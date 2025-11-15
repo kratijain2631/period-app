@@ -1,36 +1,34 @@
 import { StatusBar } from 'expo-status-bar';
-import { SafeAreaView, StyleSheet, Text } from 'react-native';
-import { useSessionStore } from './app/state/sessionStore';
+import AuthScreen from './app/features/auth/screens/AuthScreen';
+import CompanionIntroScreen from './app/features/companion/screens/CompanionIntroScreen';
+import FeedScreen from './app/features/feed/screens/FeedScreen';
+import { useCycleSyncLifecycle } from './app/services/healthkit/syncHealthData';
+import {
+  selectHasSeenCompanionIntro,
+  selectHealthPermissions,
+  selectSession,
+  useSessionStore,
+} from './app/state/sessionStore';
 
 export default function App() {
-  const session = useSessionStore((state) => state.session);
+  useCycleSyncLifecycle();
+  const session = useSessionStore(selectSession);
+  const hasSeenIntro = useSessionStore(selectHasSeenCompanionIntro);
+  const permissions = useSessionStore(selectHealthPermissions);
+
+  let content = <AuthScreen />;
+  if (session) {
+    if (!hasSeenIntro || !permissions.granted) {
+      content = <CompanionIntroScreen />;
+    } else {
+      content = <FeedScreen />;
+    }
+  }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <Text style={styles.title}>Cycle Companion</Text>
-      <Text style={styles.subtitle}>
-        {session ? `Signed in as ${session.userId}` : 'Sign in with Apple to continue'}
-      </Text>
+    <>
       <StatusBar style="auto" />
-    </SafeAreaView>
+      {content}
+    </>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 16,
-    backgroundColor: '#fff',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '600',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#444',
-  },
-});
