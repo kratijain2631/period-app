@@ -1,21 +1,22 @@
-import Healthkit, { HKCategoryTypeIdentifier } from '@kingstinct/react-native-healthkit';
-import type { HealthkitReadAuthorization } from '@kingstinct/react-native-healthkit/lib/typescript/src/native-types';
+import {
+  requestAuthorization,
+  isHealthDataAvailable,
+  type ObjectTypeIdentifier,
+} from '@kingstinct/react-native-healthkit';
 import { useSessionStore } from '../../state/sessionStore';
 
-const cycleReadTypes: readonly HealthkitReadAuthorization[] = [
-  HKCategoryTypeIdentifier.menstrualFlow as HealthkitReadAuthorization,
-];
+const MENSTRUAL_FLOW_TYPE = 'HKCategoryTypeIdentifierMenstrualFlow' as ObjectTypeIdentifier;
+const cycleReadTypes: readonly ObjectTypeIdentifier[] = [MENSTRUAL_FLOW_TYPE];
 
 export const requestCyclePermissions = async (): Promise<boolean> => {
   const setHealthPermissions = useSessionStore.getState().setHealthPermissions;
-  const isAvailable = await Healthkit.isHealthDataAvailable();
-  if (!isAvailable) {
+  if (!isHealthDataAvailable()) {
     setHealthPermissions({ granted: false, lastPromptedAt: new Date().toISOString() });
     return false;
   }
 
   try {
-    const granted = await Healthkit.requestAuthorization(cycleReadTypes, []);
+    const granted = await requestAuthorization([], cycleReadTypes);
     setHealthPermissions({ granted, lastPromptedAt: new Date().toISOString() });
     return granted;
   } catch (error) {

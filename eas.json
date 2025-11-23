@@ -8,19 +8,22 @@
       "developmentClient": true,
       "distribution": "internal",
       "env": {
-        "APP_ENV": "development"
+        "APP_ENV": "development",
+        "EXPO_USE_NEW_ARCH": "1"
       }
     },
     "preview": {
       "distribution": "internal",
       "env": {
-        "APP_ENV": "staging"
+        "APP_ENV": "staging",
+        "EXPO_USE_NEW_ARCH": "1"
       }
     },
     "production": {
       "autoIncrement": true,
       "env": {
-        "APP_ENV": "production"
+        "APP_ENV": "production",
+        "EXPO_USE_NEW_ARCH": "1"
       }
     }
   },

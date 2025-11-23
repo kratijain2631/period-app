@@ -29,10 +29,28 @@ const initialPermissions: HealthPermissionsState = {
   lastPromptedAt: undefined,
 };
 
-const storage: PersistOptions<SessionState>['storage'] = createJSONStorage(() => AsyncStorage);
+const persistOptions: PersistOptions<SessionState> = {
+  name: 'session-store',
+  storage: createJSONStorage<SessionState>(() => AsyncStorage),
+  version: 1,
+  migrate: (persistedState, version) => {
+    const state = persistedState as SessionState | undefined;
+    if (!state) {
+      return persistedState as SessionState;
+    }
+    if (version < 1) {
+      return {
+        ...state,
+        hasSeenCompanionIntro: state.hasSeenCompanionIntro ?? false,
+        permissions: state.permissions ?? initialPermissions,
+      } as SessionState;
+    }
+    return state;
+  },
+};
 
 export const useSessionStore = create<SessionState>()(
-  persist(
+  persist<SessionState>(
     (set) => ({
       session: null,
       hasSeenCompanionIntro: false,
@@ -54,25 +72,7 @@ export const useSessionStore = create<SessionState>()(
           permissions: initialPermissions,
         }),
     }),
-    {
-      name: 'session-store',
-      storage,
-      version: 1,
-      migrate: (persistedState, version) => {
-        if (!persistedState) return persistedState;
-        if (version < 1) {
-          return {
-            ...persistedState,
-            hasSeenCompanionIntro: persistedState.hasSeenCompanionIntro ?? false,
-            permissions: {
-              granted: false,
-              lastPromptedAt: undefined,
-            },
-          };
-        }
-        return persistedState;
-      },
-    },
+    persistOptions,
   ),
 );
 
