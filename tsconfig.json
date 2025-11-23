@@ -3,7 +3,7 @@
   "compilerOptions": {
     "strict": true,
     "target": "esnext",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "jsx": "react-jsx",
     "baseUrl": "."
   },

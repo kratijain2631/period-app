@@ -12,10 +12,20 @@
         "expo-build-properties",
         {
           "ios": {
-            "deploymentTarget": "15.1"
+            "deploymentTarget": "15.1",
+            "newArchEnabled": true
           }
         }
-      ]
+      ],
+      [
+        "@kingstinct/react-native-healthkit",
+        {
+          "NSHealthShareUsageDescription": "Cycle Companion reads menstrual health data from Apple Health to create social insights for you and your friends.",
+          "NSHealthUpdateUsageDescription": "Cycle Companion does not write any data back to Apple Health.",
+          "background": true
+        }
+      ],
+      "./plugins/withNitroModulesPod"
     ],
     "ios": {
       "supportsTablet": false,
@@ -35,6 +45,9 @@
       "eas": {
         "projectId": "04bd3a64-f6b1-44bf-af97-c555938af417"
       }
+    },
+    "android": {
+      "package": "com.cadence.cycle"
     }
   }
 }

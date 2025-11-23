@@ -1,9 +1,11 @@
-import Healthkit, {
-  HKAuthorizationStatus,
-  HKCategoryTypeIdentifier,
-  HKCategoryValueMenstrualFlow,
+import {
+  authorizationStatusFor,
+  queryCategorySamples,
+  type CategorySampleTyped,
+  type CategoryTypeIdentifier,
+  CategoryValueMenstrualFlow,
+  AuthorizationStatus,
 } from '@kingstinct/react-native-healthkit';
-import type { HKCategorySample } from '@kingstinct/react-native-healthkit/lib/typescript/src/types';
 import * as BackgroundFetch from 'expo-background-fetch';
 import * as TaskManager from 'expo-task-manager';
 import { AppState, AppStateStatus } from 'react-native';
@@ -13,11 +15,11 @@ import { useSessionStore } from '../../state/sessionStore';
 export const CYCLE_SYNC_TASK = 'cycle-sync-task';
 const LOOKBACK_DAYS = 90;
 
-type MenstrualSample = HKCategorySample<HKCategoryTypeIdentifier.menstrualFlow>;
+type MenstrualSample = CategorySampleTyped<typeof MENSTRUAL_FLOW_IDENTIFIER>;
 
 export type CycleSample = {
   id: string;
-  flowValue: HKCategoryValueMenstrualFlow;
+  flowValue: CategoryValueMenstrualFlow;
   startDate: string;
   endDate: string;
   metadata?: Record<string, unknown>;
@@ -47,9 +49,11 @@ const normalizeSamples = (rawSamples: readonly MenstrualSample[]): CycleSample[]
     id: sample.uuid ?? `${sample.startDate}-${sample.endDate}`,
     startDate: sample.startDate.toISOString(),
     endDate: sample.endDate.toISOString(),
-    flowValue: sample.value,
-    metadata: sample.metadata ?? {},
+    flowValue: sample.value as CategoryValueMenstrualFlow,
+    metadata: (sample.metadata as Record<string, unknown>) ?? undefined,
   }));
+
+const MENSTRUAL_FLOW_IDENTIFIER: CategoryTypeIdentifier = 'HKCategoryTypeIdentifierMenstrualFlow';
 
 const ensureBackgroundTask = () => {
   if (taskDefined) {
@@ -97,8 +101,8 @@ const ensureBackgroundFetchRegistered = async () => {
 export type SyncSource = 'foreground' | 'background';
 
 const hasPermissions = async () => {
-  const status = await Healthkit.authorizationStatusFor(HKCategoryTypeIdentifier.menstrualFlow);
-  return status === HKAuthorizationStatus.sharingAuthorized;
+  const status = await authorizationStatusFor(MENSTRUAL_FLOW_IDENTIFIER);
+  return status === AuthorizationStatus.sharingAuthorized;
 };
 
 export const syncHealthData = async ({
@@ -118,15 +122,14 @@ export const syncHealthData = async ({
   const from = new Date(now.getTime() - LOOKBACK_DAYS * 24 * 60 * 60 * 1000);
 
   try {
-    const rawSamples = await Healthkit.queryCategorySamples(
-      HKCategoryTypeIdentifier.menstrualFlow,
-      {
-        from,
-        to: now,
-        limit: 50,
-        ascending: false,
+    const rawSamples = await queryCategorySamples(MENSTRUAL_FLOW_IDENTIFIER, {
+      filter: {
+        startDate: from,
+        endDate: now,
       },
-    );
+      limit: 50,
+      ascending: false,
+    });
 
     const samples = normalizeSamples(rawSamples as readonly MenstrualSample[]);
     const snapshot: CycleSnapshot = {
