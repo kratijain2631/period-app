@@ -16,6 +16,21 @@ eas build:configure
 npm run start
 ```
 
+### Run the app without a full rebuild (dev client)
+HealthKit and Apple Sign in with Apple require a custom dev client (Expo Go is insufficient). Build once, then iterate with Metro:
+
+```bash
+# build the dev client once (installs native HealthKit/SIWA deps)
+eas build --profile development --platform ios
+
+# install the .ipa from the EAS build page on your device
+
+# start Metro for the dev client (hot reloads JS)
+npx expo start --dev-client
+```
+
+Make sure the device and your computer are on the same network, or pass `--tunnel` if LAN is blocked. Open the dev client app on your device and scan the QR from the Metro terminal.
+
 ### Preview/Test Builds
 
 ```bash
