@@ -9,19 +9,34 @@ import {
   View,
 } from 'react-native';
 import { requestCyclePermissions } from '../../../services/healthkit/permissions';
+import { syncHealthData } from '../../../services/healthkit/syncHealthData';
 import { useSessionStore } from '../../../state/sessionStore';
+import { healthkitClient, MENSTRUAL_FLOW_IDENTIFIER } from '../../../services/healthkit/healthkitClient';
 
 const CompanionIntroScreen = () => {
   const permissions = useSessionStore((state) => state.permissions);
   const markIntroSeen = useSessionStore((state) => state.markCompanionIntroSeen);
   const [status, setStatus] = useState<string | null>(null);
   const [isRequesting, setIsRequesting] = useState(false);
+  const [debugStatus, setDebugStatus] = useState<string | null>(null);
+  const [hkStatus, setHkStatus] = useState<string | null>(null);
 
   useEffect(() => {
     if (permissions.granted) {
       markIntroSeen();
     }
   }, [permissions.granted, markIntroSeen]);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const statusValue = await healthkitClient.authorizationStatusFor(MENSTRUAL_FLOW_IDENTIFIER);
+        setHkStatus(`HK status: ${statusValue}`);
+      } catch {
+        setHkStatus(null);
+      }
+    })();
+  }, []);
 
   const subtitle = useMemo(() => {
     if (permissions.granted) {
@@ -36,23 +51,39 @@ const CompanionIntroScreen = () => {
   const handleGrant = useCallback(async () => {
     setIsRequesting(true);
     setStatus(null);
+    setDebugStatus(null);
     try {
-      const granted = await requestCyclePermissions();
-      if (!granted) {
-        setStatus('We could not confirm Health access. Please try again or open the Health app.');
+      const result = await requestCyclePermissions();
+      if (!result.granted) {
+        setStatus(result.error ?? 'Health access was not granted. Please try again.');
+        setDebugStatus('Still not granted after request');
+        return;
       }
+      setDebugStatus('Health permissions granted');
+      await syncHealthData({ trigger: 'manual' });
+      markIntroSeen();
     } catch (error) {
       setStatus('Something went wrong while requesting permissions. Please try again.');
       console.error('requestCyclePermissions failed', error);
     } finally {
       setIsRequesting(false);
     }
+  }, [markIntroSeen]);
+
+  const handleSkip = useCallback(() => {
+    console.log('[intro] User tapped Not now');
+    markIntroSeen();
+  }, [markIntroSeen]);
+
+  const handleOpenHealthSettings = useCallback(() => {
+    Linking.openURL('x-apple-health://sources')
+      .catch(() => Linking.openSettings())
+      .catch(() => setStatus('Unable to open Health settings. Please open Health > Apps manually.'));
   }, []);
 
-  const handleOpenSettings = useCallback(() => {
-    Linking.openURL('x-apple-health://')
-      .catch(() => Linking.openSettings())
-      .catch(() => setStatus('Unable to open Settings. Please open the Health app manually.'));
+  const handleLearnMore = useCallback(() => {
+    Linking.openURL('https://www.apple.com/healthcare/apple-health-app/')
+      .catch(() => setStatus('Unable to open Learn more link right now.'));
   }, []);
 
   const features = useMemo(
@@ -80,6 +111,15 @@ const CompanionIntroScreen = () => {
           ))}
         </View>
 
+        {permissions.lastPromptedAt ? (
+          <Text style={styles.meta}>
+            Last prompted {new Date(permissions.lastPromptedAt).toLocaleString()}.
+          </Text>
+        ) : null}
+
+        {debugStatus ? <Text style={styles.meta}>{debugStatus}</Text> : null}
+        {hkStatus ? <Text style={styles.meta}>{hkStatus}</Text> : null}
+
         {status ? <Text style={styles.status}>{status}</Text> : null}
       </ScrollView>
 
@@ -90,19 +130,23 @@ const CompanionIntroScreen = () => {
           disabled={isRequesting || permissions.granted}
         >
           <Text style={styles.primaryLabel}>
-            {permissions.granted ? 'Access Granted' : isRequesting ? 'Requesting…' : 'Grant Health Access'}
+            {permissions.granted ? 'Access Granted' : isRequesting ? 'Requesting…' : 'Connect Apple Health'}
           </Text>
         </TouchableOpacity>
 
-        {permissions.granted ? (
-          <TouchableOpacity style={styles.secondaryButton} onPress={markIntroSeen}>
-            <Text style={styles.secondaryLabel}>Continue to feed</Text>
+        <TouchableOpacity style={styles.secondaryButton} onPress={handleSkip}>
+          <Text style={styles.secondaryLabel}>Not now</Text>
+        </TouchableOpacity>
+
+        {!permissions.granted ? (
+          <TouchableOpacity style={styles.secondaryButton} onPress={handleOpenHealthSettings}>
+            <Text style={styles.secondaryLabel}>Open Health settings</Text>
           </TouchableOpacity>
-        ) : (
-          <TouchableOpacity style={styles.secondaryButton} onPress={handleOpenSettings}>
-            <Text style={styles.secondaryLabel}>Open Health Settings</Text>
-          </TouchableOpacity>
-        )}
+        ) : null}
+
+        <TouchableOpacity style={styles.tertiaryButton} onPress={handleLearnMore}>
+          <Text style={styles.tertiaryLabel}>Learn more</Text>
+        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
@@ -162,6 +206,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
   },
+  meta: {
+    color: '#666',
+    fontSize: 13,
+  },
   footer: {
     paddingHorizontal: 24,
     paddingBottom: 32,
@@ -189,6 +237,15 @@ const styles = StyleSheet.create({
     color: '#7d50ff',
     fontSize: 15,
     fontWeight: '600',
+  },
+  tertiaryButton: {
+    paddingVertical: 10,
+    alignItems: 'center',
+  },
+  tertiaryLabel: {
+    color: '#333',
+    fontSize: 14,
+    textDecorationLine: 'underline',
   },
 });
 

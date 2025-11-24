@@ -1,15 +1,14 @@
 import { useEffect } from 'react';
 import { FlatList, RefreshControl, SafeAreaView, StyleSheet, Text, View } from 'react-native';
-import { useCycleSnapshot, syncHealthData } from '../../../services/healthkit/syncHealthData';
+import { syncHealthData, useCycleSnapshot } from '../../../services/healthkit/syncHealthData';
 
-const FeedScreen = () => {
+const HomeScreen = () => {
   const snapshot = useCycleSnapshot();
+  const samples = snapshot?.samples ?? [];
 
   useEffect(() => {
     syncHealthData({ trigger: 'foreground' });
   }, []);
-
-  const samples = snapshot?.samples ?? [];
 
   return (
     <SafeAreaView style={styles.container}>
@@ -22,7 +21,7 @@ const FeedScreen = () => {
         contentContainerStyle={styles.listContent}
         ListHeaderComponent={
           <View style={styles.header}>
-            <Text style={styles.title}>Daily Cycle Summary</Text>
+            <Text style={styles.title}>Home</Text>
             <Text style={styles.subtitle}>
               {snapshot
                 ? `Last synced ${new Date(snapshot.syncedAt).toLocaleString()}`
@@ -32,9 +31,9 @@ const FeedScreen = () => {
         }
         renderItem={({ item }) => (
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>{item.flowValue?.toString() ?? 'Flow'}</Text>
+            <Text style={styles.cardTitle}>🩸 {item.flowValue?.toString() ?? 'Flow'}</Text>
             <Text style={styles.cardSubtitle}>
-              {new Date(item.startDate).toLocaleDateString()} → {new Date(item.endDate).toLocaleDateString()}
+              {new Date(item.startDate).toLocaleDateString()}
             </Text>
           </View>
         )}
@@ -59,10 +58,6 @@ const styles = StyleSheet.create({
     padding: 16,
     gap: 12,
   },
-  header: {
-    gap: 4,
-    marginBottom: 8,
-  },
   title: {
     fontSize: 22,
     fontWeight: '700',
@@ -71,6 +66,10 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 14,
     color: '#666',
+  },
+  header: {
+    gap: 4,
+    marginBottom: 8,
   },
   card: {
     borderRadius: 16,
@@ -99,4 +98,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default FeedScreen;
+export default HomeScreen;
