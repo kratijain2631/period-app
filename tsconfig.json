@@ -5,10 +5,20 @@
     "target": "esnext",
     "moduleResolution": "bundler",
     "jsx": "react-jsx",
-    "baseUrl": "."
+    "baseUrl": ".",
+    "paths": {
+      "@/*": [
+        "app/*"
+      ],
+      "@domain/*": [
+        "packages/*"
+      ]
+    }
   },
   "include": [
     "App.tsx",
-    "app/**/*"
+    "app/**/*",
+    "packages/**/*",
+    "types/**/*"
   ]
 }

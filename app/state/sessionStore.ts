@@ -62,7 +62,10 @@ export const useSessionStore = create<SessionState>()(
           permissions: {
             ...state.permissions,
             ...nextState,
-            lastPromptedAt: nextState.lastPromptedAt ?? new Date().toISOString(),
+            lastPromptedAt:
+              nextState.lastPromptedAt !== undefined
+                ? nextState.lastPromptedAt
+                : state.permissions.lastPromptedAt,
           },
         })),
       reset: () =>

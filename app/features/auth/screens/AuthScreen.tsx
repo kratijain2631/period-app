@@ -1,15 +1,34 @@
-import { useCallback } from 'react';
-import { SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import * as AppleAuthentication from 'expo-apple-authentication';
+import { useCallback, useEffect, useState } from 'react';
+import { ActivityIndicator, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { signInWithApple } from '../../../services/auth/appleAuth';
 import { useSessionStore } from '../../../state/sessionStore';
 
 const AuthScreen = () => {
   const setSession = useSessionStore((state) => state.setSession);
+  const [isAvailable, setIsAvailable] = useState<boolean | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    AppleAuthentication.isAvailableAsync()
+      .then(setIsAvailable)
+      .catch(() => setIsAvailable(false));
+  }, []);
 
   const handleSignIn = useCallback(() => {
-    setSession({
-      userId: 'demo-user',
-      accessToken: 'demo-token',
-    });
+    setIsLoading(true);
+    setError(null);
+    signInWithApple()
+      .then((result) => {
+        setSession(result.session);
+      })
+      .catch((err) => {
+        const message =
+          err instanceof Error ? err.message : 'Sign in with Apple failed. Please try again.';
+        setError(message);
+      })
+      .finally(() => setIsLoading(false));
   }, [setSession]);
 
   return (
@@ -17,12 +36,31 @@ const AuthScreen = () => {
       <View style={styles.card}>
         <Text style={styles.title}>Welcome to Cycle Companion</Text>
         <Text style={styles.description}>
-          Sign in with Apple to sync your menstrual health data. This placeholder button simulates SIWA
-          until the real flow is wired.
+          Sign in with Apple to sync your menstrual health data. We never write back to Apple Health.
         </Text>
-        <TouchableOpacity style={styles.button} onPress={handleSignIn}>
-          <Text style={styles.buttonLabel}>Sign in with Apple</Text>
-        </TouchableOpacity>
+        {isAvailable === false && (
+          <Text style={styles.notice}>Sign in with Apple is not available on this device.</Text>
+        )}
+
+        {isAvailable ? (
+          <AppleAuthentication.AppleAuthenticationButton
+            buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
+            buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
+            cornerRadius={10}
+            style={styles.appleButton}
+            onPress={handleSignIn}
+            disabled={isLoading}
+          />
+        ) : (
+          <TouchableOpacity style={styles.button} onPress={handleSignIn} disabled={isLoading}>
+            <Text style={styles.buttonLabel}>
+              {isLoading ? 'Signing in…' : 'Sign in with Apple (fallback)'}
+            </Text>
+          </TouchableOpacity>
+        )}
+
+        {isLoading ? <ActivityIndicator /> : null}
+        {error ? <Text style={styles.error}>{error}</Text> : null}
       </View>
     </SafeAreaView>
   );
@@ -55,6 +93,11 @@ const styles = StyleSheet.create({
     color: '#555',
     lineHeight: 22,
   },
+  notice: {
+    fontSize: 14,
+    color: '#b3261e',
+    lineHeight: 20,
+  },
   button: {
     borderRadius: 12,
     backgroundColor: '#000',
@@ -66,6 +109,17 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
+  },
+  appleButton: {
+    height: 50,
+    width: '100%',
+    marginTop: 8,
+  },
+  error: {
+    color: '#b3261e',
+    fontSize: 14,
+    lineHeight: 20,
+    marginTop: 8,
   },
 });
 
