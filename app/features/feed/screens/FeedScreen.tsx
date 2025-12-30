@@ -1,50 +1,185 @@
-import { useEffect } from 'react';
-import { FlatList, RefreshControl, SafeAreaView, StyleSheet, Text, View } from 'react-native';
-import { useCycleSnapshot, syncHealthData } from '../../../services/healthkit/syncHealthData';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  FlatList,
+  RefreshControl,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import NotificationsBell from '../../notifications/components/NotificationsBell';
+import NotificationsSheet from '../../notifications/components/NotificationsSheet';
+import { useNotifications } from '../../notifications/hooks/useNotifications';
+import FriendSyncButton from '../../friends/components/FriendSyncButton';
+import { fetchCycleEvents, type CycleEventRow } from '../../../services/supabase/cycleEvents';
+import { fetchUserProfilesByIds } from '../../../services/supabase/users';
+import { sendBoop } from '../../../services/supabase/boops';
+import { selectSession, useSessionStore } from '../../../state/sessionStore';
+import { selectIsOnline, useConnectionStore } from '../../../state/connectionStore';
 
 const FeedScreen = () => {
-  const snapshot = useCycleSnapshot();
+  const { notifications, unreadCount } = useNotifications();
+  const [isSheetVisible, setSheetVisible] = useState(false);
+  const session = useSessionStore(selectSession);
+  const navigation = useNavigation();
+  const [events, setEvents] = useState<CycleEventRow[]>([]);
+  const [nameMap, setNameMap] = useState<Record<string, string>>({});
+  const [isLoading, setLoading] = useState(false);
+  const [boopStatusById, setBoopStatusById] = useState<Record<string, 'sent' | 'queued'>>({});
+  const [boopLoading, setBoopLoading] = useState<Record<string, boolean>>({});
+  const isOnline = useConnectionStore(selectIsOnline);
+  const isOffline = !isOnline;
+
+  const loadFeed = useCallback(async () => {
+    if (!session?.userId) {
+      setEvents([]);
+      return;
+    }
+    setLoading(true);
+    try {
+      const data = await fetchCycleEvents();
+      const filtered = data.filter((event) => event.user_id !== session.userId);
+      setEvents(filtered);
+      const friendIds = Array.from(new Set(filtered.map((event) => event.user_id)));
+      if (friendIds.length) {
+        try {
+          const profiles = await fetchUserProfilesByIds(friendIds);
+          const nextMap: Record<string, string> = {};
+          profiles.forEach((profile) => {
+            if (profile.full_name) {
+              nextMap[profile.id] = profile.full_name;
+            }
+          });
+          setNameMap(nextMap);
+        } catch (error) {
+          console.warn('[feed] Failed to load friend names', error);
+          setNameMap({});
+        }
+      } else {
+        setNameMap({});
+      }
+    } catch (error) {
+      console.warn('[feed] Failed to load friend updates', error);
+      setEvents([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [session?.userId]);
 
   useEffect(() => {
-    syncHealthData({ trigger: 'foreground' });
+    loadFeed();
+  }, [loadFeed]);
+
+  const navigateToProfile = () => {
+    const state = navigation.getState();
+    if (state?.routeNames?.includes('Profile')) {
+      navigation.navigate('Profile' as never);
+      return;
+    }
+    if (state?.routeNames?.includes('MainTabs')) {
+      navigation.navigate('MainTabs' as never, { screen: 'Profile' } as never);
+    }
+  };
+
+  const handleBoop = useCallback(async (event: CycleEventRow) => {
+    if (!event.user_id) {
+      return;
+    }
+    setBoopLoading((prev) => ({ ...prev, [event.id]: true }));
+    try {
+      const result = await sendBoop(event.user_id, event.id);
+      setBoopStatusById((prev) => ({ ...prev, [event.id]: result.status }));
+    } catch (error) {
+      console.warn('[feed] Failed to send boop', error);
+    } finally {
+      setBoopLoading((prev) => ({ ...prev, [event.id]: false }));
+    }
   }, []);
 
-  const samples = snapshot?.samples ?? [];
+  const displayEvents = useMemo(() => events, [events]);
+  const shortId = (value: string) => `${value.slice(0, 4)}...${value.slice(-4)}`;
 
   return (
     <SafeAreaView style={styles.container}>
       <FlatList
-        data={samples}
+        data={displayEvents}
         keyExtractor={(item) => item.id}
-        refreshControl={
-          <RefreshControl refreshing={false} onRefresh={() => syncHealthData({ trigger: 'foreground' })} />
-        }
+        refreshControl={<RefreshControl refreshing={isLoading} onRefresh={loadFeed} />}
         contentContainerStyle={styles.listContent}
         ListHeaderComponent={
           <View style={styles.header}>
-            <Text style={styles.title}>Daily Cycle Summary</Text>
-            <Text style={styles.subtitle}>
-              {snapshot
-                ? `Last synced ${new Date(snapshot.syncedAt).toLocaleString()}`
-                : 'Grant Health permissions to start syncing.'}
-            </Text>
+            <View style={styles.headerRow}>
+              <Text style={styles.title}>Feed</Text>
+              <View style={styles.headerActions}>
+                <FriendSyncButton onPress={navigateToProfile} />
+                <NotificationsBell count={unreadCount} onPress={() => setSheetVisible(true)} />
+              </View>
+            </View>
+            <Text style={styles.subtitle}>See recent cycle updates from friends you share with.</Text>
+            {isOffline ? (
+              <View style={styles.offlineBanner}>
+                <Text style={styles.offlineText}>Offline: boops will queue until you're back online.</Text>
+              </View>
+            ) : null}
           </View>
         }
-        renderItem={({ item }) => (
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>{item.flowValue?.toString() ?? 'Flow'}</Text>
-            <Text style={styles.cardSubtitle}>
-              {new Date(item.startDate).toLocaleDateString()} → {new Date(item.endDate).toLocaleDateString()}
-            </Text>
-          </View>
-        )}
+        renderItem={({ item }) => {
+          const friendLabel = nameMap[item.user_id] ?? `Friend ${shortId(item.user_id)}`;
+          const boopStatus = boopStatusById[item.id];
+          const booped = boopStatus === 'sent';
+          const queued = boopStatus === 'queued';
+          const boopInFlight = boopLoading[item.id];
+          return (
+            <View style={styles.card}>
+              <View style={styles.cardHeader}>
+                <View>
+                  <Text style={styles.cardTitle}>{friendLabel}</Text>
+                  <Text style={styles.cardSubtitle}>
+                    {item.event_type.replace(/_/g, ' ')} • {new Date(item.starts_at).toLocaleString()}
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  style={[
+                    styles.boopButton,
+                    booped ? styles.boopButtonDone : null,
+                    queued ? styles.boopButtonQueued : null,
+                  ]}
+                  onPress={() => handleBoop(item)}
+                  disabled={booped || queued || boopInFlight}
+                >
+                  <Text
+                    style={[
+                      styles.boopButtonText,
+                      booped ? styles.boopButtonTextDone : null,
+                      queued ? styles.boopButtonTextQueued : null,
+                    ]}
+                  >
+                    {booped
+                      ? 'Booped'
+                      : queued
+                        ? 'Queued'
+                        : boopInFlight
+                          ? 'Booping...'
+                          : 'Boop'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+              {item.phase ? <Text style={styles.phaseText}>Phase: {item.phase}</Text> : null}
+            </View>
+          );
+        }}
         ListEmptyComponent={
           <Text style={styles.emptyState}>
-            {snapshot
-              ? 'No recent menstrual flow entries in Apple Health.'
-              : 'Cycles will appear here after permissions are granted.'}
+            {session ? 'No friend updates yet. Add friends to start sharing.' : 'Sign in to see friend updates.'}
           </Text>
         }
+      />
+      <NotificationsSheet
+        visible={isSheetVisible}
+        notifications={notifications}
+        onClose={() => setSheetVisible(false)}
       />
     </SafeAreaView>
   );
@@ -63,6 +198,16 @@ const styles = StyleSheet.create({
     gap: 4,
     marginBottom: 8,
   },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
   title: {
     fontSize: 22,
     fontWeight: '700',
@@ -71,6 +216,19 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 14,
     color: '#666',
+  },
+  offlineBanner: {
+    marginTop: 6,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 10,
+    backgroundColor: '#ffe6e6',
+    alignSelf: 'flex-start',
+  },
+  offlineText: {
+    fontSize: 12,
+    color: '#7a1f1f',
+    fontWeight: '600',
   },
   card: {
     borderRadius: 16,
@@ -83,6 +241,12 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     elevation: 3,
   },
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 12,
+  },
   cardTitle: {
     fontSize: 18,
     fontWeight: '600',
@@ -90,6 +254,35 @@ const styles = StyleSheet.create({
   cardSubtitle: {
     fontSize: 14,
     color: '#555',
+  },
+  phaseText: {
+    fontSize: 13,
+    color: '#6a5acd',
+    fontWeight: '600',
+    textTransform: 'capitalize',
+  },
+  boopButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 999,
+    backgroundColor: '#111',
+  },
+  boopButtonDone: {
+    backgroundColor: '#e6f3e6',
+  },
+  boopButtonQueued: {
+    backgroundColor: '#fff3cd',
+  },
+  boopButtonText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: 12,
+  },
+  boopButtonTextDone: {
+    color: '#1c6d1c',
+  },
+  boopButtonTextQueued: {
+    color: '#7a5b00',
   },
   emptyState: {
     textAlign: 'center',

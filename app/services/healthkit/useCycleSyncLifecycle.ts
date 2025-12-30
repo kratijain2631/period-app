@@ -10,7 +10,9 @@ export const useCycleSyncLifecycle = () => {
 
   useEffect(() => {
     if (!session || !permissionsGranted) {
-      clearCycleSnapshot();
+      clearCycleSnapshot().catch((error) =>
+        console.error('[cycle-sync] Failed to clear snapshot', error),
+      );
       unregisterCompanionBackgroundSync().catch((error) =>
         console.error('[cycle-sync] Failed to unregister background task', error),
       );

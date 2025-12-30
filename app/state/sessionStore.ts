@@ -18,9 +18,11 @@ type SessionState = {
   session: Session | null;
   hasSeenCompanionIntro: boolean;
   permissions: HealthPermissionsState;
+  isHydrating: boolean;
   setSession: (session: Session | null) => void;
   markCompanionIntroSeen: () => void;
   setHealthPermissions: (nextState: Partial<HealthPermissionsState>) => void;
+  setHydrating: (isHydrating: boolean) => void;
   reset: () => void;
 };
 
@@ -32,7 +34,12 @@ const initialPermissions: HealthPermissionsState = {
 const persistOptions: PersistOptions<SessionState> = {
   name: 'session-store',
   storage: createJSONStorage<SessionState>(() => AsyncStorage),
-  version: 1,
+  partialize: (state) => ({
+    session: state.session,
+    hasSeenCompanionIntro: state.hasSeenCompanionIntro,
+    permissions: state.permissions,
+  }),
+  version: 2,
   migrate: (persistedState, version) => {
     const state = persistedState as SessionState | undefined;
     if (!state) {
@@ -43,6 +50,13 @@ const persistOptions: PersistOptions<SessionState> = {
         ...state,
         hasSeenCompanionIntro: state.hasSeenCompanionIntro ?? false,
         permissions: state.permissions ?? initialPermissions,
+        isHydrating: false,
+      } as SessionState;
+    }
+    if (version < 2) {
+      return {
+        ...state,
+        isHydrating: false,
       } as SessionState;
     }
     return state;
@@ -55,6 +69,7 @@ export const useSessionStore = create<SessionState>()(
       session: null,
       hasSeenCompanionIntro: false,
       permissions: initialPermissions,
+      isHydrating: true,
       setSession: (session) => set({ session }),
       markCompanionIntroSeen: () => set({ hasSeenCompanionIntro: true }),
       setHealthPermissions: (nextState) =>
@@ -68,11 +83,13 @@ export const useSessionStore = create<SessionState>()(
                 : state.permissions.lastPromptedAt,
           },
         })),
+      setHydrating: (isHydrating) => set({ isHydrating }),
       reset: () =>
         set({
           session: null,
           hasSeenCompanionIntro: false,
           permissions: initialPermissions,
+          isHydrating: false,
         }),
     }),
     persistOptions,
@@ -82,3 +99,4 @@ export const useSessionStore = create<SessionState>()(
 export const selectSession = (state: SessionState) => state.session;
 export const selectHasSeenCompanionIntro = (state: SessionState) => state.hasSeenCompanionIntro;
 export const selectHealthPermissions = (state: SessionState) => state.permissions;
+export const selectIsHydrating = (state: SessionState) => state.isHydrating;

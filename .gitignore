@@ -11,6 +11,9 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 *.log
+.env
+.env.*
+supabase/.temp/
 
 # Mac / Editor cruft
 .DS_Store

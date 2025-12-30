@@ -1,5 +1,4 @@
 import { DeviceEventEmitter } from 'react-native';
-import { useSyncExternalStore } from 'react';
 import {
   AuthorizationStatus,
   healthkitClient,
@@ -8,6 +7,8 @@ import {
 } from './healthkitClient';
 import { CycleSnapshot, deriveSnapshot, normalizeFlowSamples } from '../../../packages/domain/cycles/models';
 import { useSessionStore } from '../../state/sessionStore';
+import { clearCycleSnapshots, upsertCycleSnapshot } from '../../storage/sqlite/cycleSnapshotStore';
+import { upsertCycleEvents, upsertCycleSnapshotRemote } from '../supabase/cycleEvents';
 
 const LOOKBACK_MS = 90 * 24 * 60 * 60 * 1000; // 90 days to capture longer histories
 const QUERY_LIMIT = 400;
@@ -15,21 +16,14 @@ export const CYCLE_SNAPSHOT_UPDATED = 'companion/snapshotUpdated';
 
 export type SyncTrigger = 'manual' | 'foreground' | 'background';
 
-let latestSnapshot: CycleSnapshot | null = null;
-const listeners = new Set<() => void>();
-
 const notify = (snapshot: CycleSnapshot | null) => {
-  latestSnapshot = snapshot;
   DeviceEventEmitter.emit(CYCLE_SNAPSHOT_UPDATED, snapshot);
-  listeners.forEach((listener) => listener());
 };
 
-export const subscribeToCycleSnapshot = (listener: () => void) => {
-  listeners.add(listener);
-  return () => listeners.delete(listener);
+export const clearCycleSnapshot = async () => {
+  await clearCycleSnapshots();
+  notify(null);
 };
-
-export const clearCycleSnapshot = () => notify(null);
 
 export const syncHealthData = async ({
   trigger = 'manual',
@@ -66,6 +60,20 @@ export const syncHealthData = async ({
     });
     const snapshot = deriveSnapshot(samples, now.toISOString());
 
+    await upsertCycleSnapshot(session.userId, snapshot);
+    try {
+      await upsertCycleSnapshotRemote(session.userId, snapshot);
+      const events = samples.map((sample) => ({
+        user_id: session.userId,
+        event_type: 'menstrual_flow',
+        phase: snapshot.currentPhase,
+        symptoms: sample.metadata ?? null,
+        starts_at: sample.startDate,
+      }));
+      await upsertCycleEvents(events);
+    } catch (error) {
+      console.warn('[cycle-sync] Supabase sync failed', error);
+    }
     notify(snapshot);
     console.log(
       `[cycle-sync] Completed (${trigger}) with ${samples.length} samples from ${startDate.toISOString()} to ${now.toISOString()}`,
@@ -80,6 +88,3 @@ export const syncHealthData = async ({
     return null;
   }
 };
-
-export const useCycleSnapshot = () =>
-  useSyncExternalStore(subscribeToCycleSnapshot, () => latestSnapshot, () => latestSnapshot);

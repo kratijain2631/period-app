@@ -25,7 +25,9 @@
           "background": true
         }
       ],
-      "./plugins/withNitroModulesPod"
+      "./plugins/withNitroModulesPod",
+      "expo-sqlite",
+      "expo-notifications"
     ],
     "ios": {
       "supportsTablet": false,
