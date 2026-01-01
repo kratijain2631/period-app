@@ -19,10 +19,14 @@ type SessionState = {
   hasSeenCompanionIntro: boolean;
   permissions: HealthPermissionsState;
   isHydrating: boolean;
+  alias: string | null;
+  isProfileHydrating: boolean;
   setSession: (session: Session | null) => void;
   markCompanionIntroSeen: () => void;
   setHealthPermissions: (nextState: Partial<HealthPermissionsState>) => void;
   setHydrating: (isHydrating: boolean) => void;
+  setAlias: (alias: string | null) => void;
+  setProfileHydrating: (isHydrating: boolean) => void;
   reset: () => void;
 };
 
@@ -38,8 +42,9 @@ const persistOptions: PersistOptions<SessionState> = {
     session: state.session,
     hasSeenCompanionIntro: state.hasSeenCompanionIntro,
     permissions: state.permissions,
+    alias: state.alias,
   }),
-  version: 2,
+  version: 3,
   migrate: (persistedState, version) => {
     const state = persistedState as SessionState | undefined;
     if (!state) {
@@ -51,12 +56,23 @@ const persistOptions: PersistOptions<SessionState> = {
         hasSeenCompanionIntro: state.hasSeenCompanionIntro ?? false,
         permissions: state.permissions ?? initialPermissions,
         isHydrating: false,
+        alias: null,
+        isProfileHydrating: false,
       } as SessionState;
     }
     if (version < 2) {
       return {
         ...state,
         isHydrating: false,
+        alias: null,
+        isProfileHydrating: false,
+      } as SessionState;
+    }
+    if (version < 3) {
+      return {
+        ...state,
+        alias: null,
+        isProfileHydrating: false,
       } as SessionState;
     }
     return state;
@@ -70,6 +86,8 @@ export const useSessionStore = create<SessionState>()(
       hasSeenCompanionIntro: false,
       permissions: initialPermissions,
       isHydrating: true,
+      alias: null,
+      isProfileHydrating: false,
       setSession: (session) => set({ session }),
       markCompanionIntroSeen: () => set({ hasSeenCompanionIntro: true }),
       setHealthPermissions: (nextState) =>
@@ -84,12 +102,16 @@ export const useSessionStore = create<SessionState>()(
           },
         })),
       setHydrating: (isHydrating) => set({ isHydrating }),
+      setAlias: (alias) => set({ alias }),
+      setProfileHydrating: (isProfileHydrating) => set({ isProfileHydrating }),
       reset: () =>
         set({
           session: null,
           hasSeenCompanionIntro: false,
           permissions: initialPermissions,
           isHydrating: false,
+          alias: null,
+          isProfileHydrating: false,
         }),
     }),
     persistOptions,
@@ -100,3 +122,5 @@ export const selectSession = (state: SessionState) => state.session;
 export const selectHasSeenCompanionIntro = (state: SessionState) => state.hasSeenCompanionIntro;
 export const selectHealthPermissions = (state: SessionState) => state.permissions;
 export const selectIsHydrating = (state: SessionState) => state.isHydrating;
+export const selectAlias = (state: SessionState) => state.alias;
+export const selectIsProfileHydrating = (state: SessionState) => state.isProfileHydrating;

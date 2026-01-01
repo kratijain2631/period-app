@@ -27,9 +27,15 @@ const ensureInitialized = async () => {
           user_id text not null,
           to_user_id text not null,
           event_id text,
+          post_id text,
           created_at text not null
         );`,
       );
+      try {
+        await db.execAsync(`alter table ${TABLE_NAME} add column post_id text;`);
+      } catch (_error) {
+        // Column already exists.
+      }
       await db.execAsync(
         `create index if not exists idx_${TABLE_NAME}_user_id on ${TABLE_NAME} (user_id);`,
       );
@@ -46,18 +52,24 @@ export type BoopQueueItem = {
   user_id: string;
   to_user_id: string;
   event_id?: string | null;
+  post_id?: string | null;
   created_at: string;
 };
 
-export const enqueueBoop = async (userId: string, toUserId: string, eventId?: string | null) => {
+export const enqueueBoop = async (
+  userId: string,
+  toUserId: string,
+  eventId?: string | null,
+  postId?: string | null,
+) => {
   await ensureInitialized();
   const db = await getDb();
   const id = buildId();
   const createdAt = new Date().toISOString();
   await db.runAsync(
-    `insert into ${TABLE_NAME} (id, user_id, to_user_id, event_id, created_at)
-     values (?, ?, ?, ?, ?);`,
-    [id, userId, toUserId, eventId ?? null, createdAt],
+    `insert into ${TABLE_NAME} (id, user_id, to_user_id, event_id, post_id, created_at)
+     values (?, ?, ?, ?, ?, ?);`,
+    [id, userId, toUserId, eventId ?? null, postId ?? null, createdAt],
   );
   return id;
 };
@@ -66,7 +78,7 @@ export const listPendingBoops = async (userId: string): Promise<BoopQueueItem[]>
   await ensureInitialized();
   const db = await getDb();
   const rows = await db.getAllAsync<BoopQueueItem>(
-    `select id, user_id, to_user_id, event_id, created_at
+    `select id, user_id, to_user_id, event_id, post_id, created_at
      from ${TABLE_NAME}
      where user_id = ?
      order by created_at asc;`,

@@ -11,11 +11,14 @@ import FriendSyncScreen from '../features/friends/screens/FriendSyncScreen';
 import FeedScreen from '../features/feed/screens/FeedScreen';
 import HomeScreen from '../features/home/screens/HomeScreen';
 import ProfileScreen from '../features/profile/screens/ProfileScreen';
+import AliasScreen from '../features/profile/screens/AliasScreen';
 import { navigationRef } from './navigationRef';
 import {
+  selectAlias,
   selectHasSeenCompanionIntro,
   selectHealthPermissions,
   selectIsHydrating,
+  selectIsProfileHydrating,
   selectSession,
   useSessionStore,
 } from '../state/sessionStore';
@@ -28,6 +31,8 @@ const AppNavigator = () => {
   const hasSeenIntro = useSessionStore(selectHasSeenCompanionIntro);
   const permissionsGranted = useSessionStore(selectHealthPermissions).granted;
   const isHydrating = useSessionStore(selectIsHydrating);
+  const alias = useSessionStore(selectAlias);
+  const isProfileHydrating = useSessionStore(selectIsProfileHydrating);
 
   useEffect(() => {
     console.log(
@@ -36,14 +41,15 @@ const AppNavigator = () => {
   }, [session, hasSeenIntro, permissionsGranted]);
 
   const isAuthed = Boolean(session);
+  const needsAlias = isAuthed && !alias;
   const needsIntro = isAuthed && (!hasSeenIntro || !permissionsGranted);
-  const readyForHome = isAuthed && !needsIntro;
+  const readyForHome = isAuthed && !needsAlias && !needsIntro;
 
   return (
     <SafeAreaProvider>
       <NavigationContainer ref={navigationRef}>
         <Stack.Navigator screenOptions={{ headerShown: false }}>
-          {isHydrating && (
+          {(isHydrating || (isAuthed && isProfileHydrating)) && (
             <Stack.Screen
               name="AuthLoading"
               component={AuthLoadingScreen}
@@ -51,7 +57,10 @@ const AppNavigator = () => {
             />
           )}
           {!isHydrating && !isAuthed && <Stack.Screen name="Auth" component={AuthScreen} />}
-          {!isHydrating && needsIntro && (
+          {!isHydrating && isAuthed && !isProfileHydrating && needsAlias && (
+            <Stack.Screen name="Alias" component={AliasScreen} />
+          )}
+          {!isHydrating && !needsAlias && needsIntro && (
             <Stack.Screen name="CompanionIntro" component={CompanionIntroScreen} />
           )}
           {!isHydrating && readyForHome && <Stack.Screen name="MainTabs" component={MainTabs} />}

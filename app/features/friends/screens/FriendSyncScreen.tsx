@@ -87,7 +87,7 @@ const FriendSyncScreen = () => {
     }
     setBoopStatus('sending');
     try {
-      const result = await sendBoop(friendId);
+      const result = await sendBoop({ toUserId: friendId });
       setBoopStatus(result.status === 'queued' ? 'queued' : 'sent');
     } catch (error) {
       console.warn('[friend-sync] Failed to send boop', error);

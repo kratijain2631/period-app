@@ -6,7 +6,17 @@ export type BoopSendResult = {
   status: 'sent' | 'queued';
 };
 
-export const sendBoop = async (toUserId: string, eventId?: string): Promise<BoopSendResult> => {
+export type BoopSendPayload = {
+  toUserId: string;
+  eventId?: string;
+  postId?: string;
+};
+
+export const sendBoop = async ({
+  toUserId,
+  eventId,
+  postId,
+}: BoopSendPayload): Promise<BoopSendResult> => {
   if (!isSupabaseConfigured) {
     return { status: 'queued' };
   }
@@ -20,7 +30,7 @@ export const sendBoop = async (toUserId: string, eventId?: string): Promise<Boop
 
   const isOnline = useConnectionStore.getState().isOnline;
   if (!isOnline) {
-    await enqueueBoop(data.user.id, toUserId, eventId ?? null);
+    await enqueueBoop(data.user.id, toUserId, eventId ?? null, postId ?? null);
     return { status: 'queued' };
   }
 
@@ -28,6 +38,7 @@ export const sendBoop = async (toUserId: string, eventId?: string): Promise<Boop
     from_user_id: data.user.id,
     to_user_id: toUserId,
     event_id: eventId ?? null,
+    post_id: postId ?? null,
   });
   if (insertError) {
     throw insertError;
@@ -56,6 +67,7 @@ export const flushBoopQueue = async () => {
       from_user_id: item.user_id,
       to_user_id: item.to_user_id,
       event_id: item.event_id ?? null,
+      post_id: item.post_id ?? null,
       created_at: item.created_at,
     });
     if (insertError) {
@@ -64,4 +76,18 @@ export const flushBoopQueue = async () => {
     }
     await removeQueuedBoop(item.id);
   }
+};
+
+export const fetchPostBoops = async (postIds: string[]) => {
+  if (!isSupabaseConfigured || postIds.length === 0) {
+    return [];
+  }
+  const { data, error } = await supabase
+    .from('boops')
+    .select('post_id')
+    .in('post_id', postIds);
+  if (error) {
+    throw error;
+  }
+  return (data as { post_id: string | null }[]) ?? [];
 };

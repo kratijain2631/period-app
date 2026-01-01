@@ -89,7 +89,7 @@ const FeedScreen = () => {
     }
     setBoopLoading((prev) => ({ ...prev, [event.id]: true }));
     try {
-      const result = await sendBoop(event.user_id, event.id);
+      const result = await sendBoop({ toUserId: event.user_id, eventId: event.id });
       setBoopStatusById((prev) => ({ ...prev, [event.id]: result.status }));
     } catch (error) {
       console.warn('[feed] Failed to send boop', error);

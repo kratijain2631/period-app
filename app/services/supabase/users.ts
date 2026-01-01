@@ -4,12 +4,14 @@ export type UserProfilePayload = {
   appleUserId?: string;
   email?: string;
   fullName?: string;
+  alias?: string;
 };
 
 export type UserProfileRow = {
   id: string;
   full_name?: string | null;
   email?: string | null;
+  alias?: string | null;
 };
 
 const buildUpdate = (
@@ -23,6 +25,7 @@ const buildUpdate = (
     email?: string;
     apple_user_id?: string;
     full_name?: string;
+    alias?: string;
   } = {
     id: userId,
     updated_at: new Date().toISOString(),
@@ -37,6 +40,9 @@ const buildUpdate = (
   }
   if (payload.fullName) {
     update.full_name = payload.fullName;
+  }
+  if (payload.alias) {
+    update.alias = payload.alias;
   }
 
   return update;
@@ -78,7 +84,7 @@ export const fetchCurrentUserProfile = async (): Promise<UserProfileRow | null> 
 
   const { data, error } = await supabase
     .from('users')
-    .select('id, full_name, email')
+    .select('id, full_name, email, alias')
     .eq('id', userData.user.id)
     .maybeSingle();
   if (error) {
@@ -90,6 +96,10 @@ export const fetchCurrentUserProfile = async (): Promise<UserProfileRow | null> 
   return {
     id: userData.user.id,
     email: userData.user.email,
+    alias:
+      typeof userData.user.user_metadata?.alias === 'string'
+        ? userData.user.user_metadata.alias
+        : null,
     full_name:
       typeof userData.user.user_metadata?.full_name === 'string'
         ? userData.user.user_metadata.full_name
@@ -103,10 +113,34 @@ export const fetchUserProfilesByIds = async (ids: string[]): Promise<UserProfile
   }
   const { data, error } = await supabase
     .from('users')
-    .select('id, full_name, email')
+    .select('id, full_name, email, alias')
     .in('id', ids);
   if (error) {
     throw error;
   }
   return (data as UserProfileRow[]) ?? [];
+};
+
+export const updateUserAlias = async (alias: string) => {
+  if (!isSupabaseConfigured) {
+    return;
+  }
+  const trimmed = alias.trim();
+  if (!trimmed) {
+    throw new Error('Alias cannot be empty.');
+  }
+  const { data, error } = await supabase.auth.getUser();
+  if (error) {
+    throw error;
+  }
+  if (!data.user) {
+    throw new Error('Supabase user is not available.');
+  }
+  const { error: updateError } = await supabase
+    .from('users')
+    .update({ alias: trimmed, updated_at: new Date().toISOString() })
+    .eq('id', data.user.id);
+  if (updateError) {
+    throw updateError;
+  }
 };
