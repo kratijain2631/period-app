@@ -313,7 +313,10 @@ const HomeScreen = () => {
                   }}
                   disabled={isPosting}
                 >
-                  <Text style={styles.postButtonText}>{isPosting ? 'Posting...' : 'Post'}</Text>
+                  <Ionicons name={isPosting ? 'time-outline' : 'paper-plane'} size={16} color="#fff" />
+                  <Text style={styles.postButtonText}>
+                    {isPosting ? 'Posting...' : 'Share update'}
+                  </Text>
                 </TouchableOpacity>
               </View>
             )}
@@ -432,18 +435,29 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   postButton: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 14,
+    alignItems: 'center',
+    alignSelf: 'stretch',
     backgroundColor: '#111',
+    borderRadius: 12,
+    flexDirection: 'row',
+    gap: 8,
+    justifyContent: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 3,
   },
   postButtonDisabled: {
     backgroundColor: '#444',
   },
   postButtonText: {
     color: '#fff',
-    fontWeight: '600',
+    fontSize: 15,
+    fontWeight: '700',
+    letterSpacing: 0.2,
   },
   moodRow: {
     flexDirection: 'row',
