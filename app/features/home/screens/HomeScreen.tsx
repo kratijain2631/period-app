@@ -270,6 +270,7 @@ const HomeScreen = () => {
         keyExtractor={(item) => item.id}
         refreshing={isLoading}
         onRefresh={loadFeed}
+        keyboardShouldPersistTaps="handled"
         contentContainerStyle={styles.listContent}
         ListHeaderComponent={
           <View style={styles.header}>
