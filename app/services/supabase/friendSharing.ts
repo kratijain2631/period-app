@@ -8,6 +8,12 @@ export type FriendSharingRow = {
   updated_at: string;
 };
 
+export type FriendProfileRow = {
+  friend_id: string;
+  alias?: string | null;
+  full_name?: string | null;
+};
+
 export const fetchFriendSharing = async (): Promise<FriendSharingRow[]> => {
   if (!isSupabaseConfigured) {
     return [];
@@ -20,6 +26,19 @@ export const fetchFriendSharing = async (): Promise<FriendSharingRow[]> => {
     throw error;
   }
   return (data as FriendSharingRow[]) ?? [];
+};
+
+export const fetchFriendProfiles = async (friendIds: string[]): Promise<FriendProfileRow[]> => {
+  if (!isSupabaseConfigured || friendIds.length === 0) {
+    return [];
+  }
+  const { data, error } = await supabase.rpc('friend_profiles', {
+    friend_ids: friendIds,
+  });
+  if (error) {
+    throw error;
+  }
+  return (data as FriendProfileRow[]) ?? [];
 };
 
 export const setFriendSharing = async (friendId: string, hasShared: boolean) => {

@@ -12,13 +12,21 @@ import { useNavigation } from '@react-navigation/native';
 import { selectSession, useSessionStore } from '../../../state/sessionStore';
 import {
   fetchInboundFriendRequests,
+  fetchAcceptedFriendRequests,
+  fetchFriendRequestProfiles,
   fetchOutboundFriendRequests,
+  ensureFriendSharingForRequests,
   respondToFriendRequest,
   sendFriendRequest,
   type FriendRequestRow,
 } from '../../../services/supabase/friendRequests';
-import { fetchFriendSharing, type FriendSharingRow } from '../../../services/supabase/friendSharing';
-import { fetchCurrentUserProfile } from '../../../services/supabase/users';
+import {
+  fetchFriendProfiles,
+  fetchFriendSharing,
+  type FriendProfileRow,
+  type FriendSharingRow,
+} from '../../../services/supabase/friendSharing';
+import { fetchCurrentUserProfile, searchUsersByAliasOrEmail } from '../../../services/supabase/users';
 import { fetchFriendCycleSnapshots, type CycleSnapshotRow } from '../../../services/supabase/cycleSnapshots';
 import { useCycleSnapshot } from '../../feed/hooks/useCycleSnapshot';
 import type { CyclePhase } from '../../../../packages/domain/cycles/models';
@@ -32,8 +40,14 @@ const ProfileScreen = () => {
   const [friendId, setFriendId] = useState('');
   const [inboundRequests, setInboundRequests] = useState<FriendRequestRow[]>([]);
   const [outboundRequests, setOutboundRequests] = useState<FriendRequestRow[]>([]);
+  const [requestProfileMap, setRequestProfileMap] = useState<
+    Record<string, { alias?: string | null; full_name?: string | null }>
+  >({});
+  const [friendProfileMap, setFriendProfileMap] = useState<Record<string, FriendProfileRow>>({});
   const [sharing, setSharing] = useState<FriendSharingRow[]>([]);
-  const [friendSnapshots, setFriendSnapshots] = useState<CycleSnapshotRow[]>([]);
+  const [friendSnapshots, setFriendSnapshots] = useState<
+    Array<{ user_id: string; last_synced_at?: string; snapshot?: CycleSnapshotRow['snapshot'] }>
+  >([]);
   const [phaseFilter, setPhaseFilter] = useState<'all' | CyclePhase>('all');
   const [isLoading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -54,6 +68,14 @@ const ProfileScreen = () => {
     setLoading(true);
     setErrorMessage(null);
     try {
+      const acceptedRequests = await fetchAcceptedFriendRequests();
+      if (acceptedRequests.length > 0) {
+        try {
+          await ensureFriendSharingForRequests(acceptedRequests.map((request) => request.id));
+        } catch (error) {
+          console.warn('[profile] Failed to ensure friend sharing', error);
+        }
+      }
       const [inbound, outbound, sharingRows, snapshots] = await Promise.all([
         fetchInboundFriendRequests(),
         fetchOutboundFriendRequests(),
@@ -62,11 +84,67 @@ const ProfileScreen = () => {
       ]);
       setInboundRequests(inbound);
       setOutboundRequests(outbound);
+      const requestIds = [...inbound, ...outbound].map((row) => row.id);
+      if (requestIds.length > 0) {
+        try {
+          const profiles = await fetchFriendRequestProfiles(requestIds);
+          const nextMap: Record<string, { alias?: string | null; full_name?: string | null }> = {};
+          profiles.forEach((profile) => {
+            nextMap[profile.other_user_id] = {
+              alias: profile.alias ?? null,
+              full_name: profile.full_name ?? null,
+            };
+          });
+          setRequestProfileMap(nextMap);
+        } catch (error) {
+          console.warn('[profile] Failed to load request profiles', error);
+          setRequestProfileMap({});
+        }
+      } else {
+        setRequestProfileMap({});
+      }
       setSharing(sharingRows.filter((row) => row.has_shared));
       const filteredSnapshots = session?.userId
         ? snapshots.filter((row) => row.user_id !== session.userId)
         : snapshots;
-      setFriendSnapshots(filteredSnapshots);
+      const incomingSet = new Set(
+        sharingRows
+          .filter((row) => row.friend_id === session?.userId && row.has_shared)
+          .map((row) => row.user_id),
+      );
+      const mutualFriendIds: string[] = [];
+      sharingRows.forEach((row) => {
+        if (
+          row.user_id === session?.userId &&
+          row.has_shared &&
+          incomingSet.has(row.friend_id)
+        ) {
+          mutualFriendIds.push(row.friend_id);
+        }
+      });
+      const snapshotMap = new Map(filteredSnapshots.map((row) => [row.user_id, row]));
+      const friendList = mutualFriendIds.map((friendUserId) => {
+        const snapshotRow = snapshotMap.get(friendUserId);
+        return snapshotRow
+          ? snapshotRow
+          : { user_id: friendUserId, last_synced_at: undefined, snapshot: undefined };
+      });
+      setFriendSnapshots(friendList);
+      if (mutualFriendIds.length > 0) {
+        try {
+          const profiles = await fetchFriendProfiles(mutualFriendIds);
+          const nextMap: Record<string, FriendProfileRow> = {};
+          profiles.forEach((profile) => {
+            nextMap[profile.friend_id] = profile;
+          });
+          setFriendProfileMap(nextMap);
+        } catch (error) {
+          console.warn('[profile] Failed to load friend profiles', error);
+          setFriendProfileMap({});
+        }
+      } else {
+        setFriendProfileMap({});
+      }
     } catch (error) {
       console.warn('[profile] Failed to load friend data', error);
       setErrorMessage('Unable to load friends right now.');
@@ -91,12 +169,28 @@ const ProfileScreen = () => {
   }, [profileEmail, profileName]);
 
   const avatarInitial = displayName.trim().slice(0, 1).toUpperCase() || '?';
+  const requestDisplayName = useCallback(
+    (userId: string) => {
+      const profile = requestProfileMap[userId];
+      return profile?.alias || profile?.full_name || userId;
+    },
+    [requestProfileMap],
+  );
+  const friendDisplayName = useCallback(
+    (userId: string) => {
+      const profile = friendProfileMap[userId];
+      return profile?.alias || profile?.full_name || 'Unknown friend';
+    },
+    [friendProfileMap],
+  );
 
   const filteredFriends = useMemo(() => {
     if (phaseFilter === 'all') {
       return friendSnapshots;
     }
-    return friendSnapshots.filter((row) => row.snapshot?.currentPhase === phaseFilter);
+    return friendSnapshots.filter(
+      (row) => (row.snapshot?.currentPhase ?? 'unknown') === phaseFilter,
+    );
   }, [friendSnapshots, phaseFilter]);
 
   const phaseFilters: { label: string; value: 'all' | CyclePhase }[] = [
@@ -124,12 +218,32 @@ const ProfileScreen = () => {
     setLoading(true);
     setErrorMessage(null);
     try {
-      await sendFriendRequest(targetId);
+      let resolvedId = targetId;
+      if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetId)) {
+        const matches = await searchUsersByAliasOrEmail(targetId, 3);
+        if (matches.length === 0) {
+          setErrorMessage('No user found for that alias or email.');
+          return;
+        }
+        if (matches.length > 1) {
+          setErrorMessage('Multiple matches found. Use email or full user ID.');
+          return;
+        }
+        resolvedId = matches[0].id;
+      }
+      await sendFriendRequest(resolvedId);
       setFriendId('');
       await loadFriends();
     } catch (error) {
       console.warn('[profile] Failed to send friend request', error);
-      setErrorMessage('Could not send request. Double-check the user ID.');
+      const message = error instanceof Error ? error.message : '';
+      if (message.includes('[search_users]')) {
+        setErrorMessage('User search is unavailable. Ensure the search_users function is deployed.');
+      } else if (message) {
+        setErrorMessage(message);
+      } else {
+        setErrorMessage('Could not send request. Double-check the alias or email.');
+      }
     } finally {
       setLoading(false);
     }
@@ -181,13 +295,13 @@ const ProfileScreen = () => {
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Friend Sync</Text>
-          <Text style={styles.sectionSubtitle}>Add a friend by pasting their user ID.</Text>
+          <Text style={styles.sectionSubtitle}>Add a friend by alias or email.</Text>
           <View style={styles.inputRow}>
             <TextInput
               style={styles.input}
               value={friendId}
               onChangeText={setFriendId}
-              placeholder="Friend user ID"
+              placeholder="Friend alias or email"
               autoCapitalize="none"
               autoCorrect={false}
             />
@@ -230,7 +344,7 @@ const ProfileScreen = () => {
             filteredFriends.map((row) => (
               <View key={row.user_id} style={styles.friendRow}>
                 <View>
-                  <Text style={styles.requestLabel}>{row.user_id}</Text>
+                  <Text style={styles.requestLabel}>{friendDisplayName(row.user_id)}</Text>
                   <Text style={styles.requestDate}>Phase: {row.snapshot?.currentPhase ?? 'unknown'}</Text>
                 </View>
                 <TouchableOpacity
@@ -252,7 +366,9 @@ const ProfileScreen = () => {
             inboundRequests.map((request) => (
               <View key={request.id} style={styles.requestRow}>
                 <View>
-                  <Text style={styles.requestLabel}>From: {request.from_user_id}</Text>
+                  <Text style={styles.requestLabel}>
+                    From: {requestDisplayName(request.from_user_id)}
+                  </Text>
                   <Text style={styles.requestDate}>{new Date(request.created_at).toLocaleString()}</Text>
                 </View>
                 <View style={styles.requestActions}>
@@ -284,7 +400,9 @@ const ProfileScreen = () => {
             outboundRequests.map((request) => (
               <View key={request.id} style={styles.requestRow}>
                 <View>
-                  <Text style={styles.requestLabel}>To: {request.to_user_id}</Text>
+                  <Text style={styles.requestLabel}>
+                    To: {requestDisplayName(request.to_user_id)}
+                  </Text>
                   <Text style={styles.requestDate}>Status: {request.status}</Text>
                 </View>
               </View>
