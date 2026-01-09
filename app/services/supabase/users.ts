@@ -14,6 +14,12 @@ export type UserProfileRow = {
   alias?: string | null;
 };
 
+export type UserSearchResult = {
+  id: string;
+  full_name?: string | null;
+  alias?: string | null;
+};
+
 const buildUpdate = (
   userId: string,
   payload: UserProfilePayload,
@@ -119,6 +125,27 @@ export const fetchUserProfilesByIds = async (ids: string[]): Promise<UserProfile
     throw error;
   }
   return (data as UserProfileRow[]) ?? [];
+};
+
+export const searchUsersByAliasOrEmail = async (
+  query: string,
+  limit = 5,
+): Promise<UserSearchResult[]> => {
+  if (!isSupabaseConfigured) {
+    return [];
+  }
+  const trimmed = query.trim();
+  if (!trimmed) {
+    return [];
+  }
+  const { data, error } = await supabase.rpc('search_users', {
+    search: trimmed,
+    max_results: limit,
+  });
+  if (error) {
+    throw new Error(`[search_users] ${error.message}`);
+  }
+  return (data as UserSearchResult[]) ?? [];
 };
 
 export const updateUserAlias = async (alias: string) => {
