@@ -54,7 +54,7 @@ export const signInWithPassword = async (email: string, password: string): Promi
     throw new Error('Supabase did not return a session for password sign-in.');
   }
 
-  upsertCurrentUserProfile({ email }).catch((upsertError) => {
+  Promise.resolve(upsertCurrentUserProfile({ email })).catch((upsertError) => {
     console.warn('[auth] failed to upsert user profile', upsertError);
   });
 
