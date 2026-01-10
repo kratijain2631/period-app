@@ -410,23 +410,7 @@ const ProfileScreen = () => {
           )}
         </View>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Sharing With</Text>
-          {sharing.length === 0 ? (
-            <Text style={styles.mutedText}>No active shares yet.</Text>
-          ) : (
-            sharing.map((row) => {
-              const friendDisplayId =
-                session?.userId && row.user_id === session.userId ? row.friend_id : row.user_id;
-              return (
-                <View key={`${row.user_id}-${row.friend_id}`} style={styles.requestRow}>
-                  <Text style={styles.requestLabel}>{friendDisplayId}</Text>
-                  <Text style={styles.requestDate}>Sharing enabled</Text>
-                </View>
-              );
-            })
-          )}
-        </View>
+        {/* Hidden for now: "Sharing With" duplicates Friends until we add one-way sharing controls. */}
       </ScrollView>
     </SafeAreaView>
   );
