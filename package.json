@@ -8,7 +8,7 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
-    "test": "NODE_OPTIONS=--localstorage-file=.jest-localstorage-${JEST_WORKER_ID:-main} jest"
+    "test": "jest"
   },
   "dependencies": {
     "@kingstinct/react-native-healthkit": "10",
