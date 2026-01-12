@@ -83,6 +83,13 @@ const FeedScreen = () => {
     }
   };
 
+  const navigateToFriendSync = useCallback(
+    (friendUserId: string) => {
+      navigation.navigate('FriendSync' as never, { friendId: friendUserId } as never);
+    },
+    [navigation],
+  );
+
   const handleBoop = useCallback(async (event: CycleEventRow) => {
     if (!event.user_id) {
       return;
@@ -134,12 +141,15 @@ const FeedScreen = () => {
           return (
             <View style={styles.card}>
               <View style={styles.cardHeader}>
-                <View>
+                <TouchableOpacity
+                  onPress={() => navigateToFriendSync(item.user_id)}
+                  accessibilityLabel={`View sync with ${friendLabel}`}
+                >
                   <Text style={styles.cardTitle}>{friendLabel}</Text>
                   <Text style={styles.cardSubtitle}>
                     {item.event_type.replace(/_/g, ' ')} • {new Date(item.starts_at).toLocaleString()}
                   </Text>
-                </View>
+                </TouchableOpacity>
                 <TouchableOpacity
                   style={[
                     styles.boopButton,

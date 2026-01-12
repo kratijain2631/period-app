@@ -67,6 +67,13 @@ const HomeScreen = () => {
     }
   };
 
+  const navigateToFriendSync = useCallback(
+    (friendUserId: string) => {
+      navigation.navigate('FriendSync' as never, { friendId: friendUserId } as never);
+    },
+    [navigation],
+  );
+
   const loadFeed = useCallback(async () => {
     setLoading(true);
     try {
@@ -211,6 +218,18 @@ const HomeScreen = () => {
     const boopCount = boopCounts[item.id] ?? 0;
     const boopStatus = boopStatusByPost[item.id] ?? 'idle';
     const postReactions = reactionCounts[item.id] ?? {};
+    const isSelf = item.user_id === session?.userId;
+    const headerContent = (
+      <>
+        <View style={styles.avatar}>
+          <Text style={styles.avatarText}>{initials}</Text>
+        </View>
+        <View style={styles.postMeta}>
+          <Text style={styles.postName}>{name}</Text>
+          <Text style={styles.postTime}>{timeLabel}</Text>
+        </View>
+      </>
+    );
 
     return (
       <TouchableOpacity
@@ -219,13 +238,17 @@ const HomeScreen = () => {
         activeOpacity={0.9}
       >
         <View style={styles.postHeader}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{initials}</Text>
-          </View>
-          <View style={styles.postMeta}>
-            <Text style={styles.postName}>{name}</Text>
-            <Text style={styles.postTime}>{timeLabel}</Text>
-          </View>
+          {isSelf ? (
+            <View style={styles.postHeaderButton}>{headerContent}</View>
+          ) : (
+            <TouchableOpacity
+              style={styles.postHeaderButton}
+              onPress={() => navigateToFriendSync(item.user_id)}
+              accessibilityLabel={`View sync with ${name}`}
+            >
+              {headerContent}
+            </TouchableOpacity>
+          )}
         </View>
         {item.mood_tag ? (
           <View style={styles.moodPill}>
@@ -237,7 +260,7 @@ const HomeScreen = () => {
           <TouchableOpacity
             style={[styles.boopButton, boopStatus === 'queued' ? styles.boopButtonQueued : null]}
             onPress={() => handleBoop(item)}
-            disabled={boopStatus === 'sending' || item.user_id === session?.userId}
+            disabled={boopStatus === 'sending' || isSelf}
           >
             <Text style={styles.boopText}>
               {boopStatus === 'queued' ? 'Queued' : 'Boop'}
@@ -494,6 +517,11 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   postHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  postHeaderButton: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
