@@ -154,6 +154,18 @@ const fallbackRecommendations = (summary: ReturnType<typeof computeScore>) => {
   return recs.slice(0, 3);
 };
 
+const extractJsonArray = (content: string) => {
+  const trimmed = content.trim();
+  const fenced = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  const candidate = fenced?.[1]?.trim() ?? trimmed;
+  const start = candidate.indexOf('[');
+  const end = candidate.lastIndexOf(']');
+  if (start >= 0 && end > start) {
+    return candidate.slice(start, end + 1);
+  }
+  return candidate;
+};
+
 const generateRecommendations = async (summary: ReturnType<typeof computeScore>) => {
   if (!openaiKey) {
     return fallbackRecommendations(summary);
@@ -163,6 +175,7 @@ const generateRecommendations = async (summary: ReturnType<typeof computeScore>)
     'You are generating short, friendly recommendations for two friends.',
     'Avoid medical advice and keep suggestions supportive and actionable.',
     'Return ONLY a JSON array of 3 short strings (max 8 words each).',
+    'Do not wrap the JSON in markdown or backticks.',
     '',
     `Self phase: ${summary.selfPhase}.`,
     `Friend phase: ${summary.friendPhase}.`,
@@ -196,7 +209,7 @@ const generateRecommendations = async (summary: ReturnType<typeof computeScore>)
   const payload = await response.json();
   const content = payload?.choices?.[0]?.message?.content ?? '[]';
   try {
-    const parsed = JSON.parse(content);
+    const parsed = JSON.parse(extractJsonArray(content));
     if (Array.isArray(parsed)) {
       return parsed.map((item) => String(item)).filter(Boolean).slice(0, 3);
     }
