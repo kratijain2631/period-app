@@ -1,0 +1,28 @@
+version: 2.1
+
+jobs:
+  test:
+    docker:
+      - image: cimg/node:20.11
+    working_directory: ~/project
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - v1-npm-{{ checksum "package-lock.json" }}
+            - v1-npm-
+      - run:
+          name: Install dependencies
+          command: npm ci
+      - save_cache:
+          key: v1-npm-{{ checksum "package-lock.json" }}
+          paths:
+            - ~/.npm
+      - run:
+          name: Run tests
+          command: npm test
+
+workflows:
+  test:
+    jobs:
+      - test
