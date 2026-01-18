@@ -64,3 +64,16 @@ export const setFriendSharing = async (friendId: string, hasShared: boolean) => 
     throw upsertError;
   }
 };
+
+export const removeFriend = async (friendId: string) => {
+  if (!isSupabaseConfigured) {
+    return;
+  }
+  if (!friendId) {
+    throw new Error('Friend ID is required.');
+  }
+  const { error } = await supabase.rpc('remove_friend', { target_friend_id: friendId });
+  if (error) {
+    throw error;
+  }
+};
