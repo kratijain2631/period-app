@@ -204,8 +204,11 @@ const ProfileScreen = () => {
   ];
 
   const navigateToFriendSync = useCallback(
-    (friendUserId: string) => {
-      navigation.navigate('FriendSync' as never, { friendId: friendUserId } as never);
+    (friendUserId?: string, preview?: boolean) => {
+      navigation.navigate(
+        'FriendSync' as never,
+        { friendId: friendUserId ?? '', preview: preview ?? false } as never,
+      );
     },
     [navigation],
   );
@@ -339,7 +342,17 @@ const ProfileScreen = () => {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Friends</Text>
           {filteredFriends.length === 0 ? (
-            <Text style={styles.mutedText}>No friends in this phase yet.</Text>
+            <>
+              <Text style={styles.mutedText}>No friends in this phase yet.</Text>
+              {__DEV__ ? (
+                <TouchableOpacity
+                  style={[styles.actionButton, styles.viewSyncButton]}
+                  onPress={() => navigateToFriendSync(undefined, true)}
+                >
+                  <Text style={styles.actionButtonText}>Preview Friend Sync</Text>
+                </TouchableOpacity>
+              ) : null}
+            </>
           ) : (
             filteredFriends.map((row) => (
               <View key={row.user_id} style={styles.friendRow}>
