@@ -8,6 +8,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import AuthScreen from '../features/auth/screens/AuthScreen';
 import CompanionIntroScreen from '../features/companion/screens/CompanionIntroScreen';
 import FriendSyncScreen from '../features/friends/screens/FriendSyncScreen';
+import FriendsScreen from '../features/friends/screens/FriendsScreen';
 import FeedScreen from '../features/feed/screens/FeedScreen';
 import HomeScreen from '../features/home/screens/HomeScreen';
 import ProfileScreen from '../features/profile/screens/ProfileScreen';
@@ -67,6 +68,7 @@ const AppNavigator = () => {
           {!isHydrating && readyForHome && (
             <Stack.Screen name="FriendSync" component={FriendSyncScreen} />
           )}
+          {!isHydrating && readyForHome && <Stack.Screen name="Friends" component={FriendsScreen} />}
         </Stack.Navigator>
       </NavigationContainer>
     </SafeAreaProvider>
