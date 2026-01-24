@@ -860,16 +860,16 @@ const HomeScreen = () => {
     () => formatSyncLabel(lastSyncedAt ?? snapshot?.syncedAt ?? null),
     [lastSyncedAt, snapshot?.syncedAt],
   );
-  const cycleMetaLabel = useMemo(() => {
+  const cycleDetailLabel = useMemo(() => {
     if (!snapshot) {
-      return 'Connect Health';
+      return 'Connect Health to see your phase.';
     }
     if (isSnapshotStale) {
       return cycleSyncLabel === 'Not synced yet'
         ? 'Needs sync'
         : `Needs sync • ${cycleSyncLabel}`;
     }
-    return 'Up to date';
+    return cycleSyncLabel === 'Not synced yet' ? 'Synced recently' : `Last synced ${cycleSyncLabel}`;
   }, [cycleSyncLabel, isSnapshotStale, snapshot]);
   const cycleMetaTone = !snapshot || isSnapshotStale ? 'stale' : 'fresh';
   const cyclePhaseColors = {
@@ -1243,20 +1243,39 @@ const HomeScreen = () => {
             </View>
             <View style={styles.cycleRow}>
               <View style={styles.cycleRowLeft}>
-                <Ionicons name="pulse-outline" size={16} color={cyclePhaseColors.text} />
-                <View>
-                  <Text style={styles.cycleRowLabel}>Cycle</Text>
+                <View
+                  style={[
+                    styles.cycleIconBadge,
+                    { backgroundColor: cyclePhaseColors.background },
+                  ]}
+                >
+                  <Ionicons
+                    name="pulse-outline"
+                    size={16}
+                    color={cyclePhaseColors.text}
+                  />
+                </View>
+                <View style={styles.cycleRowText}>
+                  <Text style={styles.cycleRowLabel}>My cycle</Text>
                   <Text style={styles.cycleRowValue}>{cyclePhaseLabel}</Text>
+                  <Text
+                    style={[
+                      styles.cycleRowMeta,
+                      cycleMetaTone === 'stale' ? styles.cycleRowMetaStale : null,
+                    ]}
+                  >
+                    {cycleDetailLabel}
+                  </Text>
                 </View>
               </View>
-              <Text
-                style={[
-                  styles.cycleRowMeta,
-                  cycleMetaTone === 'stale' ? styles.cycleRowMetaStale : null,
-                ]}
+              <TouchableOpacity
+                style={styles.cycleLearnButton}
+                onPress={navigateToProfile}
+                accessibilityRole="button"
+                accessibilityLabel="Learn more about your cycle"
               >
-                {cycleMetaLabel}
-              </Text>
+                <Text style={styles.cycleLearnButtonText}>Learn more</Text>
+              </TouchableOpacity>
             </View>
             <View style={styles.composerCard}>
               <View style={styles.composerHeader}>
@@ -1534,12 +1553,33 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 12,
+    backgroundColor: palette.card,
+    borderRadius: 16,
+    padding: 12,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: palette.separator,
+    shadowColor: '#000',
+    shadowOpacity: 0.03,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 1,
   },
   cycleRowLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 12,
     flex: 1,
+  },
+  cycleIconBadge: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cycleRowText: {
+    flex: 1,
+    gap: 2,
   },
   cycleRowLabel: {
     fontSize: 12,
@@ -1557,11 +1597,20 @@ const styles = StyleSheet.create({
   cycleRowMeta: {
     fontSize: 12,
     color: palette.secondaryText,
-    textAlign: 'right',
-    flexShrink: 1,
   },
   cycleRowMetaStale: {
     color: palette.warningText,
+  },
+  cycleLearnButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 999,
+    backgroundColor: palette.accentSoft,
+  },
+  cycleLearnButtonText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: palette.accent,
   },
   composerCard: {
     backgroundColor: palette.card,
