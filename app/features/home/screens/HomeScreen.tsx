@@ -4,7 +4,10 @@ import {
   FlatList,
   GestureResponderEvent,
   Modal,
+  Platform,
+  PlatformColor,
   Pressable,
+  ScrollView,
   SafeAreaView,
   StyleSheet,
   Text,
@@ -31,21 +34,77 @@ import {
   fetchEventReactions,
   removeEventReaction,
 } from '../../../services/supabase/eventReactions';
-import { fetchEventBoops, fetchPostBoops, sendBoop } from '../../../services/supabase/boops';
+import {
+  fetchEventBoops,
+  fetchEventBoopsByUser,
+  fetchPostBoops,
+  fetchPostBoopsByUser,
+  sendBoop,
+} from '../../../services/supabase/boops';
 import { fetchUserProfilesByIds } from '../../../services/supabase/users';
 import { selectIsOnline, useConnectionStore } from '../../../state/connectionStore';
 import { selectAlias, selectSession, useSessionStore } from '../../../state/sessionStore';
+import { useCycleSnapshot } from '../../feed/hooks/useCycleSnapshot';
 import { getDoubleTapResult } from '../utils/reactionDoubleTap';
 
+const iosColor = (name: string, fallback: string) =>
+  Platform.OS === 'ios' ? PlatformColor(name) : fallback;
+
+const palette = {
+  background: iosColor('systemGroupedBackground', '#F2F2F7'),
+  card: iosColor('secondarySystemGroupedBackground', '#FFFFFF'),
+  primaryText: iosColor('label', '#111827'),
+  secondaryText: iosColor('secondaryLabel', '#6B7280'),
+  tertiaryText: iosColor('tertiaryLabel', '#9CA3AF'),
+  placeholder: iosColor('placeholderText', '#9CA3AF'),
+  separator: iosColor('separator', '#E5E7EB'),
+  accent: iosColor('systemBlue', '#007AFF'),
+  accentSoft: '#E6F0FF',
+  success: iosColor('systemGreen', '#16A34A'),
+  successBackground: '#E7F7EC',
+  fill: iosColor('systemGray5', '#E5E7EB'),
+  mutedFill: iosColor('systemGray6', '#F3F4F6'),
+  disabled: iosColor('systemGray3', '#D1D5DB'),
+  pendingText: '#92400E',
+  pendingBackground: '#FEF3C7',
+  warningText: iosColor('systemRed', '#B42318'),
+  warningBackground: '#FDECEC',
+};
+
 const MOOD_TAGS = [
-  { label: 'Recovering', color: '#C98B2B', text: '#fff' },
-  { label: 'Amazing', color: '#4CAF50', text: '#fff' },
-  { label: 'Rock Hard', color: '#1565C0', text: '#fff' },
-  { label: 'Sad', color: '#C0392B', text: '#fff' },
-  { label: 'Bloated af', color: '#B03A2E', text: '#fff' },
-  { label: 'One more day', color: '#C98B2B', text: '#fff' },
-  { label: 'Boop me', color: '#F39C12', text: '#fff' },
+  'Recovering',
+  'Amazing',
+  'Rock Hard',
+  'Sad',
+  'Bloated af',
+  'One more day',
+  'Boop me',
 ];
+
+const MOOD_TONE_MAP: Record<string, 'positive' | 'warm' | 'negative'> = {
+  Recovering: 'warm',
+  Amazing: 'positive',
+  'Rock Hard': 'positive',
+  Sad: 'negative',
+  'Bloated af': 'negative',
+  'One more day': 'warm',
+  'Boop me': 'warm',
+};
+
+const MOOD_TONE_COLORS = {
+  positive: '#15803D',
+  warm: '#B45309',
+  negative: '#B42318',
+};
+
+const MOOD_TAG_MAP = MOOD_TAGS.reduce(
+  (acc, label) => {
+    const tone = MOOD_TONE_MAP[label] ?? 'warm';
+    acc[label] = { tone, dot: MOOD_TONE_COLORS[tone] };
+    return acc;
+  },
+  {} as Record<string, { tone: 'positive' | 'warm' | 'negative'; dot: string }>,
+);
 
 const QUICK_REACTION_EMOJIS = ['❤️', '😂', '😮', '😭', '😡', '🔥', '👏'];
 const EXTENDED_REACTION_EMOJIS = [
@@ -93,6 +152,7 @@ const HomeScreen = () => {
   const alias = useSessionStore(selectAlias);
   const isOnline = useConnectionStore(selectIsOnline);
   const isOffline = !isOnline;
+  const { snapshot, lastSyncedAt, isStale: isSnapshotStale } = useCycleSnapshot();
   const [posts, setPosts] = useState<PostRow[]>([]);
   const [cycleEvents, setCycleEvents] = useState<CycleEventRow[]>([]);
   const [cycleNameMap, setCycleNameMap] = useState<Record<string, string>>({});
@@ -120,6 +180,15 @@ const HomeScreen = () => {
     postId: null,
     timestamp: null,
   });
+  const todayLabel = useMemo(
+    () =>
+      new Date().toLocaleDateString([], {
+        weekday: 'long',
+        month: 'short',
+        day: 'numeric',
+      }),
+    [],
+  );
 
   const quickReactionsKey = session?.userId ? `quick-reactions:${session.userId}` : null;
 
@@ -207,6 +276,26 @@ const HomeScreen = () => {
           nextBoopCounts[row.post_id] = (nextBoopCounts[row.post_id] ?? 0) + 1;
         });
         setBoopCounts(nextBoopCounts);
+        if (session?.userId) {
+          try {
+            const userBoops = await fetchPostBoopsByUser(ids, session.userId);
+            setBoopStatusByPost((prev) => {
+              const next = { ...prev };
+              userBoops.forEach((row) => {
+                if (!row.post_id) {
+                  return;
+                }
+                if (next[row.post_id] === 'queued' || next[row.post_id] === 'sending') {
+                  return;
+                }
+                next[row.post_id] = 'sent';
+              });
+              return next;
+            });
+          } catch (error) {
+            console.warn('[home] Failed to load post boops by user', error);
+          }
+        }
       } catch (error) {
         console.warn('[home] Failed to load boops', error);
         setBoopCounts({});
@@ -260,6 +349,26 @@ const HomeScreen = () => {
             nextCounts[row.event_id] = (nextCounts[row.event_id] ?? 0) + 1;
           });
           setBoopCountsByEvent(nextCounts);
+          if (session?.userId) {
+            try {
+              const userBoops = await fetchEventBoopsByUser(eventIds, session.userId);
+              setBoopStatusByEvent((prev) => {
+                const next = { ...prev };
+                userBoops.forEach((row) => {
+                  if (!row.event_id) {
+                    return;
+                  }
+                  if (next[row.event_id] === 'queued') {
+                    return;
+                  }
+                  next[row.event_id] = 'sent';
+                });
+                return next;
+              });
+            } catch (error) {
+              console.warn('[home] Failed to load event boops by user', error);
+            }
+          }
         } catch (error) {
           console.warn('[home] Failed to load event boops', error);
           setBoopCountsByEvent({});
@@ -393,6 +502,10 @@ const HomeScreen = () => {
       if (!post.user_id || post.user_id === session?.userId) {
         return;
       }
+      const currentStatus = boopStatusByPost[post.id];
+      if (currentStatus === 'sent' || currentStatus === 'queued' || currentStatus === 'sending') {
+        return;
+      }
       setBoopStatusByPost((prev) => ({ ...prev, [post.id]: 'sending' }));
       try {
         const result = await sendBoop({ toUserId: post.user_id, postId: post.id });
@@ -405,12 +518,19 @@ const HomeScreen = () => {
         setBoopStatusByPost((prev) => ({ ...prev, [post.id]: 'idle' }));
       }
     },
-    [session?.userId],
+    [boopStatusByPost, session?.userId],
   );
 
   const handleEventBoop = useCallback(
     async (event: CycleEventRow) => {
       if (!event.user_id || event.user_id === session?.userId) {
+        return;
+      }
+      const currentStatus = boopStatusByEvent[event.id];
+      if (currentStatus === 'sent' || currentStatus === 'queued') {
+        return;
+      }
+      if (boopLoadingByEvent[event.id]) {
         return;
       }
       setBoopLoadingByEvent((prev) => ({ ...prev, [event.id]: true }));
@@ -430,7 +550,7 @@ const HomeScreen = () => {
         setBoopLoadingByEvent((prev) => ({ ...prev, [event.id]: false }));
       }
     },
-    [session?.userId],
+    [boopLoadingByEvent, boopStatusByEvent, session?.userId],
   );
 
   const handleReaction = useCallback(
@@ -682,6 +802,19 @@ const HomeScreen = () => {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
+  const formatSyncLabel = (value?: string | null) => {
+    if (!value) {
+      return 'Not synced yet';
+    }
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+      return 'Not synced yet';
+    }
+    const datePart = date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+    const timePart = date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    return `${datePart} • ${timePart}`;
+  };
+
   const formatEventType = (value: string) => {
     if (!value) {
       return 'Cycle update';
@@ -716,6 +849,32 @@ const HomeScreen = () => {
     luteal: '#3730A3',
     pms: '#92400E',
     unknown: '#6B7280',
+  };
+
+  const cyclePhaseKey = snapshot?.currentPhase ?? 'unknown';
+  const cyclePhaseLabel = useMemo(
+    () => formatPhaseLabel(snapshot?.currentPhase) ?? 'Unknown phase',
+    [snapshot?.currentPhase],
+  );
+  const cycleSyncLabel = useMemo(
+    () => formatSyncLabel(lastSyncedAt ?? snapshot?.syncedAt ?? null),
+    [lastSyncedAt, snapshot?.syncedAt],
+  );
+  const cycleMetaLabel = useMemo(() => {
+    if (!snapshot) {
+      return 'Connect Health';
+    }
+    if (isSnapshotStale) {
+      return cycleSyncLabel === 'Not synced yet'
+        ? 'Needs sync'
+        : `Needs sync • ${cycleSyncLabel}`;
+    }
+    return 'Up to date';
+  }, [cycleSyncLabel, isSnapshotStale, snapshot]);
+  const cycleMetaTone = !snapshot || isSnapshotStale ? 'stale' : 'fresh';
+  const cyclePhaseColors = {
+    background: phasePillPalette[cyclePhaseKey] ?? palette.mutedFill,
+    text: phasePillPaletteText[cyclePhaseKey] ?? palette.secondaryText,
   };
 
   const periodDayByEventId = useMemo(() => {
@@ -799,20 +958,36 @@ const HomeScreen = () => {
     const name = item.user_id === session?.userId ? 'You' : item.alias ?? 'Anonymous';
     const timeLabel = formatTime(item.created_at);
     const initials = (item.alias ?? name).slice(0, 1).toUpperCase();
+    const metaLabel = item.mood_tag ? 'Mood update' : item.body ? 'Shared an update' : 'Check-in';
+    const moodTone = item.mood_tag ? MOOD_TAG_MAP[item.mood_tag] : null;
+    const isSelf = item.user_id === session?.userId;
     const boopCount = boopCounts[item.id] ?? 0;
     const boopStatus = boopStatusByPost[item.id] ?? 'idle';
+    const boopSent = boopStatus === 'sent';
+    const boopQueued = boopStatus === 'queued';
+    const boopSending = boopStatus === 'sending';
+    const boopTextColor =
+      boopSending || isSelf
+        ? palette.secondaryText
+        : boopSent
+          ? palette.success
+          : boopQueued
+          ? palette.pendingText
+          : palette.accent;
     const postReactions = reactionCounts[item.id] ?? {};
     const postSelections = reactionSelections[item.id] ?? {};
-    const isSelf = item.user_id === session?.userId;
     const headerContent = (
       <>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>{initials}</Text>
+        <View style={styles.headerLeft}>
+          <View style={styles.avatar}>
+            <Text style={styles.avatarText}>{initials}</Text>
+          </View>
+          <View style={styles.postMeta}>
+            <Text style={styles.postName}>{name}</Text>
+            <Text style={styles.postMetaText}>{metaLabel}</Text>
+          </View>
         </View>
-        <View style={styles.postMeta}>
-          <Text style={styles.postName}>{name}</Text>
-          <Text style={styles.postTime}>{timeLabel}</Text>
-        </View>
+        {timeLabel ? <Text style={styles.postTime}>{timeLabel}</Text> : null}
       </>
     );
 
@@ -838,18 +1013,33 @@ const HomeScreen = () => {
         </View>
         {item.mood_tag ? (
           <View style={styles.moodPill}>
+            <View
+              style={[
+                styles.moodDotSmall,
+                { backgroundColor: moodTone?.dot ?? palette.tertiaryText },
+              ]}
+            />
             <Text style={styles.moodPillText}>{item.mood_tag}</Text>
           </View>
         ) : null}
         {item.body ? <Text style={styles.postBody}>{item.body}</Text> : null}
         <View style={styles.postActions}>
           <TouchableOpacity
-            style={[styles.boopButton, boopStatus === 'queued' ? styles.boopButtonQueued : null]}
+            style={[
+              styles.boopButton,
+              boopQueued ? styles.boopButtonQueued : null,
+              boopSent ? styles.boopButtonSent : null,
+            ]}
             onPress={() => handleBoop(item)}
-            disabled={boopStatus === 'sending' || isSelf}
+            disabled={boopSending || boopQueued || boopSent || isSelf}
           >
-            <Text style={styles.boopText}>
-              {boopStatus === 'queued' ? 'Queued' : 'Boop'}
+            <Ionicons
+              name={boopSent ? 'checkmark' : 'hand-left-outline'}
+              size={14}
+              color={boopTextColor}
+            />
+            <Text style={[styles.boopText, { color: boopTextColor }]}>
+              {boopSending ? 'Booping...' : boopQueued ? 'Queued' : boopSent ? 'Booped' : 'Boop'}
             </Text>
           </TouchableOpacity>
           <Text style={styles.boopCount}>{boopCount}</Text>
@@ -892,10 +1082,25 @@ const HomeScreen = () => {
     const boopStatus = boopStatusByEvent[item.id] ?? 'idle';
     const queued = boopStatus === 'queued';
     const boopInFlight = boopLoadingByEvent[item.id];
+    const boopSent = boopStatus === 'sent';
+    const boopTextColor =
+      boopInFlight || isSelf
+        ? palette.secondaryText
+        : boopSent
+          ? palette.success
+          : queued
+          ? palette.pendingText
+          : palette.accent;
     const boopCount = boopCountsByEvent[item.id] ?? 0;
     const phaseLabel = formatPhaseLabel(item.phase);
     const periodInfo = periodDayByEventId[item.id];
     const isPhaseTransition = item.event_type === 'phase_transition';
+    const metaLabel = isPhaseTransition ? 'Phase change' : 'Cycle update';
+    const eventIcon = isPhaseTransition
+      ? 'pulse-outline'
+      : item.event_type === 'menstrual_flow'
+        ? 'water-outline'
+        : 'calendar-outline';
     const phaseKey = item.phase ?? 'unknown';
     const pillLabel = isPhaseTransition
       ? phaseLabel
@@ -908,24 +1113,27 @@ const HomeScreen = () => {
         : formatEventType(item.event_type);
     const pillColors = isPhaseTransition
       ? {
-          background: phasePillPalette[phaseKey] ?? '#e7f0ff',
-          text: phasePillPaletteText[phaseKey] ?? '#1f3a93',
+          background: palette.mutedFill,
+          text: phasePillPaletteText[phaseKey] ?? palette.secondaryText,
         }
       : item.event_type === 'menstrual_flow'
         ? {
-            background: phasePillPalette.menstruation,
+            background: palette.mutedFill,
             text: phasePillPaletteText.menstruation,
           }
-        : { background: '#f5f5f5', text: '#555' };
+        : { background: palette.mutedFill, text: palette.secondaryText };
     const headerContent = (
       <>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>{initials}</Text>
+        <View style={styles.headerLeft}>
+          <View style={styles.avatar}>
+            <Text style={styles.avatarText}>{initials}</Text>
+          </View>
+          <View style={styles.postMeta}>
+            <Text style={styles.postName}>{name}</Text>
+            <Text style={styles.postMetaText}>{metaLabel}</Text>
+          </View>
         </View>
-        <View style={styles.postMeta}>
-          <Text style={styles.postName}>{name}</Text>
-          <Text style={styles.postTime}>{timeLabel}</Text>
-        </View>
+        {timeLabel ? <Text style={styles.postTime}>{timeLabel}</Text> : null}
       </>
     );
     return (
@@ -949,16 +1157,26 @@ const HomeScreen = () => {
           )}
         </View>
         <View style={[styles.moodPill, { backgroundColor: pillColors.background }]}>
+          <Ionicons name={eventIcon} size={12} color={pillColors.text} />
           <Text style={[styles.moodPillText, { color: pillColors.text }]}>{pillLabel}</Text>
         </View>
         <View style={styles.postActions}>
           <TouchableOpacity
-            style={[styles.boopButton, queued ? styles.boopButtonQueued : null]}
+            style={[
+              styles.boopButton,
+              queued ? styles.boopButtonQueued : null,
+              boopSent ? styles.boopButtonSent : null,
+            ]}
             onPress={() => handleEventBoop(item)}
-            disabled={boopInFlight || isSelf}
+            disabled={boopInFlight || queued || boopSent || isSelf}
           >
-            <Text style={styles.boopText}>
-              {boopInFlight ? 'Booping...' : queued ? 'Queued' : 'Boop'}
+            <Ionicons
+              name={boopSent ? 'checkmark' : 'hand-left-outline'}
+              size={14}
+              color={boopTextColor}
+            />
+            <Text style={[styles.boopText, { color: boopTextColor }]}>
+              {boopInFlight ? 'Booping...' : queued ? 'Queued' : boopSent ? 'Booped' : 'Boop'}
             </Text>
           </TouchableOpacity>
           <Text style={styles.boopCount}>{boopCount}</Text>
@@ -1005,67 +1223,138 @@ const HomeScreen = () => {
         ListHeaderComponent={
           <View style={styles.header}>
             <View style={styles.navRow}>
-              <TouchableOpacity onPress={navigateToProfile} style={styles.profileIcon}>
-                <Ionicons name="person-circle-outline" size={28} color="#111" />
+              <TouchableOpacity onPress={navigateToProfile} style={styles.profileButton}>
+                <Ionicons
+                  name="person-circle-outline"
+                  size={30}
+                  color={palette.primaryText}
+                />
               </TouchableOpacity>
               <View style={styles.navActions}>
                 <FriendSyncButton onPress={navigateToProfile} />
                 <NotificationsBell count={unreadCount} onPress={() => setSheetVisible(true)} />
               </View>
             </View>
-            <Text style={styles.title}>How are you feeling, {alias ?? 'there'}?</Text>
-            {!isComposerOpen ? (
-              <TouchableOpacity onPress={() => setComposerOpen(true)} style={styles.composerCollapsed}>
-                <Text style={styles.composerPlaceholder}>I'm feeling...</Text>
-              </TouchableOpacity>
-            ) : (
-              <View style={styles.composerExpanded}>
-                <TextInput
-                  style={styles.composerInput}
-                  value={composerText}
-                  onChangeText={setComposerText}
-                  placeholder="I'm feeling..."
-                  multiline
-                  autoFocus
-                  onBlur={() => {
-                    if (!postPressRef.current) {
-                      setComposerOpen(false);
-                    }
-                  }}
-                />
-                <TouchableOpacity
-                  style={[styles.postButton, isPosting ? styles.postButtonDisabled : null]}
-                  onPress={handlePost}
-                  onPressIn={() => {
-                    postPressRef.current = true;
-                  }}
-                  onPressOut={() => {
-                    postPressRef.current = false;
-                  }}
-                  disabled={isPosting}
-                >
-                  <Ionicons name={isPosting ? 'time-outline' : 'paper-plane'} size={16} color="#fff" />
-                  <Text style={styles.postButtonText}>
-                    {isPosting ? 'Posting...' : 'Share update'}
-                  </Text>
-                </TouchableOpacity>
+            <View style={styles.titleBlock}>
+              <Text style={styles.title}>Today</Text>
+              <Text style={styles.subtitle}>
+                {todayLabel} · How are you feeling, {alias ?? 'there'}?
+              </Text>
+            </View>
+            <View style={styles.cycleRow}>
+              <View style={styles.cycleRowLeft}>
+                <Ionicons name="pulse-outline" size={16} color={cyclePhaseColors.text} />
+                <View>
+                  <Text style={styles.cycleRowLabel}>Cycle</Text>
+                  <Text style={styles.cycleRowValue}>{cyclePhaseLabel}</Text>
+                </View>
               </View>
-            )}
-            <View style={styles.moodRow}>
-              {MOOD_TAGS.map((tag) => (
+              <Text
+                style={[
+                  styles.cycleRowMeta,
+                  cycleMetaTone === 'stale' ? styles.cycleRowMetaStale : null,
+                ]}
+              >
+                {cycleMetaLabel}
+              </Text>
+            </View>
+            <View style={styles.composerCard}>
+              <View style={styles.composerHeader}>
+                <Text style={styles.sectionTitle}>Share an update</Text>
+                <Ionicons name="create-outline" size={16} color={palette.accent} />
+              </View>
+              {!isComposerOpen ? (
                 <TouchableOpacity
-                  key={tag.label}
-                  style={[styles.moodChip, { backgroundColor: tag.color }]}
-                  onPress={() => handleQuickTag(tag.label)}
-                  disabled={isPosting}
+                  onPress={() => setComposerOpen(true)}
+                  style={styles.composerCollapsed}
+                  accessibilityLabel="Share how you're feeling"
                 >
-                  <Text style={[styles.moodChipText, { color: tag.text }]}>{tag.label}</Text>
+                  <View style={styles.composerCollapsedRow}>
+                    <Text style={styles.composerPlaceholder}>I'm feeling...</Text>
+                    <Ionicons name="chevron-forward" size={16} color={palette.tertiaryText} />
+                  </View>
                 </TouchableOpacity>
-              ))}
+              ) : (
+                <View style={styles.composerExpanded}>
+                  <TextInput
+                    style={styles.composerInput}
+                    value={composerText}
+                    onChangeText={setComposerText}
+                    placeholder="I'm feeling..."
+                    placeholderTextColor={palette.placeholder}
+                    multiline
+                    autoFocus
+                    onBlur={() => {
+                      if (!postPressRef.current) {
+                        setComposerOpen(false);
+                      }
+                    }}
+                  />
+                  <View style={styles.composerActions}>
+                    <TouchableOpacity
+                      style={[styles.postButton, isPosting ? styles.postButtonDisabled : null]}
+                      onPress={handlePost}
+                      onPressIn={() => {
+                        postPressRef.current = true;
+                      }}
+                      onPressOut={() => {
+                        postPressRef.current = false;
+                      }}
+                      disabled={isPosting}
+                    >
+                      <Ionicons
+                        name={isPosting ? 'time-outline' : 'paper-plane'}
+                        size={16}
+                        color="#fff"
+                      />
+                      <Text
+                        style={[
+                          styles.postButtonText,
+                          isPosting ? styles.postButtonTextDisabled : null,
+                        ]}
+                      >
+                        {isPosting ? 'Posting...' : 'Share update'}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              )}
+              <View style={[styles.sectionHeader, styles.quickMoodHeader]}>
+                <Text style={styles.sectionTitle}>Quick moods</Text>
+                <Text style={styles.sectionHint}>Tap to share</Text>
+              </View>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.moodRow}
+              >
+                {MOOD_TAGS.map((label) => (
+                  <TouchableOpacity
+                    key={label}
+                    style={styles.moodChip}
+                    onPress={() => handleQuickTag(label)}
+                    disabled={isPosting}
+                  >
+                    <View
+                      style={[
+                        styles.moodDot,
+                        { backgroundColor: MOOD_TAG_MAP[label]?.dot ?? palette.tertiaryText },
+                      ]}
+                    />
+                    <Text style={styles.moodChipText}>{label}</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
             </View>
             {isOffline ? (
               <View style={styles.offlineBanner}>
                 <Text style={styles.offlineText}>Offline: posts will send when you're back online.</Text>
+              </View>
+            ) : null}
+            {feedItems.length ? (
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Latest updates</Text>
+                <Text style={styles.sectionHint}>Double tap to react</Text>
               </View>
             ) : null}
           </View>
@@ -1077,7 +1366,17 @@ const HomeScreen = () => {
           return renderCycleEvent({ item: item.event });
         }}
         ListEmptyComponent={
-          <Text style={styles.emptyState}>No updates yet. Share how you feel or sync your cycle.</Text>
+          <View style={styles.emptyState}>
+            <Ionicons
+              name="chatbubble-ellipses-outline"
+              size={28}
+              color={palette.tertiaryText}
+            />
+            <Text style={styles.emptyTitle}>No updates yet</Text>
+            <Text style={styles.emptySubtitle}>
+              Share how you feel or sync your cycle to see updates here.
+            </Text>
+          </View>
         }
       />
       <NotificationsSheet
@@ -1185,14 +1484,16 @@ const HomeScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: palette.background,
   },
   listContent: {
-    padding: 16,
-    gap: 12,
+    paddingHorizontal: 20,
+    paddingTop: 14,
+    paddingBottom: 36,
+    gap: 18,
   },
   header: {
-    gap: 12,
+    gap: 16,
   },
   navRow: {
     flexDirection: 'row',
@@ -1202,148 +1503,281 @@ const styles = StyleSheet.create({
   navActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 10,
   },
-  profileIcon: {
+  profileButton: {
     padding: 4,
+    borderRadius: 18,
+    backgroundColor: palette.card,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: palette.separator,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 2,
+  },
+  titleBlock: {
+    gap: 6,
   },
   title: {
-    fontSize: 22,
+    fontSize: 28,
     fontWeight: '700',
-    color: '#111',
+    color: palette.primaryText,
+  },
+  subtitle: {
+    fontSize: 15,
+    color: palette.secondaryText,
+  },
+  cycleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  cycleRowLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    flex: 1,
+  },
+  cycleRowLabel: {
+    fontSize: 12,
+    color: palette.tertiaryText,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+  },
+  cycleRowValue: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: palette.primaryText,
+    textTransform: 'capitalize',
+  },
+  cycleRowMeta: {
+    fontSize: 12,
+    color: palette.secondaryText,
+    textAlign: 'right',
+    flexShrink: 1,
+  },
+  cycleRowMetaStale: {
+    color: palette.warningText,
+  },
+  composerCard: {
+    backgroundColor: palette.card,
+    borderRadius: 18,
+    padding: 14,
+    gap: 12,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: palette.separator,
+    shadowColor: '#000',
+    shadowOpacity: 0.04,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 1,
+  },
+  composerHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   composerCollapsed: {
-    borderBottomWidth: 1,
-    borderBottomColor: '#ddd',
-    paddingVertical: 6,
-    width: '30%',
-    alignSelf: 'stretch',
+    backgroundColor: palette.mutedFill,
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+  },
+  composerCollapsedRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   composerPlaceholder: {
-    fontSize: 14,
-    color: '#999',
+    fontSize: 15,
+    color: palette.placeholder,
   },
   composerExpanded: {
-    gap: 10,
-    width: '100%',
+    gap: 12,
   },
   composerInput: {
-    borderBottomWidth: 1,
-    borderBottomColor: '#ddd',
     fontSize: 16,
-    paddingVertical: 6,
-    minHeight: 60,
-    width: '100%',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    minHeight: 80,
+    borderRadius: 12,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: palette.separator,
+    backgroundColor: palette.mutedFill,
+    color: palette.primaryText,
+    textAlignVertical: 'top',
+  },
+  composerActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
   },
   postButton: {
     alignItems: 'center',
-    alignSelf: 'stretch',
-    backgroundColor: '#111',
-    borderRadius: 12,
+    alignSelf: 'flex-start',
+    backgroundColor: palette.accent,
+    borderRadius: 999,
     flexDirection: 'row',
-    gap: 8,
+    gap: 6,
     justifyContent: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 3,
+    paddingVertical: 10,
+    minHeight: 40,
   },
   postButtonDisabled: {
-    backgroundColor: '#444',
+    backgroundColor: palette.disabled,
   },
   postButtonText: {
     color: '#fff',
-    fontSize: 15,
-    fontWeight: '700',
-    letterSpacing: 0.2,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  postButtonTextDisabled: {
+    color: palette.secondaryText,
+  },
+  quickMoodHeader: {
+    marginTop: 6,
   },
   moodRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
     gap: 8,
+    paddingRight: 4,
   },
   moodChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
     paddingHorizontal: 14,
-    paddingVertical: 9,
-    borderRadius: 18,
+    paddingVertical: 8,
+    borderRadius: 999,
+    backgroundColor: palette.mutedFill,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: palette.separator,
   },
   moodChipText: {
     fontSize: 13,
     fontWeight: '600',
+    color: palette.primaryText,
+  },
+  moodDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  sectionTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: palette.primaryText,
+  },
+  sectionHint: {
+    fontSize: 12,
+    color: palette.tertiaryText,
   },
   offlineBanner: {
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderRadius: 10,
-    backgroundColor: '#ffe6e6',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    backgroundColor: palette.warningBackground,
     alignSelf: 'flex-start',
   },
   offlineText: {
     fontSize: 12,
-    color: '#7a1f1f',
+    color: palette.warningText,
     fontWeight: '600',
   },
   postCard: {
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#eee',
-    padding: 12,
-    gap: 8,
+    borderRadius: 20,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: palette.separator,
+    backgroundColor: palette.card,
+    padding: 16,
+    gap: 12,
+    shadowColor: '#000',
+    shadowOpacity: 0.03,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 1,
   },
   postHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    justifyContent: 'space-between',
   },
   postHeaderButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    justifyContent: 'space-between',
+    gap: 12,
+    flex: 1,
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    flex: 1,
   },
   avatar: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#111',
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: palette.fill,
     alignItems: 'center',
     justifyContent: 'center',
   },
   avatarText: {
-    color: '#fff',
+    color: palette.primaryText,
     fontWeight: '700',
+    fontSize: 15,
   },
   postMeta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+    flex: 1,
+    gap: 2,
   },
   postName: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
-    color: '#111',
+    color: palette.primaryText,
+  },
+  postMetaText: {
+    fontSize: 12,
+    color: palette.secondaryText,
   },
   postTime: {
     fontSize: 12,
-    color: '#888',
+    color: palette.tertiaryText,
   },
   moodPill: {
     alignSelf: 'flex-start',
-    backgroundColor: '#f5f5f5',
+    backgroundColor: palette.mutedFill,
     paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
+    paddingVertical: 5,
+    borderRadius: 999,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   moodPillText: {
     fontSize: 12,
-    color: '#555',
+    color: palette.primaryText,
     fontWeight: '600',
   },
+  moodDotSmall: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
   postBody: {
-    fontSize: 14,
-    color: '#222',
+    fontSize: 15,
+    color: palette.primaryText,
+    lineHeight: 20,
   },
   postActions: {
     flexDirection: 'row',
@@ -1352,45 +1786,52 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
   },
   boopButton: {
+    flexDirection: 'row',
     paddingHorizontal: 8,
-    paddingVertical: 4,
-    minHeight: 24,
+    paddingVertical: 6,
+    minHeight: 32,
     justifyContent: 'center',
     alignItems: 'center',
+    borderRadius: 999,
+    backgroundColor: palette.mutedFill,
+    gap: 6,
   },
   boopButtonQueued: {
-    opacity: 0.6,
+    backgroundColor: palette.pendingBackground,
+  },
+  boopButtonSent: {
+    backgroundColor: palette.successBackground,
   },
   boopText: {
-    color: '#111',
     fontWeight: '600',
     fontSize: 12,
     lineHeight: 16,
   },
   boopCount: {
     fontSize: 12,
-    color: '#666',
+    color: palette.secondaryText,
     lineHeight: 16,
   },
   reactionRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
+    flexWrap: 'wrap',
   },
   reactionChip: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: palette.mutedFill,
     borderRadius: 12,
     paddingHorizontal: 8,
-    paddingVertical: 2,
-    minHeight: 24,
+    paddingVertical: 4,
+    minHeight: 26,
   },
   reactionChipActive: {
-    backgroundColor: '#e7f0ff',
-    borderColor: '#3b5bdb',
-    borderWidth: 1,
+    backgroundColor: palette.accentSoft,
+    borderColor: palette.accent,
+    borderWidth: StyleSheet.hairlineWidth,
   },
   reactionEmoji: {
     fontSize: 12,
@@ -1398,20 +1839,40 @@ const styles = StyleSheet.create({
   },
   reactionCount: {
     fontSize: 11,
-    color: '#555',
+    color: palette.secondaryText,
     lineHeight: 16,
   },
   reactionCountActive: {
-    color: '#1f3a93',
+    color: palette.accent,
   },
   emptyState: {
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 20,
+    paddingHorizontal: 16,
+    backgroundColor: palette.card,
+    borderRadius: 16,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: palette.separator,
+    shadowColor: '#000',
+    shadowOpacity: 0.03,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 1,
+  },
+  emptyTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: palette.primaryText,
+  },
+  emptySubtitle: {
+    fontSize: 13,
+    color: palette.secondaryText,
     textAlign: 'center',
-    color: '#777',
-    marginTop: 16,
   },
   modalBackdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.35)',
+    backgroundColor: 'rgba(0, 0, 0, 0.25)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1424,7 +1885,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#fff',
+    backgroundColor: palette.card,
     borderRadius: 999,
     paddingHorizontal: REACTION_BAR_PADDING,
     paddingVertical: REACTION_BAR_PADDING,
@@ -1434,30 +1895,32 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 6 },
     elevation: 6,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: palette.separator,
     zIndex: 2,
   },
   reactionButton: {
     width: REACTION_BUTTON_SIZE,
     height: REACTION_BUTTON_SIZE,
     borderRadius: 999,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: palette.mutedFill,
     alignItems: 'center',
     justifyContent: 'center',
   },
   reactionButtonActive: {
-    backgroundColor: '#e7f0ff',
-    borderColor: '#3b5bdb',
-    borderWidth: 1,
+    backgroundColor: palette.accentSoft,
+    borderColor: palette.accent,
+    borderWidth: StyleSheet.hairlineWidth,
   },
   reactionButtonEmoji: {
     fontSize: 18,
   },
   reactionMoreButton: {
-    backgroundColor: '#e9e9e9',
+    backgroundColor: palette.fill,
   },
   expandedSheet: {
     position: 'absolute',
-    backgroundColor: '#fff',
+    backgroundColor: palette.card,
     borderRadius: 20,
     padding: EXPANDED_PANEL_PADDING,
     gap: 12,
@@ -1467,6 +1930,8 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 8 },
     elevation: 8,
     zIndex: 2,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: palette.separator,
   },
   expandedHeader: {
     flexDirection: 'row',
@@ -1476,12 +1941,12 @@ const styles = StyleSheet.create({
   expandedTitle: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#111',
+    color: palette.primaryText,
   },
   expandedClose: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#3d2f8f',
+    color: palette.accent,
   },
   expandedGrid: {
     flexDirection: 'row',
@@ -1492,7 +1957,7 @@ const styles = StyleSheet.create({
   },
   expandedEmojiButton: {
     borderRadius: 14,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: palette.mutedFill,
     alignItems: 'center',
     justifyContent: 'center',
   },
