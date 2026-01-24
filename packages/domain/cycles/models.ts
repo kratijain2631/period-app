@@ -25,9 +25,59 @@ export type CycleSnapshot = {
   latestSampleStart?: string;
 };
 
-const phaseFromFlowValue = (value: CategoryValueMenstrualFlow): CyclePhase => {
-  // Minimal mapping until prediction data is available.
-  return value === CategoryValueMenstrualFlow.none ? 'unknown' : 'menstruation';
+const DAY_MS = 24 * 60 * 60 * 1000;
+const DEFAULT_CYCLE_LENGTH = 28;
+const PHASE_WINDOWS: Array<{ phase: CyclePhase; start: number; end: number }> = [
+  { phase: 'menstruation', start: 1, end: 5 },
+  { phase: 'follicular', start: 6, end: 12 },
+  { phase: 'ovulation', start: 13, end: 15 },
+  { phase: 'luteal', start: 16, end: 23 },
+  { phase: 'pms', start: 24, end: 28 },
+];
+
+const phaseFromFlowValue = (value: CategoryValueMenstrualFlow): CyclePhase =>
+  value === CategoryValueMenstrualFlow.none ? 'unknown' : 'menstruation';
+
+const toDayStart = (date: Date) => new Date(date.getFullYear(), date.getMonth(), date.getDate());
+
+export const estimateCyclePhase = (
+  samples: readonly CycleSample[],
+  referenceDate: Date = new Date(),
+): CyclePhase => {
+  if (!samples.length) {
+    return 'unknown';
+  }
+  const latestFlowSample = [...samples]
+    .filter((sample) => sample.flowValue !== CategoryValueMenstrualFlow.none)
+    .sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime())[0];
+
+  if (!latestFlowSample) {
+    return 'unknown';
+  }
+
+  const flowStart = new Date(latestFlowSample.startDate);
+  if (Number.isNaN(flowStart.getTime())) {
+    return phaseFromFlowValue(latestFlowSample.flowValue);
+  }
+
+  if (Number.isNaN(referenceDate.getTime())) {
+    return phaseFromFlowValue(latestFlowSample.flowValue);
+  }
+
+  const daysSinceStart = Math.floor(
+    (toDayStart(referenceDate).getTime() - toDayStart(flowStart).getTime()) / DAY_MS,
+  );
+
+  if (daysSinceStart < 0) {
+    return 'unknown';
+  }
+
+  const cycleDay = (daysSinceStart % DEFAULT_CYCLE_LENGTH) + 1;
+  const window = PHASE_WINDOWS.find(
+    ({ start, end }) => cycleDay >= start && cycleDay <= end,
+  );
+
+  return window?.phase ?? 'unknown';
 };
 
 export const normalizeFlowSample = (sample: RawFlowSample): CycleSample => ({
@@ -46,7 +96,8 @@ export const getLatestSample = (samples: readonly CycleSample[]): CycleSample | 
 
 export const deriveSnapshot = (samples: readonly CycleSample[], syncedAt: string): CycleSnapshot => {
   const latest = getLatestSample(samples);
-  const currentPhase = latest ? phaseFromFlowValue(latest.flowValue) : 'unknown';
+  const syncedDate = new Date(syncedAt);
+  const currentPhase = estimateCyclePhase(samples, syncedDate);
 
   return {
     syncedAt,
