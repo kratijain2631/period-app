@@ -1,7 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
+  Dimensions,
   FlatList,
+  GestureResponderEvent,
   Modal,
+  Pressable,
   SafeAreaView,
   StyleSheet,
   Text,
@@ -11,15 +14,21 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import NotificationsBell from '../../notifications/components/NotificationsBell';
 import NotificationsSheet from '../../notifications/components/NotificationsSheet';
 import { useNotifications } from '../../notifications/hooks/useNotifications';
 import FriendSyncButton from '../../friends/components/FriendSyncButton';
 import { createPost, fetchPosts, type PostRow } from '../../../services/supabase/posts';
-import { addPostReaction, fetchPostReactions } from '../../../services/supabase/postReactions';
+import {
+  addPostReaction,
+  fetchPostReactions,
+  removePostReaction,
+} from '../../../services/supabase/postReactions';
 import { fetchPostBoops, sendBoop } from '../../../services/supabase/boops';
 import { selectIsOnline, useConnectionStore } from '../../../state/connectionStore';
 import { selectAlias, selectSession, useSessionStore } from '../../../state/sessionStore';
+import { getDoubleTapResult } from '../utils/reactionDoubleTap';
 
 const MOOD_TAGS = [
   { label: 'Recovering', color: '#C98B2B', text: '#fff' },
@@ -31,11 +40,40 @@ const MOOD_TAGS = [
   { label: 'Boop me', color: '#F39C12', text: '#fff' },
 ];
 
-const REACTION_EMOJIS = ['❤️', '😂', '🥲', '😮', '🔥'];
+const QUICK_REACTION_EMOJIS = ['❤️', '😂', '😮', '😭', '😡', '🔥', '👏'];
+const EXTENDED_REACTION_EMOJIS = [
+  ...QUICK_REACTION_EMOJIS,
+  '😍',
+  '🤔',
+  '🙌',
+  '✨',
+  '🫶',
+  '💯',
+  '🙏',
+  '🤝',
+  '😴',
+  '🤒',
+  '🤯',
+  '🥳',
+  '😬',
+  '😅',
+  '😇',
+  '😎',
+  '💪',
+];
 
 type ReactionMap = Record<string, Record<string, number>>;
+type ReactionSelectionMap = Record<string, Record<string, boolean>>;
 
 type BoopStatus = 'idle' | 'sending' | 'sent' | 'queued';
+
+const REACTION_BUTTON_SIZE = 32;
+const REACTION_BUTTON_GAP = 6;
+const REACTION_BAR_PADDING = 10;
+const EXPANDED_GRID_COLUMNS = 6;
+const EXPANDED_GRID_GAP = 10;
+const EXPANDED_PANEL_PADDING = 12;
+const EXPANDED_HEADER_HEIGHT = 28;
 
 const HomeScreen = () => {
   const navigation = useNavigation();
@@ -51,10 +89,42 @@ const HomeScreen = () => {
   const [composerText, setComposerText] = useState('');
   const [isPosting, setPosting] = useState(false);
   const [reactionModalPostId, setReactionModalPostId] = useState<string | null>(null);
+  const [isReactionPickerExpanded, setReactionPickerExpanded] = useState(false);
+  const [reactionAnchor, setReactionAnchor] = useState<{ x: number; y: number } | null>(null);
   const [reactionCounts, setReactionCounts] = useState<ReactionMap>({});
+  const [reactionSelections, setReactionSelections] = useState<ReactionSelectionMap>({});
+  const [quickReactions, setQuickReactions] = useState<string[]>(QUICK_REACTION_EMOJIS);
   const [boopCounts, setBoopCounts] = useState<Record<string, number>>({});
   const [boopStatusByPost, setBoopStatusByPost] = useState<Record<string, BoopStatus>>({});
   const postPressRef = useRef(false);
+  const lastTapRef = useRef<{ postId: string | null; timestamp: number | null }>({
+    postId: null,
+    timestamp: null,
+  });
+
+  const quickReactionsKey = session?.userId ? `quick-reactions:${session.userId}` : null;
+
+  const normalizeQuickReactions = useCallback((list: string[]) => {
+    const seen = new Set<string>();
+    const next: string[] = [];
+    list.forEach((emoji) => {
+      if (!emoji || seen.has(emoji)) {
+        return;
+      }
+      seen.add(emoji);
+      next.push(emoji);
+    });
+    QUICK_REACTION_EMOJIS.forEach((emoji) => {
+      if (next.length >= QUICK_REACTION_EMOJIS.length) {
+        return;
+      }
+      if (!seen.has(emoji)) {
+        seen.add(emoji);
+        next.push(emoji);
+      }
+    });
+    return next.slice(0, QUICK_REACTION_EMOJIS.length);
+  }, []);
 
   const navigateToProfile = () => {
     const state = navigation.getState();
@@ -83,6 +153,7 @@ const HomeScreen = () => {
       try {
         const reactions = await fetchPostReactions(ids);
         const nextReactions: ReactionMap = {};
+        const nextSelections: ReactionSelectionMap = {};
         reactions.forEach((reaction) => {
           if (!reaction.post_id) {
             return;
@@ -92,11 +163,19 @@ const HomeScreen = () => {
           }
           const counts = nextReactions[reaction.post_id];
           counts[reaction.emoji] = (counts[reaction.emoji] ?? 0) + 1;
+          if (reaction.user_id && reaction.user_id === session?.userId) {
+            if (!nextSelections[reaction.post_id]) {
+              nextSelections[reaction.post_id] = {};
+            }
+            nextSelections[reaction.post_id][reaction.emoji] = true;
+          }
         });
         setReactionCounts(nextReactions);
+        setReactionSelections(nextSelections);
       } catch (error) {
         console.warn('[home] Failed to load reactions', error);
         setReactionCounts({});
+        setReactionSelections({});
       }
 
       try {
@@ -119,11 +198,48 @@ const HomeScreen = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [session?.userId]);
 
   useEffect(() => {
     loadFeed();
   }, [loadFeed]);
+
+  useEffect(() => {
+    if (!quickReactionsKey) {
+      setQuickReactions(QUICK_REACTION_EMOJIS);
+      return;
+    }
+    let isActive = true;
+    AsyncStorage.getItem(quickReactionsKey)
+      .then((stored) => {
+        if (!isActive) {
+          return;
+        }
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed)) {
+            setQuickReactions(normalizeQuickReactions(parsed));
+            return;
+          }
+        }
+        setQuickReactions(QUICK_REACTION_EMOJIS);
+      })
+      .catch(() => {
+        if (isActive) {
+          setQuickReactions(QUICK_REACTION_EMOJIS);
+        }
+      });
+    return () => {
+      isActive = false;
+    };
+  }, [normalizeQuickReactions, quickReactionsKey]);
+
+  useEffect(() => {
+    if (!quickReactionsKey) {
+      return;
+    }
+    AsyncStorage.setItem(quickReactionsKey, JSON.stringify(quickReactions)).catch(() => {});
+  }, [quickReactions, quickReactionsKey]);
 
   const handlePost = useCallback(async () => {
     const body = composerText.trim();
@@ -185,23 +301,166 @@ const HomeScreen = () => {
 
   const handleReaction = useCallback(async (postId: string, emoji: string) => {
     try {
-      const inserted = await addPostReaction(postId, emoji);
-      if (!inserted) {
-        return;
+      const isSelected = Boolean(reactionSelections[postId]?.[emoji]);
+      if (isSelected) {
+        const removed = await removePostReaction(postId, emoji);
+        if (!removed) {
+          return;
+        }
+        setReactionCounts((prev) => {
+          const next = { ...prev };
+          const postReactions = { ...(next[postId] ?? {}) };
+          const nextCount = (postReactions[emoji] ?? 1) - 1;
+          if (nextCount <= 0) {
+            delete postReactions[emoji];
+          } else {
+            postReactions[emoji] = nextCount;
+          }
+          if (Object.keys(postReactions).length === 0) {
+            delete next[postId];
+          } else {
+            next[postId] = postReactions;
+          }
+          return next;
+        });
+        setReactionSelections((prev) => {
+          const next = { ...prev };
+          const postSelections = { ...(next[postId] ?? {}) };
+          delete postSelections[emoji];
+          if (Object.keys(postSelections).length === 0) {
+            delete next[postId];
+          } else {
+            next[postId] = postSelections;
+          }
+          return next;
+        });
+      } else {
+        const inserted = await addPostReaction(postId, emoji);
+        if (!inserted) {
+          return;
+        }
+        setReactionCounts((prev) => {
+          const next = { ...prev };
+          const postReactions = { ...(next[postId] ?? {}) };
+          postReactions[emoji] = (postReactions[emoji] ?? 0) + 1;
+          next[postId] = postReactions;
+          return next;
+        });
+        setReactionSelections((prev) => {
+          const next = { ...prev };
+          const postSelections = { ...(next[postId] ?? {}) };
+          postSelections[emoji] = true;
+          next[postId] = postSelections;
+          return next;
+        });
       }
-      setReactionCounts((prev) => {
-        const next = { ...prev };
-        const postReactions = { ...(next[postId] ?? {}) };
-        postReactions[emoji] = (postReactions[emoji] ?? 0) + 1;
-        next[postId] = postReactions;
-        return next;
-      });
     } catch (error) {
-      console.warn('[home] Failed to add reaction', error);
+      console.warn('[home] Failed to update reaction', error);
     } finally {
       setReactionModalPostId(null);
+      setReactionPickerExpanded(false);
+      setReactionAnchor(null);
     }
+  }, [reactionSelections]);
+
+  const openReactionPicker = useCallback(
+    (postId: string, event: GestureResponderEvent) => {
+      const { pageX, pageY } = event.nativeEvent;
+      setReactionModalPostId(postId);
+      setReactionPickerExpanded(false);
+      setReactionAnchor({ x: pageX, y: pageY });
+    },
+    [],
+  );
+
+  const closeReactionPicker = useCallback(() => {
+    setReactionModalPostId(null);
+    setReactionPickerExpanded(false);
+    setReactionAnchor(null);
   }, []);
+  const handleEmojiPress = useCallback(
+    (emoji: string) => {
+      if (!reactionModalPostId) {
+        return;
+      }
+      handleReaction(reactionModalPostId, emoji);
+    },
+    [handleReaction, reactionModalPostId],
+  );
+
+  const handlePostPress = useCallback(
+    (postId: string) => {
+      const now = Date.now();
+      const result = getDoubleTapResult(lastTapRef.current, postId, now);
+      if (result.isDoubleTap) {
+        lastTapRef.current = result.nextState;
+        const defaultEmoji = quickReactions[0];
+        if (defaultEmoji) {
+          handleReaction(postId, defaultEmoji);
+        }
+        return;
+      }
+      lastTapRef.current = result.nextState;
+    },
+    [handleReaction, quickReactions],
+  );
+
+  const reactionBarLayout = useMemo(() => {
+    const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+    const reactionCount = quickReactions.length + 1;
+    const rawWidth =
+      reactionCount * REACTION_BUTTON_SIZE +
+      (reactionCount - 1) * REACTION_BUTTON_GAP +
+      REACTION_BAR_PADDING * 2;
+    const barWidth = Math.min(screenWidth - 24, rawWidth);
+    const barHeight = REACTION_BUTTON_SIZE + REACTION_BAR_PADDING * 2;
+    const anchorX = reactionAnchor?.x ?? screenWidth / 2;
+    const anchorY = reactionAnchor?.y ?? screenHeight / 2;
+    const unclampedLeft = anchorX - barWidth / 2;
+    const minLeft = 12;
+    const maxLeft = screenWidth - barWidth - 12;
+    const left = Math.min(Math.max(unclampedLeft, minLeft), maxLeft);
+    const preferredTop = anchorY - barHeight - 14;
+    const minTop = 80;
+    const maxTop = screenHeight - barHeight - 16;
+    const top =
+      preferredTop < minTop
+        ? Math.min(anchorY + 14, maxTop)
+        : Math.min(preferredTop, maxTop);
+    return { barWidth, barHeight, left, top };
+  }, [quickReactions.length, reactionAnchor]);
+
+  const expandedPanelLayout = useMemo(() => {
+    const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+    const panelWidth = Math.min(screenWidth - 32, 360);
+    const usableWidth = panelWidth - EXPANDED_PANEL_PADDING * 2;
+    const cellSize =
+      (usableWidth - EXPANDED_GRID_GAP * (EXPANDED_GRID_COLUMNS - 1)) /
+      EXPANDED_GRID_COLUMNS;
+    const rows = Math.ceil(EXTENDED_REACTION_EMOJIS.length / EXPANDED_GRID_COLUMNS);
+    const gridHeight = rows * cellSize + (rows - 1) * EXPANDED_GRID_GAP;
+    const panelHeight =
+      EXPANDED_PANEL_PADDING * 2 + EXPANDED_HEADER_HEIGHT + gridHeight;
+    const barBottom = reactionBarLayout.top + reactionBarLayout.barHeight;
+    const barCenter = reactionBarLayout.left + reactionBarLayout.barWidth / 2;
+    const minLeft = 12;
+    const maxLeft = screenWidth - panelWidth - 12;
+    const left = Math.min(Math.max(barCenter - panelWidth / 2, minLeft), maxLeft);
+    const minTop = 80;
+    const maxTop = screenHeight - panelHeight - 16;
+    const preferredTop = barBottom + 10;
+    const top =
+      preferredTop > maxTop
+        ? Math.max(reactionBarLayout.top - panelHeight - 10, minTop)
+        : Math.min(preferredTop, maxTop);
+    return {
+      panelWidth,
+      panelHeight,
+      left,
+      top,
+      cellSize,
+    };
+  }, [reactionBarLayout]);
 
   const formatTime = (value: string) => {
     const date = new Date(value);
@@ -218,6 +477,7 @@ const HomeScreen = () => {
     const boopCount = boopCounts[item.id] ?? 0;
     const boopStatus = boopStatusByPost[item.id] ?? 'idle';
     const postReactions = reactionCounts[item.id] ?? {};
+    const postSelections = reactionSelections[item.id] ?? {};
     const isSelf = item.user_id === session?.userId;
     const headerContent = (
       <>
@@ -234,7 +494,8 @@ const HomeScreen = () => {
     return (
       <TouchableOpacity
         style={styles.postCard}
-        onLongPress={() => setReactionModalPostId(item.id)}
+        onLongPress={(event) => openReactionPicker(item.id, event)}
+        onPress={() => handlePostPress(item.id)}
         activeOpacity={0.9}
       >
         <View style={styles.postHeader}>
@@ -272,11 +533,21 @@ const HomeScreen = () => {
               {Object.entries(postReactions).map(([emoji, count]) => (
                 <TouchableOpacity
                   key={`${item.id}-${emoji}`}
-                  style={styles.reactionChip}
+                  style={[
+                    styles.reactionChip,
+                    postSelections[emoji] ? styles.reactionChipActive : null,
+                  ]}
                   onPress={() => handleReaction(item.id, emoji)}
                 >
                   <Text style={styles.reactionEmoji}>{emoji}</Text>
-                  <Text style={styles.reactionCount}>{count}</Text>
+                  <Text
+                    style={[
+                      styles.reactionCount,
+                      postSelections[emoji] ? styles.reactionCountActive : null,
+                    ]}
+                  >
+                    {count}
+                  </Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -375,30 +646,89 @@ const HomeScreen = () => {
         visible={Boolean(reactionModalPostId)}
         transparent
         animationType="fade"
-        onRequestClose={() => setReactionModalPostId(null)}
+        onRequestClose={closeReactionPicker}
       >
         <View style={styles.modalBackdrop}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>React with</Text>
-            <View style={styles.modalRow}>
-              {REACTION_EMOJIS.map((emoji) => (
-                <TouchableOpacity
-                  key={emoji}
-                  style={styles.modalEmojiButton}
-                  onPress={() => {
-                    if (reactionModalPostId) {
-                      handleReaction(reactionModalPostId, emoji);
-                    }
-                  }}
-                >
-                  <Text style={styles.modalEmoji}>{emoji}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-            <TouchableOpacity style={styles.modalCancel} onPress={() => setReactionModalPostId(null)}>
-              <Text style={styles.modalCancelText}>Cancel</Text>
+          <Pressable style={styles.modalDismiss} onPress={closeReactionPicker} />
+          <View
+            style={[
+              styles.reactionBar,
+              {
+                width: reactionBarLayout.barWidth,
+                left: reactionBarLayout.left,
+                top: reactionBarLayout.top,
+              },
+            ]}
+          >
+            {quickReactions.map((emoji, index) => {
+              const isSelected = reactionModalPostId
+                ? reactionSelections[reactionModalPostId]?.[emoji]
+                : false;
+              return (
+              <TouchableOpacity
+                key={`${emoji}-${index}`}
+                style={[
+                  styles.reactionButton,
+                  isSelected ? styles.reactionButtonActive : null,
+                ]}
+                onPress={() => handleEmojiPress(emoji)}
+                accessibilityLabel={`React with ${emoji}`}
+              >
+                <Text style={styles.reactionButtonEmoji}>{emoji}</Text>
+              </TouchableOpacity>
+            );
+            })}
+            <TouchableOpacity
+              style={[styles.reactionButton, styles.reactionMoreButton]}
+              onPress={() => setReactionPickerExpanded(true)}
+              accessibilityLabel="More reactions"
+            >
+              <Ionicons name="add" size={18} color="#111" />
             </TouchableOpacity>
           </View>
+          {isReactionPickerExpanded ? (
+            <View
+              style={[
+                styles.expandedSheet,
+                {
+                  width: expandedPanelLayout.panelWidth,
+                  left: expandedPanelLayout.left,
+                  top: expandedPanelLayout.top,
+                },
+              ]}
+            >
+              <View style={styles.expandedHeader}>
+                <Text style={styles.expandedTitle}>More reactions</Text>
+                <TouchableOpacity onPress={() => setReactionPickerExpanded(false)}>
+                  <Text style={styles.expandedClose}>Done</Text>
+                </TouchableOpacity>
+              </View>
+              <View style={styles.expandedGrid}>
+                {EXTENDED_REACTION_EMOJIS.map((emoji) => {
+                  const isSelected = reactionModalPostId
+                    ? reactionSelections[reactionModalPostId]?.[emoji]
+                    : false;
+                  return (
+                  <TouchableOpacity
+                    key={emoji}
+                    style={[
+                      styles.expandedEmojiButton,
+                      isSelected ? styles.reactionButtonActive : null,
+                      {
+                        width: expandedPanelLayout.cellSize,
+                        height: expandedPanelLayout.cellSize,
+                      },
+                    ]}
+                    onPress={() => handleEmojiPress(emoji)}
+                    accessibilityLabel={`React with ${emoji}`}
+                  >
+                    <Text style={styles.expandedEmoji}>{emoji}</Text>
+                  </TouchableOpacity>
+                );
+                })}
+              </View>
+            </View>
+          ) : null}
         </View>
       </Modal>
     </SafeAreaView>
@@ -610,6 +940,11 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     minHeight: 24,
   },
+  reactionChipActive: {
+    backgroundColor: '#e7f0ff',
+    borderColor: '#3b5bdb',
+    borderWidth: 1,
+  },
   reactionEmoji: {
     fontSize: 12,
     lineHeight: 16,
@@ -619,6 +954,9 @@ const styles = StyleSheet.create({
     color: '#555',
     lineHeight: 16,
   },
+  reactionCountActive: {
+    color: '#1f3a93',
+  },
   emptyState: {
     textAlign: 'center',
     color: '#777',
@@ -626,38 +964,93 @@ const styles = StyleSheet.create({
   },
   modalBackdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    backgroundColor: 'rgba(0, 0, 0, 0.35)',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  modalContent: {
-    backgroundColor: '#fff',
-    padding: 16,
-    borderRadius: 12,
-    width: '80%',
-    gap: 12,
+  modalDismiss: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 0,
   },
-  modalTitle: {
+  reactionBar: {
+    position: 'absolute',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#fff',
+    borderRadius: 999,
+    paddingHorizontal: REACTION_BAR_PADDING,
+    paddingVertical: REACTION_BAR_PADDING,
+    gap: REACTION_BUTTON_GAP,
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 6,
+    zIndex: 2,
+  },
+  reactionButton: {
+    width: REACTION_BUTTON_SIZE,
+    height: REACTION_BUTTON_SIZE,
+    borderRadius: 999,
+    backgroundColor: '#f5f5f5',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  reactionButtonActive: {
+    backgroundColor: '#e7f0ff',
+    borderColor: '#3b5bdb',
+    borderWidth: 1,
+  },
+  reactionButtonEmoji: {
+    fontSize: 18,
+  },
+  reactionMoreButton: {
+    backgroundColor: '#e9e9e9',
+  },
+  expandedSheet: {
+    position: 'absolute',
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: EXPANDED_PANEL_PADDING,
+    gap: 12,
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 8,
+    zIndex: 2,
+  },
+  expandedHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  expandedTitle: {
     fontSize: 14,
     fontWeight: '600',
     color: '#111',
   },
-  modalRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  modalEmojiButton: {
-    padding: 8,
-  },
-  modalEmoji: {
-    fontSize: 24,
-  },
-  modalCancel: {
-    alignSelf: 'flex-end',
-  },
-  modalCancelText: {
-    color: '#3d2f8f',
+  expandedClose: {
+    fontSize: 13,
     fontWeight: '600',
+    color: '#3d2f8f',
+  },
+  expandedGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'flex-start',
+    columnGap: EXPANDED_GRID_GAP,
+    rowGap: EXPANDED_GRID_GAP,
+  },
+  expandedEmojiButton: {
+    borderRadius: 14,
+    backgroundColor: '#f5f5f5',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  expandedEmoji: {
+    fontSize: 24,
   },
 });
 
