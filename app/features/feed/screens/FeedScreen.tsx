@@ -20,7 +20,8 @@ import { selectSession, useSessionStore } from '../../../state/sessionStore';
 import { selectIsOnline, useConnectionStore } from '../../../state/connectionStore';
 
 const FeedScreen = () => {
-  const { notifications, unreadCount } = useNotifications();
+  const { notifications, unreadCount, friendRequests, requestProfileMap, respondToFriendRequest } =
+    useNotifications();
   const [isSheetVisible, setSheetVisible] = useState(false);
   const session = useSessionStore(selectSession);
   const navigation = useNavigation();
@@ -189,6 +190,9 @@ const FeedScreen = () => {
       <NotificationsSheet
         visible={isSheetVisible}
         notifications={notifications}
+        friendRequests={friendRequests}
+        requestProfileMap={requestProfileMap}
+        onRespondRequest={respondToFriendRequest}
         onClose={() => setSheetVisible(false)}
       />
     </SafeAreaView>

@@ -138,6 +138,9 @@ export const searchUsersByAliasOrEmail = async (
   if (!trimmed) {
     return [];
   }
+  if (/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(trimmed)) {
+    return [];
+  }
   const { data, error } = await supabase.rpc('search_users', {
     search: trimmed,
     max_results: limit,
