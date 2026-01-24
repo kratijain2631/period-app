@@ -91,3 +91,17 @@ export const fetchPostBoops = async (postIds: string[]) => {
   }
   return (data as { post_id: string | null }[]) ?? [];
 };
+
+export const fetchEventBoops = async (eventIds: string[]) => {
+  if (!isSupabaseConfigured || eventIds.length === 0) {
+    return [];
+  }
+  const { data, error } = await supabase
+    .from('boops')
+    .select('event_id')
+    .in('event_id', eventIds);
+  if (error) {
+    throw error;
+  }
+  return (data as { event_id: string | null }[]) ?? [];
+};

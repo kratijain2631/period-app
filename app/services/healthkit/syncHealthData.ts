@@ -7,7 +7,11 @@ import {
 } from './healthkitClient';
 import { CycleSnapshot, deriveSnapshot, normalizeFlowSamples } from '../../../packages/domain/cycles/models';
 import { useSessionStore } from '../../state/sessionStore';
-import { clearCycleSnapshots, upsertCycleSnapshot } from '../../storage/sqlite/cycleSnapshotStore';
+import {
+  clearCycleSnapshots,
+  getLatestCycleSnapshot,
+  upsertCycleSnapshot,
+} from '../../storage/sqlite/cycleSnapshotStore';
 import { upsertCycleEvents, upsertCycleSnapshotRemote } from '../supabase/cycleEvents';
 
 const LOOKBACK_MS = 90 * 24 * 60 * 60 * 1000; // 90 days to capture longer histories
@@ -58,7 +62,10 @@ export const syncHealthData = async ({
       seen.add(s.id);
       return true;
     });
+    const previousSnapshot = await getLatestCycleSnapshot(session.userId);
     const snapshot = deriveSnapshot(samples, now.toISOString());
+    const previousPhase = previousSnapshot?.snapshot.currentPhase ?? null;
+    const phaseChanged = previousPhase && previousPhase !== snapshot.currentPhase;
 
     await upsertCycleSnapshot(session.userId, snapshot);
     try {
@@ -70,6 +77,15 @@ export const syncHealthData = async ({
         symptoms: sample.metadata ?? null,
         starts_at: sample.startDate,
       }));
+      if (phaseChanged) {
+        events.push({
+          user_id: session.userId,
+          event_type: 'phase_transition',
+          phase: snapshot.currentPhase,
+          symptoms: null,
+          starts_at: snapshot.syncedAt,
+        });
+      }
       await upsertCycleEvents(events);
     } catch (error) {
       console.warn('[cycle-sync] Supabase sync failed', error);

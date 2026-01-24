@@ -9,7 +9,6 @@ import AuthScreen from '../features/auth/screens/AuthScreen';
 import CompanionIntroScreen from '../features/companion/screens/CompanionIntroScreen';
 import FriendSyncScreen from '../features/friends/screens/FriendSyncScreen';
 import FriendsScreen from '../features/friends/screens/FriendsScreen';
-import FeedScreen from '../features/feed/screens/FeedScreen';
 import HomeScreen from '../features/home/screens/HomeScreen';
 import ProfileScreen from '../features/profile/screens/ProfileScreen';
 import AliasScreen from '../features/profile/screens/AliasScreen';
@@ -93,8 +92,6 @@ const MainTabs = () => {
           let iconName: keyof typeof Ionicons.glyphMap = 'home-outline';
           if (route.name === 'Home') {
             iconName = 'home-outline';
-          } else if (route.name === 'Feed') {
-            iconName = 'people-outline';
           } else if (route.name === 'Profile') {
             iconName = 'person-outline';
           }
@@ -103,7 +100,6 @@ const MainTabs = () => {
       })}
     >
       <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="Feed" component={FeedScreen} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );
