@@ -147,7 +147,8 @@ const EXPANDED_HEADER_HEIGHT = 28;
 
 const HomeScreen = () => {
   const navigation = useNavigation();
-  const { notifications, unreadCount } = useNotifications();
+  const { notifications, unreadCount, friendRequests, requestProfileMap, respondToFriendRequest } =
+    useNotifications();
   const session = useSessionStore(selectSession);
   const alias = useSessionStore(selectAlias);
   const isOnline = useConnectionStore(selectIsOnline);
@@ -1401,6 +1402,9 @@ const HomeScreen = () => {
       <NotificationsSheet
         visible={isSheetVisible}
         notifications={notifications}
+        friendRequests={friendRequests}
+        requestProfileMap={requestProfileMap}
+        onRespondRequest={respondToFriendRequest}
         onClose={() => setSheetVisible(false)}
       />
       <Modal

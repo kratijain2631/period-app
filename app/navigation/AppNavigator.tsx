@@ -67,7 +67,6 @@ const AppNavigator = () => {
           {!isHydrating && readyForHome && (
             <Stack.Screen name="FriendSync" component={FriendSyncScreen} />
           )}
-          {!isHydrating && readyForHome && <Stack.Screen name="Friends" component={FriendsScreen} />}
         </Stack.Navigator>
       </NavigationContainer>
     </SafeAreaProvider>
@@ -92,6 +91,8 @@ const MainTabs = () => {
           let iconName: keyof typeof Ionicons.glyphMap = 'home-outline';
           if (route.name === 'Home') {
             iconName = 'home-outline';
+          } else if (route.name === 'Friends') {
+            iconName = 'people-outline';
           } else if (route.name === 'Profile') {
             iconName = 'person-outline';
           }
@@ -100,6 +101,7 @@ const MainTabs = () => {
       })}
     >
       <Tab.Screen name="Home" component={HomeScreen} />
+      <Tab.Screen name="Friends" component={FriendsScreen} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );

@@ -13,11 +13,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { selectSession, useSessionStore } from '../../../state/sessionStore';
 import { fetchCurrentUserProfile } from '../../../services/supabase/users';
-import { fetchFriendSharing } from '../../../services/supabase/friendSharing';
-import {
-  fetchInboundFriendRequests,
-  fetchOutboundFriendRequests,
-} from '../../../services/supabase/friendRequests';
 import {
   fetchCycleGuidance,
   type CycleGuidanceRow,
@@ -51,11 +46,6 @@ const ProfileScreen = () => {
   const [cycleGuidanceStatus, setCycleGuidanceStatus] = useState<
     'idle' | 'loading' | 'error'
   >('idle');
-  const [friendSummary, setFriendSummary] = useState({
-    friendCount: 0,
-    inboundCount: 0,
-    outboundCount: 0,
-  });
 
   const loadProfile = useCallback(async () => {
     try {
@@ -69,38 +59,6 @@ const ProfileScreen = () => {
     }
   }, []);
 
-  const loadFriendSummary = useCallback(async () => {
-    try {
-      if (!session?.userId) {
-        setFriendSummary({ friendCount: 0, inboundCount: 0, outboundCount: 0 });
-        return;
-      }
-      const [sharingRows, inbound, outbound] = await Promise.all([
-        fetchFriendSharing(),
-        fetchInboundFriendRequests(),
-        fetchOutboundFriendRequests(),
-      ]);
-      const pendingOutbound = outbound.filter((row) => row.status === 'pending');
-      const incomingSet = new Set(
-        sharingRows
-          .filter((row) => row.friend_id === session.userId && row.has_shared)
-          .map((row) => row.user_id),
-      );
-      const mutualCount = sharingRows.filter(
-        (row) =>
-          row.user_id === session.userId &&
-          row.has_shared &&
-          incomingSet.has(row.friend_id),
-      ).length;
-      setFriendSummary({
-        friendCount: mutualCount,
-        inboundCount: inbound.length,
-        outboundCount: pendingOutbound.length,
-      });
-    } catch (error) {
-      console.warn('[profile] Failed to load friend summary', error);
-    }
-  }, [session?.userId]);
 
   const loadCycleGuidance = useCallback(async () => {
     if (!session?.userId) {
@@ -163,15 +121,13 @@ const ProfileScreen = () => {
 
   useEffect(() => {
     loadProfile();
-    loadFriendSummary();
     loadCycleGuidance();
-  }, [loadCycleGuidance, loadFriendSummary, loadProfile]);
+  }, [loadCycleGuidance, loadProfile]);
 
   useFocusEffect(
     useCallback(() => {
-      loadFriendSummary();
       loadCycleGuidance();
-    }, [loadCycleGuidance, loadFriendSummary]),
+    }, [loadCycleGuidance]),
   );
 
   const displayName = useMemo(() => {
@@ -186,45 +142,12 @@ const ProfileScreen = () => {
 
   const avatarInitial = displayName.trim().slice(0, 1).toUpperCase() || '?';
 
-  const handleManageFriends = useCallback(() => {
-    const parent = navigation.getParent();
-    if (parent) {
-      parent.navigate('Friends' as never);
-      return;
-    }
-    navigation.navigate('Friends' as never);
-  }, [navigation]);
-
   const navigateToFriendSync = useCallback(
     (friendUserId: string) => {
       navigation.navigate('FriendSync' as never, { friendId: friendUserId } as never);
     },
     [navigation],
   );
-
-  const friendSummaryText = useMemo(() => {
-    const parts: string[] = [];
-    parts.push(
-      friendSummary.friendCount === 1
-        ? '1 friend'
-        : `${friendSummary.friendCount} friends`,
-    );
-    if (friendSummary.inboundCount > 0) {
-      parts.push(
-        friendSummary.inboundCount === 1
-          ? '1 incoming request'
-          : `${friendSummary.inboundCount} incoming requests`,
-      );
-    }
-    if (friendSummary.outboundCount > 0) {
-      parts.push(
-        friendSummary.outboundCount === 1
-          ? '1 outgoing request'
-          : `${friendSummary.outboundCount} outgoing requests`,
-      );
-    }
-    return parts.join(' - ');
-  }, [friendSummary]);
 
   const cyclePhaseKey = snapshot?.currentPhase ?? 'unknown';
   const cyclePhaseLabel = useMemo(
@@ -431,19 +354,6 @@ const ProfileScreen = () => {
           )}
         </View>
 
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Friends</Text>
-          <Text style={styles.cardSubtitle}>{friendSummaryText}</Text>
-          <Text style={styles.mutedText}>
-            Manage sharing, friend requests, and Friend Sync details.
-          </Text>
-          <TouchableOpacity
-            style={styles.primaryAction}
-            onPress={handleManageFriends}
-          >
-            <Text style={styles.primaryActionText}>Manage Friends</Text>
-          </TouchableOpacity>
-        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -502,17 +412,6 @@ const styles = StyleSheet.create({
   profileId: {
     fontSize: 12,
     color: palette.tertiaryText,
-  },
-  card: {
-    backgroundColor: palette.card,
-    borderRadius: 16,
-    padding: 16,
-    gap: 10,
-    shadowColor: '#000',
-    shadowOpacity: 0.02,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 1,
   },
   cycleCard: {
     backgroundColor: palette.card,
@@ -674,31 +573,6 @@ const styles = StyleSheet.create({
   sectionHint: {
     fontSize: 12,
     color: palette.tertiaryText,
-  },
-  cardTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: palette.primaryText,
-  },
-  cardSubtitle: {
-    fontSize: 13,
-    color: palette.secondaryText,
-  },
-  mutedText: {
-    fontSize: 13,
-    color: palette.secondaryText,
-  },
-  primaryAction: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 999,
-    backgroundColor: palette.accent,
-  },
-  primaryActionText: {
-    color: '#fff',
-    fontSize: 13,
-    fontWeight: '600',
   },
 });
 

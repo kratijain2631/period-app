@@ -17,11 +17,10 @@ import { selectSession, useSessionStore } from '../../../state/sessionStore';
 import {
   fetchInboundFriendRequests,
   fetchAcceptedFriendRequests,
-  fetchFriendRequestProfiles,
   fetchOutboundFriendRequests,
   ensureFriendSharingForRequests,
-  respondToFriendRequest,
   sendFriendRequest,
+  sendFriendRequestByEmail,
   type FriendRequestRow,
 } from '../../../services/supabase/friendRequests';
 import {
@@ -30,8 +29,9 @@ import {
   removeFriend,
   type FriendProfileRow,
 } from '../../../services/supabase/friendSharing';
-import { searchUsersByAliasOrEmail } from '../../../services/supabase/users';
+import { searchUsersByAliasOrEmail, type UserSearchResult } from '../../../services/supabase/users';
 import { fetchFriendCycleSnapshots, type CycleSnapshotRow } from '../../../services/supabase/cycleSnapshots';
+import { computeSyncScore } from '../utils/syncScore';
 import type { CyclePhase } from '../../../../packages/domain/cycles/models';
 
 const iosColor = (name: string, fallback: string) =>
@@ -48,23 +48,25 @@ const palette = {
   fill: iosColor('systemGray5', '#E5E7EB'),
   mutedFill: iosColor('systemGray6', '#F3F4F6'),
   destructive: iosColor('systemRed', '#DC2626'),
-  success: iosColor('systemGreen', '#16A34A'),
 };
 
 const FriendsScreen = () => {
   const navigation = useNavigation();
   const session = useSessionStore(selectSession);
-  const [friendId, setFriendId] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<UserSearchResult[]>([]);
+  const [searchNotice, setSearchNotice] = useState<{ message: string; tone: 'info' | 'error' } | null>(
+    null,
+  );
+  const [isSearching, setSearching] = useState(false);
   const [inboundRequests, setInboundRequests] = useState<FriendRequestRow[]>([]);
   const [outboundRequests, setOutboundRequests] = useState<FriendRequestRow[]>([]);
-  const [requestProfileMap, setRequestProfileMap] = useState<
-    Record<string, { alias?: string | null; full_name?: string | null }>
-  >({});
   const [friendProfileMap, setFriendProfileMap] = useState<Record<string, FriendProfileRow>>({});
   const [friendSnapshots, setFriendSnapshots] = useState<
     Array<{ user_id: string; last_synced_at?: string; snapshot?: CycleSnapshotRow['snapshot'] }>
   >([]);
-  const [phaseFilter, setPhaseFilter] = useState<'all' | CyclePhase>('all');
+  const [friendScores, setFriendScores] = useState<Record<string, number | null>>({});
+  const [selfPhase, setSelfPhase] = useState<CyclePhase>('unknown');
   const [isLoading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -88,24 +90,11 @@ const FriendsScreen = () => {
       ]);
       setInboundRequests(inbound);
       setOutboundRequests(outbound.filter((row) => row.status === 'pending'));
-      const requestIds = [...inbound, ...outbound].map((row) => row.id);
-      if (requestIds.length > 0) {
-        try {
-          const profiles = await fetchFriendRequestProfiles(requestIds);
-          const nextMap: Record<string, { alias?: string | null; full_name?: string | null }> = {};
-          profiles.forEach((profile) => {
-            nextMap[profile.other_user_id] = {
-              alias: profile.alias ?? null,
-              full_name: profile.full_name ?? null,
-            };
-          });
-          setRequestProfileMap(nextMap);
-        } catch (error) {
-          console.warn('[friends] Failed to load request profiles', error);
-          setRequestProfileMap({});
-        }
+      if (session?.userId) {
+        const selfSnapshotRow = snapshots.find((row) => row.user_id === session.userId);
+        setSelfPhase((selfSnapshotRow?.snapshot?.currentPhase ?? 'unknown') as CyclePhase);
       } else {
-        setRequestProfileMap({});
+        setSelfPhase('unknown');
       }
       const filteredSnapshots = session?.userId
         ? snapshots.filter((row) => row.user_id !== session.userId)
@@ -135,6 +124,33 @@ const FriendsScreen = () => {
       setFriendSnapshots(friendList);
       if (mutualFriendIds.length > 0) {
         try {
+          const selfSnapshotValue = snapshots.find((row) => row.user_id === session?.userId)?.snapshot;
+          const scores = mutualFriendIds.map((friendId) => {
+            const friendSnapshot = snapshotMap.get(friendId)?.snapshot;
+            if (!selfSnapshotValue || !friendSnapshot) {
+              return [friendId, null] as const;
+            }
+            try {
+              const summary = computeSyncScore({
+                selfSnapshot: selfSnapshotValue,
+                friendSnapshot,
+              });
+              return [friendId, summary.score] as const;
+            } catch (error) {
+              console.warn('[friends] Failed to compute sync score', error);
+              return [friendId, null] as const;
+            }
+          });
+          setFriendScores(Object.fromEntries(scores));
+        } catch (error) {
+          console.warn('[friends] Failed to load sync scores', error);
+          setFriendScores({});
+        }
+      } else {
+        setFriendScores({});
+      }
+      if (mutualFriendIds.length > 0) {
+        try {
           const profiles = await fetchFriendProfiles(mutualFriendIds);
           const nextMap: Record<string, FriendProfileRow> = {};
           profiles.forEach((profile) => {
@@ -160,40 +176,142 @@ const FriendsScreen = () => {
     loadFriends();
   }, [loadFriends]);
 
-  const requestDisplayName = useCallback(
-    (userId: string) => {
-      const profile = requestProfileMap[userId];
-      return profile?.alias || profile?.full_name || userId;
-    },
-    [requestProfileMap],
+  const trimmedQuery = searchQuery.trim();
+  const normalizedQuery = useMemo(() => trimmedQuery.replace(/^@+/, ''), [trimmedQuery]);
+  const isEmailQuery = useMemo(
+    () => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(trimmedQuery),
+    [trimmedQuery],
   );
 
-  const friendDisplayName = useCallback(
+  useEffect(() => {
+    let isActive = true;
+    if (!normalizedQuery) {
+      setSearchResults([]);
+      setSearching(false);
+      setSearchNotice(null);
+      return () => {
+        isActive = false;
+      };
+    }
+    if (isEmailQuery) {
+      setSearchResults([]);
+      setSearching(false);
+      return () => {
+        isActive = false;
+      };
+    }
+    if (normalizedQuery.length < 2) {
+      setSearchResults([]);
+      setSearching(false);
+      return () => {
+        isActive = false;
+      };
+    }
+
+    const timeout = setTimeout(async () => {
+      setSearching(true);
+      setSearchNotice(null);
+      try {
+        const results = await searchUsersByAliasOrEmail(normalizedQuery, 8);
+        const filtered = results.filter((result) => result.id !== session?.userId);
+        if (isActive) {
+          setSearchResults(filtered);
+        }
+      } catch (error) {
+        console.warn('[friends] Failed to search users', error);
+        if (isActive) {
+          setSearchResults([]);
+          setSearchNotice({ message: 'Search is unavailable right now.', tone: 'error' });
+        }
+      } finally {
+        if (isActive) {
+          setSearching(false);
+        }
+      }
+    }, 250);
+
+    return () => {
+      isActive = false;
+      clearTimeout(timeout);
+    };
+  }, [isEmailQuery, normalizedQuery, session?.userId]);
+
+  const inboundRequestMap = useMemo(
+    () => new Map(inboundRequests.map((request) => [request.from_user_id, request])),
+    [inboundRequests],
+  );
+  const outboundRequestIds = useMemo(
+    () => new Set(outboundRequests.map((request) => request.to_user_id)),
+    [outboundRequests],
+  );
+  const friendIds = useMemo(
+    () => new Set(friendSnapshots.map((row) => row.user_id)),
+    [friendSnapshots],
+  );
+
+  const formatAlias = useCallback((alias?: string | null) => {
+    if (!alias) {
+      return '@unknown';
+    }
+    return alias.startsWith('@') ? alias : `@${alias}`;
+  }, []);
+
+  const shortId = useCallback((value: string) => `${value.slice(0, 4)}...${value.slice(-4)}`, []);
+
+  const friendUsername = useCallback(
     (userId: string) => {
       const profile = friendProfileMap[userId];
-      return profile?.alias || profile?.full_name || 'Unknown friend';
+      if (profile?.alias) {
+        return formatAlias(profile.alias);
+      }
+      return `Friend ${shortId(userId)}`;
     },
-    [friendProfileMap],
+    [friendProfileMap, formatAlias, shortId],
   );
 
-  const filteredFriends = useMemo(() => {
-    if (phaseFilter === 'all') {
-      return friendSnapshots;
+  const formatPhaseLabel = useCallback((value?: string | null) => {
+    if (!value) {
+      return 'Unknown';
     }
-    return friendSnapshots.filter(
-      (row) => (row.snapshot?.currentPhase ?? 'unknown') === phaseFilter,
-    );
-  }, [friendSnapshots, phaseFilter]);
+    return value.charAt(0).toUpperCase() + value.slice(1);
+  }, []);
 
-  const phaseFilters: { label: string; value: 'all' | CyclePhase }[] = [
-    { label: 'All', value: 'all' },
-    { label: 'PMS', value: 'pms' },
-    { label: 'Menstruation', value: 'menstruation' },
-    { label: 'Follicular', value: 'follicular' },
-    { label: 'Ovulation', value: 'ovulation' },
-    { label: 'Luteal', value: 'luteal' },
-    { label: 'Unknown', value: 'unknown' },
-  ];
+  const formatPairSummary = useCallback(
+    (friendPhase?: string | null) => {
+      const safeFriendPhase = (friendPhase ?? 'unknown') as CyclePhase;
+      const you = formatPhaseLabel(selfPhase);
+      const them = formatPhaseLabel(safeFriendPhase);
+      if (selfPhase === safeFriendPhase && selfPhase !== 'unknown') {
+        return `Both in ${you}`;
+      }
+      return `${you} vs ${them}`;
+    },
+    [formatPhaseLabel, selfPhase],
+  );
+
+  const formatSyncedAt = useCallback((value?: string) => {
+    if (!value) {
+      return 'No sync yet';
+    }
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+      return 'No sync yet';
+    }
+    return `Synced ${date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`;
+  }, []);
+
+  const scoreToneFor = useCallback((value: number) => {
+    if (value >= 80) {
+      return { label: 'High sync', color: '#34C759', background: '#E7F7EC' };
+    }
+    if (value >= 60) {
+      return { label: 'Aligned', color: '#007AFF', background: '#E6F0FF' };
+    }
+    if (value >= 40) {
+      return { label: 'Mixed', color: '#FF9500', background: '#FFF3E0' };
+    }
+    return { label: 'Needs care', color: '#FF3B30', background: '#FFE8E7' };
+  }, []);
 
   const navigateToFriendSync = useCallback(
     (friendUserId?: string, preview?: boolean) => {
@@ -205,55 +323,24 @@ const FriendsScreen = () => {
     [navigation],
   );
 
-  const handleSendRequest = useCallback(async () => {
-    const targetId = friendId.trim();
-    if (!targetId) {
-      return;
-    }
-    setLoading(true);
-    setErrorMessage(null);
-    try {
-      let resolvedId = targetId;
-      if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetId)) {
-        const matches = await searchUsersByAliasOrEmail(targetId, 3);
-        if (matches.length === 0) {
-          setErrorMessage('No user found for that alias or email.');
-          return;
-        }
-        if (matches.length > 1) {
-          setErrorMessage('Multiple matches found. Use email or full user ID.');
-          return;
-        }
-        resolvedId = matches[0].id;
+  const handleSendRequest = useCallback(
+    async (targetId: string) => {
+      if (!targetId) {
+        return;
       }
-      await sendFriendRequest(resolvedId);
-      setFriendId('');
-      await loadFriends();
-    } catch (error) {
-      console.warn('[friends] Failed to send friend request', error);
-      const message = error instanceof Error ? error.message : '';
-      if (message.includes('[search_users]')) {
-        setErrorMessage('User search is unavailable. Ensure the search_users function is deployed.');
-      } else if (message) {
-        setErrorMessage(message);
-      } else {
-        setErrorMessage('Could not send request. Double-check the alias or email.');
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [friendId, loadFriends]);
-
-  const handleRespond = useCallback(
-    async (requestId: string, status: 'accepted' | 'declined') => {
       setLoading(true);
       setErrorMessage(null);
       try {
-        await respondToFriendRequest(requestId, status);
+        await sendFriendRequest(targetId);
         await loadFriends();
       } catch (error) {
-        console.warn('[friends] Failed to respond to friend request', error);
-        setErrorMessage('Could not update friend request.');
+        console.warn('[friends] Failed to send friend request', error);
+        const message = error instanceof Error ? error.message : '';
+        if (message) {
+          setErrorMessage(message);
+        } else {
+          setErrorMessage('Could not send request. Try again.');
+        }
       } finally {
         setLoading(false);
       }
@@ -261,9 +348,29 @@ const FriendsScreen = () => {
     [loadFriends],
   );
 
+  const handleSendEmailRequest = useCallback(async () => {
+    if (!trimmedQuery || !isEmailQuery) {
+      return;
+    }
+    setLoading(true);
+    setErrorMessage(null);
+    try {
+      await sendFriendRequestByEmail(trimmedQuery);
+      setSearchNotice({
+        message: 'If they have an account, your request was sent.',
+        tone: 'info',
+      });
+    } catch (error) {
+      console.warn('[friends] Failed to send email request', error);
+      setSearchNotice({ message: 'Could not send the email request. Try again.', tone: 'error' });
+    } finally {
+      setLoading(false);
+    }
+  }, [isEmailQuery, trimmedQuery]);
+
   const confirmRemoveFriend = useCallback(
     (friendUserId: string) => {
-      const friendName = friendDisplayName(friendUserId);
+      const friendName = friendUsername(friendUserId);
       Alert.alert(
         'Remove friend?',
         `${friendName} will no longer see your updates, and you'll need to send a new request to reconnect.`,
@@ -289,48 +396,135 @@ const FriendsScreen = () => {
         ],
       );
     },
-    [friendDisplayName, loadFriends],
+    [friendUsername, loadFriends],
   );
 
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.header}>
-          <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-            <Ionicons name="chevron-back" size={20} color={palette.accent} />
-            <Text style={styles.backText}>Back</Text>
-          </TouchableOpacity>
-        </View>
-
         <View style={styles.titleRow}>
           <Text style={styles.title}>Friends</Text>
-          <Text style={styles.subtitle}>Manage sharing, requests, and Friend Sync.</Text>
         </View>
 
         {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
 
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Friends</Text>
-          <Text style={styles.cardSubtitle}>People you share cycle updates with.</Text>
-          <View style={styles.filterRow}>
-            {phaseFilters.map((filter) => {
-              const active = filter.value === phaseFilter;
-              return (
-                <TouchableOpacity
-                  key={filter.value}
-                  style={[styles.filterChip, active ? styles.filterChipActive : null]}
-                  onPress={() => setPhaseFilter(filter.value)}
-                >
-                  <Text style={[styles.filterChipText, active ? styles.filterChipTextActive : null]}>
-                    {filter.label}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
+          <Text style={styles.cardTitle}>Find friends</Text>
+          <View style={styles.searchBar}>
+            <Ionicons name="search" size={16} color={palette.secondaryText} />
+            <TextInput
+              style={styles.searchInput}
+              value={searchQuery}
+              onChangeText={(text) => {
+                setSearchQuery(text);
+                if (searchNotice) {
+                  setSearchNotice(null);
+                }
+              }}
+              placeholder="Search by alias"
+              autoCapitalize="none"
+              autoCorrect={false}
+              textContentType="username"
+            />
+            {searchQuery.length > 0 ? (
+              <TouchableOpacity
+                style={styles.searchClear}
+                onPress={() => {
+                  setSearchQuery('');
+                  setSearchNotice(null);
+                }}
+                accessibilityLabel="Clear search"
+              >
+                <Ionicons name="close-circle" size={18} color={palette.tertiaryText} />
+              </TouchableOpacity>
+            ) : null}
           </View>
-          {filteredFriends.length === 0 ? (
+          {isEmailQuery ? (
+            <View style={styles.emailRequest}>
+              <Text style={styles.helperText}>
+                Send a private request by email. We won&apos;t reveal whether they have an account.
+              </Text>
+              <TouchableOpacity
+                style={[styles.actionButton, styles.primaryAction, isLoading ? styles.disabledAction : null]}
+                onPress={handleSendEmailRequest}
+                disabled={isLoading}
+              >
+                <Text style={styles.primaryActionText}>Send Request</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <View style={styles.searchResults}>
+              {isSearching ? <Text style={styles.mutedText}>Searching...</Text> : null}
+              {!isSearching && normalizedQuery.length >= 2 && searchResults.length === 0 && !searchNotice ? (
+                <Text style={styles.mutedText}>No matches yet.</Text>
+              ) : null}
+              {searchResults.map((result, index) => {
+                const primaryName = result.alias ? formatAlias(result.alias) : 'Unknown';
+                const initialSource = result.alias ?? '?';
+                const initial = initialSource.trim().slice(0, 1).toUpperCase() || '?';
+                const isInbound = inboundRequestMap.has(result.id);
+                const isOutbound = outboundRequestIds.has(result.id);
+                const isFriend = friendIds.has(result.id);
+
+                return (
+                  <View
+                    key={result.id}
+                    style={[styles.searchRow, index > 0 ? styles.rowDivider : null]}
+                  >
+                    <View style={styles.searchAvatar}>
+                      <Text style={styles.searchAvatarText}>{initial}</Text>
+                    </View>
+                    <View style={styles.searchMeta}>
+                      <Text style={styles.searchName}>{primaryName}</Text>
+                    </View>
+                    <View style={styles.searchActions}>
+                      {isFriend ? (
+                        <TouchableOpacity
+                          style={[styles.actionButton, styles.secondaryAction]}
+                          onPress={() => navigateToFriendSync(result.id)}
+                        >
+                          <Text style={styles.secondaryActionText}>View Sync</Text>
+                        </TouchableOpacity>
+                      ) : isInbound ? (
+                        <View style={[styles.actionButton, styles.pendingAction]}>
+                          <Text style={styles.pendingActionText}>Requested you</Text>
+                        </View>
+                      ) : isOutbound ? (
+                        <View style={[styles.actionButton, styles.pendingAction]}>
+                          <Text style={styles.pendingActionText}>Requested</Text>
+                        </View>
+                      ) : (
+                        <TouchableOpacity
+                          style={[styles.actionButton, styles.primaryAction]}
+                          onPress={() => handleSendRequest(result.id)}
+                          disabled={isLoading}
+                        >
+                          <Text style={styles.primaryActionText}>Add</Text>
+                        </TouchableOpacity>
+                      )}
+                    </View>
+                  </View>
+                );
+              })}
+            </View>
+          )}
+          {searchNotice ? (
+            <Text
+              style={[
+                styles.noticeText,
+                searchNotice.tone === 'error' ? styles.noticeError : styles.noticeInfo,
+              ]}
+            >
+              {searchNotice.message}
+            </Text>
+          ) : null}
+        </View>
+
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Friends</Text>
+          {friendSnapshots.length === 0 ? (
             <View style={styles.emptyState}>
-              <Text style={styles.mutedText}>No friends in this phase yet.</Text>
+              <Text style={styles.mutedText}>No friends yet.</Text>
               {__DEV__ ? (
                 <TouchableOpacity
                   style={[styles.actionButton, styles.primaryAction]}
@@ -341,117 +535,68 @@ const FriendsScreen = () => {
               ) : null}
             </View>
           ) : (
-            filteredFriends.map((row, index) => (
-              <View
-                key={row.user_id}
-                style={[styles.friendRow, index > 0 ? styles.rowDivider : null]}
-              >
-                <View style={styles.friendMeta}>
-                  <Text style={styles.friendName}>{friendDisplayName(row.user_id)}</Text>
-                  <Text style={styles.friendPhase}>
-                    Phase: {row.snapshot?.currentPhase ?? 'unknown'}
-                  </Text>
+            friendSnapshots.map((row, index) => {
+              const username = friendUsername(row.user_id);
+              const initial = username.replace('@', '').trim().slice(0, 1).toUpperCase() || '?';
+              const score = friendScores[row.user_id];
+              const normalizedScore =
+                typeof score === 'number'
+                  ? score <= 1
+                    ? Math.round(score * 100)
+                    : Math.round(score)
+                  : null;
+              const scoreTone = normalizedScore !== null ? scoreToneFor(normalizedScore) : null;
+              const scoreLabel = normalizedScore !== null ? `${normalizedScore}%` : 'No data';
+              const scoreStatus = scoreTone?.label ?? 'Sync score';
+              const scoreColor = scoreTone?.color ?? palette.secondaryText;
+              const scoreBackground = scoreTone?.background ?? palette.mutedFill;
+              return (
+                <View
+                  key={row.user_id}
+                  style={[styles.friendRow, index > 0 ? styles.rowDivider : null]}
+                >
+                  <View style={styles.friendAvatar}>
+                    <Text style={styles.friendAvatarText}>{initial}</Text>
+                  </View>
+                  <View style={styles.friendMeta}>
+                    <Text style={styles.friendName} numberOfLines={1}>
+                      {username}
+                    </Text>
+                    <Text style={styles.friendDetail}>
+                      {formatPairSummary(row.snapshot?.currentPhase)}
+                    </Text>
+                    <View style={styles.friendMetaFooter}>
+                      <Text style={styles.friendDetailMuted}>
+                        {formatSyncedAt(row.last_synced_at)}
+                      </Text>
+                      <TouchableOpacity
+                        style={styles.linkAction}
+                        onPress={() => confirmRemoveFriend(row.user_id)}
+                      >
+                        <Text style={styles.linkDestructiveText}>Remove</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                  <View style={styles.friendRight}>
+                    <TouchableOpacity
+                      style={styles.friendAction}
+                      onPress={() => navigateToFriendSync(row.user_id)}
+                    >
+                      <Text style={styles.friendActionText}>View Sync</Text>
+                      <Ionicons name="chevron-forward" size={12} color={palette.accent} />
+                    </TouchableOpacity>
+                    <View style={[styles.scoreBadge, { backgroundColor: scoreBackground }]}>
+                      <Text style={[styles.scoreBadgeText, { color: scoreColor }]}>
+                        {scoreStatus}
+                      </Text>
+                      <Text style={[styles.scoreBadgeValue, { color: scoreColor }]}>
+                        {scoreLabel}
+                      </Text>
+                    </View>
+                  </View>
                 </View>
-                <View style={styles.friendActions}>
-                  <TouchableOpacity
-                    style={[styles.actionButton, styles.primaryAction]}
-                    onPress={() => navigateToFriendSync(row.user_id)}
-                  >
-                    <Text style={styles.primaryActionText}>View Sync</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[styles.actionButton, styles.destructiveAction]}
-                    onPress={() => confirmRemoveFriend(row.user_id)}
-                  >
-                    <Text style={styles.destructiveActionText}>Remove</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            ))
-          )}
-        </View>
-
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Add a Friend</Text>
-          <Text style={styles.cardSubtitle}>Search by alias or email to send a request.</Text>
-          <View style={styles.inputRow}>
-            <TextInput
-              style={styles.input}
-              value={friendId}
-              onChangeText={setFriendId}
-              placeholder="Friend alias or email"
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
-            <TouchableOpacity
-              style={[styles.actionButton, styles.primaryAction, isLoading ? styles.disabledAction : null]}
-              onPress={handleSendRequest}
-              disabled={isLoading}
-            >
-              <Text style={styles.primaryActionText}>Send</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Incoming Requests</Text>
-          <Text style={styles.cardSubtitle}>Decide who can see your updates.</Text>
-          {inboundRequests.length === 0 ? (
-            <Text style={styles.mutedText}>No pending requests.</Text>
-          ) : (
-            inboundRequests.map((request, index) => (
-              <View
-                key={request.id}
-                style={[styles.requestRow, index > 0 ? styles.rowDivider : null]}
-              >
-                <View style={styles.requestMeta}>
-                  <Text style={styles.requestLabel}>
-                    From: {requestDisplayName(request.from_user_id)}
-                  </Text>
-                  <Text style={styles.requestDate}>
-                    {new Date(request.created_at).toLocaleString()}
-                  </Text>
-                </View>
-                <View style={styles.requestActions}>
-                  <TouchableOpacity
-                    style={[styles.actionButton, styles.successAction]}
-                    onPress={() => handleRespond(request.id, 'accepted')}
-                    disabled={isLoading}
-                  >
-                    <Text style={styles.actionText}>Accept</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[styles.actionButton, styles.destructiveAction]}
-                    onPress={() => handleRespond(request.id, 'declined')}
-                    disabled={isLoading}
-                  >
-                    <Text style={styles.destructiveActionText}>Decline</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            ))
-          )}
-        </View>
-
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Outgoing Requests</Text>
-          <Text style={styles.cardSubtitle}>Requests waiting for approval.</Text>
-          {outboundRequests.length === 0 ? (
-            <Text style={styles.mutedText}>No outgoing requests.</Text>
-          ) : (
-            outboundRequests.map((request, index) => (
-              <View
-                key={request.id}
-                style={[styles.requestRow, index > 0 ? styles.rowDivider : null]}
-              >
-                <View style={styles.requestMeta}>
-                  <Text style={styles.requestLabel}>
-                    To: {requestDisplayName(request.to_user_id)}
-                  </Text>
-                  <Text style={styles.requestDate}>Status: {request.status}</Text>
-                </View>
-              </View>
-            ))
+              );
+            })
           )}
         </View>
       </ScrollView>
@@ -470,22 +615,6 @@ const styles = StyleSheet.create({
     paddingBottom: 32,
     gap: 18,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 4,
-    gap: 6,
-  },
-  backText: {
-    fontSize: 17,
-    fontWeight: '400',
-    color: palette.accent,
-  },
   titleRow: {
     gap: 6,
   },
@@ -493,10 +622,6 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: '700',
     color: palette.primaryText,
-  },
-  subtitle: {
-    fontSize: 13,
-    color: palette.secondaryText,
   },
   card: {
     backgroundColor: palette.card,
@@ -514,35 +639,9 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: palette.primaryText,
   },
-  cardSubtitle: {
-    fontSize: 13,
-    color: palette.secondaryText,
-  },
   errorText: {
     color: palette.destructive,
     fontSize: 12,
-  },
-  filterRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  filterChip: {
-    borderRadius: 999,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    backgroundColor: palette.mutedFill,
-  },
-  filterChipActive: {
-    backgroundColor: palette.accent,
-  },
-  filterChipText: {
-    fontSize: 12,
-    color: palette.primaryText,
-    fontWeight: '600',
-  },
-  filterChipTextActive: {
-    color: '#fff',
   },
   emptyState: {
     gap: 10,
@@ -553,10 +652,22 @@ const styles = StyleSheet.create({
   },
   friendRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: 12,
-    paddingVertical: 10,
+    paddingVertical: 12,
+  },
+  friendAvatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: palette.fill,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  friendAvatarText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: palette.secondaryText,
   },
   rowDivider: {
     borderTopWidth: 1,
@@ -565,19 +676,60 @@ const styles = StyleSheet.create({
   friendMeta: {
     flex: 1,
     gap: 4,
+    minWidth: 0,
   },
   friendName: {
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 15,
+    fontWeight: '700',
     color: palette.primaryText,
+    flexShrink: 1,
   },
-  friendPhase: {
+  friendDetail: {
     fontSize: 12,
     color: palette.secondaryText,
-    textTransform: 'capitalize',
   },
-  friendActions: {
+  friendDetailMuted: {
+    fontSize: 11,
+    color: palette.tertiaryText,
+  },
+  friendMetaFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 8,
+  },
+  friendRight: {
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+    gap: 8,
+    paddingTop: 2,
+  },
+  scoreBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+  },
+  scoreBadgeText: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  scoreBadgeValue: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  friendAction: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+  },
+  friendActionText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: palette.accent,
   },
   actionButton: {
     paddingHorizontal: 12,
@@ -594,64 +746,105 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
   },
-  destructiveAction: {
-    backgroundColor: palette.mutedFill,
-    borderWidth: 1,
-    borderColor: palette.destructive,
-  },
-  destructiveActionText: {
-    color: palette.destructive,
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  successAction: {
-    backgroundColor: palette.success,
-  },
-  actionText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: '600',
-  },
   disabledAction: {
     opacity: 0.6,
   },
-  inputRow: {
-    flexDirection: 'row',
-    gap: 8,
+  secondaryAction: {
+    backgroundColor: palette.mutedFill,
+    borderWidth: 1,
+    borderColor: palette.separator,
   },
-  input: {
-    flex: 1,
+  secondaryActionText: {
+    color: palette.primaryText,
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  pendingAction: {
+    backgroundColor: palette.mutedFill,
+  },
+  pendingActionText: {
+    color: palette.secondaryText,
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
     borderWidth: 1,
     borderColor: palette.separator,
     borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 14,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
     backgroundColor: palette.mutedFill,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 14,
     color: palette.primaryText,
   },
-  requestRow: {
+  searchClear: {
+    padding: 2,
+  },
+  searchResults: {
+    gap: 10,
+  },
+  searchRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
     gap: 12,
-    paddingVertical: 10,
+    paddingVertical: 8,
   },
-  requestMeta: {
-    flex: 1,
-    gap: 4,
+  searchAvatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: palette.fill,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  requestLabel: {
+  searchAvatarText: {
     fontSize: 14,
+    fontWeight: '600',
+    color: palette.secondaryText,
+  },
+  searchMeta: {
+    flex: 1,
+    gap: 2,
+  },
+  searchName: {
+    fontSize: 14,
+    fontWeight: '600',
     color: palette.primaryText,
   },
-  requestDate: {
+  linkAction: {
+    paddingVertical: 4,
+  },
+  linkDestructiveText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: palette.destructive,
+  },
+  searchActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  helperText: {
     fontSize: 12,
     color: palette.secondaryText,
   },
-  requestActions: {
-    flexDirection: 'row',
+  emailRequest: {
     gap: 8,
+  },
+  noticeText: {
+    fontSize: 12,
+  },
+  noticeError: {
+    color: palette.destructive,
+  },
+  noticeInfo: {
+    color: palette.secondaryText,
   },
 });
 
