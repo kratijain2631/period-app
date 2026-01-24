@@ -20,12 +20,19 @@ import NotificationsSheet from '../../notifications/components/NotificationsShee
 import { useNotifications } from '../../notifications/hooks/useNotifications';
 import FriendSyncButton from '../../friends/components/FriendSyncButton';
 import { createPost, fetchPosts, type PostRow } from '../../../services/supabase/posts';
+import { fetchCycleEvents, type CycleEventRow } from '../../../services/supabase/cycleEvents';
 import {
   addPostReaction,
   fetchPostReactions,
   removePostReaction,
 } from '../../../services/supabase/postReactions';
-import { fetchPostBoops, sendBoop } from '../../../services/supabase/boops';
+import {
+  addEventReaction,
+  fetchEventReactions,
+  removeEventReaction,
+} from '../../../services/supabase/eventReactions';
+import { fetchEventBoops, fetchPostBoops, sendBoop } from '../../../services/supabase/boops';
+import { fetchUserProfilesByIds } from '../../../services/supabase/users';
 import { selectIsOnline, useConnectionStore } from '../../../state/connectionStore';
 import { selectAlias, selectSession, useSessionStore } from '../../../state/sessionStore';
 import { getDoubleTapResult } from '../utils/reactionDoubleTap';
@@ -66,6 +73,10 @@ type ReactionMap = Record<string, Record<string, number>>;
 type ReactionSelectionMap = Record<string, Record<string, boolean>>;
 
 type BoopStatus = 'idle' | 'sending' | 'sent' | 'queued';
+type HomeFeedItem =
+  | { type: 'post'; id: string; sortKey: number; post: PostRow }
+  | { type: 'cycle'; id: string; sortKey: number; event: CycleEventRow };
+type ReactionTarget = { type: 'post' | 'cycle'; id: string };
 
 const REACTION_BUTTON_SIZE = 32;
 const REACTION_BUTTON_GAP = 6;
@@ -83,19 +94,27 @@ const HomeScreen = () => {
   const isOnline = useConnectionStore(selectIsOnline);
   const isOffline = !isOnline;
   const [posts, setPosts] = useState<PostRow[]>([]);
+  const [cycleEvents, setCycleEvents] = useState<CycleEventRow[]>([]);
+  const [cycleNameMap, setCycleNameMap] = useState<Record<string, string>>({});
   const [isLoading, setLoading] = useState(false);
   const [isSheetVisible, setSheetVisible] = useState(false);
   const [isComposerOpen, setComposerOpen] = useState(false);
   const [composerText, setComposerText] = useState('');
   const [isPosting, setPosting] = useState(false);
-  const [reactionModalPostId, setReactionModalPostId] = useState<string | null>(null);
+  const [reactionTarget, setReactionTarget] = useState<ReactionTarget | null>(null);
   const [isReactionPickerExpanded, setReactionPickerExpanded] = useState(false);
   const [reactionAnchor, setReactionAnchor] = useState<{ x: number; y: number } | null>(null);
   const [reactionCounts, setReactionCounts] = useState<ReactionMap>({});
   const [reactionSelections, setReactionSelections] = useState<ReactionSelectionMap>({});
+  const [eventReactionCounts, setEventReactionCounts] = useState<ReactionMap>({});
+  const [eventReactionSelections, setEventReactionSelections] =
+    useState<ReactionSelectionMap>({});
   const [quickReactions, setQuickReactions] = useState<string[]>(QUICK_REACTION_EMOJIS);
   const [boopCounts, setBoopCounts] = useState<Record<string, number>>({});
+  const [boopCountsByEvent, setBoopCountsByEvent] = useState<Record<string, number>>({});
   const [boopStatusByPost, setBoopStatusByPost] = useState<Record<string, BoopStatus>>({});
+  const [boopStatusByEvent, setBoopStatusByEvent] = useState<Record<string, BoopStatus>>({});
+  const [boopLoadingByEvent, setBoopLoadingByEvent] = useState<Record<string, boolean>>({});
   const postPressRef = useRef(false);
   const lastTapRef = useRef<{ postId: string | null; timestamp: number | null }>({
     postId: null,
@@ -195,6 +214,96 @@ const HomeScreen = () => {
     } catch (error) {
       console.warn('[home] Failed to load posts', error);
       setPosts([]);
+      setReactionCounts({});
+      setReactionSelections({});
+      setBoopCounts({});
+    }
+    try {
+      const events = await fetchCycleEvents();
+      setCycleEvents(events);
+      const eventIds = events.map((event) => event.id);
+      if (eventIds.length) {
+        try {
+          const reactions = await fetchEventReactions(eventIds);
+          const nextReactions: ReactionMap = {};
+          const nextSelections: ReactionSelectionMap = {};
+          reactions.forEach((reaction) => {
+            if (!reaction.event_id) {
+              return;
+            }
+            if (!nextReactions[reaction.event_id]) {
+              nextReactions[reaction.event_id] = {};
+            }
+            const counts = nextReactions[reaction.event_id];
+            counts[reaction.emoji] = (counts[reaction.emoji] ?? 0) + 1;
+            if (reaction.user_id && reaction.user_id === session?.userId) {
+              if (!nextSelections[reaction.event_id]) {
+                nextSelections[reaction.event_id] = {};
+              }
+              nextSelections[reaction.event_id][reaction.emoji] = true;
+            }
+          });
+          setEventReactionCounts(nextReactions);
+          setEventReactionSelections(nextSelections);
+        } catch (error) {
+          console.warn('[home] Failed to load event reactions', error);
+          setEventReactionCounts({});
+          setEventReactionSelections({});
+        }
+        try {
+          const boops = await fetchEventBoops(eventIds);
+          const nextCounts: Record<string, number> = {};
+          boops.forEach((row) => {
+            if (!row.event_id) {
+              return;
+            }
+            nextCounts[row.event_id] = (nextCounts[row.event_id] ?? 0) + 1;
+          });
+          setBoopCountsByEvent(nextCounts);
+        } catch (error) {
+          console.warn('[home] Failed to load event boops', error);
+          setBoopCountsByEvent({});
+        }
+      } else {
+        setEventReactionCounts({});
+        setEventReactionSelections({});
+        setBoopCountsByEvent({});
+      }
+      const friendIds = Array.from(
+        new Set(
+          events
+            .map((event) => event.user_id)
+            .filter((userId) => userId && userId !== session?.userId),
+        ),
+      );
+      if (friendIds.length) {
+        try {
+          const profiles = await fetchUserProfilesByIds(friendIds);
+          const nextMap: Record<string, string> = {};
+          profiles.forEach((profile) => {
+            if (profile.full_name) {
+              nextMap[profile.id] = profile.full_name;
+            } else if (profile.alias) {
+              nextMap[profile.id] = profile.alias;
+            } else if (profile.email) {
+              nextMap[profile.id] = profile.email;
+            }
+          });
+          setCycleNameMap(nextMap);
+        } catch (error) {
+          console.warn('[home] Failed to load cycle friend names', error);
+          setCycleNameMap({});
+        }
+      } else {
+        setCycleNameMap({});
+      }
+    } catch (error) {
+      console.warn('[home] Failed to load cycle events', error);
+      setCycleEvents([]);
+      setCycleNameMap({});
+      setEventReactionCounts({});
+      setEventReactionSelections({});
+      setBoopCountsByEvent({});
     } finally {
       setLoading(false);
     }
@@ -299,74 +408,159 @@ const HomeScreen = () => {
     [session?.userId],
   );
 
-  const handleReaction = useCallback(async (postId: string, emoji: string) => {
-    try {
-      const isSelected = Boolean(reactionSelections[postId]?.[emoji]);
-      if (isSelected) {
-        const removed = await removePostReaction(postId, emoji);
-        if (!removed) {
-          return;
-        }
-        setReactionCounts((prev) => {
-          const next = { ...prev };
-          const postReactions = { ...(next[postId] ?? {}) };
-          const nextCount = (postReactions[emoji] ?? 1) - 1;
-          if (nextCount <= 0) {
-            delete postReactions[emoji];
-          } else {
-            postReactions[emoji] = nextCount;
-          }
-          if (Object.keys(postReactions).length === 0) {
-            delete next[postId];
-          } else {
-            next[postId] = postReactions;
-          }
-          return next;
-        });
-        setReactionSelections((prev) => {
-          const next = { ...prev };
-          const postSelections = { ...(next[postId] ?? {}) };
-          delete postSelections[emoji];
-          if (Object.keys(postSelections).length === 0) {
-            delete next[postId];
-          } else {
-            next[postId] = postSelections;
-          }
-          return next;
-        });
-      } else {
-        const inserted = await addPostReaction(postId, emoji);
-        if (!inserted) {
-          return;
-        }
-        setReactionCounts((prev) => {
-          const next = { ...prev };
-          const postReactions = { ...(next[postId] ?? {}) };
-          postReactions[emoji] = (postReactions[emoji] ?? 0) + 1;
-          next[postId] = postReactions;
-          return next;
-        });
-        setReactionSelections((prev) => {
-          const next = { ...prev };
-          const postSelections = { ...(next[postId] ?? {}) };
-          postSelections[emoji] = true;
-          next[postId] = postSelections;
-          return next;
-        });
+  const handleEventBoop = useCallback(
+    async (event: CycleEventRow) => {
+      if (!event.user_id || event.user_id === session?.userId) {
+        return;
       }
-    } catch (error) {
-      console.warn('[home] Failed to update reaction', error);
-    } finally {
-      setReactionModalPostId(null);
-      setReactionPickerExpanded(false);
-      setReactionAnchor(null);
-    }
-  }, [reactionSelections]);
+      setBoopLoadingByEvent((prev) => ({ ...prev, [event.id]: true }));
+      try {
+        const result = await sendBoop({ toUserId: event.user_id, eventId: event.id });
+        setBoopStatusByEvent((prev) => ({ ...prev, [event.id]: result.status }));
+        if (result.status === 'sent') {
+          setBoopCountsByEvent((prev) => ({
+            ...prev,
+            [event.id]: (prev[event.id] ?? 0) + 1,
+          }));
+        }
+      } catch (error) {
+        console.warn('[home] Failed to send boop for cycle event', error);
+        setBoopStatusByEvent((prev) => ({ ...prev, [event.id]: 'idle' }));
+      } finally {
+        setBoopLoadingByEvent((prev) => ({ ...prev, [event.id]: false }));
+      }
+    },
+    [session?.userId],
+  );
+
+  const handleReaction = useCallback(
+    async (target: ReactionTarget, emoji: string) => {
+      try {
+        const selectionMap =
+          target.type === 'post' ? reactionSelections : eventReactionSelections;
+        const isSelected = Boolean(selectionMap[target.id]?.[emoji]);
+        if (target.type === 'post') {
+          if (isSelected) {
+            const removed = await removePostReaction(target.id, emoji);
+            if (!removed) {
+              return;
+            }
+            setReactionCounts((prev) => {
+              const next = { ...prev };
+              const postReactions = { ...(next[target.id] ?? {}) };
+              const nextCount = (postReactions[emoji] ?? 1) - 1;
+              if (nextCount <= 0) {
+                delete postReactions[emoji];
+              } else {
+                postReactions[emoji] = nextCount;
+              }
+              if (Object.keys(postReactions).length === 0) {
+                delete next[target.id];
+              } else {
+                next[target.id] = postReactions;
+              }
+              return next;
+            });
+            setReactionSelections((prev) => {
+              const next = { ...prev };
+              const postSelections = { ...(next[target.id] ?? {}) };
+              delete postSelections[emoji];
+              if (Object.keys(postSelections).length === 0) {
+                delete next[target.id];
+              } else {
+                next[target.id] = postSelections;
+              }
+              return next;
+            });
+          } else {
+            const inserted = await addPostReaction(target.id, emoji);
+            if (!inserted) {
+              return;
+            }
+            setReactionCounts((prev) => {
+              const next = { ...prev };
+              const postReactions = { ...(next[target.id] ?? {}) };
+              postReactions[emoji] = (postReactions[emoji] ?? 0) + 1;
+              next[target.id] = postReactions;
+              return next;
+            });
+            setReactionSelections((prev) => {
+              const next = { ...prev };
+              const postSelections = { ...(next[target.id] ?? {}) };
+              postSelections[emoji] = true;
+              next[target.id] = postSelections;
+              return next;
+            });
+          }
+        } else {
+          if (isSelected) {
+            const removed = await removeEventReaction(target.id, emoji);
+            if (!removed) {
+              return;
+            }
+            setEventReactionCounts((prev) => {
+              const next = { ...prev };
+              const eventReactions = { ...(next[target.id] ?? {}) };
+              const nextCount = (eventReactions[emoji] ?? 1) - 1;
+              if (nextCount <= 0) {
+                delete eventReactions[emoji];
+              } else {
+                eventReactions[emoji] = nextCount;
+              }
+              if (Object.keys(eventReactions).length === 0) {
+                delete next[target.id];
+              } else {
+                next[target.id] = eventReactions;
+              }
+              return next;
+            });
+            setEventReactionSelections((prev) => {
+              const next = { ...prev };
+              const eventSelections = { ...(next[target.id] ?? {}) };
+              delete eventSelections[emoji];
+              if (Object.keys(eventSelections).length === 0) {
+                delete next[target.id];
+              } else {
+                next[target.id] = eventSelections;
+              }
+              return next;
+            });
+          } else {
+            const inserted = await addEventReaction(target.id, emoji);
+            if (!inserted) {
+              return;
+            }
+            setEventReactionCounts((prev) => {
+              const next = { ...prev };
+              const eventReactions = { ...(next[target.id] ?? {}) };
+              eventReactions[emoji] = (eventReactions[emoji] ?? 0) + 1;
+              next[target.id] = eventReactions;
+              return next;
+            });
+            setEventReactionSelections((prev) => {
+              const next = { ...prev };
+              const eventSelections = { ...(next[target.id] ?? {}) };
+              eventSelections[emoji] = true;
+              next[target.id] = eventSelections;
+              return next;
+            });
+          }
+        }
+      } catch (error) {
+        console.warn('[home] Failed to update reaction', error);
+      } finally {
+        setReactionTarget(null);
+        setReactionPickerExpanded(false);
+        setReactionAnchor(null);
+      }
+    },
+    [eventReactionSelections, reactionSelections],
+  );
 
   const openReactionPicker = useCallback(
-    (postId: string, event: GestureResponderEvent) => {
+    (target: ReactionTarget, event: GestureResponderEvent) => {
       const { pageX, pageY } = event.nativeEvent;
-      setReactionModalPostId(postId);
+      setReactionTarget(target);
       setReactionPickerExpanded(false);
       setReactionAnchor({ x: pageX, y: pageY });
     },
@@ -374,18 +568,18 @@ const HomeScreen = () => {
   );
 
   const closeReactionPicker = useCallback(() => {
-    setReactionModalPostId(null);
+    setReactionTarget(null);
     setReactionPickerExpanded(false);
     setReactionAnchor(null);
   }, []);
   const handleEmojiPress = useCallback(
     (emoji: string) => {
-      if (!reactionModalPostId) {
+      if (!reactionTarget) {
         return;
       }
-      handleReaction(reactionModalPostId, emoji);
+      handleReaction(reactionTarget, emoji);
     },
-    [handleReaction, reactionModalPostId],
+    [handleReaction, reactionTarget],
   );
 
   const handlePostPress = useCallback(
@@ -396,7 +590,25 @@ const HomeScreen = () => {
         lastTapRef.current = result.nextState;
         const defaultEmoji = quickReactions[0];
         if (defaultEmoji) {
-          handleReaction(postId, defaultEmoji);
+          handleReaction({ type: 'post', id: postId }, defaultEmoji);
+        }
+        return;
+      }
+      lastTapRef.current = result.nextState;
+    },
+    [handleReaction, quickReactions],
+  );
+
+  const handleEventPress = useCallback(
+    (eventId: string) => {
+      const now = Date.now();
+      const targetId = `cycle-${eventId}`;
+      const result = getDoubleTapResult(lastTapRef.current, targetId, now);
+      if (result.isDoubleTap) {
+        lastTapRef.current = result.nextState;
+        const defaultEmoji = quickReactions[0];
+        if (defaultEmoji) {
+          handleReaction({ type: 'cycle', id: eventId }, defaultEmoji);
         }
         return;
       }
@@ -470,6 +682,119 @@ const HomeScreen = () => {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
+  const formatEventType = (value: string) => {
+    if (!value) {
+      return 'Cycle update';
+    }
+    const normalized = value.replace(/_/g, ' ');
+    return normalized.charAt(0).toUpperCase() + normalized.slice(1);
+  };
+
+  const shortId = (value: string) => `${value.slice(0, 4)}...${value.slice(-4)}`;
+
+  const formatPhaseLabel = (value?: string | null) => {
+    if (!value) {
+      return null;
+    }
+    const normalized = value.replace(/_/g, ' ');
+    return normalized.charAt(0).toUpperCase() + normalized.slice(1);
+  };
+
+  const phasePillPalette: Record<string, string> = {
+    menstruation: '#FDECEC',
+    follicular: '#ECFDF3',
+    ovulation: '#FFF8E1',
+    luteal: '#EEF2FF',
+    pms: '#FEF3C7',
+    unknown: '#F3F4F6',
+  };
+
+  const phasePillPaletteText: Record<string, string> = {
+    menstruation: '#B42318',
+    follicular: '#027A48',
+    ovulation: '#B54708',
+    luteal: '#3730A3',
+    pms: '#92400E',
+    unknown: '#6B7280',
+  };
+
+  const periodDayByEventId = useMemo(() => {
+    const result: Record<string, { day: number; total: number }> = {};
+    const byUser: Record<string, Record<number, CycleEventRow[]>> = {};
+    const dayMs = 24 * 60 * 60 * 1000;
+
+    cycleEvents
+      .filter((event) => event.event_type === 'menstrual_flow')
+      .forEach((event) => {
+        const date = new Date(event.starts_at);
+        if (Number.isNaN(date.getTime())) {
+          return;
+        }
+        const dayStart = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+        if (!byUser[event.user_id]) {
+          byUser[event.user_id] = {};
+        }
+        if (!byUser[event.user_id][dayStart]) {
+          byUser[event.user_id][dayStart] = [];
+        }
+        byUser[event.user_id][dayStart].push(event);
+      });
+
+    Object.values(byUser).forEach((byDay) => {
+      const dayStarts = Object.keys(byDay)
+        .map((value) => Number(value))
+        .sort((a, b) => a - b);
+      let runStartIndex = 0;
+      dayStarts.forEach((dayStart, index) => {
+        const previous = dayStarts[index - 1];
+        const isBreak = index === 0 || dayStart - previous > dayMs;
+        if (isBreak && index > 0) {
+          const runDays = dayStarts.slice(runStartIndex, index);
+          runDays.forEach((runDay, runIndex) => {
+            const total = runDays.length;
+            byDay[runDay].forEach((event) => {
+              result[event.id] = { day: runIndex + 1, total };
+            });
+          });
+          runStartIndex = index;
+        }
+      });
+      const trailingRun = dayStarts.slice(runStartIndex);
+      if (trailingRun.length) {
+        trailingRun.forEach((runDay, runIndex) => {
+          const total = trailingRun.length;
+          byDay[runDay].forEach((event) => {
+            result[event.id] = { day: runIndex + 1, total };
+          });
+        });
+      }
+    });
+
+    return result;
+  }, [cycleEvents]);
+
+  const feedItems = useMemo<HomeFeedItem[]>(() => {
+    const toSortKey = (timestamp: string) => {
+      const date = new Date(timestamp);
+      return Number.isNaN(date.getTime()) ? 0 : date.getTime();
+    };
+    const merged: HomeFeedItem[] = [
+      ...posts.map((post) => ({
+        type: 'post',
+        id: `post-${post.id}`,
+        sortKey: toSortKey(post.created_at),
+        post,
+      })),
+      ...cycleEvents.map((event) => ({
+        type: 'cycle',
+        id: `cycle-${event.id}`,
+        sortKey: toSortKey(event.starts_at),
+        event,
+      })),
+    ];
+    return merged.sort((a, b) => b.sortKey - a.sortKey);
+  }, [posts, cycleEvents]);
+
   const renderPost = ({ item }: { item: PostRow }) => {
     const name = item.user_id === session?.userId ? 'You' : item.alias ?? 'Anonymous';
     const timeLabel = formatTime(item.created_at);
@@ -494,7 +819,7 @@ const HomeScreen = () => {
     return (
       <TouchableOpacity
         style={styles.postCard}
-        onLongPress={(event) => openReactionPicker(item.id, event)}
+        onLongPress={(event) => openReactionPicker({ type: 'post', id: item.id }, event)}
         onPress={() => handlePostPress(item.id)}
         activeOpacity={0.9}
       >
@@ -537,7 +862,7 @@ const HomeScreen = () => {
                     styles.reactionChip,
                     postSelections[emoji] ? styles.reactionChipActive : null,
                   ]}
-                  onPress={() => handleReaction(item.id, emoji)}
+                  onPress={() => handleReaction({ type: 'post', id: item.id }, emoji)}
                 >
                   <Text style={styles.reactionEmoji}>{emoji}</Text>
                   <Text
@@ -557,10 +882,121 @@ const HomeScreen = () => {
     );
   };
 
+  const renderCycleEvent = ({ item }: { item: CycleEventRow }) => {
+    const isSelf = item.user_id === session?.userId;
+    const name = isSelf ? 'You' : cycleNameMap[item.user_id] ?? `Friend ${shortId(item.user_id)}`;
+    const timeLabel = formatTime(item.starts_at);
+    const initials = name.trim().slice(0, 1).toUpperCase() || '?';
+    const eventReactions = eventReactionCounts[item.id] ?? {};
+    const eventSelections = eventReactionSelections[item.id] ?? {};
+    const boopStatus = boopStatusByEvent[item.id] ?? 'idle';
+    const queued = boopStatus === 'queued';
+    const boopInFlight = boopLoadingByEvent[item.id];
+    const boopCount = boopCountsByEvent[item.id] ?? 0;
+    const phaseLabel = formatPhaseLabel(item.phase);
+    const periodInfo = periodDayByEventId[item.id];
+    const isPhaseTransition = item.event_type === 'phase_transition';
+    const phaseKey = item.phase ?? 'unknown';
+    const pillLabel = isPhaseTransition
+      ? phaseLabel
+        ? `Entered ${phaseLabel}`
+        : 'Phase update'
+      : item.event_type === 'menstrual_flow'
+        ? periodInfo
+          ? `Period day ${periodInfo.day} of ${periodInfo.total}`
+          : 'Menstrual flow'
+        : formatEventType(item.event_type);
+    const pillColors = isPhaseTransition
+      ? {
+          background: phasePillPalette[phaseKey] ?? '#e7f0ff',
+          text: phasePillPaletteText[phaseKey] ?? '#1f3a93',
+        }
+      : item.event_type === 'menstrual_flow'
+        ? {
+            background: phasePillPalette.menstruation,
+            text: phasePillPaletteText.menstruation,
+          }
+        : { background: '#f5f5f5', text: '#555' };
+    const headerContent = (
+      <>
+        <View style={styles.avatar}>
+          <Text style={styles.avatarText}>{initials}</Text>
+        </View>
+        <View style={styles.postMeta}>
+          <Text style={styles.postName}>{name}</Text>
+          <Text style={styles.postTime}>{timeLabel}</Text>
+        </View>
+      </>
+    );
+    return (
+      <TouchableOpacity
+        style={styles.postCard}
+        onLongPress={(event) => openReactionPicker({ type: 'cycle', id: item.id }, event)}
+        onPress={() => handleEventPress(item.id)}
+        activeOpacity={0.9}
+      >
+        <View style={styles.postHeader}>
+          {isSelf ? (
+            <View style={styles.postHeaderButton}>{headerContent}</View>
+          ) : (
+            <TouchableOpacity
+              style={styles.postHeaderButton}
+              onPress={() => navigateToFriendSync(item.user_id)}
+              accessibilityLabel={`View sync with ${name}`}
+            >
+              {headerContent}
+            </TouchableOpacity>
+          )}
+        </View>
+        <View style={[styles.moodPill, { backgroundColor: pillColors.background }]}>
+          <Text style={[styles.moodPillText, { color: pillColors.text }]}>{pillLabel}</Text>
+        </View>
+        <View style={styles.postActions}>
+          <TouchableOpacity
+            style={[styles.boopButton, queued ? styles.boopButtonQueued : null]}
+            onPress={() => handleEventBoop(item)}
+            disabled={boopInFlight || isSelf}
+          >
+            <Text style={styles.boopText}>
+              {boopInFlight ? 'Booping...' : queued ? 'Queued' : 'Boop'}
+            </Text>
+          </TouchableOpacity>
+          <Text style={styles.boopCount}>{boopCount}</Text>
+          {Object.keys(eventReactions).length > 0 ? (
+            <View style={styles.reactionRow}>
+              {Object.entries(eventReactions).map(([emoji, count]) => (
+                <TouchableOpacity
+                  key={`${item.id}-${emoji}`}
+                  style={[
+                    styles.reactionChip,
+                    eventSelections[emoji] ? styles.reactionChipActive : null,
+                  ]}
+                  onPress={() =>
+                    handleReaction({ type: 'cycle', id: item.id }, emoji)
+                  }
+                >
+                  <Text style={styles.reactionEmoji}>{emoji}</Text>
+                  <Text
+                    style={[
+                      styles.reactionCount,
+                      eventSelections[emoji] ? styles.reactionCountActive : null,
+                    ]}
+                  >
+                    {count}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          ) : null}
+        </View>
+      </TouchableOpacity>
+    );
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <FlatList
-        data={posts}
+        data={feedItems}
         keyExtractor={(item) => item.id}
         refreshing={isLoading}
         onRefresh={loadFeed}
@@ -634,8 +1070,15 @@ const HomeScreen = () => {
             ) : null}
           </View>
         }
-        renderItem={renderPost}
-        ListEmptyComponent={<Text style={styles.emptyState}>No posts yet. Share how you feel.</Text>}
+        renderItem={({ item }) => {
+          if (item.type === 'post') {
+            return renderPost({ item: item.post });
+          }
+          return renderCycleEvent({ item: item.event });
+        }}
+        ListEmptyComponent={
+          <Text style={styles.emptyState}>No updates yet. Share how you feel or sync your cycle.</Text>
+        }
       />
       <NotificationsSheet
         visible={isSheetVisible}
@@ -643,7 +1086,7 @@ const HomeScreen = () => {
         onClose={() => setSheetVisible(false)}
       />
       <Modal
-        visible={Boolean(reactionModalPostId)}
+        visible={Boolean(reactionTarget)}
         transparent
         animationType="fade"
         onRequestClose={closeReactionPicker}
@@ -661,8 +1104,10 @@ const HomeScreen = () => {
             ]}
           >
             {quickReactions.map((emoji, index) => {
-              const isSelected = reactionModalPostId
-                ? reactionSelections[reactionModalPostId]?.[emoji]
+              const isSelected = reactionTarget
+                ? reactionTarget.type === 'post'
+                  ? reactionSelections[reactionTarget.id]?.[emoji]
+                  : eventReactionSelections[reactionTarget.id]?.[emoji]
                 : false;
               return (
               <TouchableOpacity
@@ -705,8 +1150,10 @@ const HomeScreen = () => {
               </View>
               <View style={styles.expandedGrid}>
                 {EXTENDED_REACTION_EMOJIS.map((emoji) => {
-                  const isSelected = reactionModalPostId
-                    ? reactionSelections[reactionModalPostId]?.[emoji]
+                  const isSelected = reactionTarget
+                    ? reactionTarget.type === 'post'
+                      ? reactionSelections[reactionTarget.id]?.[emoji]
+                      : eventReactionSelections[reactionTarget.id]?.[emoji]
                     : false;
                   return (
                   <TouchableOpacity
