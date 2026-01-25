@@ -21,6 +21,8 @@ jobs:
       - run:
           name: Run tests
           command: npm test
+          # Note: Architecture sync test will be skipped if OPENAI_API_KEY is not set
+          # To enable it, add OPENAI_API_KEY as an environment variable in CircleCI project settings
 
 workflows:
   test:
