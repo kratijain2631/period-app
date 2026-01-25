@@ -24,6 +24,13 @@ describe('Architecture Documentation Sync', () => {
   const packageJsonPath = path.join(__dirname, '..', 'package.json');
   const openaiApiKey = process.env.OPENAI_API_KEY;
   const openaiModel = process.env.OPENAI_MODEL || 'gpt-4o-mini';
+  
+  // Debug: Log environment info (without exposing the key)
+  if (process.env.CI === 'true' || process.env.CIRCLECI === 'true') {
+    console.log('[architecture-sync] CI environment detected');
+    console.log(`[architecture-sync] OPENAI_API_KEY is ${openaiApiKey ? 'SET' : 'NOT SET'}`);
+    console.log(`[architecture-sync] Available env vars with 'OPENAI': ${Object.keys(process.env).filter(k => k.includes('OPENAI')).join(', ') || 'none'}`);
+  }
 
   /**
    * Recursively get directory structure, excluding node_modules and other common ignores
@@ -222,10 +229,20 @@ describe('Architecture Documentation Sync', () => {
   it('should be in sync with the codebase', async () => {
     // Fail test if no API key (reduce silent failures)
     if (!openaiApiKey) {
+      const isCI = process.env.CI === 'true' || process.env.CIRCLECI === 'true';
+      const instructions = isCI
+        ? 'To fix in CircleCI:\n' +
+          '1. Go to your CircleCI project settings\n' +
+          '2. Navigate to "Environment Variables"\n' +
+          '3. Add OPENAI_API_KEY with your OpenAI API key\n' +
+          '4. Get your key from: https://platform.openai.com/api-keys'
+        : 'To fix locally:\n' +
+          '1. Create a .env file in the project root\n' +
+          '2. Add: OPENAI_API_KEY=sk-your-key-here\n' +
+          '3. Get your key from: https://platform.openai.com/api-keys';
+      
       throw new Error(
-        'OPENAI_API_KEY is not set. This test requires an OpenAI API key to evaluate architecture sync.\n' +
-        'Set it in your .env file or as an environment variable.\n' +
-        'Get your key from: https://platform.openai.com/api-keys'
+        `OPENAI_API_KEY is not set. This test requires an OpenAI API key to evaluate architecture sync.\n\n${instructions}`
       );
     }
 
