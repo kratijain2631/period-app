@@ -29,7 +29,6 @@ describe('Architecture Documentation Sync', () => {
   if (process.env.CI === 'true' || process.env.CIRCLECI === 'true') {
     console.log('[architecture-sync] CI environment detected');
     console.log(`[architecture-sync] OPENAI_API_KEY is ${openaiApiKey ? 'SET' : 'NOT SET'}`);
-    console.log(`[architecture-sync] Available env vars with 'OPENAI': ${Object.keys(process.env).filter(k => k.includes('OPENAI')).join(', ') || 'none'}`);
   }
 
   /**
