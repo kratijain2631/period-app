@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import fetch from 'node-fetch';
 
 /**
  * Test to verify that architecture.md stays in sync with the actual codebase.
