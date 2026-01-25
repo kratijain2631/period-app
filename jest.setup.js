@@ -1,3 +1,7 @@
+// Load environment variables from .env file (similar to Deno.env.get)
+// This allows tests to use process.env.OPENAI_API_KEY from .env without hardcoding
+require('dotenv').config();
+
 globalThis.crypto = globalThis.crypto ?? {};
 
 const localStorageMock = (() => {
