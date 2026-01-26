@@ -1282,47 +1282,29 @@ const HomeScreen = () => {
                 <NotificationsBell count={unreadCount} onPress={() => setSheetVisible(true)} />
               </View>
             </View>
-            <View style={styles.titleBlock}>
-              <Text style={styles.title}>Today</Text>
+            <View style={styles.titleRow}>
+              <View style={styles.titleRowTop}>
+                <Text style={styles.title}>Today</Text>
+                <TouchableOpacity
+                  style={[styles.cycleSummaryChip, { borderColor: cyclePhaseColors.background }]}
+                  onPress={navigateToProfile}
+                  accessibilityRole="button"
+                  accessibilityLabel="View cycle details"
+                >
+                  <View
+                    style={[
+                      styles.cycleIconBadge,
+                      { backgroundColor: cyclePhaseColors.background },
+                    ]}
+                  >
+                    <Ionicons name="pulse-outline" size={14} color={cyclePhaseColors.text} />
+                  </View>
+                  <Text style={styles.cycleChipText}>{cyclePhaseLabel}</Text>
+                </TouchableOpacity>
+              </View>
               <Text style={styles.subtitle}>
                 {todayLabel} · How are you feeling, {alias ?? 'there'}?
               </Text>
-            </View>
-            <View style={styles.cycleRow}>
-              <View style={styles.cycleRowLeft}>
-                <View
-                  style={[
-                    styles.cycleIconBadge,
-                    { backgroundColor: cyclePhaseColors.background },
-                  ]}
-                >
-                  <Ionicons
-                    name="pulse-outline"
-                    size={16}
-                    color={cyclePhaseColors.text}
-                  />
-                </View>
-                <View style={styles.cycleRowText}>
-                  <Text style={styles.cycleRowLabel}>My cycle</Text>
-                  <Text style={styles.cycleRowValue}>{cyclePhaseLabel}</Text>
-                  <Text
-                    style={[
-                      styles.cycleRowMeta,
-                      cycleMetaTone === 'stale' ? styles.cycleRowMetaStale : null,
-                    ]}
-                  >
-                    {cycleDetailLabel}
-                  </Text>
-                </View>
-              </View>
-              <TouchableOpacity
-                style={styles.cycleLearnButton}
-                onPress={navigateToProfile}
-                accessibilityRole="button"
-                accessibilityLabel="Learn more about your cycle"
-              >
-                <Text style={styles.cycleLearnButtonText}>Learn more</Text>
-              </TouchableOpacity>
             </View>
             <View style={styles.quickMoodCard}>
               <View style={[styles.sectionHeader, styles.quickMoodHeader]}>
@@ -1678,8 +1660,14 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 3 },
     elevation: 2,
   },
-  titleBlock: {
+  titleRow: {
     gap: 6,
+  },
+  titleRowTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
   },
   title: {
     fontSize: 28,
@@ -1690,69 +1678,41 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: palette.secondaryText,
   },
-  cycleRow: {
+  cycleSummaryChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 999,
     backgroundColor: palette.card,
-    borderRadius: 16,
-    padding: 12,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: palette.separator,
-    shadowColor: '#000',
-    shadowOpacity: 0.03,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 3 },
-    elevation: 1,
-  },
-  cycleRowLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    flex: 1,
+    gap: 6,
+    flexShrink: 0,
   },
   cycleIconBadge: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  cycleRowText: {
-    flex: 1,
-    gap: 2,
-  },
-  cycleRowLabel: {
-    fontSize: 12,
-    color: palette.tertiaryText,
+  cycleChipText: {
+    fontSize: 13,
     fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: 0.4,
-  },
-  cycleRowValue: {
-    fontSize: 16,
-    fontWeight: '700',
     color: palette.primaryText,
     textTransform: 'capitalize',
   },
-  cycleRowMeta: {
+  cycleChipSeparator: {
+    fontSize: 13,
+    color: palette.secondaryText,
+  },
+  cycleChipSubtext: {
     fontSize: 12,
     color: palette.secondaryText,
   },
-  cycleRowMetaStale: {
+  cycleChipSubtextStale: {
     color: palette.warningText,
-  },
-  cycleLearnButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 999,
-    backgroundColor: palette.accentSoft,
-  },
-  cycleLearnButtonText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: palette.accent,
   },
   quickMoodCard: {
     backgroundColor: palette.card,
