@@ -1000,7 +1000,8 @@ const HomeScreen = () => {
     const timeLabel = formatTime(item.created_at);
     const initials = (item.alias ?? name).slice(0, 1).toUpperCase();
     const moodTags = parseMoodTags(item.mood_tag);
-    const metaLabel = moodTags.length ? 'Mood update' : item.body ? 'Shared an update' : 'Check-in';
+    const hasBody = Boolean(item.body);
+    const metaLabel = hasBody ? 'Story update' : moodTags.length ? 'Mood update' : 'Check-in';
     const moodTone = moodTags.length ? MOOD_TAG_MAP[moodTags[0]] : null;
     const isSelf = item.user_id === session?.userId;
     const boopCount = boopCounts[item.id] ?? 0;
