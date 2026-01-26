@@ -106,6 +106,18 @@ const MOOD_TAG_MAP = MOOD_TAGS.reduce(
   {} as Record<string, { tone: 'positive' | 'warm' | 'negative'; dot: string }>,
 );
 
+const parseMoodTags = (value: string | null) =>
+  (value ?? '')
+    .split(',')
+    .map((label) => label.trim())
+    .filter(Boolean);
+
+const serializeMoodTags = (tags: string[]) =>
+  tags
+    .map((label) => label.trim())
+    .filter(Boolean)
+    .join(',');
+
 const QUICK_REACTION_EMOJIS = ['❤️', '😂', '😮', '😭', '😡', '🔥', '👏'];
 const EXTENDED_REACTION_EMOJIS = [
   ...QUICK_REACTION_EMOJIS,
@@ -162,6 +174,8 @@ const HomeScreen = () => {
   const [isComposerOpen, setComposerOpen] = useState(false);
   const [composerText, setComposerText] = useState('');
   const [isPosting, setPosting] = useState(false);
+  const [composerMoods, setComposerMoods] = useState<string[]>([]);
+  const [isMoodModalVisible, setMoodModalVisible] = useState(false);
   const [reactionTarget, setReactionTarget] = useState<ReactionTarget | null>(null);
   const [isReactionPickerExpanded, setReactionPickerExpanded] = useState(false);
   const [reactionAnchor, setReactionAnchor] = useState<{ x: number; y: number } | null>(null);
@@ -192,6 +206,30 @@ const HomeScreen = () => {
   );
 
   const quickReactionsKey = session?.userId ? `quick-reactions:${session.userId}` : null;
+
+  const toggleComposerMood = useCallback((label: string) => {
+    setComposerMoods((prev) => {
+      if (prev.includes(label)) {
+        return prev.filter((item) => item !== label);
+      }
+      return [...prev, label];
+    });
+  }, []);
+
+  const clearComposerMoods = useCallback(() => {
+    setComposerMoods([]);
+  }, []);
+
+  const openMoodModal = useCallback(() => {
+    if (!isComposerOpen) {
+      setComposerOpen(true);
+    }
+    setMoodModalVisible(true);
+  }, [isComposerOpen]);
+
+  const closeMoodModal = useCallback(() => {
+    setMoodModalVisible(false);
+  }, []);
 
   const normalizeQuickReactions = useCallback((list: string[]) => {
     const seen = new Set<string>();
@@ -467,11 +505,13 @@ const HomeScreen = () => {
     }
     setPosting(true);
     try {
-      const created = await createPost({ body, alias });
+      const moodTagValue = composerMoods.length ? serializeMoodTags(composerMoods) : undefined;
+      const created = await createPost({ body, alias, moodTag: moodTagValue });
       if (created) {
         setPosts((prev) => [created, ...prev]);
       }
       setComposerText('');
+      clearComposerMoods();
       setComposerOpen(false);
     } catch (error) {
       console.warn('[home] Failed to create post', error);
@@ -479,7 +519,7 @@ const HomeScreen = () => {
       setPosting(false);
       postPressRef.current = false;
     }
-  }, [alias, composerText]);
+  }, [alias, clearComposerMoods, composerMoods, composerText]);
 
   const handleQuickTag = useCallback(
     async (label: string) => {
@@ -959,8 +999,10 @@ const HomeScreen = () => {
     const name = item.user_id === session?.userId ? 'You' : item.alias ?? 'Anonymous';
     const timeLabel = formatTime(item.created_at);
     const initials = (item.alias ?? name).slice(0, 1).toUpperCase();
-    const metaLabel = item.mood_tag ? 'Mood update' : item.body ? 'Shared an update' : 'Check-in';
-    const moodTone = item.mood_tag ? MOOD_TAG_MAP[item.mood_tag] : null;
+    const moodTags = parseMoodTags(item.mood_tag);
+    const hasBody = Boolean(item.body);
+    const metaLabel = hasBody ? 'Story update' : moodTags.length ? 'Mood update' : 'Check-in';
+    const moodTone = moodTags.length ? MOOD_TAG_MAP[moodTags[0]] : null;
     const isSelf = item.user_id === session?.userId;
     const boopCount = boopCounts[item.id] ?? 0;
     const boopStatus = boopStatusByPost[item.id] ?? 'idle';
@@ -1012,15 +1054,19 @@ const HomeScreen = () => {
             </TouchableOpacity>
           )}
         </View>
-        {item.mood_tag ? (
-          <View style={styles.moodPill}>
-            <View
-              style={[
-                styles.moodDotSmall,
-                { backgroundColor: moodTone?.dot ?? palette.tertiaryText },
-              ]}
-            />
-            <Text style={styles.moodPillText}>{item.mood_tag}</Text>
+        {moodTags.length ? (
+          <View style={styles.moodPillRow}>
+            {moodTags.map((tag, index) => (
+              <View key={`${tag}-${index}`} style={styles.moodPill}>
+                <View
+                  style={[
+                    styles.moodDotSmall,
+                    { backgroundColor: MOOD_TAG_MAP[tag]?.dot ?? palette.tertiaryText },
+                  ]}
+                />
+                <Text style={styles.moodPillText}>{tag}</Text>
+              </View>
+            ))}
           </View>
         ) : null}
         {item.body ? <Text style={styles.postBody}>{item.body}</Text> : null}
@@ -1236,47 +1282,57 @@ const HomeScreen = () => {
                 <NotificationsBell count={unreadCount} onPress={() => setSheetVisible(true)} />
               </View>
             </View>
-            <View style={styles.titleBlock}>
-              <Text style={styles.title}>Today</Text>
+            <View style={styles.titleRow}>
+              <View style={styles.titleRowTop}>
+                <Text style={styles.title}>Today</Text>
+                <TouchableOpacity
+                  style={[styles.cycleSummaryChip, { borderColor: cyclePhaseColors.background }]}
+                  onPress={navigateToProfile}
+                  accessibilityRole="button"
+                  accessibilityLabel="View cycle details"
+                >
+                  <View
+                    style={[
+                      styles.cycleIconBadge,
+                      { backgroundColor: cyclePhaseColors.background },
+                    ]}
+                  >
+                    <Ionicons name="pulse-outline" size={14} color={cyclePhaseColors.text} />
+                  </View>
+                  <Text style={styles.cycleChipText}>{cyclePhaseLabel}</Text>
+                </TouchableOpacity>
+              </View>
               <Text style={styles.subtitle}>
                 {todayLabel} · How are you feeling, {alias ?? 'there'}?
               </Text>
             </View>
-            <View style={styles.cycleRow}>
-              <View style={styles.cycleRowLeft}>
-                <View
-                  style={[
-                    styles.cycleIconBadge,
-                    { backgroundColor: cyclePhaseColors.background },
-                  ]}
-                >
-                  <Ionicons
-                    name="pulse-outline"
-                    size={16}
-                    color={cyclePhaseColors.text}
-                  />
-                </View>
-                <View style={styles.cycleRowText}>
-                  <Text style={styles.cycleRowLabel}>My cycle</Text>
-                  <Text style={styles.cycleRowValue}>{cyclePhaseLabel}</Text>
-                  <Text
-                    style={[
-                      styles.cycleRowMeta,
-                      cycleMetaTone === 'stale' ? styles.cycleRowMetaStale : null,
-                    ]}
-                  >
-                    {cycleDetailLabel}
-                  </Text>
-                </View>
+            <View style={styles.quickMoodCard}>
+              <View style={[styles.sectionHeader, styles.quickMoodHeader]}>
+                <Text style={styles.sectionTitle}>Quick moods</Text>
+                <Text style={styles.sectionHint}>Tap to share</Text>
               </View>
-              <TouchableOpacity
-                style={styles.cycleLearnButton}
-                onPress={navigateToProfile}
-                accessibilityRole="button"
-                accessibilityLabel="Learn more about your cycle"
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.moodRow}
               >
-                <Text style={styles.cycleLearnButtonText}>Learn more</Text>
-              </TouchableOpacity>
+                {MOOD_TAGS.map((label) => (
+                  <TouchableOpacity
+                    key={label}
+                    style={styles.moodChip}
+                    onPress={() => handleQuickTag(label)}
+                    disabled={isPosting}
+                  >
+                    <View
+                      style={[
+                        styles.moodDot,
+                        { backgroundColor: MOOD_TAG_MAP[label]?.dot ?? palette.tertiaryText },
+                      ]}
+                    />
+                    <Text style={styles.moodChipText}>{label}</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
             </View>
             <View style={styles.composerCard}>
               <View style={styles.composerHeader}>
@@ -1310,61 +1366,69 @@ const HomeScreen = () => {
                       }
                     }}
                   />
-                  <View style={styles.composerActions}>
-                    <TouchableOpacity
-                      style={[styles.postButton, isPosting ? styles.postButtonDisabled : null]}
-                      onPress={handlePost}
-                      onPressIn={() => {
-                        postPressRef.current = true;
-                      }}
-                      onPressOut={() => {
-                        postPressRef.current = false;
-                      }}
-                      disabled={isPosting}
-                    >
-                      <Ionicons
-                        name={isPosting ? 'time-outline' : 'paper-plane'}
-                        size={16}
-                        color="#fff"
-                      />
-                      <Text
-                        style={[
-                          styles.postButtonText,
-                          isPosting ? styles.postButtonTextDisabled : null,
-                        ]}
-                      >
-                        {isPosting ? 'Posting...' : 'Share update'}
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
                 </View>
               )}
-              <View style={[styles.sectionHeader, styles.quickMoodHeader]}>
-                <Text style={styles.sectionTitle}>Quick moods</Text>
-                <Text style={styles.sectionHint}>Tap to share</Text>
-              </View>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.moodRow}
-              >
-                {MOOD_TAGS.map((label) => (
+              {composerMoods.length ? (
+                <View style={styles.composerSelectedMoods}>
+                  {composerMoods.map((label) => (
+                    <View key={label} style={styles.selectedMoodChip}>
+                      <View
+                        style={[
+                          styles.moodDot,
+                          { backgroundColor: MOOD_TAG_MAP[label]?.dot ?? palette.tertiaryText },
+                        ]}
+                      />
+                      <Text style={styles.selectedMoodChipText}>{label}</Text>
+                      <TouchableOpacity
+                        onPress={() => toggleComposerMood(label)}
+                        style={styles.selectedMoodRemove}
+                        accessibilityLabel={`Remove ${label}`}
+                      >
+                        <Ionicons name="close" size={12} color={palette.secondaryText} />
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                </View>
+              ) : null}
+              <View style={styles.composerActions}>
+                <TouchableOpacity
+                  style={styles.addMoodButton}
+                  onPress={openMoodModal}
+                  accessibilityLabel="Add mood tags"
+                >
+                  <Ionicons name="pricetag-outline" size={16} color={palette.accent} />
+                  <Text style={styles.addMoodButtonText}>
+                    {composerMoods.length ? `Edit moods (${composerMoods.length})` : 'Add mood'}
+                  </Text>
+                </TouchableOpacity>
+                {isComposerOpen ? (
                   <TouchableOpacity
-                    key={label}
-                    style={styles.moodChip}
-                    onPress={() => handleQuickTag(label)}
+                    style={[styles.postButton, isPosting ? styles.postButtonDisabled : null]}
+                    onPress={handlePost}
+                    onPressIn={() => {
+                      postPressRef.current = true;
+                    }}
+                    onPressOut={() => {
+                      postPressRef.current = false;
+                    }}
                     disabled={isPosting}
                   >
-                    <View
-                      style={[
-                        styles.moodDot,
-                        { backgroundColor: MOOD_TAG_MAP[label]?.dot ?? palette.tertiaryText },
-                      ]}
+                    <Ionicons
+                      name={isPosting ? 'time-outline' : 'paper-plane'}
+                      size={16}
+                      color="#fff"
                     />
-                    <Text style={styles.moodChipText}>{label}</Text>
+                    <Text
+                      style={[
+                        styles.postButtonText,
+                        isPosting ? styles.postButtonTextDisabled : null,
+                      ]}
+                    >
+                      {isPosting ? 'Posting...' : 'Share update'}
+                    </Text>
                   </TouchableOpacity>
-                ))}
-              </ScrollView>
+                ) : null}
+              </View>
             </View>
             {isOffline ? (
               <View style={styles.offlineBanner}>
@@ -1500,6 +1564,62 @@ const HomeScreen = () => {
           ) : null}
         </View>
       </Modal>
+      <Modal
+        visible={isMoodModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={closeMoodModal}
+      >
+        <View style={styles.modalBackdrop}>
+          <Pressable style={styles.modalDismiss} onPress={closeMoodModal} />
+          <View style={styles.moodModal}>
+            <View style={styles.moodModalHeader}>
+              <Text style={styles.moodModalTitle}>Select moods</Text>
+              <TouchableOpacity onPress={closeMoodModal} accessibilityLabel="Close mood selector">
+                <Text style={styles.moodModalDone}>Done</Text>
+              </TouchableOpacity>
+            </View>
+            <ScrollView contentContainerStyle={styles.moodModalGrid}>
+              {MOOD_TAGS.map((label) => {
+                const isSelected = composerMoods.includes(label);
+                return (
+                  <TouchableOpacity
+                    key={label}
+                    style={[
+                      styles.modalMoodChip,
+                      isSelected ? styles.modalMoodChipSelected : null,
+                    ]}
+                    onPress={() => toggleComposerMood(label)}
+                    accessibilityLabel={
+                      isSelected ? `Remove ${label} mood tag` : `Select ${label} mood tag`
+                    }
+                  >
+                    <View
+                      style={[
+                        styles.moodDot,
+                        { backgroundColor: MOOD_TAG_MAP[label]?.dot ?? palette.tertiaryText },
+                      ]}
+                    />
+                    <Text style={styles.modalMoodChipText}>{label}</Text>
+                    {isSelected ? (
+                      <Ionicons name="checkmark" size={14} color={palette.accent} />
+                    ) : null}
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+            {composerMoods.length ? (
+              <TouchableOpacity
+                onPress={clearComposerMoods}
+                style={styles.moodModalClear}
+                accessibilityLabel="Clear selected moods"
+              >
+                <Text style={styles.moodModalClearText}>Clear all</Text>
+              </TouchableOpacity>
+            ) : null}
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -1540,8 +1660,14 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 3 },
     elevation: 2,
   },
-  titleBlock: {
+  titleRow: {
     gap: 6,
+  },
+  titleRowTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
   },
   title: {
     fontSize: 28,
@@ -1552,69 +1678,54 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: palette.secondaryText,
   },
-  cycleRow: {
+  cycleSummaryChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 999,
     backgroundColor: palette.card,
-    borderRadius: 16,
-    padding: 12,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: palette.separator,
-    shadowColor: '#000',
-    shadowOpacity: 0.03,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 3 },
-    elevation: 1,
-  },
-  cycleRowLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    flex: 1,
+    gap: 6,
+    flexShrink: 0,
   },
   cycleIconBadge: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  cycleRowText: {
-    flex: 1,
-    gap: 2,
-  },
-  cycleRowLabel: {
-    fontSize: 12,
-    color: palette.tertiaryText,
+  cycleChipText: {
+    fontSize: 13,
     fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: 0.4,
-  },
-  cycleRowValue: {
-    fontSize: 16,
-    fontWeight: '700',
     color: palette.primaryText,
     textTransform: 'capitalize',
   },
-  cycleRowMeta: {
+  cycleChipSeparator: {
+    fontSize: 13,
+    color: palette.secondaryText,
+  },
+  cycleChipSubtext: {
     fontSize: 12,
     color: palette.secondaryText,
   },
-  cycleRowMetaStale: {
+  cycleChipSubtextStale: {
     color: palette.warningText,
   },
-  cycleLearnButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 999,
-    backgroundColor: palette.accentSoft,
-  },
-  cycleLearnButtonText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: palette.accent,
+  quickMoodCard: {
+    backgroundColor: palette.card,
+    borderRadius: 18,
+    padding: 14,
+    gap: 10,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: palette.separator,
+    shadowColor: '#000',
+    shadowOpacity: 0.04,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 1,
   },
   composerCard: {
     backgroundColor: palette.card,
@@ -1664,13 +1775,57 @@ const styles = StyleSheet.create({
     color: palette.primaryText,
     textAlignVertical: 'top',
   },
+  composerSelectedMoods: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  selectedMoodChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 999,
+    backgroundColor: palette.mutedFill,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: palette.separator,
+  },
+  selectedMoodChipText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: palette.primaryText,
+  },
+  selectedMoodRemove: {
+    padding: 4,
+    borderRadius: 999,
+    backgroundColor: palette.fill,
+  },
   composerActions: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+    flexWrap: 'wrap',
+  },
+  addMoodButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 999,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: palette.separator,
+    backgroundColor: palette.mutedFill,
+  },
+  addMoodButtonText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: palette.accent,
   },
   postButton: {
     alignItems: 'center',
-    alignSelf: 'flex-start',
     backgroundColor: palette.accent,
     borderRadius: 999,
     flexDirection: 'row',
@@ -1816,6 +1971,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
+  },
+  moodPillRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
   },
   moodPillText: {
     fontSize: 12,
@@ -2016,6 +2176,72 @@ const styles = StyleSheet.create({
   },
   expandedEmoji: {
     fontSize: 24,
+  },
+  moodModal: {
+    width: '86%',
+    maxWidth: 360,
+    borderRadius: 20,
+    backgroundColor: palette.card,
+    padding: 16,
+    gap: 12,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 8 },
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: palette.separator,
+  },
+  moodModalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  moodModalTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: palette.primaryText,
+  },
+  moodModalDone: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: palette.accent,
+  },
+  moodModalGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  modalMoodChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: palette.separator,
+    backgroundColor: palette.mutedFill,
+    flexBasis: '48%',
+  },
+  modalMoodChipSelected: {
+    borderColor: palette.accent,
+    backgroundColor: palette.accentSoft,
+  },
+  modalMoodChipText: {
+    flex: 1,
+    fontSize: 13,
+    fontWeight: '600',
+    color: palette.primaryText,
+  },
+  moodModalClear: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  moodModalClearText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: palette.accent,
   },
 });
 
