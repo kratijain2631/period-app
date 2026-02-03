@@ -25,6 +25,9 @@ import {
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
+const HomeStack = createNativeStackNavigator();
+const FriendsStack = createNativeStackNavigator();
+const ProfileStack = createNativeStackNavigator();
 
 const AppNavigator = () => {
   const session = useSessionStore(selectSession);
@@ -48,7 +51,7 @@ const AppNavigator = () => {
   return (
     <SafeAreaProvider>
       <NavigationContainer ref={navigationRef}>
-        <Stack.Navigator screenOptions={{ headerShown: false }}>
+        <Stack.Navigator screenOptions={{ headerShown: false, gestureEnabled: true }}>
           {(isHydrating || (isAuthed && isProfileHydrating)) && (
             <Stack.Screen
               name="AuthLoading"
@@ -65,7 +68,11 @@ const AppNavigator = () => {
           )}
           {!isHydrating && readyForHome && <Stack.Screen name="MainTabs" component={MainTabs} />}
           {!isHydrating && readyForHome && (
-            <Stack.Screen name="FriendSync" component={FriendSyncScreen} />
+            <Stack.Screen
+              name="FriendSync"
+              component={FriendSyncScreen}
+              options={{ gestureEnabled: true, fullScreenGestureEnabled: true }}
+            />
           )}
         </Stack.Navigator>
       </NavigationContainer>
@@ -77,6 +84,29 @@ const AuthLoadingScreen = () => (
   <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
     <ActivityIndicator />
   </View>
+);
+
+const HomeStackScreen = () => (
+  <HomeStack.Navigator screenOptions={{ headerShown: false, gestureEnabled: true }}>
+    <HomeStack.Screen name="HomeRoot" component={HomeScreen} />
+    <HomeStack.Screen
+      name="HomeProfile"
+      component={ProfileScreen}
+      options={{ gestureEnabled: true, fullScreenGestureEnabled: true }}
+    />
+  </HomeStack.Navigator>
+);
+
+const FriendsStackScreen = () => (
+  <FriendsStack.Navigator screenOptions={{ headerShown: false, gestureEnabled: true }}>
+    <FriendsStack.Screen name="FriendsRoot" component={FriendsScreen} />
+  </FriendsStack.Navigator>
+);
+
+const ProfileStackScreen = () => (
+  <ProfileStack.Navigator screenOptions={{ headerShown: false, gestureEnabled: true }}>
+    <ProfileStack.Screen name="ProfileRoot" component={ProfileScreen} />
+  </ProfileStack.Navigator>
 );
 
 const MainTabs = () => {
@@ -100,9 +130,9 @@ const MainTabs = () => {
         },
       })}
     >
-      <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="Friends" component={FriendsScreen} />
-      <Tab.Screen name="Profile" component={ProfileScreen} />
+      <Tab.Screen name="Home" component={HomeStackScreen} />
+      <Tab.Screen name="Friends" component={FriendsStackScreen} />
+      <Tab.Screen name="Profile" component={ProfileStackScreen} />
     </Tab.Navigator>
   );
 };

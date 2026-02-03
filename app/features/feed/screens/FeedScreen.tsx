@@ -75,12 +75,12 @@ const FeedScreen = () => {
 
   const navigateToProfile = () => {
     const state = navigation.getState();
-    if (state?.routeNames?.includes('Profile')) {
-      navigation.navigate('Profile' as never);
+    if (state?.routeNames?.includes('HomeProfile')) {
+      navigation.navigate('HomeProfile' as never);
       return;
     }
-    if (state?.routeNames?.includes('MainTabs')) {
-      navigation.navigate('MainTabs' as never, { screen: 'Profile' } as never);
+    if (state?.routeNames?.includes('Profile')) {
+      navigation.navigate('Profile' as never);
     }
   };
 
