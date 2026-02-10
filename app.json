@@ -18,6 +18,12 @@
         }
       ],
       [
+        "expo-image-picker",
+        {
+          "photosPermission": "Cycle Companion needs photo access to let you choose a profile picture."
+        }
+      ],
+      [
         "@kingstinct/react-native-healthkit",
         {
           "NSHealthShareUsageDescription": "Cycle Companion reads menstrual health data from Apple Health to create social insights for you and your friends.",
@@ -39,6 +45,7 @@
       "infoPlist": {
         "NSHealthShareUsageDescription": "Cycle Companion reads menstrual health data from Apple Health to create social insights for you and your friends.",
         "NSHealthUpdateUsageDescription": "Cycle Companion does not write any data back to Apple Health.",
+        "NSPhotoLibraryUsageDescription": "Cycle Companion needs photo access to let you choose a profile picture.",
         "NSFaceIDUsageDescription": "Face ID is used to secure your account if enabled in device settings.",
         "ITSAppUsesNonExemptEncryption": false
       }
