@@ -1,23 +1,36 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
+  ActionSheetIOS,
+  Alert,
+  Animated,
+  Easing,
+  Image,
   Platform,
   PlatformColor,
+  Pressable,
   SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
+import { Buffer } from 'buffer';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import * as ImagePicker from 'expo-image-picker';
 import { selectSession, useSessionStore } from '../../../state/sessionStore';
-import { fetchCurrentUserProfile } from '../../../services/supabase/users';
+import {
+  fetchCurrentUserProfile,
+  updateCurrentUserProfile,
+} from '../../../services/supabase/users';
 import {
   fetchCycleGuidance,
   type CycleGuidanceRow,
 } from '../../../services/supabase/cycleGuidance';
 import { useCycleSnapshot } from '../../feed/hooks/useCycleSnapshot';
+import { generateAvatarImage, uploadAvatarBlob } from '../../../services/supabase/avatars';
 
 const iosColor = (name: string, fallback: string) =>
   Platform.OS === 'ios' ? PlatformColor(name) : fallback;
@@ -30,11 +43,25 @@ const palette = {
   tertiaryText: iosColor('tertiaryLabel', '#9CA3AF'),
   separator: iosColor('separator', '#E5E7EB'),
   accent: iosColor('systemBlue', '#007AFF'),
+  accentSoft: '#E6F0FF',
   success: iosColor('systemGreen', '#16A34A'),
   warningText: iosColor('systemRed', '#B42318'),
   fill: iosColor('systemGray5', '#E5E7EB'),
   mutedFill: iosColor('systemGray6', '#F3F4F6'),
 };
+
+const BIO_MAX_LENGTH = 80;
+
+const AVATAR_GLAM_PROMPT = [
+  'This is an image edit task, not generation from scratch.',
+  'Glamify the exact uploaded image and preserve the same subject and composition.',
+  'Do not replace the person, do not change identity, and do not create a new person.',
+  'If the input has no person, keep the original scene and do not add any people.',
+  'Preserve facial features, skin tone, hair, pose, background structure, and framing.',
+  'Apply only tasteful glam enhancements: flattering lighting, refined color, and gentle polish.',
+].join(' ');
+const AVATAR_GLAM_STYLE_LABEL = 'Maximum Glam';
+const AVATAR_GENERATION_TIMEOUT_MS = 90000;
 
 const ProfileScreen = () => {
   const session = useSessionStore(selectSession);
@@ -42,6 +69,15 @@ const ProfileScreen = () => {
   const { snapshot, isStale, lastSyncedAt } = useCycleSnapshot();
   const [profileName, setProfileName] = useState('');
   const [profileEmail, setProfileEmail] = useState('');
+  const [profileBio, setProfileBio] = useState('');
+  const [bioDraft, setBioDraft] = useState('');
+  const [isBioEditing, setBioEditing] = useState(false);
+  const [bioStatus, setBioStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [avatarLoadFailed, setAvatarLoadFailed] = useState(false);
+  const [isAvatarBusy, setAvatarBusy] = useState(false);
+  const [avatarError, setAvatarError] = useState<string | null>(null);
+  const avatarPulse = useRef(new Animated.Value(0)).current;
   const [cycleGuidance, setCycleGuidance] = useState<CycleGuidanceRow | null>(null);
   const [cycleGuidanceStatus, setCycleGuidanceStatus] = useState<
     'idle' | 'loading' | 'error'
@@ -53,6 +89,12 @@ const ProfileScreen = () => {
       if (data) {
         setProfileName(data.full_name ?? '');
         setProfileEmail(data.email ?? '');
+        const nextBio = data.bio ?? '';
+        setProfileBio(nextBio);
+        setBioDraft(nextBio);
+        setBioEditing(false);
+        setAvatarUrl(data.avatar_url ?? null);
+        setAvatarLoadFailed(false);
       }
     } catch (error) {
       console.warn('[profile] Failed to load user profile', error);
@@ -77,6 +119,206 @@ const ProfileScreen = () => {
       setCycleGuidanceStatus('error');
     }
   }, [session?.userId]);
+
+  const handleSaveBio = useCallback(async () => {
+    const trimmed = bioDraft.trim();
+    if (trimmed.length > BIO_MAX_LENGTH) {
+      setBioStatus('error');
+      return;
+    }
+    setBioStatus('saving');
+    try {
+      await updateCurrentUserProfile({ bio: trimmed ? trimmed : null });
+      setProfileBio(trimmed);
+      setBioEditing(false);
+      setBioStatus('saved');
+      setTimeout(() => setBioStatus('idle'), 1500);
+    } catch (error) {
+      console.warn('[profile] Failed to update bio', error);
+      setBioStatus('error');
+    }
+  }, [bioDraft]);
+
+  const handleStartBioEdit = useCallback(() => {
+    setBioDraft(profileBio);
+    setBioStatus('idle');
+    setBioEditing(true);
+  }, [profileBio]);
+
+  const handleCancelBioEdit = useCallback(() => {
+    setBioDraft(profileBio);
+    setBioStatus('idle');
+    setBioEditing(false);
+  }, [profileBio]);
+
+  const ensurePhotoPermission = useCallback(async () => {
+    const existingPermission = await ImagePicker.getMediaLibraryPermissionsAsync();
+    if (existingPermission.granted) {
+      return true;
+    }
+    const requestedPermission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    return requestedPermission.granted;
+  }, []);
+
+  const handlePickAvatar = useCallback(async () => {
+    if (!session?.userId) {
+      return;
+    }
+    setAvatarError(null);
+    const hasPermission = await ensurePhotoPermission();
+    if (!hasPermission) {
+      setAvatarError('Allow photo access to choose an avatar.');
+      return;
+    }
+    let result: ImagePicker.ImagePickerResult;
+    try {
+      result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        quality: 0.9,
+        allowsEditing: true,
+        aspect: [1, 1],
+        base64: true,
+      });
+    } catch (error) {
+      console.warn('[profile] Failed to open photo library', error);
+      setAvatarError('Unable to open your photo library right now.');
+      return;
+    }
+    if (result.canceled || !result.assets?.length) {
+      return;
+    }
+    const asset = result.assets[0];
+    if (!asset.base64) {
+      setAvatarError('Unable to load the selected photo.');
+      return;
+    }
+    const mimeType = asset.mimeType ?? 'image/jpeg';
+    const dataUri = `data:${mimeType};base64,${asset.base64}`;
+    setAvatarBusy(true);
+    try {
+      const generated = (await Promise.race([
+        generateAvatarImage({
+          prompt: AVATAR_GLAM_PROMPT,
+          imageBase64: dataUri,
+        }),
+        new Promise<never>((_, reject) =>
+          setTimeout(
+            () =>
+              reject(new Error('This is taking longer than expected. Please try again.')),
+            AVATAR_GENERATION_TIMEOUT_MS,
+          ),
+        ),
+      ])) as Awaited<ReturnType<typeof generateAvatarImage>>;
+      const buffer = Buffer.from(generated.b64, 'base64');
+      const url = await uploadAvatarBlob(session.userId, buffer, 'png', 'image/png');
+      await updateCurrentUserProfile({
+        avatarUrl: url,
+        avatarStyle: AVATAR_GLAM_STYLE_LABEL,
+        avatarPrompt: AVATAR_GLAM_PROMPT,
+      });
+      setAvatarUrl(url);
+      setAvatarLoadFailed(false);
+    } catch (error) {
+      console.warn('[profile] Failed to generate avatar', error);
+      const message =
+        error instanceof Error && error.message
+          ? error.message
+          : 'Unable to glam your avatar right now.';
+      setAvatarError(message);
+    } finally {
+      setAvatarBusy(false);
+    }
+  }, [ensurePhotoPermission, session?.userId]);
+
+  const handleRemoveAvatar = useCallback(async () => {
+    if (!session?.userId) {
+      return;
+    }
+    setAvatarError(null);
+    setAvatarBusy(true);
+    try {
+      await updateCurrentUserProfile({ avatarUrl: null, avatarStyle: null, avatarPrompt: null });
+      setAvatarUrl(null);
+      setAvatarLoadFailed(false);
+    } catch (error) {
+      console.warn('[profile] Failed to remove avatar', error);
+      setAvatarError('Unable to remove avatar right now.');
+    } finally {
+      setAvatarBusy(false);
+    }
+  }, [session?.userId]);
+
+  useEffect(() => {
+    if (!isAvatarBusy) {
+      avatarPulse.stopAnimation();
+      avatarPulse.setValue(0);
+      return;
+    }
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(avatarPulse, {
+          toValue: 1,
+          duration: 900,
+          easing: Easing.out(Easing.quad),
+          useNativeDriver: true,
+        }),
+        Animated.timing(avatarPulse, {
+          toValue: 0,
+          duration: 900,
+          easing: Easing.in(Easing.quad),
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [avatarPulse, isAvatarBusy]);
+
+  const handleAvatarPress = useCallback(() => {
+    if (isAvatarBusy) {
+      return;
+    }
+    if (!avatarUrl) {
+      void handlePickAvatar();
+      return;
+    }
+
+    if (Platform.OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          options: ['Choose new photo', 'Remove photo', 'Cancel'],
+          cancelButtonIndex: 2,
+          destructiveButtonIndex: 1,
+        },
+        (buttonIndex) => {
+          if (buttonIndex === 0) {
+            void handlePickAvatar();
+          }
+          if (buttonIndex === 1) {
+            void handleRemoveAvatar();
+          }
+        },
+      );
+      return;
+    }
+
+    Alert.alert('Profile photo', undefined, [
+      {
+        text: 'Choose new photo',
+        onPress: () => {
+          void handlePickAvatar();
+        },
+      },
+      {
+        text: 'Remove photo',
+        style: 'destructive',
+        onPress: () => {
+          void handleRemoveAvatar();
+        },
+      },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
+  }, [avatarUrl, handlePickAvatar, handleRemoveAvatar, isAvatarBusy]);
 
   const formatSyncLabel = (value?: string | null) => {
     if (!value) {
@@ -139,6 +381,24 @@ const ProfileScreen = () => {
     }
     return 'Your Name';
   }, [profileEmail, profileName]);
+
+  const canSaveBio = useMemo(
+    () => bioDraft.trim() !== profileBio.trim() && bioDraft.trim().length <= BIO_MAX_LENGTH,
+    [bioDraft, profileBio],
+  );
+
+  const bioStatusLabel = useMemo(() => {
+    switch (bioStatus) {
+      case 'saving':
+        return 'Saving...';
+      case 'saved':
+        return 'Saved';
+      case 'error':
+        return 'Could not save';
+      default:
+        return `${bioDraft.trim().length}/${BIO_MAX_LENGTH}`;
+    }
+  }, [bioDraft, bioStatus]);
 
   const avatarInitial = displayName.trim().slice(0, 1).toUpperCase() || '?';
 
@@ -221,15 +481,128 @@ const ProfileScreen = () => {
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.profileCard}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{avatarInitial}</Text>
+          <View style={styles.profileHeaderRow}>
+            <Pressable
+              style={styles.avatar}
+              onPress={handleAvatarPress}
+              accessibilityRole="button"
+              accessibilityLabel="Choose profile photo"
+              accessibilityState={{ disabled: isAvatarBusy }}
+            >
+              {isAvatarBusy ? (
+                <Animated.View
+                  pointerEvents="none"
+                  style={[
+                    styles.avatarPulse,
+                    {
+                      opacity: avatarPulse.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [0.2, 0.55],
+                      }),
+                      transform: [
+                        {
+                          scale: avatarPulse.interpolate({
+                            inputRange: [0, 1],
+                            outputRange: [1, 1.12],
+                          }),
+                        },
+                      ],
+                    },
+                  ]}
+                />
+              ) : null}
+              <View style={styles.avatarImageWrap}>
+                {avatarUrl && !avatarLoadFailed ? (
+                  <Image
+                    source={{ uri: avatarUrl }}
+                    style={styles.avatarImage}
+                    onError={() => {
+                      setAvatarLoadFailed(true);
+                      setAvatarError('Could not load avatar. Try re-uploading.');
+                    }}
+                  />
+                ) : (
+                  <Text style={styles.avatarText}>{avatarInitial}</Text>
+                )}
+              </View>
+              <View style={styles.avatarOverlay}>
+                <Ionicons
+                  name={isAvatarBusy ? 'sparkles' : 'camera-outline'}
+                  size={18}
+                  color={isAvatarBusy ? palette.accent : palette.primaryText}
+                />
+              </View>
+            </Pressable>
+            <View style={styles.profileMeta}>
+              <Text style={styles.profileName}>{displayName}</Text>
+              {profileEmail ? <Text style={styles.profileEmail}>{profileEmail}</Text> : null}
+              {session?.userId ? (
+                <Text style={styles.profileId}>Your ID: {session.userId}</Text>
+              ) : null}
+              {isAvatarBusy ? (
+                <Text style={styles.avatarStatus}>Glamifying your photo...</Text>
+              ) : null}
+              {avatarError ? <Text style={styles.avatarError}>{avatarError}</Text> : null}
+            </View>
           </View>
-          <View style={styles.profileMeta}>
-            <Text style={styles.profileName}>{displayName}</Text>
-            {profileEmail ? <Text style={styles.profileEmail}>{profileEmail}</Text> : null}
-            {session?.userId ? (
-              <Text style={styles.profileId}>Your ID: {session.userId}</Text>
-            ) : null}
+          <View style={styles.profileDivider} />
+          <View style={styles.bioSection}>
+            <View style={styles.bioHeader}>
+              <Text style={styles.sectionTitle}>About you</Text>
+              {isBioEditing ? (
+                <Text style={styles.bioCounter}>{bioStatusLabel}</Text>
+              ) : (
+                <TouchableOpacity style={styles.bioEditButton} onPress={handleStartBioEdit}>
+                  <Ionicons name="pencil-outline" size={13} color={palette.accent} />
+                  <Text style={styles.bioEditButtonText}>
+                    {profileBio.trim() ? 'Edit' : 'Add'}
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
+            {isBioEditing ? (
+              <>
+                <TextInput
+                  style={styles.bioInput}
+                  value={bioDraft}
+                  onChangeText={setBioDraft}
+                  placeholder="NYC, Yale '24, matcha loyalist"
+                  maxLength={BIO_MAX_LENGTH}
+                  autoCapitalize="sentences"
+                  autoCorrect
+                />
+                {bioStatus === 'error' ? (
+                  <Text style={styles.bioError}>Unable to save right now.</Text>
+                ) : null}
+                <View style={styles.bioActionRow}>
+                  <TouchableOpacity
+                    style={[styles.bioSaveButton, !canSaveBio ? styles.bioSaveButtonDisabled : null]}
+                    onPress={handleSaveBio}
+                    disabled={!canSaveBio || bioStatus === 'saving'}
+                  >
+                    <Text style={styles.bioSaveButtonText}>
+                      {bioStatus === 'saving' ? 'Saving...' : 'Save bio'}
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.bioCancelButton}
+                    onPress={handleCancelBioEdit}
+                    disabled={bioStatus === 'saving'}
+                  >
+                    <Text style={styles.bioCancelButtonText}>Cancel</Text>
+                  </TouchableOpacity>
+                </View>
+              </>
+            ) : (
+              <Text
+                style={[
+                  styles.bioPreviewText,
+                  !profileBio.trim() ? styles.bioPreviewPlaceholder : null,
+                ]}
+              >
+                {profileBio.trim() || 'Add a short bio about yourself.'}
+              </Text>
+            )}
           </View>
         </View>
 
@@ -374,27 +747,73 @@ const styles = StyleSheet.create({
     backgroundColor: palette.card,
     borderRadius: 20,
     padding: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
+    gap: 14,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: palette.separator,
     shadowColor: '#000',
     shadowOpacity: 0.03,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 },
     elevation: 1,
   },
+  profileHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+  },
   avatar: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 92,
+    height: 92,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+    overflow: 'visible',
+  },
+  avatarImageWrap: {
+    width: 78,
+    height: 78,
+    borderRadius: 39,
     backgroundColor: palette.fill,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  avatarImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  avatarPulse: {
+    position: 'absolute',
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    borderWidth: 2,
+    borderColor: palette.accent,
+    backgroundColor: palette.accentSoft,
   },
   avatarText: {
     fontSize: 24,
     fontWeight: '700',
     color: palette.primaryText,
+  },
+  avatarOverlay: {
+    position: 'absolute',
+    bottom: 4,
+    right: 4,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: '#FFFFFFEE',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: palette.separator,
+    shadowColor: '#000',
+    shadowOpacity: 0.12,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
   },
   profileMeta: {
     flex: 1,
@@ -412,6 +831,105 @@ const styles = StyleSheet.create({
   profileId: {
     fontSize: 12,
     color: palette.tertiaryText,
+  },
+  avatarStatus: {
+    marginTop: 2,
+    fontSize: 12,
+    color: palette.accent,
+    fontWeight: '600',
+  },
+  avatarError: {
+    marginTop: 6,
+    fontSize: 12,
+    color: palette.warningText,
+  },
+  profileDivider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: palette.separator,
+    marginHorizontal: -16,
+  },
+  bioSection: {
+    gap: 10,
+  },
+  bioHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  bioEditButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 999,
+    backgroundColor: palette.accentSoft,
+  },
+  bioEditButtonText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: palette.accent,
+  },
+  bioCounter: {
+    fontSize: 12,
+    color: palette.tertiaryText,
+  },
+  bioPreviewText: {
+    minHeight: 20,
+    fontSize: 14,
+    color: palette.primaryText,
+  },
+  bioPreviewPlaceholder: {
+    color: palette.tertiaryText,
+  },
+  bioInput: {
+    minHeight: 44,
+    borderRadius: 12,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: palette.separator,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 14,
+    color: palette.primaryText,
+    backgroundColor: palette.mutedFill,
+  },
+  bioError: {
+    fontSize: 12,
+    color: palette.warningText,
+  },
+  bioSaveButton: {
+    alignSelf: 'flex-start',
+    backgroundColor: palette.primaryText,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 12,
+  },
+  bioSaveButtonDisabled: {
+    opacity: 0.6,
+  },
+  bioSaveButtonText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: 13,
+  },
+  bioActionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  bioCancelButton: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 12,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: palette.separator,
+    backgroundColor: palette.card,
+  },
+  bioCancelButtonText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: palette.secondaryText,
   },
   cycleCard: {
     backgroundColor: palette.card,

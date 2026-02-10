@@ -5,6 +5,10 @@ export type UserProfilePayload = {
   email?: string;
   fullName?: string;
   alias?: string;
+  bio?: string;
+  avatarUrl?: string;
+  avatarStyle?: string;
+  avatarPrompt?: string;
 };
 
 export type UserProfileRow = {
@@ -12,6 +16,10 @@ export type UserProfileRow = {
   full_name?: string | null;
   email?: string | null;
   alias?: string | null;
+  bio?: string | null;
+  avatar_url?: string | null;
+  avatar_style?: string | null;
+  avatar_prompt?: string | null;
 };
 
 export type UserSearchResult = {
@@ -32,6 +40,10 @@ const buildUpdate = (
     apple_user_id?: string;
     full_name?: string;
     alias?: string;
+    bio?: string;
+    avatar_url?: string;
+    avatar_style?: string;
+    avatar_prompt?: string;
   } = {
     id: userId,
     updated_at: new Date().toISOString(),
@@ -49,6 +61,18 @@ const buildUpdate = (
   }
   if (payload.alias) {
     update.alias = payload.alias;
+  }
+  if (payload.bio) {
+    update.bio = payload.bio;
+  }
+  if (payload.avatarUrl) {
+    update.avatar_url = payload.avatarUrl;
+  }
+  if (payload.avatarStyle) {
+    update.avatar_style = payload.avatarStyle;
+  }
+  if (payload.avatarPrompt) {
+    update.avatar_prompt = payload.avatarPrompt;
   }
 
   return update;
@@ -90,7 +114,7 @@ export const fetchCurrentUserProfile = async (): Promise<UserProfileRow | null> 
 
   const { data, error } = await supabase
     .from('users')
-    .select('id, full_name, email, alias')
+    .select('id, full_name, email, alias, bio, avatar_url, avatar_style, avatar_prompt')
     .eq('id', userData.user.id)
     .maybeSingle();
   if (error) {
@@ -110,6 +134,10 @@ export const fetchCurrentUserProfile = async (): Promise<UserProfileRow | null> 
       typeof userData.user.user_metadata?.full_name === 'string'
         ? userData.user.user_metadata.full_name
         : null,
+    bio: null,
+    avatar_url: null,
+    avatar_style: null,
+    avatar_prompt: null,
   };
 };
 
@@ -119,12 +147,72 @@ export const fetchUserProfilesByIds = async (ids: string[]): Promise<UserProfile
   }
   const { data, error } = await supabase
     .from('users')
-    .select('id, full_name, email, alias')
+    .select('id, full_name, email, alias, bio, avatar_url, avatar_style, avatar_prompt')
     .in('id', ids);
   if (error) {
     throw error;
   }
   return (data as UserProfileRow[]) ?? [];
+};
+
+export type UserProfileUpdate = {
+  fullName?: string | null;
+  alias?: string | null;
+  bio?: string | null;
+  avatarUrl?: string | null;
+  avatarStyle?: string | null;
+  avatarPrompt?: string | null;
+};
+
+export const updateCurrentUserProfile = async (
+  payload: UserProfileUpdate,
+): Promise<UserProfileRow | null> => {
+  if (!isSupabaseConfigured) {
+    return null;
+  }
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  if (userError) {
+    throw userError;
+  }
+  if (!userData.user) {
+    throw new Error('Supabase user is not available.');
+  }
+
+  const update: Record<string, string | null> = {
+    updated_at: new Date().toISOString(),
+  };
+
+  if (payload.fullName !== undefined) {
+    update.full_name = payload.fullName ?? null;
+  }
+  if (payload.alias !== undefined) {
+    update.alias = payload.alias ?? null;
+  }
+  if (payload.bio !== undefined) {
+    update.bio = payload.bio ?? null;
+  }
+  if (payload.avatarUrl !== undefined) {
+    update.avatar_url = payload.avatarUrl ?? null;
+  }
+  if (payload.avatarStyle !== undefined) {
+    update.avatar_style = payload.avatarStyle ?? null;
+  }
+  if (payload.avatarPrompt !== undefined) {
+    update.avatar_prompt = payload.avatarPrompt ?? null;
+  }
+
+  const { data, error } = await supabase
+    .from('users')
+    .update(update)
+    .eq('id', userData.user.id)
+    .select('id, full_name, email, alias, bio, avatar_url, avatar_style, avatar_prompt')
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  return (data as UserProfileRow) ?? null;
 };
 
 export const searchUsersByAliasOrEmail = async (
