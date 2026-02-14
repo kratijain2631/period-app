@@ -13,6 +13,11 @@ import {
   upsertCycleSnapshot,
 } from '../../storage/sqlite/cycleSnapshotStore';
 import { upsertCycleEvents, upsertCycleSnapshotRemote } from '../supabase/cycleEvents';
+import { fetchCurrentAutoPostSettings } from '../supabase/users';
+import {
+  DEFAULT_AUTO_POST_SETTINGS,
+  selectAutoPostedPeriodSamples,
+} from './autoPostSettings';
 
 const LOOKBACK_MS = 90 * 24 * 60 * 60 * 1000; // 90 days to capture longer histories
 const QUERY_LIMIT = 400;
@@ -69,15 +74,26 @@ export const syncHealthData = async ({
 
     await upsertCycleSnapshot(session.userId, snapshot);
     try {
+      let autoPostSettings = useSessionStore.getState().autoPostSettings ?? DEFAULT_AUTO_POST_SETTINGS;
+      try {
+        const remoteSettings = await fetchCurrentAutoPostSettings();
+        if (remoteSettings) {
+          autoPostSettings = remoteSettings;
+          useSessionStore.getState().setAutoPostSettings(remoteSettings);
+        }
+      } catch (error) {
+        console.warn('[cycle-sync] Failed to load remote auto-post settings; using local settings', error);
+      }
+      const autoPostedSamples = selectAutoPostedPeriodSamples(samples, autoPostSettings);
       await upsertCycleSnapshotRemote(session.userId, snapshot);
-      const events = samples.map((sample) => ({
+      const events = autoPostedSamples.map((sample) => ({
         user_id: session.userId,
         event_type: 'menstrual_flow',
         phase: snapshot.currentPhase,
         symptoms: sample.metadata ?? null,
         starts_at: sample.startDate,
       }));
-      if (phaseChanged) {
+      if (phaseChanged && autoPostSettings.postPhaseTransitions) {
         events.push({
           user_id: session.userId,
           event_type: 'phase_transition',

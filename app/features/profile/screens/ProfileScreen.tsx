@@ -101,7 +101,6 @@ const ProfileScreen = () => {
     }
   }, []);
 
-
   const loadCycleGuidance = useCallback(async () => {
     if (!session?.userId) {
       setCycleGuidance(null);
@@ -409,6 +408,10 @@ const ProfileScreen = () => {
     [navigation],
   );
 
+  const navigateToAutoPostSettings = useCallback(() => {
+    navigation.navigate('AutoPostSettings' as never);
+  }, [navigation]);
+
   const cyclePhaseKey = snapshot?.currentPhase ?? 'unknown';
   const cyclePhaseLabel = useMemo(
     () => formatPhaseLabel(snapshot?.currentPhase) ?? 'Unknown phase',
@@ -534,7 +537,17 @@ const ProfileScreen = () => {
               </View>
             </Pressable>
             <View style={styles.profileMeta}>
-              <Text style={styles.profileName}>{displayName}</Text>
+              <View style={styles.profileMetaTopRow}>
+                <Text style={styles.profileName}>{displayName}</Text>
+                <TouchableOpacity
+                  style={styles.profileSettingsButton}
+                  onPress={navigateToAutoPostSettings}
+                  accessibilityRole="button"
+                  accessibilityLabel="Open auto-post settings"
+                >
+                  <Ionicons name="settings-outline" size={16} color={palette.secondaryText} />
+                </TouchableOpacity>
+              </View>
               {profileEmail ? <Text style={styles.profileEmail}>{profileEmail}</Text> : null}
               {session?.userId ? (
                 <Text style={styles.profileId}>Your ID: {session.userId}</Text>
@@ -819,10 +832,27 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 4,
   },
+  profileMetaTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
   profileName: {
     fontSize: 20,
     fontWeight: '700',
     color: palette.primaryText,
+    flex: 1,
+  },
+  profileSettingsButton: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: palette.mutedFill,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: palette.separator,
   },
   profileEmail: {
     fontSize: 13,

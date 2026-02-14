@@ -1,10 +1,12 @@
 import { useEffect } from 'react';
-import { fetchCurrentUserProfile } from './users';
+import { fetchCurrentUserProfile, hasRemoteAutoPostSettings } from './users';
 import { useSessionStore } from '../../state/sessionStore';
+import { resolveAutoPostSettings } from '../healthkit/autoPostSettings';
 
 export const useProfileGate = () => {
   const session = useSessionStore((state) => state.session);
   const setAlias = useSessionStore((state) => state.setAlias);
+  const setAutoPostSettings = useSessionStore((state) => state.setAutoPostSettings);
   const setProfileHydrating = useSessionStore((state) => state.setProfileHydrating);
 
   useEffect(() => {
@@ -24,6 +26,9 @@ export const useProfileGate = () => {
         }
         const resolvedAlias = profile?.alias?.trim() || null;
         setAlias(resolvedAlias);
+        if (hasRemoteAutoPostSettings(profile)) {
+          setAutoPostSettings(resolveAutoPostSettings(profile));
+        }
       } catch (error) {
         if (!isMounted) {
           return;
@@ -42,5 +47,5 @@ export const useProfileGate = () => {
     return () => {
       isMounted = false;
     };
-  }, [session, setAlias, setProfileHydrating]);
+  }, [session, setAlias, setAutoPostSettings, setProfileHydrating]);
 };
