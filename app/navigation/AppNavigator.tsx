@@ -11,6 +11,7 @@ import FriendSyncScreen from '../features/friends/screens/FriendSyncScreen';
 import FriendsScreen from '../features/friends/screens/FriendsScreen';
 import HomeScreen from '../features/home/screens/HomeScreen';
 import ProfileScreen from '../features/profile/screens/ProfileScreen';
+import AutoPostSettingsScreen from '../features/profile/screens/AutoPostSettingsScreen';
 import AliasScreen from '../features/profile/screens/AliasScreen';
 import { navigationRef } from './navigationRef';
 import {
@@ -45,7 +46,7 @@ const AppNavigator = () => {
 
   const isAuthed = Boolean(session);
   const needsAlias = isAuthed && !alias;
-  const needsIntro = isAuthed && (!hasSeenIntro || !permissionsGranted);
+  const needsIntro = isAuthed && !hasSeenIntro;
   const readyForHome = isAuthed && !needsAlias && !needsIntro;
 
   return (
@@ -94,6 +95,11 @@ const HomeStackScreen = () => (
       component={ProfileScreen}
       options={{ gestureEnabled: true, fullScreenGestureEnabled: true }}
     />
+    <HomeStack.Screen
+      name="AutoPostSettings"
+      component={AutoPostSettingsScreen}
+      options={{ gestureEnabled: true, fullScreenGestureEnabled: true }}
+    />
   </HomeStack.Navigator>
 );
 
@@ -106,6 +112,11 @@ const FriendsStackScreen = () => (
 const ProfileStackScreen = () => (
   <ProfileStack.Navigator screenOptions={{ headerShown: false, gestureEnabled: true }}>
     <ProfileStack.Screen name="ProfileRoot" component={ProfileScreen} />
+    <ProfileStack.Screen
+      name="AutoPostSettings"
+      component={AutoPostSettingsScreen}
+      options={{ gestureEnabled: true, fullScreenGestureEnabled: true }}
+    />
   </ProfileStack.Navigator>
 );
 
