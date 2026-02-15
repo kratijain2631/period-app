@@ -129,7 +129,7 @@ const AutoPostSettingsScreen = () => {
             <View style={styles.settingTextWrap}>
               <Text style={styles.settingTitle}>Post period updates</Text>
               <Text style={styles.settingDescription}>
-                Share menstrual flow entries from Apple Health to your feed.
+                Share cycle updates from Apple Health to your feed.
               </Text>
             </View>
             <Switch

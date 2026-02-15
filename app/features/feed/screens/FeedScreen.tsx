@@ -108,6 +108,19 @@ const FeedScreen = () => {
 
   const displayEvents = useMemo(() => events, [events]);
   const shortId = (value: string) => `${value.slice(0, 4)}...${value.slice(-4)}`;
+  const formatPhaseLabel = (value?: string | null) => {
+    if (!value) {
+      return null;
+    }
+    const normalized = value.replace(/_/g, ' ');
+    return normalized.charAt(0).toUpperCase() + normalized.slice(1);
+  };
+  const formatPhaseSourceLabel = (value?: string | null) => {
+    if (value === 'estimated') {
+      return 'Estimated';
+    }
+    return null;
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -139,6 +152,12 @@ const FeedScreen = () => {
           const booped = boopStatus === 'sent';
           const queued = boopStatus === 'queued';
           const boopInFlight = boopLoading[item.id];
+          const phaseLabel = formatPhaseLabel(item.phase);
+          const phaseSourceLabel = item.user_id === session?.userId
+            ? formatPhaseSourceLabel(
+                typeof item.symptoms?.phase_source === 'string' ? item.symptoms.phase_source : null,
+              )
+            : null;
           return (
             <View style={styles.card}>
               <View style={styles.cardHeader}>
@@ -177,7 +196,12 @@ const FeedScreen = () => {
                   </Text>
                 </TouchableOpacity>
               </View>
-              {item.phase ? <Text style={styles.phaseText}>Phase: {item.phase}</Text> : null}
+              {phaseLabel ? (
+                <Text style={styles.phaseText}>
+                  Phase: {phaseLabel}
+                  {phaseSourceLabel ? ` (${phaseSourceLabel})` : ''}
+                </Text>
+              ) : null}
             </View>
           );
         }}

@@ -17,6 +17,21 @@ const formatTimestamp = (value: string) => {
   return date.toLocaleString();
 };
 
+const formatPhaseLabel = (value?: string | null) => {
+  if (!value) {
+    return 'Unknown phase';
+  }
+  const normalized = value.replace(/_/g, ' ');
+  return normalized.charAt(0).toUpperCase() + normalized.slice(1);
+};
+
+const formatPhaseSourceLabel = (value?: string | null) => {
+  if (value === 'estimated') {
+    return 'Estimated';
+  }
+  return null;
+};
+
 const DailySummaryCard = ({
   snapshot,
   lastSyncedAt,
@@ -25,14 +40,18 @@ const DailySummaryCard = ({
   onRetrySync,
 }: DailySummaryCardProps) => {
   const showStale = !snapshot || isStale;
-  const phaseLabel = snapshot && !isStale ? snapshot.currentPhase : 'Unknown phase';
+  const phaseLabel = snapshot && !isStale ? formatPhaseLabel(snapshot.currentPhase) : 'Unknown phase';
+  const phaseSourceLabel =
+    snapshot && !isStale ? formatPhaseSourceLabel(snapshot.phaseSource ?? null) : null;
   const syncLabel = lastSyncedAt ?? snapshot?.syncedAt ?? null;
 
   return (
     <View style={styles.card}>
       <View style={styles.headerRow}>
         <Text style={styles.title}>Daily Cycle Summary</Text>
-        <Text style={styles.phase}>{phaseLabel}</Text>
+        <Text style={styles.phase}>
+          {phaseSourceLabel ? `${phaseLabel} (${phaseSourceLabel})` : phaseLabel}
+        </Text>
       </View>
       {showStale ? (
         <View style={styles.staleBanner}>

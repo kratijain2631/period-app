@@ -340,6 +340,13 @@ const ProfileScreen = () => {
     return normalized.charAt(0).toUpperCase() + normalized.slice(1);
   };
 
+  const formatPhaseSourceLabel = (value?: string | null) => {
+    if (value === 'estimated') {
+      return 'Estimated';
+    }
+    return null;
+  };
+
   const shortId = (value: string) => `${value.slice(0, 4)}...${value.slice(-4)}`;
 
   const phasePillPalette: Record<string, string> = {
@@ -416,6 +423,17 @@ const ProfileScreen = () => {
   const cyclePhaseLabel = useMemo(
     () => formatPhaseLabel(snapshot?.currentPhase) ?? 'Unknown phase',
     [snapshot?.currentPhase],
+  );
+  const cyclePhaseSourceLabel = useMemo(
+    () => formatPhaseSourceLabel(snapshot?.phaseSource ?? null),
+    [snapshot?.phaseSource],
+  );
+  const cyclePhaseDisplayLabel = useMemo(
+    () =>
+      cyclePhaseSourceLabel
+        ? `${cyclePhaseLabel} (${cyclePhaseSourceLabel})`
+        : cyclePhaseLabel,
+    [cyclePhaseLabel, cyclePhaseSourceLabel],
   );
   const cycleSyncLabel = useMemo(
     () => formatSyncLabel(lastSyncedAt ?? snapshot?.syncedAt ?? null),
@@ -636,7 +654,7 @@ const ProfileScreen = () => {
               </View>
               <View style={styles.cycleHeaderText}>
                 <Text style={styles.cycleHeaderLabel}>My cycle</Text>
-                <Text style={styles.cycleHeaderValue}>{cyclePhaseLabel}</Text>
+                <Text style={styles.cycleHeaderValue}>{cyclePhaseDisplayLabel}</Text>
               </View>
             </View>
             <Text
@@ -661,7 +679,7 @@ const ProfileScreen = () => {
                   { color: cyclePhaseColors.text },
                 ]}
               >
-                {cyclePhaseLabel}
+                {cyclePhaseDisplayLabel}
               </Text>
             </View>
             <Text style={styles.cycleMetaDetail}>{cycleDetailLabel}</Text>

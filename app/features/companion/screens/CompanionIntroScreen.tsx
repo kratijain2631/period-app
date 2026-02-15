@@ -56,7 +56,7 @@ const CompanionIntroScreen = () => {
     if (permissions.lastPromptedAt) {
       return 'Grant read access in Health to finish setup, or continue for now.';
     }
-    return 'Connect read-only menstrual flow data from Apple Health.';
+    return 'Connect read-only cycle data from Apple Health.';
   }, [permissions, showAutoPostStep]);
 
   const handleGrant = useCallback(async () => {
@@ -99,7 +99,7 @@ const CompanionIntroScreen = () => {
 
   const features = useMemo(
     () => [
-      'Read-only access to menstrual flow entries.',
+      'Read-only access to cycle and fertility entries (when available).',
       'No writes back to Apple Health.',
       'Background sync that respects battery life.',
     ],
@@ -195,7 +195,7 @@ const CompanionIntroScreen = () => {
               <View style={styles.settingTextWrap}>
                 <Text style={styles.settingLabel}>Post period updates</Text>
                 <Text style={styles.settingDescription}>
-                  Share menstrual flow entries from Apple Health to your feed.
+                  Share cycle updates from Apple Health to your feed.
                 </Text>
               </View>
               <Switch
