@@ -14,6 +14,7 @@ export type CycleEventRow = {
   user_id: string;
   event_type: string;
   phase?: string | null;
+  symptoms?: Record<string, unknown> | null;
   starts_at: string;
   created_at: string;
 };
@@ -24,7 +25,7 @@ export const fetchCycleEvents = async (limit = 40): Promise<CycleEventRow[]> => 
   }
   const { data, error } = await supabase
     .from('cycle_events')
-    .select('id, user_id, event_type, phase, starts_at, created_at')
+    .select('id, user_id, event_type, phase, symptoms, starts_at, created_at')
     .order('starts_at', { ascending: false })
     .limit(limit);
   if (error) {

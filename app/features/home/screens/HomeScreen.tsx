@@ -874,6 +874,13 @@ const HomeScreen = () => {
     return normalized.charAt(0).toUpperCase() + normalized.slice(1);
   };
 
+  const formatPhaseSourceLabel = (value?: string | null) => {
+    if (value === 'estimated') {
+      return 'Estimated';
+    }
+    return null;
+  };
+
   const phasePillPalette: Record<string, string> = {
     menstruation: '#FDECEC',
     follicular: '#ECFDF3',
@@ -896,6 +903,10 @@ const HomeScreen = () => {
   const cyclePhaseLabel = useMemo(
     () => formatPhaseLabel(snapshot?.currentPhase) ?? 'Unknown phase',
     [snapshot?.currentPhase],
+  );
+  const cyclePhaseSourceLabel = useMemo(
+    () => formatPhaseSourceLabel(snapshot?.phaseSource ?? null),
+    [snapshot?.phaseSource],
   );
   const cycleSyncLabel = useMemo(
     () => formatSyncLabel(lastSyncedAt ?? snapshot?.syncedAt ?? null),
@@ -1140,9 +1151,18 @@ const HomeScreen = () => {
           : palette.accent;
     const boopCount = boopCountsByEvent[item.id] ?? 0;
     const phaseLabel = formatPhaseLabel(item.phase);
+    const phaseSourceLabel = isSelf
+      ? formatPhaseSourceLabel(
+          typeof item.symptoms?.phase_source === 'string' ? item.symptoms.phase_source : null,
+        )
+      : null;
     const periodInfo = periodDayByEventId[item.id];
     const isPhaseTransition = item.event_type === 'phase_transition';
-    const metaLabel = isPhaseTransition ? 'Phase change' : 'Cycle update';
+    const metaLabel = isPhaseTransition
+      ? phaseSourceLabel
+        ? `Phase change • ${phaseSourceLabel}`
+        : 'Phase change'
+      : 'Cycle update';
     const eventIcon = isPhaseTransition
       ? 'pulse-outline'
       : item.event_type === 'menstrual_flow'
@@ -1299,7 +1319,11 @@ const HomeScreen = () => {
                   >
                     <Ionicons name="pulse-outline" size={14} color={cyclePhaseColors.text} />
                   </View>
-                  <Text style={styles.cycleChipText}>{cyclePhaseLabel}</Text>
+                  <Text style={styles.cycleChipText}>
+                    {cyclePhaseSourceLabel
+                      ? `${cyclePhaseLabel} (${cyclePhaseSourceLabel})`
+                      : cyclePhaseLabel}
+                  </Text>
                 </TouchableOpacity>
               </View>
               <Text style={styles.subtitle}>

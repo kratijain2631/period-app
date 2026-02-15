@@ -46,7 +46,7 @@ export const requestCyclePermissions = async (): Promise<PermissionResult> => {
       console.log('[permissions] requestAuthorization returned', granted, 'status', status);
       return {
         granted: false,
-        error: 'Health access was not granted. Please enable menstrual flow in Health settings.',
+        error: 'Health access was not granted. Please enable cycle data in Health settings.',
       };
     }
     return { granted: true };

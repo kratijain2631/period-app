@@ -1,11 +1,24 @@
 import { DeviceEventEmitter } from 'react-native';
 import {
   AuthorizationStatus,
+  BASAL_BODY_TEMPERATURE_IDENTIFIER,
+  CERVICAL_MUCUS_IDENTIFIER,
   healthkitClient,
   MENSTRUAL_FLOW_IDENTIFIER,
+  OVULATION_TEST_IDENTIFIER,
+  PROGESTERONE_TEST_IDENTIFIER,
   type MenstrualSample,
 } from './healthkitClient';
-import { CycleSnapshot, deriveSnapshot, normalizeFlowSamples } from '../../../packages/domain/cycles/models';
+import {
+  deriveSnapshot,
+  normalizeFlowSamples,
+  normalizeSignalSamples,
+} from '../../../packages/domain/cycles/models';
+import type {
+  CycleSignalKind,
+  CycleSnapshot,
+  RawSignalSample,
+} from '../../../packages/domain/cycles/models';
 import { useSessionStore } from '../../state/sessionStore';
 import {
   clearCycleSnapshots,
@@ -19,9 +32,129 @@ import {
   selectAutoPostedPeriodSamples,
 } from './autoPostSettings';
 
-const LOOKBACK_MS = 90 * 24 * 60 * 60 * 1000; // 90 days to capture longer histories
+const LOOKBACK_MS = 180 * 24 * 60 * 60 * 1000; // 180 days to personalize cycle-length estimates
 const QUERY_LIMIT = 400;
 export const CYCLE_SNAPSHOT_UPDATED = 'companion/snapshotUpdated';
+
+const SIGNAL_QUERY_CONFIG: Array<{
+  kind: CycleSignalKind;
+  identifier: string;
+  type: 'category' | 'quantity';
+}> = [
+  { kind: 'ovulation_test', identifier: OVULATION_TEST_IDENTIFIER, type: 'category' },
+  { kind: 'progesterone_test', identifier: PROGESTERONE_TEST_IDENTIFIER, type: 'category' },
+  { kind: 'cervical_mucus', identifier: CERVICAL_MUCUS_IDENTIFIER, type: 'category' },
+  { kind: 'basal_body_temperature', identifier: BASAL_BODY_TEMPERATURE_IDENTIFIER, type: 'quantity' },
+];
+
+type QuantitySampleLike = {
+  uuid?: string | null;
+  startDate: Date;
+  endDate: Date;
+  value?: number;
+  quantity?: {
+    value?: number;
+    doubleValue?: (unit: string) => number;
+    doubleValueForUnit?: (unit: string) => number;
+  };
+  metadata?: unknown;
+};
+
+const asRecord = (value: unknown): Record<string, unknown> | null =>
+  value && typeof value === 'object' && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null;
+
+const extractQuantityValue = (sample: QuantitySampleLike): number | null => {
+  if (typeof sample.value === 'number' && Number.isFinite(sample.value)) {
+    return sample.value;
+  }
+
+  const quantityRecord = asRecord(sample.quantity);
+  if (!quantityRecord) {
+    return null;
+  }
+
+  const literal = quantityRecord.value;
+  if (typeof literal === 'number' && Number.isFinite(literal)) {
+    return literal;
+  }
+
+  const queryFns = [quantityRecord.doubleValue, quantityRecord.doubleValueForUnit];
+  for (const fn of queryFns) {
+    if (typeof fn !== 'function') {
+      continue;
+    }
+    for (const unit of ['degC', 'celsius', '']) {
+      try {
+        const parsed = (fn as (unit: string) => number)(unit);
+        if (typeof parsed === 'number' && Number.isFinite(parsed)) {
+          return parsed;
+        }
+      } catch {
+        // Ignore invalid unit requests and try the next candidate.
+      }
+    }
+  }
+
+  return null;
+};
+
+const fetchSignalSamples = async ({
+  startDate,
+  now,
+}: {
+  startDate: Date;
+  now: Date;
+}) => {
+  const signalGroups = await Promise.all(
+    SIGNAL_QUERY_CONFIG.map(async (query) => {
+      try {
+        if (query.type === 'category') {
+          const raw = await healthkitClient.queryCategorySamples(query.identifier as never, {
+            filter: { startDate, endDate: now },
+            limit: QUERY_LIMIT,
+            ascending: false,
+          });
+          return normalizeSignalSamples(raw as readonly RawSignalSample[], query.kind);
+        }
+
+        if (!healthkitClient.queryQuantitySamples) {
+          return [];
+        }
+
+        const raw = await healthkitClient.queryQuantitySamples(query.identifier as never, {
+          filter: { startDate, endDate: now },
+          limit: QUERY_LIMIT,
+          ascending: false,
+        });
+        const normalizedRaw = (raw as readonly QuantitySampleLike[]).map(
+          (sample): RawSignalSample => ({
+            uuid: sample.uuid ?? null,
+            startDate: sample.startDate,
+            endDate: sample.endDate,
+            value: extractQuantityValue(sample),
+            metadata: sample.metadata,
+          }),
+        );
+        return normalizeSignalSamples(normalizedRaw, query.kind);
+      } catch (error) {
+        console.warn(`[cycle-sync] Optional signal query failed for ${query.identifier}`, error);
+        return [];
+      }
+    }),
+  );
+
+  const seen = new Set<string>();
+  return signalGroups.flat().filter((sample) => {
+    const dedupeKey = `${sample.kind}:${sample.id}`;
+    if (seen.has(dedupeKey)) {
+      return false;
+    }
+    seen.add(dedupeKey);
+    return true;
+  });
+};
 
 export type SyncTrigger = 'manual' | 'foreground' | 'background';
 
@@ -59,6 +192,7 @@ export const syncHealthData = async ({
       limit: QUERY_LIMIT,
       ascending: false,
     });
+    const signalSamples = await fetchSignalSamples({ startDate, now });
 
     // De-dupe by id to avoid duplicates across successive queries
     const seen = new Set<string>();
@@ -68,7 +202,7 @@ export const syncHealthData = async ({
       return true;
     });
     const previousSnapshot = await getLatestCycleSnapshot(session.userId);
-    const snapshot = deriveSnapshot(samples, now.toISOString());
+    const snapshot = deriveSnapshot(samples, now.toISOString(), signalSamples);
     const previousPhase = previousSnapshot?.snapshot.currentPhase ?? null;
     const phaseChanged = previousPhase && previousPhase !== snapshot.currentPhase;
 
@@ -86,11 +220,19 @@ export const syncHealthData = async ({
       }
       const autoPostedSamples = selectAutoPostedPeriodSamples(samples, autoPostSettings);
       await upsertCycleSnapshotRemote(session.userId, snapshot);
+      const phaseMetadata = {
+        phase_source: snapshot.phaseSource ?? 'unknown',
+        cycle_length_days: snapshot.cycleLengthDays ?? null,
+        luteal_length_days: snapshot.lutealLengthDays ?? null,
+      };
       const events = autoPostedSamples.map((sample) => ({
         user_id: session.userId,
         event_type: 'menstrual_flow',
         phase: snapshot.currentPhase,
-        symptoms: sample.metadata ?? null,
+        symptoms: {
+          ...(asRecord(sample.metadata) ?? {}),
+          ...phaseMetadata,
+        },
         starts_at: sample.startDate,
       }));
       if (phaseChanged && autoPostSettings.postPhaseTransitions) {
@@ -98,7 +240,7 @@ export const syncHealthData = async ({
           user_id: session.userId,
           event_type: 'phase_transition',
           phase: snapshot.currentPhase,
-          symptoms: null,
+          symptoms: phaseMetadata,
           starts_at: snapshot.syncedAt,
         });
       }
@@ -108,7 +250,7 @@ export const syncHealthData = async ({
     }
     notify(snapshot);
     console.log(
-      `[cycle-sync] Completed (${trigger}) with ${samples.length} samples from ${startDate.toISOString()} to ${now.toISOString()}`,
+      `[cycle-sync] Completed (${trigger}) with ${samples.length} flow samples and ${signalSamples.length} signal samples from ${startDate.toISOString()} to ${now.toISOString()}`,
     );
     return snapshot;
   } catch (error) {
