@@ -17,7 +17,7 @@ After this change, a signed-in user can tap a friend in the Feed or the Friends 
 - [x] (2026-01-10 21:57Z) Add Supabase schema for friend recommendations and client fetch helpers.
 - [x] (2026-01-10 21:57Z) Add Edge Function to precompute recommendations with OpenAI and document secret handling + scheduling.
 - [x] (2026-01-10 22:06Z) Validate preview-mode behavior in simulator and capture evidence.
-- [ ] (2026-01-10 22:06Z) Configure nightly scheduling for `friend-recommendations` (Supabase dashboard/cron not available in CLI).
+- [x] (2026-02-15 19:30Z) Configure nightly scheduling for `friend-recommendations` via SQL migration.
 - [x] (2026-01-10 22:15Z) Switch Home/Feed navigation to tap friend identity (avatar/name) instead of extra buttons and refresh Friend Sync visual styling.
 - [x] (2026-01-11 23:38Z) Apply HIG review updates: system palette, score pill + legend, cycle overlap timelines with overlap legend, and updated header typography; validated in simulator.
 - [x] (2026-01-11 23:45Z) Cleaned Friend Sync header/preview labels, simplified match highlights, and adjusted recommendation bullet alignment + overlap visuals.
@@ -198,3 +198,4 @@ Change Log: 2026-01-11 23:09Z - Added cycle-over-cycle overlap visualization and
 Change Log: 2026-01-11 23:38Z - Applied HIG review refinements, including system palette, overlap legend, and timeline bar visuals.
 Change Log: 2026-01-11 23:45Z - Simplified Friend Sync header/preview labels and match highlight subtext, adjusted bullet alignment, and removed overlap legend.
 Change Log: 2026-01-11 23:51Z - Gated preview mode behind __DEV__ flag with a dedicated empty state for no selection.
+Change Log: 2026-02-15 19:30Z - Added nightly friend-recommendations scheduler migration and client-side freshness fallback for stale rows.
