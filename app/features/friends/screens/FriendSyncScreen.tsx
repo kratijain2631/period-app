@@ -16,7 +16,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { fetchFriendSharing } from '../../../services/supabase/friendSharing';
 import { fetchCycleSnapshotByUserId } from '../../../services/supabase/cycleSnapshots';
 import { sendBoop } from '../../../services/supabase/boops';
-import { fetchFriendRecommendations } from '../../../services/supabase/friendRecommendations';
+import {
+  fetchFriendRecommendations,
+  shouldUseFriendRecommendations,
+} from '../../../services/supabase/friendRecommendations';
 import { selectIsOnline, useConnectionStore } from '../../../state/connectionStore';
 import { selectSession, useSessionStore } from '../../../state/sessionStore';
 import {
@@ -53,7 +56,7 @@ const FriendSyncScreen = () => {
   const [friendSnapshot, setFriendSnapshot] = useState<{ phase?: string | null } | null>(null);
   const [recommendations, setRecommendations] = useState<string[]>([]);
   const [recommendationsMeta, setRecommendationsMeta] = useState<{
-    source: 'llm' | 'fallback';
+    source: 'llm' | 'fallback' | 'stale';
     generatedAt?: string;
   } | null>(null);
   const [selfPhase, setSelfPhase] = useState<string | null>(null);
@@ -118,6 +121,13 @@ const FriendSyncScreen = () => {
         fetchCycleSnapshotByUserId(session.userId).catch(() => null),
         fetchFriendRecommendations(friendId).catch(() => null),
       ]);
+      const hasFreshRecommendations = shouldUseFriendRecommendations({ row: recRow });
+      const recommendationMeta =
+        hasFreshRecommendations && recRow
+          ? { source: 'llm' as const, generatedAt: recRow.generated_at }
+          : recRow
+            ? { source: 'stale' as const }
+            : { source: 'fallback' as const };
 
       const hasLocal = sharingRows.some(
         (row) => row.user_id === session.userId && row.friend_id === friendId && row.has_shared,
@@ -153,16 +163,9 @@ const FriendSyncScreen = () => {
           friendPhase: friendSnapshotValue.currentPhase ?? 'unknown',
           score: computed.score,
         });
-        const nextRecommendations =
-          recRow?.recommendations && recRow.recommendations.length > 0
-            ? recRow.recommendations
-            : fallback;
+        const nextRecommendations = hasFreshRecommendations && recRow ? recRow.recommendations : fallback;
         setRecommendations(nextRecommendations);
-        setRecommendationsMeta(
-          recRow
-            ? { source: 'llm', generatedAt: recRow.generated_at }
-            : { source: 'fallback' },
-        );
+        setRecommendationsMeta(recommendationMeta);
       } else {
         setSyncScore(null);
         setSelfPhase(selfSnapshot?.currentPhase ?? null);
@@ -172,16 +175,9 @@ const FriendSyncScreen = () => {
           friendPhase: friendSnapshotValue?.currentPhase ?? 'unknown',
           score: 60,
         });
-        const nextRecommendations =
-          recRow?.recommendations && recRow.recommendations.length > 0
-            ? recRow.recommendations
-            : fallback;
+        const nextRecommendations = hasFreshRecommendations && recRow ? recRow.recommendations : fallback;
         setRecommendations(nextRecommendations);
-        setRecommendationsMeta(
-          recRow
-            ? { source: 'llm', generatedAt: recRow.generated_at }
-            : { source: 'fallback' },
-        );
+        setRecommendationsMeta(recommendationMeta);
       }
     } catch (error) {
       console.warn('[friend-sync] Failed to load sync data', error);
@@ -387,6 +383,8 @@ const FriendSyncScreen = () => {
   }, []);
   const recommendationNote = recommendationsMeta?.generatedAt
     ? `Updated ${new Date(recommendationsMeta.generatedAt).toLocaleDateString()}`
+    : recommendationsMeta?.source === 'stale'
+      ? 'Recommendations stale, showing fallback'
     : recommendationsMeta?.source === 'fallback'
       ? 'Fallback suggestions'
       : 'Awaiting recommendations';
