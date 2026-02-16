@@ -49,8 +49,6 @@ const supabase = createClient(supabaseUrl, serviceRoleKey, {
   auth: { persistSession: false },
 });
 
-const DAY_MS = 24 * 60 * 60 * 1000;
-const REGEN_DAYS = 1;
 const PHASE_ORDER = ['menstruation', 'follicular', 'ovulation', 'luteal', 'pms'];
 
 const phaseDistance = (a?: string | null, b?: string | null) => {
@@ -282,37 +280,6 @@ const collectMutualFriendMap = async (): Promise<Map<string, Set<string>>> => {
   return mutual;
 };
 
-const loadExistingMap = async (userIds: string[]) => {
-  if (userIds.length === 0) {
-    return new Map<string, GuidanceRow>();
-  }
-  const { data, error } = await supabase
-    .from('cycle_guidance')
-    .select('user_id, phase, generated_at')
-    .in('user_id', userIds);
-
-  if (error) {
-    throw error;
-  }
-
-  const map = new Map<string, GuidanceRow>();
-  (data ?? []).forEach((row) => {
-    map.set(row.user_id, row as GuidanceRow);
-  });
-  return map;
-};
-
-const isFresh = (row: GuidanceRow | undefined, phase: string) => {
-  if (!row) {
-    return false;
-  }
-  if (row.phase && row.phase !== phase) {
-    return false;
-  }
-  const updatedAt = new Date(row.generated_at).getTime();
-  return Date.now() - updatedAt < REGEN_DAYS * DAY_MS;
-};
-
 const buildSimilarFriends = (selfPhase: string, friends: FriendContext[]) => {
   if (!selfPhase || selfPhase === 'unknown' || friends.length === 0) {
     return [];
@@ -362,7 +329,6 @@ Deno.serve(async () => {
         status: 200,
       });
     }
-    const existingMap = await loadExistingMap(userIds);
     const friendMap = await collectMutualFriendMap();
 
     const { data: profiles, error: profileError } = await supabase
@@ -390,11 +356,6 @@ Deno.serve(async () => {
         continue;
       }
       const selfPhase = snapshotEntry.snapshot.currentPhase ?? 'unknown';
-      const existing = existingMap.get(userId);
-      if (isFresh(existing, selfPhase)) {
-        skipped += 1;
-        continue;
-      }
 
       const friendIds = Array.from(friendMap.get(userId) ?? []);
       const friendContexts: FriendContext[] = friendIds
