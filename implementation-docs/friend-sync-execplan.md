@@ -33,8 +33,8 @@ After this change, a signed-in user can tap a friend in the Feed or the Friends 
 - Decision: Weight the compatibility score as 45% phase alignment, 35% recent flow timing, and 20% 28-day overlap, then clamp to 0–100.
   Rationale: The snapshot model exposes phase and recent flow timing reliably; overlap provides a smaller stabilizing signal.
   Date/Author: 2026-01-10 21:57Z / Codex
-- Decision: Refresh recommendations every 3 days when scheduled.
-  Rationale: Nightly recomputation avoids stale guidance while limiting cost and latency.
+- Decision: Refresh recommendations on every nightly schedule run.
+  Rationale: Daily regeneration keeps recommendation content fresh and avoids stale skips.
   Date/Author: 2026-01-10 21:57Z / Codex
 - Decision: Use preview mode with seeded snapshots when no friend is selected.
   Rationale: The simulator account has no friends, so a demoable UI is required without compromising real data paths.
@@ -87,7 +87,7 @@ Then, update `FeedScreen` and `HomeScreen` so tapping a friend’s identity (ava
 
 After the client changes, add a Supabase migration to create a `friend_recommendations` table with columns for `user_id`, `friend_id`, `recommendations` (JSON array of strings), `score`, and `generated_at`. Add RLS policies that allow authenticated users to read rows where `user_id = auth.uid()` and only allow service-role inserts/updates. Implement a new client helper `app/services/supabase/friendRecommendations.ts` that fetches the latest recommendations for a friend.
 
-Finally, create a new Edge Function at `supabase/functions/friend-recommendations/index.ts` that uses the service role key to fetch mutual friend pairs, compute the same compatibility summary server-side, call OpenAI to generate 3–5 recommendations, and upsert the results into `friend_recommendations`. The function should skip pairs that were generated recently (for example, within the last 3 days). Document in the plan how to set `OPENAI_API_KEY` in Supabase secrets and how to schedule the function nightly. Do not hardcode the key in the repository.
+Finally, create a new Edge Function at `supabase/functions/friend-recommendations/index.ts` that uses the service role key to fetch mutual friend pairs, compute the same compatibility summary server-side, call OpenAI to generate 3–5 recommendations, and upsert the results into `friend_recommendations` on each nightly run. Document in the plan how to set `OPENAI_API_KEY` in Supabase secrets and how to schedule the function nightly. Do not hardcode the key in the repository.
 
 ## Concrete Steps
 
@@ -199,3 +199,4 @@ Change Log: 2026-01-11 23:38Z - Applied HIG review refinements, including system
 Change Log: 2026-01-11 23:45Z - Simplified Friend Sync header/preview labels and match highlight subtext, adjusted bullet alignment, and removed overlap legend.
 Change Log: 2026-01-11 23:51Z - Gated preview mode behind __DEV__ flag with a dedicated empty state for no selection.
 Change Log: 2026-02-15 19:30Z - Added nightly friend-recommendations scheduler migration and client-side freshness fallback for stale rows.
+Change Log: 2026-02-16 16:50Z - Removed server-side 3-day freshness skip so nightly cron recomputes recommendations every run.

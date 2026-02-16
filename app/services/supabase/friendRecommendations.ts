@@ -1,6 +1,6 @@
 import { isSupabaseConfigured, supabase } from './client';
 
-export const FRIEND_RECOMMENDATIONS_TTL_DAYS = 3;
+export const FRIEND_RECOMMENDATIONS_TTL_DAYS = 1;
 
 export type FriendRecommendationsRow = {
   recommendations: string[];
