@@ -18,12 +18,6 @@ type Pair = {
   friendId: string;
 };
 
-type RecommendationRow = {
-  user_id: string;
-  friend_id: string;
-  generated_at: string;
-};
-
 const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
 const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
 const openaiKey = Deno.env.get('OPENAI_API_KEY') ?? '';
@@ -34,7 +28,6 @@ const supabase = createClient(supabaseUrl, serviceRoleKey, {
 });
 
 const DAY_MS = 24 * 60 * 60 * 1000;
-const REGEN_DAYS = 3;
 const PHASE_ORDER = ['menstruation', 'follicular', 'ovulation', 'luteal', 'pms'];
 
 const clamp = (value: number, min = 0, max = 1) => Math.min(max, Math.max(min, value));
@@ -255,34 +248,6 @@ const collectMutualPairs = async (): Promise<Pair[]> => {
   return pairs;
 };
 
-const loadExistingMap = async (userIds: string[]) => {
-  if (userIds.length === 0) {
-    return new Map<string, RecommendationRow>();
-  }
-  const { data, error } = await supabase
-    .from('friend_recommendations')
-    .select('user_id, friend_id, generated_at')
-    .in('user_id', userIds);
-
-  if (error) {
-    throw error;
-  }
-
-  const map = new Map<string, RecommendationRow>();
-  (data ?? []).forEach((row) => {
-    map.set(`${row.user_id}:${row.friend_id}`, row as RecommendationRow);
-  });
-  return map;
-};
-
-const isFresh = (row: RecommendationRow | undefined) => {
-  if (!row) {
-    return false;
-  }
-  const updatedAt = new Date(row.generated_at).getTime();
-  return Date.now() - updatedAt < REGEN_DAYS * DAY_MS;
-};
-
 Deno.serve(async () => {
   try {
     if (!supabaseUrl || !serviceRoleKey) {
@@ -290,19 +255,12 @@ Deno.serve(async () => {
     }
 
     const pairs = await collectMutualPairs();
-    const existingMap = await loadExistingMap(Array.from(new Set(pairs.map((pair) => pair.userId))));
 
     let processed = 0;
     let skipped = 0;
     const errors: string[] = [];
 
     for (const pair of pairs) {
-      const existing = existingMap.get(`${pair.userId}:${pair.friendId}`);
-      if (isFresh(existing)) {
-        skipped += 1;
-        continue;
-      }
-
       const { data: snapshots, error: snapshotError } = await supabase
         .from('cycle_snapshots')
         .select('user_id, snapshot')
