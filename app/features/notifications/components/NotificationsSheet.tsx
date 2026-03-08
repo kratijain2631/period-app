@@ -1,6 +1,7 @@
 import { FlatList, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import type { NotificationRow } from '../../../services/supabase/notifications';
 import type { FriendRequestRow } from '../../../services/supabase/friendRequests';
+import { brand, brandType } from '../../../theme/brand';
 
 type NotificationsSheetProps = {
   visible: boolean;
@@ -115,12 +116,14 @@ const styles = StyleSheet.create({
   },
   sheet: {
     maxHeight: '70%',
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 18,
-    borderTopRightRadius: 18,
+    backgroundColor: brand.colors.white,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
     paddingHorizontal: 16,
     paddingTop: 12,
     paddingBottom: 24,
+    borderTopWidth: 1,
+    borderColor: brand.colors.separator,
   },
   header: {
     flexDirection: 'row',
@@ -130,12 +133,13 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 18,
-    fontWeight: '700',
-    color: '#111',
+    color: brand.colors.primaryText,
+    ...brandType.heading,
   },
   close: {
     fontSize: 14,
-    color: '#555',
+    color: brand.colors.accent,
+    ...brandType.semibold,
   },
   listContent: {
     gap: 12,
@@ -146,27 +150,29 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 14,
-    fontWeight: '700',
-    color: '#111',
+    color: brand.colors.primaryText,
+    ...brandType.semibold,
   },
   requestRow: {
-    borderRadius: 12,
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#eee',
+    borderColor: brand.colors.separator,
     padding: 12,
     gap: 8,
+    backgroundColor: brand.colors.mutedFill,
   },
   requestMeta: {
     gap: 4,
   },
   requestName: {
     fontSize: 14,
-    fontWeight: '700',
-    color: '#111',
+    color: brand.colors.primaryText,
+    ...brandType.semibold,
   },
   requestDate: {
     fontSize: 12,
-    color: '#777',
+    color: brand.colors.secondaryText,
+    ...brandType.body,
   },
   requestActions: {
     flexDirection: 'row',
@@ -178,47 +184,51 @@ const styles = StyleSheet.create({
     borderRadius: 999,
   },
   requestAccept: {
-    backgroundColor: '#1f9d55',
+    backgroundColor: brand.colors.accent,
   },
   requestAcceptText: {
-    color: '#fff',
+    color: brand.colors.white,
     fontSize: 12,
-    fontWeight: '600',
+    ...brandType.semibold,
   },
   requestDecline: {
-    backgroundColor: '#f3f4f6',
+    backgroundColor: brand.colors.white,
     borderWidth: 1,
-    borderColor: '#dc2626',
+    borderColor: brand.colors.destructive,
   },
   requestDeclineText: {
-    color: '#dc2626',
+    color: brand.colors.destructive,
     fontSize: 12,
-    fontWeight: '600',
+    ...brandType.semibold,
   },
   row: {
-    borderRadius: 12,
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#eee',
+    borderColor: brand.colors.separator,
     padding: 12,
     gap: 4,
+    backgroundColor: brand.colors.mutedFill,
   },
   rowTitle: {
     fontSize: 14,
-    fontWeight: '700',
-    color: '#111',
+    color: brand.colors.primaryText,
+    ...brandType.semibold,
   },
   rowSubtitle: {
     fontSize: 13,
-    color: '#555',
+    color: brand.colors.secondaryText,
+    ...brandType.body,
   },
   rowMeta: {
     fontSize: 12,
-    color: '#888',
+    color: brand.colors.tertiaryText,
+    ...brandType.body,
   },
   empty: {
     textAlign: 'center',
-    color: '#666',
+    color: brand.colors.secondaryText,
     paddingVertical: 24,
+    ...brandType.body,
   },
 });
 

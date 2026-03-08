@@ -6,7 +6,6 @@ import {
   Easing,
   Image,
   Platform,
-  PlatformColor,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -31,23 +30,26 @@ import {
 } from '../../../services/supabase/cycleGuidance';
 import { useCycleSnapshot } from '../../feed/hooks/useCycleSnapshot';
 import { generateAvatarImage, uploadAvatarBlob } from '../../../services/supabase/avatars';
-
-const iosColor = (name: string, fallback: string) =>
-  Platform.OS === 'ios' ? PlatformColor(name) : fallback;
+import { deleteCurrentAccount, signOut } from '../../../services/supabase/auth';
+import { brand, brandType } from '../../../theme/brand';
+import { CycleRing, PhaseAvatar, PhaseIndicator, getPhaseBg, getPhaseColor } from '../../../components/brand/CycleRing';
+import { DottieMascot, DottieTheme, DottieThemed } from '../../../components/brand/DottieMascot';
+import { useStaggeredEntrance } from '../../../components/brand/useStaggeredEntrance';
 
 const palette = {
-  background: iosColor('systemGroupedBackground', '#F2F2F7'),
-  card: iosColor('secondarySystemGroupedBackground', '#FFFFFF'),
-  primaryText: iosColor('label', '#111827'),
-  secondaryText: iosColor('secondaryLabel', '#6B7280'),
-  tertiaryText: iosColor('tertiaryLabel', '#9CA3AF'),
-  separator: iosColor('separator', '#E5E7EB'),
-  accent: iosColor('systemBlue', '#007AFF'),
-  accentSoft: '#E6F0FF',
-  success: iosColor('systemGreen', '#16A34A'),
-  warningText: iosColor('systemRed', '#B42318'),
-  fill: iosColor('systemGray5', '#E5E7EB'),
-  mutedFill: iosColor('systemGray6', '#F3F4F6'),
+  background: brand.colors.background,
+  card: brand.colors.card,
+  primaryText: brand.colors.primaryText,
+  secondaryText: brand.colors.secondaryText,
+  tertiaryText: brand.colors.tertiaryText,
+  separator: brand.colors.separator,
+  accent: brand.colors.accent,
+  accentSoft: brand.colors.accentSoft,
+  success: brand.colors.success,
+  warningText: brand.colors.warningText,
+  fill: brand.colors.fill,
+  mutedFill: brand.colors.mutedFill,
+  white: brand.colors.white,
 };
 
 const BIO_MAX_LENGTH = 80;
@@ -62,6 +64,79 @@ const AVATAR_GLAM_PROMPT = [
 ].join(' ');
 const AVATAR_GLAM_STYLE_LABEL = 'Maximum Glam';
 const AVATAR_GENERATION_TIMEOUT_MS = 90000;
+
+type FlipGuideCardProps = {
+  title: string;
+  body: string;
+  bg: string;
+  color: string;
+  theme: DottieTheme;
+  accessibilityLabel: string;
+};
+
+const FlipGuideCard = ({ title, body, bg, color, theme, accessibilityLabel }: FlipGuideCardProps) => {
+  const [isFlipped, setFlipped] = useState(false);
+  const rotate = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.timing(rotate, {
+      toValue: isFlipped ? 1 : 0,
+      duration: 450,
+      easing: Easing.bezier(0.4, 0, 0.2, 1),
+      useNativeDriver: true,
+    }).start();
+  }, [isFlipped, rotate]);
+
+  const frontRotate = rotate.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '180deg'],
+  });
+  const backRotate = rotate.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['180deg', '360deg'],
+  });
+
+  return (
+    <Pressable
+      onPress={() => setFlipped((value) => !value)}
+      style={styles.flipCardWrap}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
+    >
+      <View style={styles.flipCardPerspective}>
+        <Animated.View
+          style={[
+            styles.flipCardFace,
+            styles.flipCardFront,
+            {
+              backgroundColor: bg,
+              transform: [{ perspective: 900 }, { rotateY: frontRotate }],
+            },
+          ]}
+        >
+          <DottieThemed theme={theme} color={color} size={52} />
+          <Text style={[styles.flipCardTitle, { color }]}>{title}</Text>
+          <Text style={styles.flipCardHint}>tap to flip</Text>
+        </Animated.View>
+
+        <Animated.View
+          style={[
+            styles.flipCardFace,
+            styles.flipCardBack,
+            {
+              backgroundColor: bg,
+              transform: [{ perspective: 900 }, { rotateY: backRotate }],
+            },
+          ]}
+        >
+          <Text style={styles.flipCardBody} numberOfLines={5}>
+            {body}
+          </Text>
+        </Animated.View>
+      </View>
+    </Pressable>
+  );
+};
 
 const ProfileScreen = () => {
   const session = useSessionStore(selectSession);
@@ -82,6 +157,8 @@ const ProfileScreen = () => {
   const [cycleGuidanceStatus, setCycleGuidanceStatus] = useState<
     'idle' | 'loading' | 'error'
   >('idle');
+  const [accountAction, setAccountAction] = useState<'idle' | 'signingOut' | 'deleting'>('idle');
+  const [accountError, setAccountError] = useState<string | null>(null);
 
   const loadProfile = useCallback(async () => {
     try {
@@ -379,14 +456,22 @@ const ProfileScreen = () => {
   );
 
   const displayName = useMemo(() => {
+    const normalize = (value: string) => value.trim().toUpperCase();
     if (profileName) {
-      return profileName;
+      return normalize(profileName);
     }
     if (profileEmail) {
-      return profileEmail;
+      return normalize(profileEmail);
     }
     return 'Your Name';
   }, [profileEmail, profileName]);
+
+  const displayEmail = useMemo(() => {
+    if (!profileEmail) {
+      return '';
+    }
+    return profileEmail.trim().toUpperCase();
+  }, [profileEmail]);
 
   const canSaveBio = useMemo(
     () => bioDraft.trim() !== profileBio.trim() && bioDraft.trim().length <= BIO_MAX_LENGTH,
@@ -410,14 +495,61 @@ const ProfileScreen = () => {
 
   const navigateToFriendSync = useCallback(
     (friendUserId: string) => {
-      navigation.navigate('FriendSync' as never, { friendId: friendUserId } as never);
+      (navigation as any).navigate('FriendSync', { friendId: friendUserId });
     },
     [navigation],
   );
 
   const navigateToAutoPostSettings = useCallback(() => {
-    navigation.navigate('AutoPostSettings' as never);
+    (navigation as any).navigate('AutoPostSettings');
   }, [navigation]);
+
+  const handleSignOut = useCallback(async () => {
+    if (accountAction !== 'idle') {
+      return;
+    }
+    setAccountError(null);
+    setAccountAction('signingOut');
+    try {
+      await signOut();
+      useSessionStore.getState().reset();
+    } catch (error) {
+      console.warn('[profile] Failed to sign out', error);
+      setAccountError('Could not sign out right now.');
+    } finally {
+      setAccountAction('idle');
+    }
+  }, [accountAction]);
+
+  const confirmDeleteAccount = useCallback(() => {
+    if (accountAction !== 'idle') {
+      return;
+    }
+    Alert.alert(
+      'Delete account?',
+      'This permanently removes your account and cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            setAccountError(null);
+            setAccountAction('deleting');
+            try {
+              await deleteCurrentAccount();
+              useSessionStore.getState().reset();
+            } catch (error) {
+              console.warn('[profile] Failed to delete account', error);
+              setAccountError('Could not delete account right now.');
+            } finally {
+              setAccountAction('idle');
+            }
+          },
+        },
+      ],
+    );
+  }, [accountAction]);
 
   const cyclePhaseKey = snapshot?.currentPhase ?? 'unknown';
   const cyclePhaseLabel = useMemo(
@@ -498,266 +630,296 @@ const ProfileScreen = () => {
     return 'No similar-phase friends yet.';
   }, [cycleGuidanceStatus]);
 
+  const cycleDayNumber = useMemo(() => {
+    const latest = snapshot?.latestSampleStart;
+    if (!latest) {
+      return null;
+    }
+    const latestDate = new Date(latest);
+    if (Number.isNaN(latestDate.getTime())) {
+      return null;
+    }
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const startOfLatest = new Date(
+      latestDate.getFullYear(),
+      latestDate.getMonth(),
+      latestDate.getDate(),
+    ).getTime();
+    const elapsedDays = Math.max(
+      0,
+      Math.floor((startOfToday - startOfLatest) / (24 * 60 * 60 * 1000)),
+    );
+    const cycleLength = snapshot?.cycleLengthDays ?? 28;
+    return (elapsedDays % cycleLength) + 1;
+  }, [snapshot?.cycleLengthDays, snapshot?.latestSampleStart]);
+
+  const cycleLengthDays = snapshot?.cycleLengthDays ?? 28;
+  const monthlyTracked = Math.max(
+    1,
+    Math.min(12, Math.round((snapshot?.samples.length ?? 0) / 5) || 6),
+  );
+
+  const parseGuideText = (value: string) => {
+    const trimmed = value.trim();
+    if (!trimmed) {
+      return { title: 'Tip', body: '' };
+    }
+    const parts = trimmed.split(':');
+    if (parts.length > 1) {
+      return {
+        title: parts[0].trim(),
+        body: parts.slice(1).join(':').trim(),
+      };
+    }
+    const words = trimmed.split(/\s+/);
+    const title = words.slice(0, Math.min(3, words.length)).join(' ');
+    return { title, body: trimmed };
+  };
+
+  const doThemes: DottieTheme[] = ['hydrate', 'movement', 'nourish'];
+  const dontThemes: DottieTheme[] = ['caffeine', 'overcommit', 'workouts'];
+  const doPalette = [
+    { bg: '#EEF3F8', color: '#6B8DB5' },
+    { bg: '#EDF5F0', color: '#7BA68F' },
+    { bg: '#FFF8ED', color: '#D4A252' },
+  ];
+  const dontPalette = [
+    { bg: '#FFF0EB', color: '#C4654A' },
+    { bg: '#EEF3F8', color: '#6B8DB5' },
+    { bg: '#EDF5F0', color: '#7BA68F' },
+  ];
+
+  const doCards = phaseDos.map((item, index) => {
+    const parsed = parseGuideText(item);
+    return {
+      ...parsed,
+      ...doPalette[index % doPalette.length],
+      theme: doThemes[index % doThemes.length],
+    };
+  });
+
+  const dontCards = phaseDonts.map((item, index) => {
+    const parsed = parseGuideText(item);
+    return {
+      ...parsed,
+      ...dontPalette[index % dontPalette.length],
+      theme: dontThemes[index % dontThemes.length],
+    };
+  });
+  const entranceStyles = useStaggeredEntrance(5, {
+    initialDelay: 40,
+    stagger: 80,
+    distance: 14,
+  });
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.profileCard}>
-          <View style={styles.profileHeaderRow}>
+        <Animated.View style={entranceStyles[0]}>
+          <View style={styles.headerRow}>
+          <View style={styles.headerIdentity}>
             <Pressable
-              style={styles.avatar}
+              style={styles.avatarPress}
               onPress={handleAvatarPress}
               accessibilityRole="button"
               accessibilityLabel="Choose profile photo"
               accessibilityState={{ disabled: isAvatarBusy }}
             >
-              {isAvatarBusy ? (
-                <Animated.View
-                  pointerEvents="none"
-                  style={[
-                    styles.avatarPulse,
-                    {
-                      opacity: avatarPulse.interpolate({
-                        inputRange: [0, 1],
-                        outputRange: [0.2, 0.55],
-                      }),
-                      transform: [
-                        {
-                          scale: avatarPulse.interpolate({
-                            inputRange: [0, 1],
-                            outputRange: [1, 1.12],
-                          }),
-                        },
-                      ],
-                    },
-                  ]}
+              {avatarUrl && !avatarLoadFailed ? (
+                <Image
+                  source={{ uri: avatarUrl }}
+                  style={styles.avatarImage}
+                  onError={() => {
+                    setAvatarLoadFailed(true);
+                    setAvatarError('Could not load avatar. Try re-uploading.');
+                  }}
                 />
-              ) : null}
-              <View style={styles.avatarImageWrap}>
-                {avatarUrl && !avatarLoadFailed ? (
-                  <Image
-                    source={{ uri: avatarUrl }}
-                    style={styles.avatarImage}
-                    onError={() => {
-                      setAvatarLoadFailed(true);
-                      setAvatarError('Could not load avatar. Try re-uploading.');
-                    }}
-                  />
-                ) : (
-                  <Text style={styles.avatarText}>{avatarInitial}</Text>
-                )}
-              </View>
-              <View style={styles.avatarOverlay}>
-                <Ionicons
-                  name={isAvatarBusy ? 'sparkles' : 'camera-outline'}
-                  size={18}
-                  color={isAvatarBusy ? palette.accent : palette.primaryText}
-                />
-              </View>
-            </Pressable>
-            <View style={styles.profileMeta}>
-              <View style={styles.profileMetaTopRow}>
-                <Text style={styles.profileName}>{displayName}</Text>
-                <TouchableOpacity
-                  style={styles.profileSettingsButton}
-                  onPress={navigateToAutoPostSettings}
-                  accessibilityRole="button"
-                  accessibilityLabel="Open auto-post settings"
-                >
-                  <Ionicons name="settings-outline" size={16} color={palette.secondaryText} />
-                </TouchableOpacity>
-              </View>
-              {profileEmail ? <Text style={styles.profileEmail}>{profileEmail}</Text> : null}
-              {session?.userId ? (
-                <Text style={styles.profileId}>Your ID: {session.userId}</Text>
-              ) : null}
-              {isAvatarBusy ? (
-                <Text style={styles.avatarStatus}>Glamifying your photo...</Text>
-              ) : null}
-              {avatarError ? <Text style={styles.avatarError}>{avatarError}</Text> : null}
-            </View>
-          </View>
-          <View style={styles.profileDivider} />
-          <View style={styles.bioSection}>
-            <View style={styles.bioHeader}>
-              <Text style={styles.sectionTitle}>About you</Text>
-              {isBioEditing ? (
-                <Text style={styles.bioCounter}>{bioStatusLabel}</Text>
               ) : (
-                <TouchableOpacity style={styles.bioEditButton} onPress={handleStartBioEdit}>
-                  <Ionicons name="pencil-outline" size={13} color={palette.accent} />
-                  <Text style={styles.bioEditButtonText}>
-                    {profileBio.trim() ? 'Edit' : 'Add'}
-                  </Text>
-                </TouchableOpacity>
+                <PhaseAvatar initial={avatarInitial} phase={cyclePhaseKey} size={56} />
               )}
+            </Pressable>
+            <View style={styles.identityMeta}>
+              <Text style={styles.profileName}>{displayName}</Text>
+              {displayEmail ? <Text style={styles.profileEmail}>{displayEmail}</Text> : null}
+              {isAvatarBusy ? <Text style={styles.inlineStatus}>Glamifying your photo...</Text> : null}
+              {avatarError ? <Text style={styles.inlineError}>{avatarError}</Text> : null}
             </View>
-            {isBioEditing ? (
-              <>
-                <TextInput
-                  style={styles.bioInput}
-                  value={bioDraft}
-                  onChangeText={setBioDraft}
-                  placeholder="NYC, Yale '24, matcha loyalist"
-                  maxLength={BIO_MAX_LENGTH}
-                  autoCapitalize="sentences"
-                  autoCorrect
-                />
-                {bioStatus === 'error' ? (
-                  <Text style={styles.bioError}>Unable to save right now.</Text>
-                ) : null}
-                <View style={styles.bioActionRow}>
-                  <TouchableOpacity
-                    style={[styles.bioSaveButton, !canSaveBio ? styles.bioSaveButtonDisabled : null]}
-                    onPress={handleSaveBio}
-                    disabled={!canSaveBio || bioStatus === 'saving'}
-                  >
-                    <Text style={styles.bioSaveButtonText}>
-                      {bioStatus === 'saving' ? 'Saving...' : 'Save bio'}
-                    </Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.bioCancelButton}
-                    onPress={handleCancelBioEdit}
-                    disabled={bioStatus === 'saving'}
-                  >
-                    <Text style={styles.bioCancelButtonText}>Cancel</Text>
-                  </TouchableOpacity>
-                </View>
-              </>
-            ) : (
-              <Text
-                style={[
-                  styles.bioPreviewText,
-                  !profileBio.trim() ? styles.bioPreviewPlaceholder : null,
-                ]}
-              >
-                {profileBio.trim() || 'Add a short bio about yourself.'}
-              </Text>
-            )}
           </View>
-        </View>
 
-        <View style={styles.cycleCard}>
-          <View style={styles.cycleHeader}>
-            <View style={styles.cycleHeaderLeft}>
-              <View
-                style={[
-                  styles.cycleIconBadge,
-                  { backgroundColor: cyclePhaseColors.background },
-                ]}
-              >
-                <Ionicons
-                  name="pulse-outline"
-                  size={16}
-                  color={cyclePhaseColors.text}
-                />
-              </View>
-              <View style={styles.cycleHeaderText}>
-                <Text style={styles.cycleHeaderLabel}>My cycle</Text>
-                <Text style={styles.cycleHeaderValue}>{cyclePhaseDisplayLabel}</Text>
+          <TouchableOpacity
+            style={styles.settingsButton}
+            onPress={navigateToAutoPostSettings}
+            accessibilityRole="button"
+            accessibilityLabel="Open auto-post settings"
+          >
+            <Ionicons name="settings-outline" size={19} color="#8A857E" />
+          </TouchableOpacity>
+          </View>
+        </Animated.View>
+
+        <Animated.View style={entranceStyles[1]}>
+          <View style={[styles.heroCard, { backgroundColor: getPhaseBg(cyclePhaseKey) }]}>
+            <CycleRing currentDay={cycleDayNumber ?? 1} currentPhase={cyclePhaseKey} size={180} />
+            <View style={styles.heroPhaseWrap}>
+              <PhaseIndicator phase={cyclePhaseKey} />
+            </View>
+            <View style={styles.heroMascot}>
+              <DottieMascot size={64} mood="meditating" color={getPhaseColor(cyclePhaseKey)} />
+            </View>
+          </View>
+        </Animated.View>
+
+        <Animated.View style={entranceStyles[2]}>
+          <View style={styles.recapBlock}>
+          <Text style={styles.recapEyebrow}>Your Monthly Recap</Text>
+
+          <View style={styles.recapLargeCard}>
+            <Text style={styles.recapLargeLabel}>Cycle Length</Text>
+            <Text style={styles.recapLargeHint}>Right on track!</Text>
+            <View style={styles.recapValueRow}>
+              <Text style={styles.recapLargeValue}>{cycleLengthDays}</Text>
+              <Text style={styles.recapLargeSuffix}>days</Text>
+            </View>
+          </View>
+
+          <View style={styles.recapGrid}>
+            <View style={[styles.recapSmallCard, { backgroundColor: '#EDF5F0' }]}>
+              <Text style={[styles.recapSmallLabel, { color: '#7BA68F' }]}>Current Day</Text>
+              <View style={styles.recapValueRow}>
+                <Text style={styles.recapSmallValue}>{cycleDayNumber ?? '--'}</Text>
+                <Text style={styles.recapSmallSuffix}>of {cycleLengthDays}</Text>
               </View>
             </View>
-            <Text
-              style={[
-                styles.cycleHeaderMeta,
-                cycleMetaTone === 'stale' ? styles.cycleHeaderMetaStale : null,
-              ]}
-            >
-              {cycleMetaLabel}
-            </Text>
-          </View>
-          <View style={styles.cycleMetaRow}>
-            <View
-              style={[
-                styles.phasePill,
-                { backgroundColor: cyclePhaseColors.background },
-              ]}
-            >
-              <Text
-                style={[
-                  styles.phasePillText,
-                  { color: cyclePhaseColors.text },
-                ]}
-              >
-                {cyclePhaseDisplayLabel}
-              </Text>
-            </View>
-            <Text style={styles.cycleMetaDetail}>{cycleDetailLabel}</Text>
-          </View>
-          <View style={styles.cycleSectionHeader}>
-            <Text style={styles.sectionTitle}>Phase guide</Text>
-            <Text style={styles.sectionHint}>{guidanceUpdatedLabel}</Text>
-          </View>
-          {phaseDos.length || phaseDonts.length ? (
-            <View style={styles.phaseGuideGrid}>
-              <View style={styles.phaseGuideColumn}>
-                <Text style={styles.phaseGuideLabel}>Do</Text>
-                {phaseDos.map((item, index) => (
-                  <View key={`do-${index}`} style={styles.phaseGuideRow}>
-                    <Ionicons
-                      name="checkmark-circle"
-                      size={14}
-                      color={palette.success}
-                    />
-                    <Text style={styles.phaseGuideText}>{item}</Text>
-                  </View>
-                ))}
-              </View>
-              <View style={styles.phaseGuideColumn}>
-                <Text style={styles.phaseGuideLabel}>Don't</Text>
-                {phaseDonts.map((item, index) => (
-                  <View key={`dont-${index}`} style={styles.phaseGuideRow}>
-                    <Ionicons
-                      name="close-circle"
-                      size={14}
-                      color={palette.warningText}
-                    />
-                    <Text style={styles.phaseGuideText}>{item}</Text>
-                  </View>
-                ))}
+
+            <View style={[styles.recapSmallCard, { backgroundColor: '#FFF8ED' }]}>
+              <Text style={[styles.recapSmallLabel, { color: '#D4A252' }]}>Tracked</Text>
+              <View style={styles.recapValueRow}>
+                <Text style={styles.recapSmallValue}>{monthlyTracked}</Text>
+                <Text style={styles.recapSmallSuffix}>months</Text>
               </View>
             </View>
+          </View>
+          </View>
+        </Animated.View>
+
+        <Text style={styles.sectionTitle}>Phase Guide</Text>
+
+        <Text style={styles.doLabel}>Do&apos;s</Text>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.guideRow}
+        >
+          {doCards.length ? (
+            doCards.map((card, index) => (
+              <FlipGuideCard
+                key={`do-${index}`}
+                title={card.title}
+                body={card.body}
+                bg={card.bg}
+                color={card.color}
+                theme={card.theme}
+                accessibilityLabel={`Flip do card ${card.title}`}
+              />
+            ))
           ) : (
-            <Text style={styles.cycleEmptyText}>{guidanceEmptyLabel}</Text>
+            <Text style={styles.emptyInlineText}>{guidanceEmptyLabel}</Text>
           )}
-          <View style={styles.cycleSectionHeader}>
-            <Text style={styles.sectionTitle}>Friends in sync</Text>
-            <Text style={styles.sectionHint}>Similar phases</Text>
-          </View>
+        </ScrollView>
+
+        <Text style={styles.dontLabel}>Don&apos;ts</Text>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.guideRow}
+        >
+          {dontCards.length ? (
+            dontCards.map((card, index) => (
+              <FlipGuideCard
+                key={`dont-${index}`}
+                title={card.title}
+                body={card.body}
+                bg={card.bg}
+                color={card.color}
+                theme={card.theme}
+                accessibilityLabel={`Flip don't card ${card.title}`}
+              />
+            ))
+          ) : (
+            <Text style={styles.emptyInlineText}>{guidanceEmptyLabel}</Text>
+          )}
+        </ScrollView>
+
+        <Text style={styles.sectionTitle}>Friends In Sync</Text>
+        <View style={styles.friendsCard}>
           {friendSuggestions.length ? (
-            <View style={styles.friendSuggestionList}>
-              {friendSuggestions.map((item, index) => {
-                const friendName =
-                  item.friend_name ?? `Friend ${shortId(item.friend_id)}`;
-                const initial = friendName.trim().slice(0, 1).toUpperCase() || '?';
-                return (
-                  <TouchableOpacity
-                    key={`${item.friend_id}-${index}`}
-                    style={styles.friendSuggestionRow}
-                    onPress={() => navigateToFriendSync(item.friend_id)}
-                    accessibilityLabel={`View sync with ${friendName}`}
-                  >
-                    <View style={styles.friendSuggestionAvatar}>
-                      <Text style={styles.friendSuggestionInitial}>{initial}</Text>
+            friendSuggestions.map((item, index) => {
+              const friendName = item.friend_name ?? `Friend ${shortId(item.friend_id)}`;
+              const initial = friendName.trim().slice(0, 1).toUpperCase() || '?';
+              const phaseColor = getPhaseColor(cyclePhaseKey);
+              return (
+                <TouchableOpacity
+                  key={`${item.friend_id}-${index}`}
+                  style={styles.friendRow}
+                  onPress={() => navigateToFriendSync(item.friend_id)}
+                  accessibilityLabel={`View sync with ${friendName}`}
+                >
+                  <PhaseAvatar initial={initial} phase={cyclePhaseKey} size={42} />
+                  <View style={styles.friendMeta}>
+                    <View style={styles.friendMetaTitle}>
+                      <Text style={styles.friendName}>{friendName}</Text>
+                      <View style={[styles.friendPhaseBadge, { backgroundColor: `${phaseColor}14` }]}>
+                        <View style={[styles.friendPhaseDot, { backgroundColor: phaseColor }]} />
+                        <Text style={[styles.friendPhaseText, { color: phaseColor }]}>Sync</Text>
+                      </View>
                     </View>
-                    <View style={styles.friendSuggestionContent}>
-                      <Text style={styles.friendSuggestionName}>{friendName}</Text>
-                      <Text style={styles.friendSuggestionText}>{item.suggestion}</Text>
-                    </View>
-                    <Ionicons
-                      name="chevron-forward"
-                      size={16}
-                      color={palette.tertiaryText}
-                    />
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
+                    <Text style={styles.friendNote} numberOfLines={1}>
+                      {item.suggestion}
+                    </Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={16} color="#DDD9D3" />
+                  {index < friendSuggestions.length - 1 ? <View style={styles.friendDivider} /> : null}
+                </TouchableOpacity>
+              );
+            })
           ) : (
-            <Text style={styles.cycleEmptyText}>{friendsEmptyLabel}</Text>
+            <Text style={styles.emptyInlineText}>{friendsEmptyLabel}</Text>
           )}
         </View>
 
+        <Text style={styles.sectionTitle}>Account</Text>
+        <View style={styles.accountCard}>
+          <TouchableOpacity style={[styles.accountRow, styles.accountRowDivider]} onPress={navigateToAutoPostSettings}>
+            <Ionicons name="settings-outline" size={18} color="#8A857E" />
+            <Text style={styles.accountRowText}>Post Settings</Text>
+            <Ionicons name="chevron-forward" size={16} color="#DDD9D3" />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.accountRow, styles.accountRowDivider, accountAction !== 'idle' ? styles.buttonDisabled : null]}
+            onPress={handleSignOut}
+            disabled={accountAction !== 'idle'}
+          >
+            <Ionicons name="log-out-outline" size={18} color="#C4654A" />
+            <Text style={styles.accountSignOutText}>
+              {accountAction === 'signingOut' ? 'Signing out...' : 'Sign out'}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.accountRow, accountAction !== 'idle' ? styles.buttonDisabled : null]}
+            onPress={confirmDeleteAccount}
+            disabled={accountAction !== 'idle'}
+          >
+            <Ionicons name="trash-outline" size={18} color="#D4A252" />
+            <Text style={styles.accountDeleteText}>
+              {accountAction === 'deleting' ? 'Deleting...' : 'Delete account'}
+            </Text>
+          </TouchableOpacity>
+
+          {accountError ? <Text style={styles.inlineError}>{accountError}</Text> : null}
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -770,375 +932,348 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 32,
-    gap: 18,
+    paddingTop: 14,
+    paddingBottom: 120,
   },
-  profileCard: {
-    backgroundColor: palette.card,
-    borderRadius: 20,
-    padding: 16,
-    gap: 14,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: palette.separator,
-    shadowColor: '#000',
-    shadowOpacity: 0.03,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 1,
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    marginBottom: 18,
   },
-  profileHeaderRow: {
+  headerIdentity: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
+    gap: 12,
+    flex: 1,
   },
-  avatar: {
-    width: 92,
-    height: 92,
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'relative',
-    overflow: 'visible',
-  },
-  avatarImageWrap: {
-    width: 78,
-    height: 78,
-    borderRadius: 39,
-    backgroundColor: palette.fill,
-    alignItems: 'center',
-    justifyContent: 'center',
+  avatarPress: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   avatarImage: {
     width: '100%',
     height: '100%',
+    borderRadius: 28,
     resizeMode: 'cover',
   },
-  avatarPulse: {
-    position: 'absolute',
-    width: 88,
-    height: 88,
-    borderRadius: 44,
-    borderWidth: 2,
-    borderColor: palette.accent,
-    backgroundColor: palette.accentSoft,
-  },
-  avatarText: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: palette.primaryText,
-  },
-  avatarOverlay: {
-    position: 'absolute',
-    bottom: 4,
-    right: 4,
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: '#FFFFFFEE',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1.5,
-    borderColor: palette.separator,
-    shadowColor: '#000',
-    shadowOpacity: 0.12,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
-  },
-  profileMeta: {
+  identityMeta: {
     flex: 1,
-    gap: 4,
-  },
-  profileMetaTopRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 8,
+    minWidth: 0,
   },
   profileName: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: palette.primaryText,
-    flex: 1,
-  },
-  profileSettingsButton: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: palette.mutedFill,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: palette.separator,
+    fontSize: 22,
+    color: '#2D2A26',
+    ...brandType.display,
   },
   profileEmail: {
     fontSize: 13,
-    color: palette.secondaryText,
+    color: '#8A857E',
+    marginTop: 0.5,
+    letterSpacing: 0.2,
+    ...brandType.body,
   },
-  profileId: {
+  settingsButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#F0EDE8',
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...brand.shadow.soft,
+  },
+  inlineStatus: {
+    marginTop: 3,
     fontSize: 12,
-    color: palette.tertiaryText,
+    color: '#C4654A',
+    ...brandType.semibold,
   },
-  avatarStatus: {
-    marginTop: 2,
-    fontSize: 12,
-    color: palette.accent,
-    fontWeight: '600',
-  },
-  avatarError: {
+  inlineError: {
     marginTop: 6,
     fontSize: 12,
-    color: palette.warningText,
+    color: '#C4654A',
+    ...brandType.body,
   },
-  profileDivider: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: palette.separator,
-    marginHorizontal: -16,
+  heroCard: {
+    borderRadius: 28,
+    paddingVertical: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 18,
+    overflow: 'hidden',
   },
-  bioSection: {
+  heroPhaseWrap: {
+    marginTop: 10,
+  },
+  heroMascot: {
+    position: 'absolute',
+    right: -4,
+    bottom: -2,
+    opacity: 0.32,
+  },
+  recapBlock: {
+    marginBottom: 18,
+  },
+  recapEyebrow: {
+    fontSize: 10,
+    color: '#8A857E',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginBottom: 8,
+    ...brandType.semibold,
+  },
+  recapLargeCard: {
+    borderRadius: 24,
+    backgroundColor: '#EEF3F8',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    marginBottom: 10,
+  },
+  recapLargeLabel: {
+    fontSize: 10,
+    color: '#6B8DB5',
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    ...brandType.semibold,
+  },
+  recapLargeHint: {
+    fontSize: 12,
+    color: '#8A857E',
+    marginBottom: 3,
+    ...brandType.body,
+  },
+  recapValueRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 5,
+  },
+  recapLargeValue: {
+    fontSize: 58,
+    lineHeight: 66,
+    paddingTop: 2,
+    color: '#2D2A26',
+    ...brandType.display,
+  },
+  recapLargeSuffix: {
+    fontSize: 14,
+    color: '#8A857E',
+    marginBottom: 8,
+    ...brandType.body,
+  },
+  recapGrid: {
+    flexDirection: 'row',
     gap: 10,
   },
-  bioHeader: {
+  recapSmallCard: {
+    flex: 1,
+    borderRadius: 24,
+    paddingHorizontal: 12,
+    paddingVertical: 11,
+  },
+  recapSmallLabel: {
+    fontSize: 10,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginBottom: 3,
+    ...brandType.semibold,
+  },
+  recapSmallValue: {
+    fontSize: 40,
+    lineHeight: 46,
+    paddingTop: 1,
+    color: '#2D2A26',
+    ...brandType.display,
+  },
+  recapSmallSuffix: {
+    fontSize: 12,
+    color: '#8A857E',
+    marginBottom: 6,
+    ...brandType.body,
+  },
+  sectionTitle: {
+    fontSize: 28,
+    color: '#2D2A26',
+    marginBottom: 8,
+    ...brandType.display,
+  },
+  doLabel: {
+    fontSize: 12,
+    color: '#7BA68F',
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginBottom: 8,
+    ...brandType.semibold,
+  },
+  dontLabel: {
+    fontSize: 12,
+    color: '#C4654A',
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginTop: 8,
+    marginBottom: 8,
+    ...brandType.semibold,
+  },
+  guideRow: {
+    gap: 10,
+    paddingBottom: 10,
+    paddingRight: 2,
+  },
+  flipCardWrap: {
+    width: 150,
+    height: 158,
+  },
+  flipCardPerspective: {
+    flex: 1,
+    position: 'relative',
+  },
+  flipCardFace: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: 22,
+    paddingHorizontal: 10,
+    paddingVertical: 10,
+    backfaceVisibility: 'hidden',
+  },
+  flipCardFront: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  flipCardBack: {
+    justifyContent: 'center',
+  },
+  flipCardTitle: {
+    marginTop: 6,
+    fontSize: 13,
+    textAlign: 'center',
+    ...brandType.semibold,
+  },
+  flipCardHint: {
+    position: 'absolute',
+    bottom: 8,
+    fontSize: 9,
+    color: '#B5AFA7',
+    ...brandType.body,
+  },
+  flipCardBody: {
+    fontSize: 11,
+    color: '#5A564F',
+    lineHeight: 16,
+    textAlign: 'center',
+    ...brandType.body,
+  },
+  emptyInlineText: {
+    fontSize: 13,
+    color: '#8A857E',
+    ...brandType.body,
+  },
+  friendsCard: {
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: '#F0EDE8',
+    backgroundColor: '#FFFFFF',
+    marginBottom: 18,
+    overflow: 'hidden',
+    ...brand.shadow.card,
+  },
+  friendRow: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  friendMeta: {
+    flex: 1,
+    marginLeft: 10,
+    marginRight: 8,
+  },
+  friendMetaTitle: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    gap: 6,
+    marginBottom: 3,
   },
-  bioEditButton: {
+  friendName: {
+    fontSize: 14,
+    color: '#2D2A26',
+    ...brandType.semibold,
+  },
+  friendPhaseBadge: {
+    borderRadius: 999,
+    paddingHorizontal: 9,
+    paddingVertical: 3,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 999,
-    backgroundColor: palette.accentSoft,
   },
-  bioEditButtonText: {
+  friendPhaseDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  friendPhaseText: {
+    fontSize: 10,
+    ...brandType.semibold,
+  },
+  friendNote: {
     fontSize: 12,
-    fontWeight: '600',
-    color: palette.accent,
+    color: '#8A857E',
+    ...brandType.body,
   },
-  bioCounter: {
-    fontSize: 12,
-    color: palette.tertiaryText,
+  friendDivider: {
+    position: 'absolute',
+    left: 16,
+    right: 16,
+    bottom: 0,
+    height: 1,
+    backgroundColor: '#F3F0EC',
   },
-  bioPreviewText: {
-    minHeight: 20,
+  accountCard: {
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: '#F0EDE8',
+    backgroundColor: '#FFFFFF',
+    marginBottom: 18,
+    overflow: 'hidden',
+    ...brand.shadow.card,
+  },
+  accountRow: {
+    minHeight: 56,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingHorizontal: 16,
+  },
+  accountRowDivider: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F0EC',
+  },
+  accountRowText: {
+    flex: 1,
     fontSize: 14,
-    color: palette.primaryText,
+    color: '#5A564F',
+    ...brandType.body,
   },
-  bioPreviewPlaceholder: {
-    color: palette.tertiaryText,
-  },
-  bioInput: {
-    minHeight: 44,
-    borderRadius: 12,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: palette.separator,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+  accountSignOutText: {
+    flex: 1,
     fontSize: 14,
-    color: palette.primaryText,
-    backgroundColor: palette.mutedFill,
+    color: '#C4654A',
+    ...brandType.semibold,
   },
-  bioError: {
-    fontSize: 12,
-    color: palette.warningText,
+  accountDeleteText: {
+    flex: 1,
+    fontSize: 14,
+    color: '#D4A252',
+    ...brandType.semibold,
   },
-  bioSaveButton: {
-    alignSelf: 'flex-start',
-    backgroundColor: palette.primaryText,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 12,
-  },
-  bioSaveButtonDisabled: {
+  buttonDisabled: {
     opacity: 0.6,
-  },
-  bioSaveButtonText: {
-    color: '#fff',
-    fontWeight: '600',
-    fontSize: 13,
-  },
-  bioActionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  bioCancelButton: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 12,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: palette.separator,
-    backgroundColor: palette.card,
-  },
-  bioCancelButtonText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: palette.secondaryText,
-  },
-  cycleCard: {
-    backgroundColor: palette.card,
-    borderRadius: 20,
-    padding: 16,
-    gap: 12,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: palette.separator,
-    shadowColor: '#000',
-    shadowOpacity: 0.03,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 3 },
-    elevation: 1,
-  },
-  cycleHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 12,
-  },
-  cycleHeaderLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    flex: 1,
-  },
-  cycleIconBadge: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  cycleHeaderText: {
-    flex: 1,
-    gap: 2,
-  },
-  cycleHeaderLabel: {
-    fontSize: 12,
-    color: palette.tertiaryText,
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: 0.4,
-  },
-  cycleHeaderValue: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: palette.primaryText,
-    textTransform: 'capitalize',
-  },
-  cycleHeaderMeta: {
-    fontSize: 12,
-    color: palette.secondaryText,
-    textAlign: 'right',
-  },
-  cycleHeaderMetaStale: {
-    color: palette.warningText,
-  },
-  cycleMetaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  phasePill: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 999,
-  },
-  phasePillText: {
-    fontSize: 12,
-    fontWeight: '600',
-    textTransform: 'capitalize',
-  },
-  cycleMetaDetail: {
-    fontSize: 12,
-    color: palette.secondaryText,
-    flex: 1,
-    textAlign: 'right',
-  },
-  cycleSectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  phaseGuideGrid: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  phaseGuideColumn: {
-    flex: 1,
-    gap: 6,
-  },
-  phaseGuideLabel: {
-    fontSize: 12,
-    color: palette.tertiaryText,
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: 0.4,
-  },
-  phaseGuideRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 6,
-  },
-  phaseGuideText: {
-    fontSize: 13,
-    color: palette.primaryText,
-    flexShrink: 1,
-  },
-  cycleEmptyText: {
-    fontSize: 13,
-    color: palette.tertiaryText,
-  },
-  friendSuggestionList: {
-    gap: 10,
-  },
-  friendSuggestionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 14,
-    backgroundColor: palette.mutedFill,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: palette.separator,
-  },
-  friendSuggestionAvatar: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: palette.fill,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  friendSuggestionInitial: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: palette.primaryText,
-  },
-  friendSuggestionContent: {
-    flex: 1,
-    gap: 2,
-  },
-  friendSuggestionName: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: palette.primaryText,
-  },
-  friendSuggestionText: {
-    fontSize: 12,
-    color: palette.secondaryText,
-  },
-  sectionTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: palette.primaryText,
-  },
-  sectionHint: {
-    fontSize: 12,
-    color: palette.tertiaryText,
   },
 });
 

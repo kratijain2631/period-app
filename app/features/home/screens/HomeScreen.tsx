@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
+  Animated,
   Dimensions,
   FlatList,
   GestureResponderEvent,
+  Image,
   Modal,
-  Platform,
-  PlatformColor,
   Pressable,
   ScrollView,
   SafeAreaView,
@@ -18,10 +18,8 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import NotificationsBell from '../../notifications/components/NotificationsBell';
 import NotificationsSheet from '../../notifications/components/NotificationsSheet';
 import { useNotifications } from '../../notifications/hooks/useNotifications';
-import FriendSyncButton from '../../friends/components/FriendSyncButton';
 import { createPost, fetchPosts, type PostRow } from '../../../services/supabase/posts';
 import { fetchCycleEvents, type CycleEventRow } from '../../../services/supabase/cycleEvents';
 import {
@@ -46,29 +44,30 @@ import { selectIsOnline, useConnectionStore } from '../../../state/connectionSto
 import { selectAlias, selectSession, useSessionStore } from '../../../state/sessionStore';
 import { useCycleSnapshot } from '../../feed/hooks/useCycleSnapshot';
 import { getDoubleTapResult } from '../utils/reactionDoubleTap';
-
-const iosColor = (name: string, fallback: string) =>
-  Platform.OS === 'ios' ? PlatformColor(name) : fallback;
+import { brand, brandType } from '../../../theme/brand';
+import { CycleRing, PhaseAvatar, PhaseIndicator, getPhaseColor } from '../../../components/brand/CycleRing';
+import { useStaggeredEntrance } from '../../../components/brand/useStaggeredEntrance';
 
 const palette = {
-  background: iosColor('systemGroupedBackground', '#F2F2F7'),
-  card: iosColor('secondarySystemGroupedBackground', '#FFFFFF'),
-  primaryText: iosColor('label', '#111827'),
-  secondaryText: iosColor('secondaryLabel', '#6B7280'),
-  tertiaryText: iosColor('tertiaryLabel', '#9CA3AF'),
-  placeholder: iosColor('placeholderText', '#9CA3AF'),
-  separator: iosColor('separator', '#E5E7EB'),
-  accent: iosColor('systemBlue', '#007AFF'),
-  accentSoft: '#E6F0FF',
-  success: iosColor('systemGreen', '#16A34A'),
-  successBackground: '#E7F7EC',
-  fill: iosColor('systemGray5', '#E5E7EB'),
-  mutedFill: iosColor('systemGray6', '#F3F4F6'),
-  disabled: iosColor('systemGray3', '#D1D5DB'),
-  pendingText: '#92400E',
-  pendingBackground: '#FEF3C7',
-  warningText: iosColor('systemRed', '#B42318'),
-  warningBackground: '#FDECEC',
+  background: brand.colors.background,
+  card: brand.colors.card,
+  primaryText: brand.colors.primaryText,
+  secondaryText: brand.colors.secondaryText,
+  tertiaryText: brand.colors.tertiaryText,
+  placeholder: '#C5BFB8',
+  separator: brand.colors.separator,
+  accent: brand.colors.accent,
+  accentSoft: brand.colors.accentSoft,
+  success: brand.colors.success,
+  successBackground: brand.colors.successBackground,
+  fill: brand.colors.fill,
+  mutedFill: brand.colors.mutedFill,
+  disabled: brand.colors.disabled,
+  pendingText: brand.colors.pendingText,
+  pendingBackground: brand.colors.pendingBackground,
+  warningText: brand.colors.warningText,
+  warningBackground: brand.colors.warningBackground,
+  white: brand.colors.white,
 };
 
 const MOOD_TAGS = [
@@ -81,30 +80,15 @@ const MOOD_TAGS = [
   'Boop me',
 ];
 
-const MOOD_TONE_MAP: Record<string, 'positive' | 'warm' | 'negative'> = {
-  Recovering: 'warm',
-  Amazing: 'positive',
-  'Rock Hard': 'positive',
-  Sad: 'negative',
-  'Bloated af': 'negative',
-  'One more day': 'warm',
-  'Boop me': 'warm',
+const MOOD_EMOJI_MAP: Record<string, string> = {
+  Recovering: '🌿',
+  Amazing: '✨',
+  'Rock Hard': '💪',
+  Sad: '🌧',
+  'Bloated af': '🫧',
+  'One more day': '🕯',
+  'Boop me': '🤝',
 };
-
-const MOOD_TONE_COLORS = {
-  positive: '#15803D',
-  warm: '#B45309',
-  negative: '#B42318',
-};
-
-const MOOD_TAG_MAP = MOOD_TAGS.reduce(
-  (acc, label) => {
-    const tone = MOOD_TONE_MAP[label] ?? 'warm';
-    acc[label] = { tone, dot: MOOD_TONE_COLORS[tone] };
-    return acc;
-  },
-  {} as Record<string, { tone: 'positive' | 'warm' | 'negative'; dot: string }>,
-);
 
 const parseMoodTags = (value: string | null) =>
   (value ?? '')
@@ -148,6 +132,7 @@ type HomeFeedItem =
   | { type: 'post'; id: string; sortKey: number; post: PostRow }
   | { type: 'cycle'; id: string; sortKey: number; event: CycleEventRow };
 type ReactionTarget = { type: 'post' | 'cycle'; id: string };
+type FeedUserProfile = { name: string; avatarUrl: string | null };
 
 const REACTION_BUTTON_SIZE = 32;
 const REACTION_BUTTON_GAP = 6;
@@ -169,6 +154,7 @@ const HomeScreen = () => {
   const [posts, setPosts] = useState<PostRow[]>([]);
   const [cycleEvents, setCycleEvents] = useState<CycleEventRow[]>([]);
   const [cycleNameMap, setCycleNameMap] = useState<Record<string, string>>({});
+  const [userProfileMap, setUserProfileMap] = useState<Record<string, FeedUserProfile>>({});
   const [isLoading, setLoading] = useState(false);
   const [isSheetVisible, setSheetVisible] = useState(false);
   const [isComposerOpen, setComposerOpen] = useState(false);
@@ -190,6 +176,9 @@ const HomeScreen = () => {
   const [boopStatusByPost, setBoopStatusByPost] = useState<Record<string, BoopStatus>>({});
   const [boopStatusByEvent, setBoopStatusByEvent] = useState<Record<string, BoopStatus>>({});
   const [boopLoadingByEvent, setBoopLoadingByEvent] = useState<Record<string, boolean>>({});
+  const [likedPosts, setLikedPosts] = useState<Set<string>>(new Set());
+  const [likedEvents, setLikedEvents] = useState<Set<string>>(new Set());
+  const [quickMoodRowWidth, setQuickMoodRowWidth] = useState(0);
   const postPressRef = useRef(false);
   const lastTapRef = useRef<{ postId: string | null; timestamp: number | null }>({
     postId: null,
@@ -206,6 +195,38 @@ const HomeScreen = () => {
   );
 
   const quickReactionsKey = session?.userId ? `quick-reactions:${session.userId}` : null;
+  const visibleQuickMoodLabels = useMemo(() => {
+    if (!quickMoodRowWidth) {
+      return MOOD_TAGS.slice(0, 3);
+    }
+    const GAP = 8;
+    const MORE_CHIP_WIDTH = 78;
+    const available = quickMoodRowWidth - MORE_CHIP_WIDTH - GAP;
+    if (available <= 0) {
+      return MOOD_TAGS.slice(0, 1);
+    }
+
+    const estimateChipWidth = (label: string) => {
+      const text = `${MOOD_EMOJI_MAP[label] ?? '•'} ${label}`;
+      return Math.min(170, 30 + text.length * 7.1);
+    };
+
+    const visible: string[] = [];
+    let used = 0;
+    for (const label of MOOD_TAGS) {
+      const nextWidth = estimateChipWidth(label);
+      if (visible.length === 0 && nextWidth > available) {
+        visible.push(label);
+        break;
+      }
+      if (visible.length > 0 && used + GAP + nextWidth > available) {
+        break;
+      }
+      used += visible.length > 0 ? GAP + nextWidth : nextWidth;
+      visible.push(label);
+    }
+    return visible.length ? visible : MOOD_TAGS.slice(0, 1);
+  }, [quickMoodRowWidth]);
 
   const toggleComposerMood = useCallback((label: string) => {
     setComposerMoods((prev) => {
@@ -229,6 +250,30 @@ const HomeScreen = () => {
 
   const closeMoodModal = useCallback(() => {
     setMoodModalVisible(false);
+  }, []);
+
+  const toggleLikedPost = useCallback((postId: string) => {
+    setLikedPosts((prev) => {
+      const next = new Set(prev);
+      if (next.has(postId)) {
+        next.delete(postId);
+      } else {
+        next.add(postId);
+      }
+      return next;
+    });
+  }, []);
+
+  const toggleLikedEvent = useCallback((eventId: string) => {
+    setLikedEvents((prev) => {
+      const next = new Set(prev);
+      if (next.has(eventId)) {
+        next.delete(eventId);
+      } else {
+        next.add(eventId);
+      }
+      return next;
+    });
   }, []);
 
   const normalizeQuickReactions = useCallback((list: string[]) => {
@@ -256,25 +301,28 @@ const HomeScreen = () => {
   const navigateToProfile = () => {
     const state = navigation.getState();
     if (state?.routeNames?.includes('HomeProfile')) {
-      navigation.navigate('HomeProfile' as never);
+      (navigation as any).navigate('HomeProfile');
       return;
     }
     if (state?.routeNames?.includes('Profile')) {
-      navigation.navigate('Profile' as never);
+      (navigation as any).navigate('Profile');
     }
   };
 
   const navigateToFriendSync = useCallback(
     (friendUserId: string) => {
-      navigation.navigate('FriendSync' as never, { friendId: friendUserId } as never);
+      (navigation as any).navigate('FriendSync', { friendId: friendUserId });
     },
     [navigation],
   );
 
   const loadFeed = useCallback(async () => {
     setLoading(true);
+    let postRows: PostRow[] = [];
+    let eventRows: CycleEventRow[] = [];
     try {
       const data = await fetchPosts();
+      postRows = data;
       setPosts(data);
       const ids = data.map((post) => post.id);
       try {
@@ -348,6 +396,7 @@ const HomeScreen = () => {
     }
     try {
       const events = await fetchCycleEvents();
+      eventRows = events;
       setCycleEvents(events);
       const eventIds = events.map((event) => event.id);
       if (eventIds.length) {
@@ -417,34 +466,6 @@ const HomeScreen = () => {
         setEventReactionSelections({});
         setBoopCountsByEvent({});
       }
-      const friendIds = Array.from(
-        new Set(
-          events
-            .map((event) => event.user_id)
-            .filter((userId) => userId && userId !== session?.userId),
-        ),
-      );
-      if (friendIds.length) {
-        try {
-          const profiles = await fetchUserProfilesByIds(friendIds);
-          const nextMap: Record<string, string> = {};
-          profiles.forEach((profile) => {
-            if (profile.full_name) {
-              nextMap[profile.id] = profile.full_name;
-            } else if (profile.alias) {
-              nextMap[profile.id] = profile.alias;
-            } else if (profile.email) {
-              nextMap[profile.id] = profile.email;
-            }
-          });
-          setCycleNameMap(nextMap);
-        } catch (error) {
-          console.warn('[home] Failed to load cycle friend names', error);
-          setCycleNameMap({});
-        }
-      } else {
-        setCycleNameMap({});
-      }
     } catch (error) {
       console.warn('[home] Failed to load cycle events', error);
       setCycleEvents([]);
@@ -453,6 +474,40 @@ const HomeScreen = () => {
       setEventReactionSelections({});
       setBoopCountsByEvent({});
     } finally {
+      const profileIds = Array.from(
+        new Set(
+          [...postRows.map((row) => row.user_id), ...eventRows.map((row) => row.user_id), session?.userId]
+            .filter((id): id is string => Boolean(id)),
+        ),
+      );
+      if (profileIds.length) {
+        try {
+          const profiles = await fetchUserProfilesByIds(profileIds);
+          const nextProfiles: Record<string, FeedUserProfile> = {};
+          const nextNames: Record<string, string> = {};
+          profiles.forEach((profile) => {
+            const name =
+              profile.full_name?.trim() ||
+              profile.alias?.trim() ||
+              profile.email?.trim() ||
+              `Friend ${profile.id.slice(0, 4)}...${profile.id.slice(-4)}`;
+            nextProfiles[profile.id] = {
+              name,
+              avatarUrl: profile.avatar_url ?? null,
+            };
+            nextNames[profile.id] = name;
+          });
+          setUserProfileMap(nextProfiles);
+          setCycleNameMap(nextNames);
+        } catch (error) {
+          console.warn('[home] Failed to load user profiles', error);
+          setUserProfileMap({});
+          setCycleNameMap({});
+        }
+      } else {
+        setUserProfileMap({});
+        setCycleNameMap({});
+      }
       setLoading(false);
     }
   }, [session?.userId]);
@@ -881,25 +936,8 @@ const HomeScreen = () => {
     return null;
   };
 
-  const phasePillPalette: Record<string, string> = {
-    menstruation: '#FDECEC',
-    follicular: '#ECFDF3',
-    ovulation: '#FFF8E1',
-    luteal: '#EEF2FF',
-    pms: '#FEF3C7',
-    unknown: '#F3F4F6',
-  };
-
-  const phasePillPaletteText: Record<string, string> = {
-    menstruation: '#B42318',
-    follicular: '#027A48',
-    ovulation: '#B54708',
-    luteal: '#3730A3',
-    pms: '#92400E',
-    unknown: '#6B7280',
-  };
-
   const cyclePhaseKey = snapshot?.currentPhase ?? 'unknown';
+  const quickMoodActiveColor = useMemo(() => getPhaseColor(cyclePhaseKey), [cyclePhaseKey]);
   const cyclePhaseLabel = useMemo(
     () => formatPhaseLabel(snapshot?.currentPhase) ?? 'Unknown phase',
     [snapshot?.currentPhase],
@@ -923,12 +961,6 @@ const HomeScreen = () => {
     }
     return cycleSyncLabel === 'Not synced yet' ? 'Synced recently' : `Last synced ${cycleSyncLabel}`;
   }, [cycleSyncLabel, isSnapshotStale, snapshot]);
-  const cycleMetaTone = !snapshot || isSnapshotStale ? 'stale' : 'fresh';
-  const cyclePhaseColors = {
-    background: phasePillPalette[cyclePhaseKey] ?? palette.mutedFill,
-    text: phasePillPaletteText[cyclePhaseKey] ?? palette.secondaryText,
-  };
-
   const periodDayByEventId = useMemo(() => {
     const result: Record<string, { day: number; total: number }> = {};
     const byUser: Record<string, Record<number, CycleEventRow[]>> = {};
@@ -991,13 +1023,13 @@ const HomeScreen = () => {
     };
     const merged: HomeFeedItem[] = [
       ...posts.map((post) => ({
-        type: 'post',
+        type: 'post' as const,
         id: `post-${post.id}`,
         sortKey: toSortKey(post.created_at),
         post,
       })),
       ...cycleEvents.map((event) => ({
-        type: 'cycle',
+        type: 'cycle' as const,
         id: `cycle-${event.id}`,
         sortKey: toSortKey(event.starts_at),
         event,
@@ -1006,15 +1038,96 @@ const HomeScreen = () => {
     return merged.sort((a, b) => b.sortKey - a.sortKey);
   }, [posts, cycleEvents]);
 
+  const cycleDayNumber = useMemo(() => {
+    const latest = snapshot?.latestSampleStart;
+    if (!latest) {
+      return null;
+    }
+    const latestDate = new Date(latest);
+    if (Number.isNaN(latestDate.getTime())) {
+      return null;
+    }
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const startOfLatest = new Date(
+      latestDate.getFullYear(),
+      latestDate.getMonth(),
+      latestDate.getDate(),
+    ).getTime();
+    const elapsedDays = Math.max(0, Math.floor((startOfToday - startOfLatest) / (24 * 60 * 60 * 1000)));
+    const cycleLength = snapshot?.cycleLengthDays ?? 28;
+    return ((elapsedDays % cycleLength) + 1);
+  }, [snapshot?.cycleLengthDays, snapshot?.latestSampleStart]);
+  const entranceStyles = useStaggeredEntrance(4, {
+    initialDelay: 40,
+    stagger: 80,
+    distance: 14,
+  });
+
+  const openReactionPickerAtCenter = useCallback((target: ReactionTarget) => {
+    const { width, height } = Dimensions.get('window');
+    setReactionTarget(target);
+    setReactionPickerExpanded(false);
+    setReactionAnchor({ x: width / 2, y: height * 0.62 });
+  }, []);
+
+  const renderReactions = useCallback(
+    (
+      target: ReactionTarget,
+      reactions: Record<string, number>,
+      selections: Record<string, boolean>,
+    ) => {
+      const entries = Object.entries(reactions).sort((a, b) => b[1] - a[1]);
+      const visible = entries.slice(0, 3);
+      const hidden = Math.max(0, entries.length - visible.length);
+
+      return (
+        <View style={styles.reactionInlineRow}>
+          {visible.map(([emoji, count]) => (
+            <TouchableOpacity
+              key={`${target.id}-${emoji}`}
+              style={[
+                styles.reactionChip,
+                selections[emoji] ? styles.reactionChipActive : null,
+              ]}
+              onPress={() => handleReaction(target, emoji)}
+            >
+              <Text style={styles.reactionEmoji}>{emoji}</Text>
+              <Text
+                style={[
+                  styles.reactionCount,
+                  selections[emoji] ? styles.reactionCountActive : null,
+                ]}
+              >
+                {count}
+              </Text>
+            </TouchableOpacity>
+          ))}
+          <TouchableOpacity
+            style={styles.reactionMoreChip}
+            onPress={() => openReactionPickerAtCenter(target)}
+            accessibilityLabel="More reactions"
+          >
+            {hidden > 0 ? (
+              <Text style={styles.reactionMoreText}>+{hidden}</Text>
+            ) : (
+              <Ionicons name="add" size={14} color={palette.secondaryText} />
+            )}
+          </TouchableOpacity>
+        </View>
+      );
+    },
+    [handleReaction, openReactionPickerAtCenter],
+  );
+
   const renderPost = ({ item }: { item: PostRow }) => {
-    const name = item.user_id === session?.userId ? 'You' : item.alias ?? 'Anonymous';
-    const timeLabel = formatTime(item.created_at);
-    const initials = (item.alias ?? name).slice(0, 1).toUpperCase();
-    const moodTags = parseMoodTags(item.mood_tag);
-    const hasBody = Boolean(item.body);
-    const metaLabel = hasBody ? 'Story update' : moodTags.length ? 'Mood update' : 'Check-in';
-    const moodTone = moodTags.length ? MOOD_TAG_MAP[moodTags[0]] : null;
     const isSelf = item.user_id === session?.userId;
+    const profile = userProfileMap[item.user_id];
+    const name = isSelf ? 'You' : profile?.name ?? item.alias ?? 'Anonymous';
+    const initials = (item.alias ?? name).slice(0, 1).toUpperCase();
+    const avatarUrl = profile?.avatarUrl ?? null;
+    const timeLabel = formatTime(item.created_at);
+    const moodTags = parseMoodTags(item.mood_tag);
     const boopCount = boopCounts[item.id] ?? 0;
     const boopStatus = boopStatusByPost[item.id] ?? 'idle';
     const boopSent = boopStatus === 'sent';
@@ -1026,105 +1139,79 @@ const HomeScreen = () => {
         : boopSent
           ? palette.success
           : boopQueued
-          ? palette.pendingText
-          : palette.accent;
+            ? palette.pendingText
+            : palette.accent;
     const postReactions = reactionCounts[item.id] ?? {};
     const postSelections = reactionSelections[item.id] ?? {};
-    const headerContent = (
-      <>
-        <View style={styles.headerLeft}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{initials}</Text>
-          </View>
-          <View style={styles.postMeta}>
-            <Text style={styles.postName}>{name}</Text>
-            <Text style={styles.postMetaText}>{metaLabel}</Text>
-          </View>
-        </View>
-        {timeLabel ? <Text style={styles.postTime}>{timeLabel}</Text> : null}
-      </>
-    );
+    const reactionTotal = Object.values(postReactions).reduce((sum, value) => sum + value, 0);
+    const isLiked = likedPosts.has(item.id);
+    const likeCount = reactionTotal + (isLiked ? 1 : 0);
+    const avatarPhase = isSelf ? cyclePhaseKey : 'unknown';
+    const moodLabel = moodTags.length ? moodTags[0] : 'Cycle update';
 
     return (
       <TouchableOpacity
-        style={styles.postCard}
+        style={styles.feedCard}
         onLongPress={(event) => openReactionPicker({ type: 'post', id: item.id }, event)}
         onPress={() => handlePostPress(item.id)}
-        activeOpacity={0.9}
+        activeOpacity={0.93}
       >
-        <View style={styles.postHeader}>
-          {isSelf ? (
-            <View style={styles.postHeaderButton}>{headerContent}</View>
-          ) : (
-            <TouchableOpacity
-              style={styles.postHeaderButton}
-              onPress={() => navigateToFriendSync(item.user_id)}
-              accessibilityLabel={`View sync with ${name}`}
-            >
-              {headerContent}
-            </TouchableOpacity>
-          )}
-        </View>
-        {moodTags.length ? (
-          <View style={styles.moodPillRow}>
-            {moodTags.map((tag, index) => (
-              <View key={`${tag}-${index}`} style={styles.moodPill}>
-                <View
-                  style={[
-                    styles.moodDotSmall,
-                    { backgroundColor: MOOD_TAG_MAP[tag]?.dot ?? palette.tertiaryText },
-                  ]}
-                />
-                <Text style={styles.moodPillText}>{tag}</Text>
-              </View>
-            ))}
-          </View>
-        ) : null}
-        {item.body ? <Text style={styles.postBody}>{item.body}</Text> : null}
-        <View style={styles.postActions}>
-          <TouchableOpacity
-            style={[
-              styles.boopButton,
-              boopQueued ? styles.boopButtonQueued : null,
-              boopSent ? styles.boopButtonSent : null,
-            ]}
-            onPress={() => handleBoop(item)}
-            disabled={boopSending || boopQueued || boopSent || isSelf}
-          >
-            <Ionicons
-              name={boopSent ? 'checkmark' : 'hand-left-outline'}
-              size={14}
-              color={boopTextColor}
-            />
-            <Text style={[styles.boopText, { color: boopTextColor }]}>
-              {boopSending ? 'Booping...' : boopQueued ? 'Queued' : boopSent ? 'Booped' : 'Boop'}
-            </Text>
-          </TouchableOpacity>
-          <Text style={styles.boopCount}>{boopCount}</Text>
-          {Object.keys(postReactions).length > 0 ? (
-            <View style={styles.reactionRow}>
-              {Object.entries(postReactions).map(([emoji, count]) => (
-                <TouchableOpacity
-                  key={`${item.id}-${emoji}`}
-                  style={[
-                    styles.reactionChip,
-                    postSelections[emoji] ? styles.reactionChipActive : null,
-                  ]}
-                  onPress={() => handleReaction({ type: 'post', id: item.id }, emoji)}
-                >
-                  <Text style={styles.reactionEmoji}>{emoji}</Text>
-                  <Text
-                    style={[
-                      styles.reactionCount,
-                      postSelections[emoji] ? styles.reactionCountActive : null,
-                    ]}
-                  >
-                    {count}
-                  </Text>
-                </TouchableOpacity>
-              ))}
+        <View style={styles.feedHeaderRow}>
+          <View style={styles.feedHeaderLeft}>
+            {avatarUrl ? (
+              <Image source={{ uri: avatarUrl }} style={styles.feedAvatarImage} />
+            ) : (
+              <PhaseAvatar initial={initials} phase={avatarPhase} size={40} />
+            )}
+            <View style={styles.feedMeta}>
+              <Text style={styles.feedName}>{name}</Text>
+              <Text style={styles.feedSubline}>{moodLabel}</Text>
             </View>
-          ) : null}
+          </View>
+          {timeLabel ? <Text style={styles.feedTime}>{timeLabel}</Text> : null}
+        </View>
+
+        {item.body ? <Text style={styles.feedBody}>{item.body}</Text> : null}
+
+        <View style={styles.feedActionsRow}>
+          <View style={styles.feedReactionsWrap}>
+            {renderReactions({ type: 'post', id: item.id }, postReactions, postSelections)}
+          </View>
+          <View style={styles.feedIconActions}>
+            <TouchableOpacity
+              style={styles.feedIconButton}
+              onPress={() => toggleLikedPost(item.id)}
+              accessibilityLabel="Toggle like"
+            >
+              <Ionicons
+                name={isLiked ? 'heart' : 'heart-outline'}
+                size={15}
+                color={isLiked ? palette.accent : palette.tertiaryText}
+              />
+              <Text
+                style={[
+                  styles.feedIconCount,
+                  isLiked ? { color: palette.accent } : null,
+                ]}
+              >
+                {likeCount}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.feedIconButton}
+              onPress={() => handleBoop(item)}
+              disabled={boopSending || boopQueued || boopSent || isSelf}
+              accessibilityLabel="Boop post"
+            >
+              <Ionicons
+                name={boopSent ? 'checkmark-circle' : 'hand-left-outline'}
+                size={15}
+                color={boopTextColor}
+              />
+              <Text style={[styles.feedIconCount, { color: boopTextColor }]}>{boopCount}</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </TouchableOpacity>
     );
@@ -1132,147 +1219,125 @@ const HomeScreen = () => {
 
   const renderCycleEvent = ({ item }: { item: CycleEventRow }) => {
     const isSelf = item.user_id === session?.userId;
-    const name = isSelf ? 'You' : cycleNameMap[item.user_id] ?? `Friend ${shortId(item.user_id)}`;
-    const timeLabel = formatTime(item.starts_at);
+    const profile = userProfileMap[item.user_id];
+    const name =
+      isSelf ? 'You' : profile?.name ?? cycleNameMap[item.user_id] ?? `Friend ${shortId(item.user_id)}`;
     const initials = name.trim().slice(0, 1).toUpperCase() || '?';
+    const avatarUrl = profile?.avatarUrl ?? null;
+    const timeLabel = formatTime(item.starts_at);
     const eventReactions = eventReactionCounts[item.id] ?? {};
     const eventSelections = eventReactionSelections[item.id] ?? {};
     const boopStatus = boopStatusByEvent[item.id] ?? 'idle';
     const queued = boopStatus === 'queued';
-    const boopInFlight = boopLoadingByEvent[item.id];
     const boopSent = boopStatus === 'sent';
+    const boopLoading = boopLoadingByEvent[item.id];
+    const boopCount = boopCountsByEvent[item.id] ?? 0;
     const boopTextColor =
-      boopInFlight || isSelf
+      boopLoading || isSelf
         ? palette.secondaryText
         : boopSent
           ? palette.success
           : queued
-          ? palette.pendingText
-          : palette.accent;
-    const boopCount = boopCountsByEvent[item.id] ?? 0;
+            ? palette.pendingText
+            : palette.accent;
+
     const phaseLabel = formatPhaseLabel(item.phase);
-    const phaseSourceLabel = isSelf
-      ? formatPhaseSourceLabel(
-          typeof item.symptoms?.phase_source === 'string' ? item.symptoms.phase_source : null,
-        )
-      : null;
     const periodInfo = periodDayByEventId[item.id];
     const isPhaseTransition = item.event_type === 'phase_transition';
-    const metaLabel = isPhaseTransition
-      ? phaseSourceLabel
-        ? `Phase change • ${phaseSourceLabel}`
-        : 'Phase change'
-      : 'Cycle update';
-    const eventIcon = isPhaseTransition
-      ? 'pulse-outline'
-      : item.event_type === 'menstrual_flow'
-        ? 'water-outline'
-        : 'calendar-outline';
-    const phaseKey = item.phase ?? 'unknown';
     const pillLabel = isPhaseTransition
       ? phaseLabel
         ? `Entered ${phaseLabel}`
-        : 'Phase update'
+        : 'Phase change'
       : item.event_type === 'menstrual_flow'
         ? periodInfo
           ? `Period day ${periodInfo.day} of ${periodInfo.total}`
           : 'Menstrual flow'
         : formatEventType(item.event_type);
-    const pillColors = isPhaseTransition
-      ? {
-          background: palette.mutedFill,
-          text: phasePillPaletteText[phaseKey] ?? palette.secondaryText,
-        }
-      : item.event_type === 'menstrual_flow'
-        ? {
-            background: palette.mutedFill,
-            text: phasePillPaletteText.menstruation,
-          }
-        : { background: palette.mutedFill, text: palette.secondaryText };
-    const headerContent = (
-      <>
-        <View style={styles.headerLeft}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{initials}</Text>
-          </View>
-          <View style={styles.postMeta}>
-            <Text style={styles.postName}>{name}</Text>
-            <Text style={styles.postMetaText}>{metaLabel}</Text>
-          </View>
-        </View>
-        {timeLabel ? <Text style={styles.postTime}>{timeLabel}</Text> : null}
-      </>
-    );
+    const eventText = pillLabel;
+    const eventToneColor =
+      item.event_type === 'menstrual_flow'
+        ? '#C4654A'
+        : item.event_type === 'ovulation_detected'
+          ? '#D4A252'
+          : getPhaseColor(item.phase);
+    const eventIcon: keyof typeof Ionicons.glyphMap =
+      item.event_type === 'menstrual_flow'
+        ? 'water-outline'
+        : item.event_type === 'ovulation_detected'
+          ? 'sunny-outline'
+          : item.event_type === 'phase_transition'
+            ? 'pulse-outline'
+            : 'sparkles-outline';
+    const isLiked = likedEvents.has(item.id);
+    const reactionTotal = Object.values(eventReactions).reduce((sum, value) => sum + value, 0);
+    const likeCount = reactionTotal + (isLiked ? 1 : 0);
+
     return (
       <TouchableOpacity
-        style={styles.postCard}
+        style={styles.feedCard}
         onLongPress={(event) => openReactionPicker({ type: 'cycle', id: item.id }, event)}
         onPress={() => handleEventPress(item.id)}
-        activeOpacity={0.9}
+        activeOpacity={0.93}
       >
-        <View style={styles.postHeader}>
-          {isSelf ? (
-            <View style={styles.postHeaderButton}>{headerContent}</View>
-          ) : (
-            <TouchableOpacity
-              style={styles.postHeaderButton}
-              onPress={() => navigateToFriendSync(item.user_id)}
-              accessibilityLabel={`View sync with ${name}`}
-            >
-              {headerContent}
-            </TouchableOpacity>
-          )}
-        </View>
-        <View style={[styles.moodPill, { backgroundColor: pillColors.background }]}>
-          <Ionicons name={eventIcon} size={12} color={pillColors.text} />
-          <Text style={[styles.moodPillText, { color: pillColors.text }]}>{pillLabel}</Text>
-        </View>
-        <View style={styles.postActions}>
-          <TouchableOpacity
-            style={[
-              styles.boopButton,
-              queued ? styles.boopButtonQueued : null,
-              boopSent ? styles.boopButtonSent : null,
-            ]}
-            onPress={() => handleEventBoop(item)}
-            disabled={boopInFlight || queued || boopSent || isSelf}
-          >
-            <Ionicons
-              name={boopSent ? 'checkmark' : 'hand-left-outline'}
-              size={14}
-              color={boopTextColor}
-            />
-            <Text style={[styles.boopText, { color: boopTextColor }]}>
-              {boopInFlight ? 'Booping...' : queued ? 'Queued' : boopSent ? 'Booped' : 'Boop'}
-            </Text>
-          </TouchableOpacity>
-          <Text style={styles.boopCount}>{boopCount}</Text>
-          {Object.keys(eventReactions).length > 0 ? (
-            <View style={styles.reactionRow}>
-              {Object.entries(eventReactions).map(([emoji, count]) => (
-                <TouchableOpacity
-                  key={`${item.id}-${emoji}`}
-                  style={[
-                    styles.reactionChip,
-                    eventSelections[emoji] ? styles.reactionChipActive : null,
-                  ]}
-                  onPress={() =>
-                    handleReaction({ type: 'cycle', id: item.id }, emoji)
-                  }
-                >
-                  <Text style={styles.reactionEmoji}>{emoji}</Text>
-                  <Text
-                    style={[
-                      styles.reactionCount,
-                      eventSelections[emoji] ? styles.reactionCountActive : null,
-                    ]}
-                  >
-                    {count}
-                  </Text>
-                </TouchableOpacity>
-              ))}
+        <View style={styles.feedHeaderRow}>
+          <View style={styles.feedHeaderLeft}>
+            {avatarUrl ? (
+              <Image source={{ uri: avatarUrl }} style={styles.feedAvatarImage} />
+            ) : (
+              <PhaseAvatar initial={initials} phase={item.phase} size={40} />
+            )}
+            <View style={styles.feedMeta}>
+              <Text style={styles.feedName}>{name}</Text>
+              <Text style={styles.feedSubline}>{phaseLabel ? `${phaseLabel} phase` : 'Cycle update'}</Text>
             </View>
-          ) : null}
+          </View>
+          {timeLabel ? <Text style={styles.feedTime}>{timeLabel}</Text> : null}
+        </View>
+
+        <View style={[styles.eventPill, { backgroundColor: `${eventToneColor}14` }]}>
+          <Ionicons name={eventIcon} size={12} color={eventToneColor} />
+          <Text style={[styles.eventPillText, { color: eventToneColor }]}>{eventText}</Text>
+        </View>
+
+        <View style={styles.feedActionsRow}>
+          <View style={styles.feedReactionsWrap}>
+            {renderReactions({ type: 'cycle', id: item.id }, eventReactions, eventSelections)}
+          </View>
+          <View style={styles.feedIconActions}>
+            <TouchableOpacity
+              style={styles.feedIconButton}
+              onPress={() => toggleLikedEvent(item.id)}
+              accessibilityLabel="Toggle like"
+            >
+              <Ionicons
+                name={isLiked ? 'heart' : 'heart-outline'}
+                size={15}
+                color={isLiked ? palette.accent : palette.tertiaryText}
+              />
+              <Text
+                style={[
+                  styles.feedIconCount,
+                  isLiked ? { color: palette.accent } : null,
+                ]}
+              >
+                {likeCount}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.feedIconButton}
+              onPress={() => handleEventBoop(item)}
+              disabled={boopLoading || queued || boopSent || isSelf}
+              accessibilityLabel="Boop cycle event"
+            >
+              <Ionicons
+                name={boopSent ? 'checkmark-circle' : 'hand-left-outline'}
+                size={15}
+                color={boopTextColor}
+              />
+              <Text style={[styles.feedIconCount, { color: boopTextColor }]}>{boopCount}</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </TouchableOpacity>
     );
@@ -1283,151 +1348,64 @@ const HomeScreen = () => {
       <FlatList
         data={feedItems}
         keyExtractor={(item) => item.id}
-        refreshing={isLoading}
-        onRefresh={loadFeed}
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={styles.listContent}
         ListHeaderComponent={
           <View style={styles.header}>
-            <View style={styles.navRow}>
-              <TouchableOpacity onPress={navigateToProfile} style={styles.profileButton}>
-                <Ionicons
-                  name="person-circle-outline"
-                  size={30}
-                  color={palette.primaryText}
-                />
-              </TouchableOpacity>
-              <View style={styles.navActions}>
-                <FriendSyncButton onPress={navigateToProfile} />
-                <NotificationsBell count={unreadCount} onPress={() => setSheetVisible(true)} />
-              </View>
-            </View>
-            <View style={styles.titleRow}>
-              <View style={styles.titleRowTop}>
-                <Text style={styles.title}>Today</Text>
+            <Animated.View style={entranceStyles[0]}>
+              <View style={styles.headerTopRow}>
+                <View style={styles.titleBlock}>
+                  <Text style={styles.dateEyebrow}>{todayLabel}</Text>
+                  <Text style={styles.title}>Hey, {alias ?? 'there'}</Text>
+                </View>
                 <TouchableOpacity
-                  style={[styles.cycleSummaryChip, { borderColor: cyclePhaseColors.background }]}
-                  onPress={navigateToProfile}
-                  accessibilityRole="button"
-                  accessibilityLabel="View cycle details"
+                  style={styles.bellButton}
+                  onPress={() => setSheetVisible(true)}
+                  accessibilityLabel="Open notifications"
                 >
-                  <View
-                    style={[
-                      styles.cycleIconBadge,
-                      { backgroundColor: cyclePhaseColors.background },
-                    ]}
-                  >
-                    <Ionicons name="pulse-outline" size={14} color={cyclePhaseColors.text} />
-                  </View>
-                  <Text style={styles.cycleChipText}>
-                    {cyclePhaseSourceLabel
-                      ? `${cyclePhaseLabel} (${cyclePhaseSourceLabel})`
-                      : cyclePhaseLabel}
-                  </Text>
+                  <Ionicons name="notifications-outline" size={18} color={palette.secondaryText} />
+                  {unreadCount > 0 ? <View style={styles.bellDot} /> : null}
                 </TouchableOpacity>
               </View>
-              <Text style={styles.subtitle}>
-                {todayLabel} · How are you feeling, {alias ?? 'there'}?
-              </Text>
-            </View>
-            <View style={styles.quickMoodCard}>
-              <View style={[styles.sectionHeader, styles.quickMoodHeader]}>
-                <Text style={styles.sectionTitle}>Quick moods</Text>
-                <Text style={styles.sectionHint}>Tap to share</Text>
-              </View>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.moodRow}
+            </Animated.View>
+
+            <Animated.View style={entranceStyles[1]}>
+              <TouchableOpacity
+                style={styles.cycleCard}
+                onPress={navigateToProfile}
+                accessibilityLabel="Open your profile"
+                activeOpacity={0.95}
               >
-                {MOOD_TAGS.map((label) => (
-                  <TouchableOpacity
-                    key={label}
-                    style={styles.moodChip}
-                    onPress={() => handleQuickTag(label)}
-                    disabled={isPosting}
-                  >
-                    <View
-                      style={[
-                        styles.moodDot,
-                        { backgroundColor: MOOD_TAG_MAP[label]?.dot ?? palette.tertiaryText },
-                      ]}
-                    />
-                    <Text style={styles.moodChipText}>{label}</Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            </View>
-            <View style={styles.composerCard}>
-              <View style={styles.composerHeader}>
-                <Text style={styles.sectionTitle}>Share an update</Text>
-                <Ionicons name="create-outline" size={16} color={palette.accent} />
-              </View>
-              {!isComposerOpen ? (
-                <TouchableOpacity
-                  onPress={() => setComposerOpen(true)}
-                  style={styles.composerCollapsed}
-                  accessibilityLabel="Share how you're feeling"
-                >
-                  <View style={styles.composerCollapsedRow}>
-                    <Text style={styles.composerPlaceholder}>I'm feeling...</Text>
-                    <Ionicons name="chevron-forward" size={16} color={palette.tertiaryText} />
-                  </View>
-                </TouchableOpacity>
-              ) : (
-                <View style={styles.composerExpanded}>
-                  <TextInput
-                    style={styles.composerInput}
-                    value={composerText}
-                    onChangeText={setComposerText}
-                    placeholder="I'm feeling..."
-                    placeholderTextColor={palette.placeholder}
-                    multiline
-                    autoFocus
-                    onBlur={() => {
-                      if (!postPressRef.current) {
-                        setComposerOpen(false);
-                      }
-                    }}
+                <View style={styles.cycleRingWrap}>
+                  <CycleRing
+                    currentDay={cycleDayNumber ?? 1}
+                    currentPhase={cyclePhaseKey}
+                    size={72}
+                    strokeWidth={6}
+                    showCenter={false}
                   />
                 </View>
-              )}
-              {composerMoods.length ? (
-                <View style={styles.composerSelectedMoods}>
-                  {composerMoods.map((label) => (
-                    <View key={label} style={styles.selectedMoodChip}>
-                      <View
-                        style={[
-                          styles.moodDot,
-                          { backgroundColor: MOOD_TAG_MAP[label]?.dot ?? palette.tertiaryText },
-                        ]}
-                      />
-                      <Text style={styles.selectedMoodChipText}>{label}</Text>
-                      <TouchableOpacity
-                        onPress={() => toggleComposerMood(label)}
-                        style={styles.selectedMoodRemove}
-                        accessibilityLabel={`Remove ${label}`}
-                      >
-                        <Ionicons name="close" size={12} color={palette.secondaryText} />
-                      </TouchableOpacity>
-                    </View>
-                  ))}
+                <View style={styles.cycleMeta}>
+                  <Text style={styles.cycleDayLabel}>Day {cycleDayNumber ?? '--'}</Text>
+                  <PhaseIndicator phase={cyclePhaseKey} />
+                  <Text style={styles.cycleDetail}>{cycleDetailLabel}</Text>
                 </View>
-              ) : null}
-              <View style={styles.composerActions}>
-                <TouchableOpacity
-                  style={styles.addMoodButton}
-                  onPress={openMoodModal}
-                  accessibilityLabel="Add mood tags"
-                >
-                  <Ionicons name="pricetag-outline" size={16} color={palette.accent} />
-                  <Text style={styles.addMoodButtonText}>
-                    {composerMoods.length ? `Edit moods (${composerMoods.length})` : 'Add mood'}
-                  </Text>
-                </TouchableOpacity>
-                {isComposerOpen ? (
+              </TouchableOpacity>
+            </Animated.View>
+
+            <Animated.View style={entranceStyles[2]}>
+              <View style={styles.shareCard}>
+                <View style={styles.shareInputRow}>
+                  <TextInput
+                    style={styles.shareInput}
+                    value={composerText}
+                    onChangeText={setComposerText}
+                    placeholder="What's on your mind..."
+                    placeholderTextColor={palette.placeholder}
+                    onFocus={() => setComposerOpen(true)}
+                  />
                   <TouchableOpacity
-                    style={[styles.postButton, isPosting ? styles.postButtonDisabled : null]}
+                    style={[styles.sendButton, isPosting ? styles.sendButtonDisabled : null]}
                     onPress={handlePost}
                     onPressIn={() => {
                       postPressRef.current = true;
@@ -1439,32 +1417,63 @@ const HomeScreen = () => {
                   >
                     <Ionicons
                       name={isPosting ? 'time-outline' : 'paper-plane'}
-                      size={16}
-                      color="#fff"
+                      size={14}
+                      color={isPosting ? palette.secondaryText : palette.white}
                     />
-                    <Text
-                      style={[
-                        styles.postButtonText,
-                        isPosting ? styles.postButtonTextDisabled : null,
-                      ]}
-                    >
-                      {isPosting ? 'Posting...' : 'Share update'}
-                    </Text>
                   </TouchableOpacity>
-                ) : null}
+                </View>
+                <View
+                  style={styles.quickMoodRow}
+                  onLayout={(event) => setQuickMoodRowWidth(event.nativeEvent.layout.width)}
+                >
+                  {visibleQuickMoodLabels.map((label) => {
+                    const selected = composerMoods.includes(label);
+                    return (
+                      <TouchableOpacity
+                        key={label}
+                        style={[
+                          styles.quickMoodChip,
+                          selected
+                            ? {
+                                backgroundColor: `${quickMoodActiveColor}15`,
+                                borderColor: 'transparent',
+                              }
+                            : null,
+                        ]}
+                        onPress={() => toggleComposerMood(label)}
+                      >
+                        <Text
+                          style={[
+                            styles.quickMoodText,
+                            selected ? { color: quickMoodActiveColor } : null,
+                          ]}
+                          numberOfLines={1}
+                        >
+                          {`${MOOD_EMOJI_MAP[label] ?? ''} ${label}`.trim()}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                  <TouchableOpacity style={styles.quickMoodMoreChip} onPress={openMoodModal}>
+                    <Ionicons name="add" size={12} color={palette.secondaryText} />
+                    <Text style={styles.quickMoodMoreText}>more</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
-            </View>
+            </Animated.View>
+
             {isOffline ? (
               <View style={styles.offlineBanner}>
-                <Text style={styles.offlineText}>Offline: posts will send when you're back online.</Text>
+                <Text style={styles.offlineText}>Offline: posts will send when you&apos;re back online.</Text>
               </View>
             ) : null}
-            {feedItems.length ? (
+
+            <Animated.View style={entranceStyles[3]}>
               <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>Latest updates</Text>
-                <Text style={styles.sectionHint}>Double tap to react</Text>
+                <Text style={styles.sectionTitle}>Updates</Text>
+                <Text style={styles.sectionHint}>Long press to react</Text>
               </View>
-            ) : null}
+            </Animated.View>
           </View>
         }
         renderItem={({ item }) => {
@@ -1475,18 +1484,12 @@ const HomeScreen = () => {
         }}
         ListEmptyComponent={
           <View style={styles.emptyState}>
-            <Ionicons
-              name="chatbubble-ellipses-outline"
-              size={28}
-              color={palette.tertiaryText}
-            />
             <Text style={styles.emptyTitle}>No updates yet</Text>
-            <Text style={styles.emptySubtitle}>
-              Share how you feel or sync your cycle to see updates here.
-            </Text>
+            <Text style={styles.emptySubtitle}>Share how you feel to start your circle feed.</Text>
           </View>
         }
       />
+
       <NotificationsSheet
         visible={isSheetVisible}
         notifications={notifications}
@@ -1495,13 +1498,14 @@ const HomeScreen = () => {
         onRespondRequest={respondToFriendRequest}
         onClose={() => setSheetVisible(false)}
       />
+
       <Modal
         visible={Boolean(reactionTarget)}
         transparent
         animationType="fade"
         onRequestClose={closeReactionPicker}
       >
-        <View style={styles.modalBackdrop}>
+        <View style={styles.overlayCenter}>
           <Pressable style={styles.modalDismiss} onPress={closeReactionPicker} />
           <View
             style={[
@@ -1520,27 +1524,25 @@ const HomeScreen = () => {
                   : eventReactionSelections[reactionTarget.id]?.[emoji]
                 : false;
               return (
-              <TouchableOpacity
-                key={`${emoji}-${index}`}
-                style={[
-                  styles.reactionButton,
-                  isSelected ? styles.reactionButtonActive : null,
-                ]}
-                onPress={() => handleEmojiPress(emoji)}
-                accessibilityLabel={`React with ${emoji}`}
-              >
-                <Text style={styles.reactionButtonEmoji}>{emoji}</Text>
-              </TouchableOpacity>
-            );
+                <TouchableOpacity
+                  key={`${emoji}-${index}`}
+                  style={[styles.reactionButton, isSelected ? styles.reactionButtonActive : null]}
+                  onPress={() => handleEmojiPress(emoji)}
+                  accessibilityLabel={`React with ${emoji}`}
+                >
+                  <Text style={styles.reactionButtonEmoji}>{emoji}</Text>
+                </TouchableOpacity>
+              );
             })}
             <TouchableOpacity
               style={[styles.reactionButton, styles.reactionMoreButton]}
               onPress={() => setReactionPickerExpanded(true)}
               accessibilityLabel="More reactions"
             >
-              <Ionicons name="add" size={18} color="#111" />
+              <Ionicons name="add" size={18} color={palette.secondaryText} />
             </TouchableOpacity>
           </View>
+
           {isReactionPickerExpanded ? (
             <View
               style={[
@@ -1566,79 +1568,69 @@ const HomeScreen = () => {
                       : eventReactionSelections[reactionTarget.id]?.[emoji]
                     : false;
                   return (
-                  <TouchableOpacity
-                    key={emoji}
-                    style={[
-                      styles.expandedEmojiButton,
-                      isSelected ? styles.reactionButtonActive : null,
-                      {
-                        width: expandedPanelLayout.cellSize,
-                        height: expandedPanelLayout.cellSize,
-                      },
-                    ]}
-                    onPress={() => handleEmojiPress(emoji)}
-                    accessibilityLabel={`React with ${emoji}`}
-                  >
-                    <Text style={styles.expandedEmoji}>{emoji}</Text>
-                  </TouchableOpacity>
-                );
+                    <TouchableOpacity
+                      key={emoji}
+                      style={[
+                        styles.expandedEmojiButton,
+                        isSelected ? styles.reactionButtonActive : null,
+                        {
+                          width: expandedPanelLayout.cellSize,
+                          height: expandedPanelLayout.cellSize,
+                        },
+                      ]}
+                      onPress={() => handleEmojiPress(emoji)}
+                    >
+                      <Text style={styles.expandedEmoji}>{emoji}</Text>
+                    </TouchableOpacity>
+                  );
                 })}
               </View>
             </View>
           ) : null}
         </View>
       </Modal>
+
       <Modal
         visible={isMoodModalVisible}
         transparent
         animationType="fade"
         onRequestClose={closeMoodModal}
       >
-        <View style={styles.modalBackdrop}>
+        <View style={styles.overlayBottom}>
           <Pressable style={styles.modalDismiss} onPress={closeMoodModal} />
-          <View style={styles.moodModal}>
-            <View style={styles.moodModalHeader}>
-              <Text style={styles.moodModalTitle}>Select moods</Text>
-              <TouchableOpacity onPress={closeMoodModal} accessibilityLabel="Close mood selector">
-                <Text style={styles.moodModalDone}>Done</Text>
+          <View style={styles.moodSheet}>
+            <View style={styles.sheetHandle} />
+            <View style={styles.moodSheetHeader}>
+              <Text style={styles.moodSheetTitle}>How are you feeling?</Text>
+              <TouchableOpacity onPress={closeMoodModal}>
+                <Text style={styles.moodSheetDone}>Done</Text>
               </TouchableOpacity>
             </View>
-            <ScrollView contentContainerStyle={styles.moodModalGrid}>
+            <View style={styles.moodSheetGrid}>
               {MOOD_TAGS.map((label) => {
-                const isSelected = composerMoods.includes(label);
+                const selected = composerMoods.includes(label);
                 return (
                   <TouchableOpacity
                     key={label}
-                    style={[
-                      styles.modalMoodChip,
-                      isSelected ? styles.modalMoodChipSelected : null,
-                    ]}
+                    style={[styles.sheetMoodChip, selected ? styles.sheetMoodChipSelected : null]}
                     onPress={() => toggleComposerMood(label)}
-                    accessibilityLabel={
-                      isSelected ? `Remove ${label} mood tag` : `Select ${label} mood tag`
-                    }
                   >
-                    <View
+                    <Text style={styles.sheetMoodEmoji}>{MOOD_EMOJI_MAP[label] ?? '🙂'}</Text>
+                    <Text
                       style={[
-                        styles.moodDot,
-                        { backgroundColor: MOOD_TAG_MAP[label]?.dot ?? palette.tertiaryText },
+                        styles.sheetMoodText,
+                        selected ? styles.sheetMoodTextSelected : null,
                       ]}
-                    />
-                    <Text style={styles.modalMoodChipText}>{label}</Text>
-                    {isSelected ? (
-                      <Ionicons name="checkmark" size={14} color={palette.accent} />
-                    ) : null}
+                    >
+                      {label}
+                    </Text>
                   </TouchableOpacity>
                 );
               })}
-            </ScrollView>
+            </View>
             {composerMoods.length ? (
-              <TouchableOpacity
-                onPress={clearComposerMoods}
-                style={styles.moodModalClear}
-                accessibilityLabel="Clear selected moods"
-              >
-                <Text style={styles.moodModalClearText}>Clear all</Text>
+              <TouchableOpacity style={styles.clearMoodButton} onPress={clearComposerMoods}>
+                <Text style={styles.clearMoodButtonText}>Clear all</Text>
               </TouchableOpacity>
             ) : null}
           </View>
@@ -1656,400 +1648,370 @@ const styles = StyleSheet.create({
   listContent: {
     paddingHorizontal: 20,
     paddingTop: 14,
-    paddingBottom: 36,
-    gap: 18,
+    paddingBottom: 120,
   },
   header: {
-    gap: 16,
+    marginBottom: 14,
   },
-  navRow: {
+  headerTopRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
+    marginBottom: 16,
   },
-  navActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
+  titleBlock: {
+    gap: 3,
   },
-  profileButton: {
-    padding: 4,
-    borderRadius: 18,
-    backgroundColor: palette.card,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: palette.separator,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 3 },
-    elevation: 2,
-  },
-  titleRow: {
-    gap: 6,
-  },
-  titleRowTop: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 12,
+  dateEyebrow: {
+    fontSize: 11,
+    color: palette.secondaryText,
+    textTransform: 'uppercase',
+    letterSpacing: 1.1,
+    ...brandType.semibold,
   },
   title: {
-    fontSize: 28,
-    fontWeight: '700',
+    fontSize: 30,
     color: palette.primaryText,
+    ...brandType.display,
   },
-  subtitle: {
-    fontSize: 15,
-    color: palette.secondaryText,
-  },
-  cycleSummaryChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 999,
-    backgroundColor: palette.card,
-    borderWidth: StyleSheet.hairlineWidth,
+  bellButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 16,
+    borderWidth: 1,
     borderColor: palette.separator,
-    gap: 6,
-    flexShrink: 0,
-  },
-  cycleIconBadge: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    backgroundColor: palette.white,
     alignItems: 'center',
     justifyContent: 'center',
+    ...brand.shadow.soft,
   },
-  cycleChipText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: palette.primaryText,
-    textTransform: 'capitalize',
-  },
-  cycleChipSeparator: {
-    fontSize: 13,
-    color: palette.secondaryText,
-  },
-  cycleChipSubtext: {
-    fontSize: 12,
-    color: palette.secondaryText,
-  },
-  cycleChipSubtextStale: {
-    color: palette.warningText,
-  },
-  quickMoodCard: {
-    backgroundColor: palette.card,
-    borderRadius: 18,
-    padding: 14,
-    gap: 10,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: palette.separator,
-    shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 1,
-  },
-  composerCard: {
-    backgroundColor: palette.card,
-    borderRadius: 18,
-    padding: 14,
-    gap: 12,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: palette.separator,
-    shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 1,
-  },
-  composerHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  composerCollapsed: {
-    backgroundColor: palette.mutedFill,
-    borderRadius: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-  },
-  composerCollapsedRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  composerPlaceholder: {
-    fontSize: 15,
-    color: palette.placeholder,
-  },
-  composerExpanded: {
-    gap: 12,
-  },
-  composerInput: {
-    fontSize: 16,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    minHeight: 80,
-    borderRadius: 12,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: palette.separator,
-    backgroundColor: palette.mutedFill,
-    color: palette.primaryText,
-    textAlignVertical: 'top',
-  },
-  composerSelectedMoods: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  selectedMoodChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 999,
-    backgroundColor: palette.mutedFill,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: palette.separator,
-  },
-  selectedMoodChipText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: palette.primaryText,
-  },
-  selectedMoodRemove: {
-    padding: 4,
-    borderRadius: 999,
-    backgroundColor: palette.fill,
-  },
-  composerActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 12,
-    flexWrap: 'wrap',
-  },
-  addMoodButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 999,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: palette.separator,
-    backgroundColor: palette.mutedFill,
-  },
-  addMoodButtonText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: palette.accent,
-  },
-  postButton: {
-    alignItems: 'center',
+  bellDot: {
+    position: 'absolute',
+    top: 11,
+    right: 11,
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
     backgroundColor: palette.accent,
-    borderRadius: 999,
-    flexDirection: 'row',
-    gap: 6,
-    justifyContent: 'center',
+  },
+  cycleCard: {
+    backgroundColor: palette.white,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: palette.separator,
     paddingHorizontal: 16,
-    paddingVertical: 10,
-    minHeight: 40,
-  },
-  postButtonDisabled: {
-    backgroundColor: palette.disabled,
-  },
-  postButtonText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  postButtonTextDisabled: {
-    color: palette.secondaryText,
-  },
-  quickMoodHeader: {
-    marginTop: 6,
-  },
-  moodRow: {
+    paddingVertical: 14,
     flexDirection: 'row',
-    gap: 8,
-    paddingRight: 4,
+    alignItems: 'center',
+    gap: 14,
+    marginBottom: 14,
+    ...brand.shadow.card,
   },
-  moodChip: {
+  cycleRingWrap: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cycleRing: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    borderWidth: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  cycleRingInner: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cycleRingDay: {
+    fontSize: 22,
+    color: palette.primaryText,
+    ...brandType.display,
+  },
+  cycleRingDot: {
+    position: 'absolute',
+    top: -3,
+    right: 12,
+    width: 9,
+    height: 9,
+    borderRadius: 4.5,
+    borderWidth: 2,
+    borderColor: palette.white,
+  },
+  cycleMeta: {
+    flex: 1,
+    gap: 6,
+  },
+  cycleDayLabel: {
+    fontSize: 26,
+    color: palette.primaryText,
+    ...brandType.display,
+  },
+  phaseIndicator: {
+    alignSelf: 'flex-start',
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
     borderRadius: 999,
-    backgroundColor: palette.mutedFill,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: palette.separator,
   },
-  moodChipText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: palette.primaryText,
-  },
-  moodDot: {
+  phaseIndicatorDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
   },
-  sectionHeader: {
+  phaseIndicatorText: {
+    fontSize: 12,
+    ...brandType.semibold,
+  },
+  cycleDetail: {
+    fontSize: 12,
+    color: palette.secondaryText,
+    ...brandType.body,
+  },
+  shareCard: {
+    backgroundColor: palette.white,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: palette.separator,
+    padding: 14,
+    marginBottom: 14,
+    ...brand.shadow.card,
+  },
+  shareInputRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    gap: 10,
+    marginBottom: 10,
   },
-  sectionTitle: {
+  shareInput: {
+    flex: 1,
+    minHeight: 42,
+    borderRadius: 16,
+    backgroundColor: palette.mutedFill,
+    paddingHorizontal: 13,
+    paddingVertical: 10,
     fontSize: 14,
-    fontWeight: '600',
     color: palette.primaryText,
+    ...brandType.body,
   },
-  sectionHint: {
+  sendButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 14,
+    backgroundColor: palette.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sendButtonDisabled: {
+    backgroundColor: palette.fill,
+  },
+  quickMoodRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flexWrap: 'nowrap',
+    overflow: 'hidden',
+  },
+  quickMoodChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    backgroundColor: palette.mutedFill,
+    borderWidth: 0,
+    maxWidth: 160,
+  },
+  quickMoodText: {
     fontSize: 12,
-    color: palette.tertiaryText,
+    color: palette.secondaryText,
+    flexShrink: 1,
+    ...brandType.semibold,
+  },
+  quickMoodMoreChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    borderRadius: 999,
+    width: 72,
+    paddingVertical: 6,
+    backgroundColor: palette.mutedFill,
+    borderWidth: 0,
+    flexShrink: 0,
+  },
+  quickMoodMoreText: {
+    fontSize: 12,
+    color: palette.secondaryText,
+    ...brandType.semibold,
   },
   offlineBanner: {
-    paddingVertical: 8,
     paddingHorizontal: 12,
+    paddingVertical: 9,
     borderRadius: 12,
     backgroundColor: palette.warningBackground,
+    marginBottom: 12,
     alignSelf: 'flex-start',
   },
   offlineText: {
     fontSize: 12,
     color: palette.warningText,
-    fontWeight: '600',
+    ...brandType.semibold,
   },
-  postCard: {
-    borderRadius: 20,
-    borderWidth: StyleSheet.hairlineWidth,
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    color: palette.primaryText,
+    ...brandType.heading,
+  },
+  sectionHint: {
+    fontSize: 11,
+    color: palette.tertiaryText,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    ...brandType.semibold,
+  },
+  feedCard: {
+    backgroundColor: palette.white,
+    borderRadius: 24,
+    borderWidth: 1,
     borderColor: palette.separator,
-    backgroundColor: palette.card,
-    padding: 16,
-    gap: 12,
-    shadowColor: '#000',
-    shadowOpacity: 0.03,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 3 },
-    elevation: 1,
+    padding: 14,
+    marginBottom: 10,
+    ...brand.shadow.soft,
   },
-  postHeader: {
+  feedHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    gap: 10,
+    marginBottom: 8,
   },
-  postHeaderButton: {
+  feedHeaderLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 12,
+    gap: 10,
     flex: 1,
   },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    flex: 1,
-  },
-  avatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+  feedAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: palette.fill,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  avatarText: {
-    color: palette.primaryText,
-    fontWeight: '700',
-    fontSize: 15,
+  feedAvatarImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+    backgroundColor: palette.fill,
   },
-  postMeta: {
+  feedAvatarText: {
+    fontSize: 15,
+    color: palette.primaryText,
+    ...brandType.semibold,
+  },
+  feedMeta: {
     flex: 1,
     gap: 2,
   },
-  postName: {
-    fontSize: 15,
-    fontWeight: '600',
+  feedName: {
+    fontSize: 14,
     color: palette.primaryText,
+    ...brandType.semibold,
   },
-  postMetaText: {
-    fontSize: 12,
+  feedSubline: {
+    fontSize: 11,
     color: palette.secondaryText,
+    ...brandType.body,
   },
-  postTime: {
-    fontSize: 12,
+  feedTime: {
+    fontSize: 11,
     color: palette.tertiaryText,
+    ...brandType.body,
   },
-  moodPill: {
+  feedBody: {
+    fontSize: 13,
+    lineHeight: 19,
+    color: '#5A564F',
+    marginBottom: 8,
+    ...brandType.body,
+  },
+  eventPill: {
     alignSelf: 'flex-start',
-    backgroundColor: palette.mutedFill,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 999,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 5,
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    marginBottom: 9,
+  },
+  eventPillText: {
+    fontSize: 12,
+    ...brandType.semibold,
   },
   moodPillRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: 6,
+    marginBottom: 8,
+  },
+  moodPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    borderRadius: 999,
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+    backgroundColor: palette.mutedFill,
   },
   moodPillText: {
-    fontSize: 12,
-    color: palette.primaryText,
-    fontWeight: '600',
+    fontSize: 11,
+    color: palette.secondaryText,
+    ...brandType.semibold,
   },
-  moodDotSmall: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
+  feedActionsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
   },
-  postBody: {
-    fontSize: 15,
-    color: palette.primaryText,
-    lineHeight: 20,
+  feedReactionsWrap: {
+    flex: 1,
   },
-  postActions: {
+  feedIconActions: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    flexWrap: 'wrap',
   },
-  boopButton: {
+  feedIconButton: {
     flexDirection: 'row',
-    paddingHorizontal: 8,
-    paddingVertical: 6,
-    minHeight: 32,
-    justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: 999,
-    backgroundColor: palette.mutedFill,
-    gap: 6,
+    gap: 4,
+    paddingHorizontal: 2,
+    paddingVertical: 2,
   },
-  boopButtonQueued: {
-    backgroundColor: palette.pendingBackground,
-  },
-  boopButtonSent: {
-    backgroundColor: palette.successBackground,
-  },
-  boopText: {
-    fontWeight: '600',
+  feedIconCount: {
     fontSize: 12,
-    lineHeight: 16,
+    color: palette.tertiaryText,
+    ...brandType.semibold,
   },
-  boopCount: {
-    fontSize: 12,
-    color: palette.secondaryText,
-    lineHeight: 16,
-  },
-  reactionRow: {
+  reactionInlineRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
@@ -2060,79 +2022,94 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 4,
     backgroundColor: palette.mutedFill,
-    borderRadius: 12,
+    borderRadius: 999,
     paddingHorizontal: 8,
     paddingVertical: 4,
-    minHeight: 26,
+    borderWidth: 1,
+    borderColor: palette.separator,
   },
   reactionChipActive: {
     backgroundColor: palette.accentSoft,
     borderColor: palette.accent,
-    borderWidth: StyleSheet.hairlineWidth,
   },
   reactionEmoji: {
     fontSize: 12,
-    lineHeight: 16,
   },
   reactionCount: {
     fontSize: 11,
     color: palette.secondaryText,
-    lineHeight: 16,
+    ...brandType.semibold,
   },
   reactionCountActive: {
     color: palette.accent,
   },
-  emptyState: {
+  reactionMoreChip: {
+    minWidth: 28,
+    height: 28,
+    borderRadius: 999,
+    paddingHorizontal: 8,
     alignItems: 'center',
-    gap: 8,
-    paddingVertical: 20,
-    paddingHorizontal: 16,
-    backgroundColor: palette.card,
-    borderRadius: 16,
-    borderWidth: StyleSheet.hairlineWidth,
+    justifyContent: 'center',
+    backgroundColor: palette.mutedFill,
+    borderWidth: 1,
     borderColor: palette.separator,
-    shadowColor: '#000',
-    shadowOpacity: 0.03,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 1,
+  },
+  reactionMoreText: {
+    fontSize: 11,
+    color: palette.secondaryText,
+    ...brandType.semibold,
+  },
+  emptyState: {
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: palette.separator,
+    backgroundColor: palette.white,
+    padding: 18,
+    alignItems: 'center',
+    gap: 5,
+    ...brand.shadow.soft,
   },
   emptyTitle: {
     fontSize: 16,
-    fontWeight: '600',
     color: palette.primaryText,
+    ...brandType.heading,
   },
   emptySubtitle: {
     fontSize: 13,
     color: palette.secondaryText,
     textAlign: 'center',
+    ...brandType.body,
   },
-  modalBackdrop: {
+  overlayCenter: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.25)',
+    backgroundColor: 'rgba(0, 0, 0, 0.2)',
     alignItems: 'center',
     justifyContent: 'center',
   },
+  overlayBottom: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.2)',
+    justifyContent: 'flex-end',
+  },
   modalDismiss: {
     ...StyleSheet.absoluteFillObject,
-    zIndex: 0,
   },
   reactionBar: {
     position: 'absolute',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: palette.card,
+    backgroundColor: palette.white,
     borderRadius: 999,
     paddingHorizontal: REACTION_BAR_PADDING,
     paddingVertical: REACTION_BAR_PADDING,
     gap: REACTION_BUTTON_GAP,
     shadowColor: '#000',
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
+    shadowOpacity: 0.13,
+    shadowRadius: 14,
     shadowOffset: { width: 0, height: 6 },
     elevation: 6,
-    borderWidth: StyleSheet.hairlineWidth,
+    borderWidth: 1,
     borderColor: palette.separator,
     zIndex: 2,
   },
@@ -2147,7 +2124,7 @@ const styles = StyleSheet.create({
   reactionButtonActive: {
     backgroundColor: palette.accentSoft,
     borderColor: palette.accent,
-    borderWidth: StyleSheet.hairlineWidth,
+    borderWidth: 1,
   },
   reactionButtonEmoji: {
     fontSize: 18,
@@ -2157,38 +2134,37 @@ const styles = StyleSheet.create({
   },
   expandedSheet: {
     position: 'absolute',
-    backgroundColor: palette.card,
+    backgroundColor: palette.white,
     borderRadius: 20,
     padding: EXPANDED_PANEL_PADDING,
     gap: 12,
     shadowColor: '#000',
-    shadowOpacity: 0.15,
+    shadowOpacity: 0.14,
     shadowRadius: 16,
     shadowOffset: { width: 0, height: 8 },
     elevation: 8,
-    zIndex: 2,
-    borderWidth: StyleSheet.hairlineWidth,
+    borderWidth: 1,
     borderColor: palette.separator,
+    zIndex: 2,
   },
   expandedHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    justifyContent: 'space-between',
   },
   expandedTitle: {
     fontSize: 14,
-    fontWeight: '600',
     color: palette.primaryText,
+    ...brandType.heading,
   },
   expandedClose: {
     fontSize: 13,
-    fontWeight: '600',
     color: palette.accent,
+    ...brandType.semibold,
   },
   expandedGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'flex-start',
     columnGap: EXPANDED_GRID_GAP,
     rowGap: EXPANDED_GRID_GAP,
   },
@@ -2201,71 +2177,83 @@ const styles = StyleSheet.create({
   expandedEmoji: {
     fontSize: 24,
   },
-  moodModal: {
-    width: '86%',
-    maxWidth: 360,
-    borderRadius: 20,
-    backgroundColor: palette.card,
-    padding: 16,
-    gap: 12,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 8 },
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: palette.separator,
+  moodSheet: {
+    width: '100%',
+    backgroundColor: palette.white,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    paddingBottom: 26,
   },
-  moodModalHeader: {
+  sheetHandle: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: palette.fill,
+    alignSelf: 'center',
+    marginBottom: 12,
+  },
+  moodSheetHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    marginBottom: 12,
   },
-  moodModalTitle: {
-    fontSize: 16,
-    fontWeight: '600',
+  moodSheetTitle: {
+    fontSize: 20,
     color: palette.primaryText,
+    ...brandType.heading,
   },
-  moodModalDone: {
+  moodSheetDone: {
     fontSize: 14,
-    fontWeight: '600',
     color: palette.accent,
+    ...brandType.semibold,
   },
-  moodModalGrid: {
+  moodSheetGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 10,
+    gap: 8,
   },
-  modalMoodChip: {
+  sheetMoodChip: {
+    width: '48%',
+    borderRadius: 16,
+    backgroundColor: palette.mutedFill,
+    borderWidth: 0,
+    paddingHorizontal: 12,
+    paddingVertical: 11,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    padding: 12,
-    borderRadius: 12,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: palette.separator,
-    backgroundColor: palette.mutedFill,
-    flexBasis: '48%',
   },
-  modalMoodChipSelected: {
+  sheetMoodChipSelected: {
+    borderWidth: 1.5,
     borderColor: palette.accent,
     backgroundColor: palette.accentSoft,
   },
-  modalMoodChipText: {
-    flex: 1,
-    fontSize: 13,
-    fontWeight: '600',
-    color: palette.primaryText,
+  sheetMoodEmoji: {
+    fontSize: 18,
+    lineHeight: 20,
   },
-  moodModalClear: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: 8,
-    paddingVertical: 6,
-    borderRadius: 8,
-  },
-  moodModalClearText: {
+  sheetMoodText: {
     fontSize: 13,
-    fontWeight: '600',
+    color: '#5A564F',
+    ...brandType.semibold,
+  },
+  sheetMoodTextSelected: {
     color: palette.accent,
+  },
+  clearMoodButton: {
+    marginTop: 12,
+    alignSelf: 'flex-start',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 10,
+  },
+  clearMoodButtonText: {
+    fontSize: 13,
+    color: palette.accent,
+    ...brandType.semibold,
   },
 });
 

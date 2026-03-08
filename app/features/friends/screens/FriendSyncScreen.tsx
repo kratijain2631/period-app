@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated,
+  Dimensions,
   Easing,
-  Platform,
-  PlatformColor,
   SafeAreaView,
   ScrollView,
   StyleSheet,
@@ -13,7 +12,9 @@ import {
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import { fetchFriendSharing } from '../../../services/supabase/friendSharing';
+import Svg, { Circle, Defs, LinearGradient, Path, Stop } from 'react-native-svg';
+import { fetchFriendProfiles, fetchFriendSharing } from '../../../services/supabase/friendSharing';
+import { fetchUserProfilesByIds } from '../../../services/supabase/users';
 import { fetchCycleSnapshotByUserId } from '../../../services/supabase/cycleSnapshots';
 import { sendBoop } from '../../../services/supabase/boops';
 import {
@@ -28,24 +29,72 @@ import {
   fallbackRecommendations,
   type SyncScoreSummary,
 } from '../utils/syncScore';
-
-const iosColor = (name: string, fallback: string) =>
-  Platform.OS === 'ios' ? PlatformColor(name) : fallback;
+import { brand, brandType } from '../../../theme/brand';
+import { SyncRings, getPhaseColor } from '../../../components/brand/CycleRing';
+import { DottieSyncScene } from '../../../components/brand/DottieMascot';
+import { useStaggeredEntrance } from '../../../components/brand/useStaggeredEntrance';
 
 const palette = {
-  background: iosColor('systemGroupedBackground', '#F2F2F7'),
-  card: iosColor('secondarySystemGroupedBackground', '#FFFFFF'),
-  primaryText: iosColor('label', '#111827'),
-  secondaryText: iosColor('secondaryLabel', '#6B7280'),
-  tertiaryText: iosColor('tertiaryLabel', '#9CA3AF'),
-  separator: iosColor('separator', '#E5E7EB'),
-  accent: iosColor('systemBlue', '#007AFF'),
-  fill: iosColor('systemGray5', '#E5E7EB'),
-  mutedFill: iosColor('systemGray6', '#F3F4F6'),
-  disabled: iosColor('systemGray4', '#D1D5DB'),
+  background: brand.colors.background,
+  card: brand.colors.card,
+  primaryText: brand.colors.primaryText,
+  secondaryText: brand.colors.secondaryText,
+  tertiaryText: brand.colors.tertiaryText,
+  separator: brand.colors.separator,
+  accent: brand.colors.accent,
+  fill: brand.colors.fill,
+  mutedFill: brand.colors.mutedFill,
+  disabled: brand.colors.disabled,
+  white: brand.colors.white,
 };
 
 const DAY_MS = 24 * 60 * 60 * 1000;
+
+const FlowGapSparkline = ({
+  data,
+  color,
+  width = 130,
+  height = 32,
+}: {
+  data: number[];
+  color: string;
+  width?: number;
+  height?: number;
+}) => {
+  if (data.length < 2) {
+    return null;
+  }
+  const max = Math.max(...data);
+  const min = Math.min(...data);
+  const range = max - min || 1;
+  const padding = 4;
+  const usableW = width - padding * 2;
+  const usableH = height - padding * 2;
+  const points = data.map((value, index) => ({
+    x: padding + (index / (data.length - 1)) * usableW,
+    y: padding + usableH - ((value - min) / range) * usableH,
+  }));
+
+  const linePath = points
+    .map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x.toFixed(1)} ${point.y.toFixed(1)}`)
+    .join(' ');
+  const areaPath = `${linePath} L ${points[points.length - 1].x.toFixed(1)} ${height} L ${points[0].x.toFixed(1)} ${height} Z`;
+  const gradientId = `sync-gap-${color.replace('#', '')}`;
+
+  return (
+    <Svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} fill="none">
+      <Defs>
+        <LinearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+          <Stop offset="0%" stopColor={color} stopOpacity={0.22} />
+          <Stop offset="100%" stopColor={color} stopOpacity={0} />
+        </LinearGradient>
+      </Defs>
+      <Path d={areaPath} fill={`url(#${gradientId})`} />
+      <Path d={linePath} stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+      <Circle cx={points[points.length - 1].x} cy={points[points.length - 1].y} r={2.8} fill={color} />
+    </Svg>
+  );
+};
 
 const FriendSyncScreen = () => {
   const navigation = useNavigation();
@@ -60,6 +109,9 @@ const FriendSyncScreen = () => {
     generatedAt?: string;
   } | null>(null);
   const [selfPhase, setSelfPhase] = useState<string | null>(null);
+  const [friendAlias, setFriendAlias] = useState<string | null>(null);
+  const [selfAvatarUrl, setSelfAvatarUrl] = useState<string | null>(null);
+  const [friendAvatarUrl, setFriendAvatarUrl] = useState<string | null>(null);
   const [hasConsent, setHasConsent] = useState<boolean | null>(null);
   const [isLoading, setLoading] = useState(false);
   const [boopStatus, setBoopStatus] = useState<'idle' | 'sending' | 'sent' | 'queued'>('idle');
@@ -70,6 +122,7 @@ const FriendSyncScreen = () => {
   const routeParams = (route as { params?: { friendId?: string; preview?: boolean } }).params;
   const friendId = routeParams?.friendId ?? '';
   const shouldShowPreview = __DEV__ && !!routeParams?.preview;
+  const viewportWidth = Dimensions.get('window').width;
 
   const loadSync = useCallback(async () => {
     setLoading(true);
@@ -91,6 +144,9 @@ const FriendSyncScreen = () => {
           }),
         );
         setRecommendationsMeta({ source: 'fallback' });
+        setFriendAlias('nehaha');
+        setSelfAvatarUrl(null);
+        setFriendAvatarUrl(null);
         setHasConsent(true);
         return;
       }
@@ -101,6 +157,9 @@ const FriendSyncScreen = () => {
         setRecommendations([]);
         setRecommendationsMeta(null);
         setFriendSnapshot(null);
+        setFriendAlias(null);
+        setSelfAvatarUrl(null);
+        setFriendAvatarUrl(null);
         setSelfPhase(null);
         return;
       }
@@ -111,16 +170,32 @@ const FriendSyncScreen = () => {
         setRecommendations([]);
         setRecommendationsMeta(null);
         setFriendSnapshot(null);
+        setFriendAlias(null);
+        setSelfAvatarUrl(null);
+        setFriendAvatarUrl(null);
         setSelfPhase(null);
         return;
       }
 
-      const [sharingRows, friendSnapshotRow, selfSnapshotRow, recRow] = await Promise.all([
+      const [sharingRows, friendSnapshotRow, selfSnapshotRow, recRow, friendProfileRows, userProfiles] =
+        await Promise.all([
         fetchFriendSharing(),
         fetchCycleSnapshotByUserId(friendId).catch(() => null),
         fetchCycleSnapshotByUserId(session.userId).catch(() => null),
         fetchFriendRecommendations(friendId).catch(() => null),
+        fetchFriendProfiles([friendId]).catch(() => []),
+        fetchUserProfilesByIds([session.userId, friendId]).catch(() => []),
       ]);
+      const friendProfile = userProfiles.find((profile) => profile.id === friendId);
+      const selfProfile = userProfiles.find((profile) => profile.id === session.userId);
+      setSelfAvatarUrl(selfProfile?.avatar_url ?? null);
+      setFriendAvatarUrl(friendProfile?.avatar_url ?? null);
+      const rawAlias =
+        friendProfileRows[0]?.alias?.trim() ??
+        friendProfile?.alias?.trim() ??
+        friendProfile?.full_name?.trim() ??
+        null;
+      setFriendAlias(rawAlias ? rawAlias.replace(/^@/, '') : null);
       const hasFreshRecommendations = shouldUseFriendRecommendations({ row: recRow });
       const recommendationMeta =
         hasFreshRecommendations && recRow
@@ -181,6 +256,9 @@ const FriendSyncScreen = () => {
       }
     } catch (error) {
       console.warn('[friend-sync] Failed to load sync data', error);
+      setFriendAlias(null);
+      setSelfAvatarUrl(null);
+      setFriendAvatarUrl(null);
       setHasConsent(false);
     } finally {
       setLoading(false);
@@ -219,15 +297,15 @@ const FriendSyncScreen = () => {
   );
   const scoreTone = useMemo(() => {
     if (scoreValue >= 80) {
-      return { label: 'High sync', color: '#34C759', background: '#E7F7EC' };
+      return { label: 'High sync', color: '#7BA68F', background: '#EDF5F0' };
     }
     if (scoreValue >= 60) {
-      return { label: 'Aligned', color: '#007AFF', background: '#E6F0FF' };
+      return { label: 'Aligned', color: '#6B8DB5', background: '#EEF3F8' };
     }
     if (scoreValue >= 40) {
-      return { label: 'Mixed', color: '#FF9500', background: '#FFF3E0' };
+      return { label: 'Mixed', color: '#D4A252', background: '#FFF8ED' };
     }
-    return { label: 'Needs care', color: '#FF3B30', background: '#FFE8E7' };
+    return { label: 'Needs care', color: '#C4654A', background: '#FFF0EB' };
   }, [scoreValue]);
   const phaseTone = useMemo(() => {
     const phase = (selfPhase ?? 'unknown').toLowerCase();
@@ -235,43 +313,49 @@ const FriendSyncScreen = () => {
       case 'menstruation':
         return {
           label: 'You',
-          color: '#FF3B30',
-          background: '#FFECEC',
+          phaseLabel: 'Menstruation',
+          color: '#C4654A',
+          background: '#FFF0EB',
           icon: 'water-outline' as const,
         };
       case 'follicular':
         return {
           label: 'You',
-          color: '#34C759',
-          background: '#E6F7ED',
+          phaseLabel: 'Follicular',
+          color: '#7BA68F',
+          background: '#EDF5F0',
           icon: 'leaf-outline' as const,
         };
       case 'ovulation':
         return {
           label: 'You',
-          color: '#FF9500',
-          background: '#FFF3E0',
+          phaseLabel: 'Ovulation',
+          color: '#D4A252',
+          background: '#FFF8ED',
           icon: 'sparkles' as const,
         };
       case 'luteal':
         return {
           label: 'You',
-          color: '#AF52DE',
-          background: '#F4E8FA',
+          phaseLabel: 'Luteal',
+          color: '#6B8DB5',
+          background: '#EEF3F8',
           icon: 'moon-outline' as const,
         };
       case 'pms':
         return {
           label: 'You',
-          color: '#FF2D55',
-          background: '#FFE5EC',
+          phaseLabel: 'PMS',
+          color: '#B56E9D',
+          background: '#F8EAF2',
           icon: 'cloud-outline' as const,
         };
       default:
         return {
           label: 'You',
-          color: '#8E8E93',
-          background: '#F2F2F7',
+          phaseLabel: 'Unknown',
+          color: '#8A857E',
+          background: '#F3F0EC',
           icon: 'help-circle-outline' as const,
         };
     }
@@ -282,43 +366,49 @@ const FriendSyncScreen = () => {
       case 'menstruation':
         return {
           label: 'Friend',
-          color: '#FF3B30',
-          background: '#FFECEC',
+          phaseLabel: 'Menstruation',
+          color: '#C4654A',
+          background: '#FFF0EB',
           icon: 'water-outline' as const,
         };
       case 'follicular':
         return {
           label: 'Friend',
-          color: '#34C759',
-          background: '#E6F7ED',
+          phaseLabel: 'Follicular',
+          color: '#7BA68F',
+          background: '#EDF5F0',
           icon: 'leaf-outline' as const,
         };
       case 'ovulation':
         return {
           label: 'Friend',
-          color: '#FF9500',
-          background: '#FFF3E0',
+          phaseLabel: 'Ovulation',
+          color: '#D4A252',
+          background: '#FFF8ED',
           icon: 'sparkles' as const,
         };
       case 'luteal':
         return {
           label: 'Friend',
-          color: '#AF52DE',
-          background: '#F4E8FA',
+          phaseLabel: 'Luteal',
+          color: '#6B8DB5',
+          background: '#EEF3F8',
           icon: 'moon-outline' as const,
         };
       case 'pms':
         return {
           label: 'Friend',
-          color: '#FF2D55',
-          background: '#FFE5EC',
+          phaseLabel: 'PMS',
+          color: '#B56E9D',
+          background: '#F8EAF2',
           icon: 'cloud-outline' as const,
         };
       default:
         return {
           label: 'Friend',
-          color: '#8E8E93',
-          background: '#F2F2F7',
+          phaseLabel: 'Unknown',
+          color: '#8A857E',
+          background: '#F3F0EC',
           icon: 'help-circle-outline' as const,
         };
     }
@@ -365,8 +455,8 @@ const FriendSyncScreen = () => {
       const offsetDays = Math.max(0, Math.round((safeStart - spanStart) / DAY_MS));
       const durationDays = Math.max(1, Math.round((safeEnd - safeStart) / DAY_MS) + 1);
       return {
-        left: `${(offsetDays / spanDays) * 100}%`,
-        width: `${(durationDays / spanDays) * 100}%`,
+        left: (offsetDays / spanDays) * 100,
+        width: (durationDays / spanDays) * 100,
       };
     };
 
@@ -419,27 +509,65 @@ const FriendSyncScreen = () => {
     };
   }, [progress, scoreValue, syncScore]);
 
+  const displayFriendName = useMemo(() => {
+    if (friendAlias) {
+      return friendAlias;
+    }
+    if (!friendId) {
+      return 'friend';
+    }
+    if (friendId.length > 14) {
+      return `${friendId.slice(0, 6)}...`;
+    }
+    return friendId;
+  }, [friendAlias, friendId]);
+
+  const latestGapDays = syncScore?.metrics.daysApart ?? null;
+  const overlapDays = syncScore?.metrics.overlapDays ?? 0;
+  const flowGapHistory = useMemo(() => {
+    const values = cycleTrend
+      .slice(-6)
+      .map((row) => row.daysApart)
+      .filter((value): value is number => typeof value === 'number' && Number.isFinite(value));
+    if (values.length >= 2) {
+      return values;
+    }
+    if (values.length === 1) {
+      return [values[0], values[0]];
+    }
+    return [12, 28, 45, 52, 65, 69];
+  }, [cycleTrend]);
+  const flowGapColor = useMemo(() => {
+    const latestTrend = cycleTrend[cycleTrend.length - 1]?.trend;
+    if (latestTrend === 'closer') {
+      return '#7BA68F';
+    }
+    if (latestTrend === 'further') {
+      return '#C4654A';
+    }
+    return '#6B8DB5';
+  }, [cycleTrend]);
+  const yourRingDay = 18;
+  const friendRingDay = useMemo(() => {
+    if (latestGapDays === null) {
+      return 8;
+    }
+    const offset = Math.max(1, Math.min(27, latestGapDays % 28));
+    return Math.max(1, Math.min(28, yourRingDay - offset));
+  }, [latestGapDays]);
+  const entranceStyles = useStaggeredEntrance(3, {
+    initialDelay: 40,
+    stagger: 90,
+    distance: 14,
+  });
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => navigation.goBack()}
-            accessibilityRole="button"
-            hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
-          >
-            <Ionicons name="chevron-back" size={20} color={palette.accent} />
-            <Text style={styles.backText}>Back</Text>
-          </TouchableOpacity>
-        </View>
-
         {!friendId && !shouldShowPreview ? (
           <View style={styles.noticeCard}>
             <Text style={styles.noticeTitle}>Select a Friend</Text>
-            <Text style={styles.noticeText}>
-              Pick someone from your feed or friends list to view Friend Sync.
-            </Text>
+            <Text style={styles.noticeText}>Pick someone from your circle to open Friend Sync.</Text>
           </View>
         ) : hasConsent === false ? (
           <View style={styles.noticeCard}>
@@ -450,158 +578,151 @@ const FriendSyncScreen = () => {
           </View>
         ) : (
           <>
-            <View style={styles.heroCard}>
-              <View style={styles.heroHeader}>
-                <Text style={styles.heroEyebrow}>Compatibility</Text>
+            <Animated.View style={entranceStyles[0]}>
+              <View style={styles.sceneHeader}>
+              <View style={styles.sceneArtworkBleed}>
+                <DottieSyncScene
+                  width={viewportWidth + 40}
+                  height={258}
+                  color1={getPhaseColor(selfPhase)}
+                  color2={getPhaseColor(friendSnapshot?.phase)}
+                />
               </View>
-              {syncScore ? (
-                <>
-                  <Text style={styles.heroScore}>{displayScore}%</Text>
-                  <View style={styles.scoreBar}>
-                    <Animated.View
-                      style={[
-                        styles.scoreFill,
-                        { width: animatedWidth, backgroundColor: scoreTone.color },
-                      ]}
-                    />
-                    <View style={styles.scoreTicks}>
-                      <View style={[styles.scoreTick, { left: '33%' }]} />
-                      <View style={[styles.scoreTick, { left: '66%' }]} />
-                    </View>
+              <TouchableOpacity
+                style={styles.backButton}
+                onPress={() => navigation.goBack()}
+                accessibilityRole="button"
+                hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+              >
+                <Ionicons name="chevron-back" size={20} color="#5A564F" />
+                <Text style={styles.backText}>Back</Text>
+              </TouchableOpacity>
+              <View style={styles.sceneTitleWrap}>
+                <Text style={styles.sceneSubtitle}>Sync with</Text>
+                <Text style={styles.sceneTitle}>{displayFriendName}</Text>
+              </View>
+              </View>
+            </Animated.View>
+
+            <Animated.View style={entranceStyles[1]}>
+              <View style={styles.ringsWrap}>
+                <View style={styles.ringCard}>
+                  <SyncRings
+                    yourDay={yourRingDay}
+                    yourPhase={selfPhase}
+                    theirDay={friendRingDay}
+                    theirPhase={friendSnapshot?.phase}
+                    syncPercent={displayScore}
+                    yourInitial="Y"
+                    friendInitial={(displayFriendName[0] ?? 'F').toUpperCase()}
+                    yourAvatarUrl={selfAvatarUrl}
+                    friendAvatarUrl={friendAvatarUrl}
+                    size={170}
+                  />
+                </View>
+              </View>
+            </Animated.View>
+
+            <Animated.View style={entranceStyles[2]}>
+              <View style={styles.bodyContent}>
+              <View style={styles.statsGrid}>
+                <View style={styles.statCard}>
+                  <Text style={styles.statEyebrow}>Flow Gap</Text>
+                  <View style={styles.statValueRow}>
+                    <Text style={styles.statValue}>{latestGapDays ?? '--'}</Text>
+                    <Text style={styles.statSuffix}>days</Text>
                   </View>
-                  <View style={styles.scoreMetaRow}>
-                    <Text style={styles.heroLabel}>Cycle alignment</Text>
-                    <View style={[styles.scorePill, { backgroundColor: scoreTone.background }]}>
-                      <Text style={[styles.scorePillText, { color: scoreTone.color }]}>
-                        {scoreTone.label}
-                      </Text>
-                    </View>
+                  <View style={styles.sparklineWrap}>
+                    <FlowGapSparkline data={flowGapHistory} color={flowGapColor} width={130} height={32} />
                   </View>
-                  <Text style={styles.scoreHint}>Based on phase alignment, timing, and overlap.</Text>
-                  <View style={styles.phaseRow}>
-                    <View style={[styles.phaseChip, { backgroundColor: phaseTone.background }]}>
-                      <Ionicons name={phaseTone.icon as never} size={12} color={phaseTone.color} />
-                      <Text style={[styles.phaseChipLabel, { color: phaseTone.color }]}>
-                        You: {selfPhase ?? 'unknown'}
-                      </Text>
-                    </View>
-                    <View style={[styles.phaseChip, { backgroundColor: friendPhaseTone.background }]}>
-                      <Ionicons
-                        name={friendPhaseTone.icon as never}
-                        size={12}
-                        color={friendPhaseTone.color}
+                  <Text style={styles.statNote}>Last cycles</Text>
+                </View>
+
+                <View style={styles.statCard}>
+                  <Text style={styles.statEyebrow}>Overlap</Text>
+                  <View style={styles.statValueRow}>
+                    <Text style={styles.statValue}>{overlapDays}</Text>
+                    <Text style={styles.statSuffix}>shared days</Text>
+                  </View>
+                  <View style={styles.overlapSegments}>
+                    {[...Array(5)].map((_, index) => (
+                      <View
+                        key={index}
+                        style={[
+                          styles.overlapSegment,
+                          index < overlapDays
+                            ? { backgroundColor: scoreTone.color, opacity: 0.7 }
+                            : null,
+                        ]}
                       />
-                      <Text style={[styles.phaseChipLabel, { color: friendPhaseTone.color }]}>
-                        Friend: {friendSnapshot?.phase ?? 'unknown'}
-                      </Text>
-                    </View>
+                    ))}
                   </View>
-                  {isLoading ? <Text style={styles.scoreStatus}>Updating from latest sync...</Text> : null}
-                </>
-              ) : (
-                <Text style={styles.mutedText}>
-                  {isLoading ? 'Loading sync insights...' : 'Not enough shared cycle data yet.'}
-                </Text>
-              )}
-            </View>
-
-            {syncScore ? (
-              <View style={styles.groupCard}>
-                <Text style={styles.groupTitle}>Match Highlights</Text>
-                <Text style={styles.sectionSubtitle}>Key signals driving the score.</Text>
-                {highlightItems.map((item, index) => {
-                  const highlightTone = item.tone ?? {
-                    color: scoreTone.color,
-                    background: scoreTone.background,
-                  };
-                  return (
-                    <View
-                      key={`${item.label}-${index}`}
-                      style={[styles.groupRow, index > 0 ? styles.groupRowDivider : null]}
-                    >
-                      <View style={styles.highlightText}>
-                        <View style={styles.highlightIconRow}>
-                          {item.icon ? (
-                            <View
-                              style={[
-                                styles.highlightIcon,
-                                { backgroundColor: highlightTone.background },
-                              ]}
-                            >
-                              <Ionicons name={item.icon as never} size={12} color={highlightTone.color} />
-                            </View>
-                          ) : null}
-                          <Text style={styles.highlightLabel}>{item.label}</Text>
-                        </View>
-                        {item.detail && item.kind !== 'phase' ? (
-                          <Text style={styles.highlightDetail}>{item.detail}</Text>
-                        ) : null}
-                      </View>
-                      <Text style={styles.highlightValue}>{item.value}</Text>
-                    </View>
-                  );
-                })}
+                  <Text style={styles.statNote}>of last 5 days</Text>
+                </View>
               </View>
-            ) : null}
 
-            {syncScore ? (
+              <Text style={styles.sectionTitle}>Match Highlights</Text>
               <View style={styles.groupCard}>
-                <Text style={styles.groupTitle}>Cycle Overlap</Text>
-                <Text style={styles.sectionSubtitle}>How your cycles have lined up recently.</Text>
+                <View style={styles.highlightRow}>
+                  <View style={styles.highlightLabelRow}>
+                    <Text style={styles.highlightEmoji}>🌊</Text>
+                    <Text style={styles.highlightLabel}>Your phase</Text>
+                  </View>
+                  <View style={[styles.phaseBadge, { backgroundColor: `${phaseTone.color}14` }]}>
+                    <View style={[styles.phaseBadgeDot, { backgroundColor: phaseTone.color }]} />
+                    <Text style={[styles.phaseBadgeText, { color: phaseTone.color }]}>
+                      {phaseTone.phaseLabel}
+                    </Text>
+                  </View>
+                </View>
+                <View style={[styles.highlightRow, styles.rowDivider]}>
+                  <View style={styles.highlightLabelRow}>
+                    <Text style={styles.highlightEmoji}>🌱</Text>
+                    <Text style={styles.highlightLabel}>Their phase</Text>
+                  </View>
+                  <View style={[styles.phaseBadge, { backgroundColor: `${friendPhaseTone.color}14` }]}>
+                    <View style={[styles.phaseBadgeDot, { backgroundColor: friendPhaseTone.color }]} />
+                    <Text style={[styles.phaseBadgeText, { color: friendPhaseTone.color }]}>
+                      {friendPhaseTone.phaseLabel}
+                    </Text>
+                  </View>
+                </View>
+                <View style={[styles.highlightRow, styles.rowDivider]}>
+                  <View style={styles.highlightLabelRow}>
+                    <Text style={styles.highlightEmoji}>🕐</Text>
+                    <Text style={styles.highlightLabel}>Flow timing</Text>
+                  </View>
+                  <Text style={styles.highlightValue}>
+                    {latestGapDays === null ? 'Unknown' : `${latestGapDays} days apart`}
+                  </Text>
+                </View>
+              </View>
+
+              <Text style={styles.sectionTitle}>Cycle History</Text>
+              <Text style={styles.sectionSub}>How your cycles have aligned</Text>
+              <View style={styles.historyList}>
                 {cycleTrend.length === 0 ? (
-                  <Text style={styles.mutedText}>Not enough cycle history yet.</Text>
+                  <View style={styles.groupCard}>
+                    <Text style={styles.mutedText}>Not enough cycle history yet.</Text>
+                  </View>
                 ) : (
                   cycleTrend.map((row, index) => {
                     const segments = buildTimelineSegments(row);
-                    const trendLabel =
-                      row.trend === 'closer' ? 'Closer' : row.trend === 'further' ? 'Further' : 'Steady';
-                    const trendTone =
-                      row.trend === 'closer'
-                        ? { color: '#34C759', background: '#E7F7EC', icon: 'arrow-down' as const }
-                        : row.trend === 'further'
-                          ? { color: '#FF3B30', background: '#FFE8E7', icon: 'arrow-up' as const }
-                          : { color: palette.secondaryText, background: palette.mutedFill, icon: 'remove' as const };
                     return (
-                      <View
-                        key={`${row.label}-${index}`}
-                        style={[styles.cycleRow, index > 0 ? styles.groupRowDivider : null]}
-                      >
-                        <View style={styles.cycleHeaderRow}>
-                          <View style={styles.cycleMeta}>
-                            <Text style={styles.cycleLabel}>{row.label}</Text>
-                            <Text style={styles.cycleDates}>
-                              You {formatDateRange(row.selfStart, row.selfEnd)} · Friend{' '}
-                              {formatDateRange(row.friendStart, row.friendEnd)}
-                            </Text>
-                          </View>
-                          {row.trend !== 'unknown' ? (
-                            <View
-                              style={[
-                                styles.cycleTrendBadge,
-                                { backgroundColor: trendTone.background },
-                              ]}
-                            >
-                              <Ionicons name={trendTone.icon} size={12} color={trendTone.color} />
-                              <Text style={[styles.cycleTrendBadgeText, { color: trendTone.color }]}>
-                                {trendLabel}
-                              </Text>
-                            </View>
-                          ) : null}
-                        </View>
+                      <View key={`${row.label}-${index}`} style={styles.historyCard}>
+                        <Text style={styles.historyTitle}>{row.label}</Text>
+
                         {segments ? (
-                          <View style={styles.cycleTimeline}>
-                            <View style={styles.cycleTimelineRow}>
-                              <View style={styles.cycleTimelineLabel}>
-                                <Ionicons name={phaseTone.icon as never} size={12} color={phaseTone.color} />
-                                <Text style={styles.cycleTimelineLabelText}>You</Text>
-                              </View>
-                              <View style={styles.cycleTrack}>
+                          <View style={styles.historyTracks}>
+                            <View style={styles.historyTrackRow}>
+                              <Text style={styles.historyTrackLabel}>You</Text>
+                              <View style={styles.historyTrack}>
                                 <View
                                   style={[
-                                    styles.cycleBar,
+                                    styles.historyFill,
                                     {
-                                      left: segments.self.left,
-                                      width: segments.self.width,
+                                      left: `${segments.self.left}%`,
+                                      width: `${segments.self.width}%`,
                                       backgroundColor: phaseTone.color,
                                     },
                                   ]}
@@ -609,34 +730,29 @@ const FriendSyncScreen = () => {
                                 {segments.overlap ? (
                                   <View
                                     style={[
-                                      styles.cycleOverlap,
+                                      styles.historyOverlap,
                                       {
-                                        left: segments.overlap.left,
-                                        width: segments.overlap.width,
-                                        backgroundColor: scoreTone.color,
+                                        left: `${segments.overlap.left}%`,
+                                        width: `${segments.overlap.width}%`,
                                         borderColor: scoreTone.color,
+                                        backgroundColor: scoreTone.color,
                                       },
                                     ]}
                                   />
                                 ) : null}
                               </View>
+                              <Text style={styles.historyDate}>{formatDateRange(row.selfStart, row.selfEnd)}</Text>
                             </View>
-                            <View style={styles.cycleTimelineRow}>
-                              <View style={styles.cycleTimelineLabel}>
-                                <Ionicons
-                                  name={friendPhaseTone.icon as never}
-                                  size={12}
-                                  color={friendPhaseTone.color}
-                                />
-                                <Text style={styles.cycleTimelineLabelText}>Friend</Text>
-                              </View>
-                              <View style={styles.cycleTrack}>
+
+                            <View style={styles.historyTrackRow}>
+                              <Text style={styles.historyTrackLabel}>Them</Text>
+                              <View style={styles.historyTrack}>
                                 <View
                                   style={[
-                                    styles.cycleBar,
+                                    styles.historyFill,
                                     {
-                                      left: segments.friend.left,
-                                      width: segments.friend.width,
+                                      left: `${segments.friend.left}%`,
+                                      width: `${segments.friend.width}%`,
                                       backgroundColor: friendPhaseTone.color,
                                     },
                                   ]}
@@ -644,80 +760,84 @@ const FriendSyncScreen = () => {
                                 {segments.overlap ? (
                                   <View
                                     style={[
-                                      styles.cycleOverlap,
+                                      styles.historyOverlap,
                                       {
-                                        left: segments.overlap.left,
-                                        width: segments.overlap.width,
-                                        backgroundColor: scoreTone.color,
+                                        left: `${segments.overlap.left}%`,
+                                        width: `${segments.overlap.width}%`,
                                         borderColor: scoreTone.color,
+                                        backgroundColor: scoreTone.color,
                                       },
                                     ]}
                                   />
                                 ) : null}
                               </View>
+                              <Text style={styles.historyDate}>{formatDateRange(row.friendStart, row.friendEnd)}</Text>
                             </View>
                           </View>
                         ) : (
                           <Text style={styles.mutedText}>Timeline unavailable.</Text>
                         )}
-                        <View style={styles.cycleTagRow}>
-                          <View style={styles.cycleTag}>
-                            <Ionicons name="time-outline" size={12} color={palette.secondaryText} />
-                            <Text style={styles.cycleTagText}>
-                              {row.daysApart === null ? 'Gap unknown' : `${row.daysApart}d apart`}
-                            </Text>
-                          </View>
-                          <View style={styles.cycleTag}>
-                            <Ionicons name="link-outline" size={12} color={palette.secondaryText} />
-                            <Text style={styles.cycleTagText}>
-                              {row.overlapDays} overlap day{row.overlapDays === 1 ? '' : 's'}
-                            </Text>
-                          </View>
+
+                        <View style={styles.historyMetaRow}>
+                          <Text style={styles.historyMetaText}>
+                            {row.daysApart === null ? 'Gap unknown' : `${row.daysApart}d apart`}
+                          </Text>
+                          <Text style={styles.historyMetaText}>{row.overlapDays} overlap</Text>
                         </View>
                       </View>
                     );
                   })
                 )}
               </View>
-            ) : null}
 
-            <View style={styles.groupCard}>
-              <Text style={styles.groupTitle}>Recommendations</Text>
-              <Text style={styles.sectionSubtitle}>{recommendationNote}</Text>
-              {recommendations.length > 0 ? (
-                <View style={styles.recommendationList}>
-                  {recommendations.map((item) => (
-                    <View key={item} style={styles.recommendationRow}>
-                      <View style={styles.recommendationDot} />
+              <Text style={styles.sectionTitle}>Recommendations</Text>
+              <View style={styles.recommendationsList}>
+                {recommendations.length === 0 ? (
+                  <View style={styles.groupCard}>
+                    <Text style={styles.mutedText}>No recommendations yet.</Text>
+                  </View>
+                ) : (
+                  recommendations.map((item, index) => (
+                    <View key={`${item}-${index}`} style={styles.recommendationCard}>
+                      <Text style={styles.recommendationIcon}>
+                        {index % 3 === 0 ? '🎬' : index % 3 === 1 ? '🍿' : '🌿'}
+                      </Text>
                       <Text style={styles.recommendationText}>{item}</Text>
                     </View>
-                  ))}
-                </View>
-              ) : (
-                <Text style={styles.mutedText}>No recommendations yet.</Text>
-              )}
+                  ))
+                )}
+              </View>
+
+              <Text style={styles.recommendationMeta}>{recommendationNote}</Text>
+
               <TouchableOpacity
-                style={[styles.primaryButton, isBoopDisabled ? styles.primaryButtonDisabled : null]}
+                style={[
+                  styles.boopButton,
+                  boopStatus === 'sent' ? styles.boopButtonSent : null,
+                  isBoopDisabled ? styles.boopButtonDisabled : null,
+                ]}
                 onPress={handleBoop}
                 disabled={isBoopDisabled}
-                accessibilityRole="button"
               >
-                <Text style={styles.primaryButtonText}>
+                <Ionicons
+                  name={boopStatus === 'sent' ? 'checkmark' : 'hand-left'}
+                  size={17}
+                  color={palette.white}
+                />
+                <Text style={styles.boopButtonText}>
                   {!friendId
                     ? 'Boop unavailable in preview'
                     : boopStatus === 'sent'
-                      ? 'Boop sent'
+                      ? 'Booped!'
                       : boopStatus === 'queued'
                         ? 'Boop queued'
                         : boopStatus === 'sending'
                           ? 'Sending...'
-                          : 'Send boop'}
+                  : `Boop ${displayFriendName}`}
                 </Text>
               </TouchableOpacity>
-              {!isOnline ? (
-                <Text style={styles.offlineNote}>Offline: boops will queue until you're back online.</Text>
-              ) : null}
-            </View>
+              </View>
+            </Animated.View>
           </>
         )}
       </ScrollView>
@@ -731,363 +851,352 @@ const styles = StyleSheet.create({
     backgroundColor: palette.background,
   },
   content: {
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 24,
-    gap: 20,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    marginBottom: 4,
-  },
-  backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 4,
-    gap: 6,
-  },
-  backText: {
-    fontSize: 17,
-    fontWeight: '400',
-    color: palette.accent,
-  },
-  mutedText: {
-    fontSize: 13,
-    color: palette.secondaryText,
+    paddingBottom: 40,
   },
   noticeCard: {
-    backgroundColor: palette.card,
-    borderRadius: 16,
+    margin: 20,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: '#F0EDE8',
+    backgroundColor: '#FFFFFF',
     padding: 16,
     gap: 8,
-    borderWidth: 1,
-    borderColor: palette.separator,
-    shadowColor: '#000',
-    shadowOpacity: 0.03,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 1,
+    ...brand.shadow.card,
   },
   noticeTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: palette.primaryText,
+    fontSize: 18,
+    color: '#2D2A26',
+    ...brandType.heading,
   },
   noticeText: {
     fontSize: 13,
-    color: palette.secondaryText,
+    color: '#8A857E',
+    ...brandType.body,
   },
-  heroCard: {
-    backgroundColor: palette.card,
-    borderRadius: 22,
-    padding: 20,
-    gap: 8,
-    shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowRadius: 14,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 2,
+  sceneHeader: {
+    height: 250,
+    backgroundColor: '#F0F4F8',
+    overflow: 'hidden',
+    position: 'relative',
   },
-  heroHeader: {
+  sceneArtworkBleed: {
+    position: 'absolute',
+    left: -20,
+    right: -20,
+    top: 0,
+    bottom: 0,
+  },
+  backButton: {
+    position: 'absolute',
+    top: 56,
+    left: 16,
+    zIndex: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+    paddingVertical: 2,
+    paddingHorizontal: 1,
+  },
+  backText: {
+    fontSize: 14,
+    color: '#5A564F',
+    ...brandType.semibold,
+  },
+  sceneTitleWrap: {
+    position: 'absolute',
+    top: 92,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+  },
+  sceneSubtitle: {
+    fontSize: 12,
+    color: '#8A857E',
+    marginBottom: 1,
+    ...brandType.body,
+  },
+  sceneTitle: {
+    fontSize: 26,
+    color: '#2D2A26',
+    ...brandType.display,
+  },
+  ringsWrap: {
+    paddingHorizontal: 20,
+    marginTop: -12,
+  },
+  ringCard: {
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: '#F0EDE8',
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    paddingVertical: 14,
+    ...brand.shadow.card,
+  },
+  bodyContent: {
+    paddingHorizontal: 20,
+    paddingTop: 20,
+  },
+  statsGrid: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 20,
+  },
+  statCard: {
+    flex: 1,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: '#F0EDE8',
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    ...brand.shadow.card,
+  },
+  statEyebrow: {
+    fontSize: 10,
+    color: '#8A857E',
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginBottom: 3,
+    ...brandType.semibold,
+  },
+  statValueRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: 4,
+  },
+  statValue: {
+    fontSize: 30,
+    color: '#2D2A26',
+    lineHeight: 32,
+    ...brandType.display,
+  },
+  statSuffix: {
+    fontSize: 11,
+    color: '#8A857E',
+    marginBottom: 4,
+    ...brandType.body,
+  },
+  sparklineWrap: {
+    marginTop: 8,
+    minHeight: 32,
+    justifyContent: 'flex-end',
+  },
+  statNote: {
+    marginTop: 7,
+    fontSize: 10,
+    color: '#B5AFA7',
+    ...brandType.body,
+  },
+  overlapSegments: {
+    marginTop: 12,
+    flexDirection: 'row',
+    gap: 5,
+  },
+  overlapSegment: {
+    flex: 1,
+    height: 10,
+    borderRadius: 999,
+    backgroundColor: '#F0EDE8',
+  },
+  sectionTitle: {
+    fontSize: 18,
+    color: '#2D2A26',
+    marginBottom: 8,
+    ...brandType.heading,
+  },
+  sectionSub: {
+    marginTop: -5,
+    marginBottom: 8,
+    fontSize: 13,
+    color: '#8A857E',
+    ...brandType.body,
+  },
+  groupCard: {
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: '#F0EDE8',
+    backgroundColor: '#FFFFFF',
+    overflow: 'hidden',
+    marginBottom: 18,
+    ...brand.shadow.card,
+  },
+  highlightRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 13,
   },
-  heroEyebrow: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: palette.secondaryText,
-    letterSpacing: 0.2,
-  },
-  heroScore: {
-    fontSize: 44,
-    fontWeight: '700',
-    color: palette.primaryText,
-  },
-  heroLabel: {
-    fontSize: 13,
-    color: palette.secondaryText,
-    fontWeight: '500',
-  },
-  scoreHint: {
-    fontSize: 12,
-    color: palette.tertiaryText,
-    marginTop: 2,
-    lineHeight: 16,
-  },
-  phaseRow: {
+  highlightLabelRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
+    alignItems: 'center',
     gap: 8,
-    marginTop: 4,
   },
-  phaseChip: {
+  highlightEmoji: {
+    fontSize: 16,
+  },
+  highlightLabel: {
+    fontSize: 13,
+    color: '#8A857E',
+    ...brandType.body,
+  },
+  highlightValue: {
+    fontSize: 13,
+    color: '#5A564F',
+    ...brandType.semibold,
+  },
+  phaseBadge: {
     borderRadius: 999,
     paddingHorizontal: 10,
     paddingVertical: 4,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 5,
   },
-  phaseChipLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    textTransform: 'capitalize',
-  },
-  groupCard: {
-    backgroundColor: palette.card,
-    borderRadius: 16,
-    padding: 16,
-    gap: 10,
-    shadowColor: '#000',
-    shadowOpacity: 0.02,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 1,
-  },
-  groupTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: palette.primaryText,
-  },
-  groupRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    paddingVertical: 8,
-  },
-  groupRowDivider: {
-    borderTopWidth: 1,
-    borderTopColor: palette.separator,
-    paddingTop: 12,
-  },
-  sectionSubtitle: {
-    fontSize: 13,
-    color: palette.secondaryText,
-  },
-  scoreBar: {
-    width: '100%',
-    height: 8,
-    borderRadius: 999,
-    backgroundColor: palette.fill,
-    overflow: 'hidden',
-  },
-  scoreTicks: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    top: 0,
-    bottom: 0,
-  },
-  scoreTick: {
-    position: 'absolute',
-    width: 1,
-    height: '100%',
-    backgroundColor: palette.separator,
-  },
-  scoreFill: {
-    height: '100%',
-    borderRadius: 999,
-    backgroundColor: palette.accent,
-  },
-  scoreMetaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 8,
-  },
-  scorePill: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 999,
-  },
-  scorePillText: {
-    fontSize: 11,
-    fontWeight: '600',
-  },
-  scoreStatus: {
-    fontSize: 11,
-    color: palette.tertiaryText,
-  },
-  highlightText: {
-    flex: 1,
-    paddingRight: 12,
-  },
-  highlightIconRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  highlightIcon: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  highlightLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: palette.primaryText,
-  },
-  highlightDetail: {
-    fontSize: 12,
-    color: palette.secondaryText,
-    lineHeight: 16,
-  },
-  highlightValue: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: palette.primaryText,
-    marginTop: 2,
-  },
-  recommendationList: {
-    gap: 8,
-    marginTop: 4,
-  },
-  recommendationRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 10,
-  },
-  recommendationDot: {
+  phaseBadgeDot: {
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: palette.tertiaryText,
-    marginTop: 6,
-    alignSelf: 'flex-start',
   },
-  recommendationText: {
-    fontSize: 13,
-    color: palette.primaryText,
-    lineHeight: 18,
-    flex: 1,
-    flexShrink: 1,
+  phaseBadgeText: {
+    fontSize: 11,
+    ...brandType.semibold,
   },
-  cycleRow: {
-    gap: 8,
-    paddingVertical: 10,
+  rowDivider: {
+    borderTopWidth: 1,
+    borderTopColor: '#F3F0EC',
   },
-  cycleHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    gap: 12,
-  },
-  cycleMeta: {
-    flex: 1,
-  },
-  cycleLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: palette.primaryText,
-  },
-  cycleDates: {
-    fontSize: 12,
-    color: palette.secondaryText,
-    marginTop: 2,
-  },
-  cycleTimeline: {
-    marginTop: 8,
-    gap: 8,
-  },
-  cycleTimelineRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  historyList: {
+    marginBottom: 18,
     gap: 10,
   },
-  cycleTimelineLabel: {
+  historyCard: {
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: '#F0EDE8',
+    backgroundColor: '#FFFFFF',
+    padding: 14,
+    ...brand.shadow.card,
+  },
+  historyTitle: {
+    fontSize: 13,
+    color: '#8A857E',
+    marginBottom: 10,
+    ...brandType.semibold,
+  },
+  historyTracks: {
+    gap: 8,
+    marginBottom: 8,
+  },
+  historyTrackRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    width: 64,
+    gap: 8,
   },
-  cycleTimelineLabelText: {
+  historyTrackLabel: {
+    width: 34,
     fontSize: 11,
-    color: palette.secondaryText,
-    fontWeight: '600',
+    color: '#8A857E',
+    ...brandType.semibold,
   },
-  cycleTrack: {
+  historyTrack: {
     flex: 1,
     height: 8,
     borderRadius: 999,
-    backgroundColor: palette.mutedFill,
-    position: 'relative',
+    backgroundColor: '#F3F0EC',
     overflow: 'hidden',
+    position: 'relative',
   },
-  cycleBar: {
+  historyFill: {
     position: 'absolute',
     top: 0,
     bottom: 0,
     borderRadius: 999,
-    zIndex: 1,
+    opacity: 0.8,
   },
-  cycleOverlap: {
+  historyOverlap: {
     position: 'absolute',
-    top: 0,
-    bottom: 0,
+    top: 1,
+    bottom: 1,
     borderRadius: 999,
-    opacity: 0.18,
-    borderWidth: 1,
-    zIndex: 2,
+    opacity: 0.4,
   },
-  cycleTagRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-    marginTop: 8,
-  },
-  cycleTag: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 999,
-    backgroundColor: palette.mutedFill,
-  },
-  cycleTagText: {
+  historyDate: {
+    width: 52,
+    textAlign: 'right',
     fontSize: 11,
-    color: palette.secondaryText,
-    fontWeight: '500',
+    color: '#8A857E',
+    ...brandType.body,
   },
-  cycleTrendBadge: {
+  historyMetaRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 999,
+    gap: 12,
   },
-  cycleTrendBadgeText: {
-    fontSize: 11,
-    fontWeight: '600',
-  },
-  primaryButton: {
-    marginTop: 12,
-    backgroundColor: palette.accent,
-    paddingVertical: 10,
-    paddingHorizontal: 18,
-    borderRadius: 12,
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    minHeight: 44,
-  },
-  primaryButtonDisabled: {
-    backgroundColor: palette.disabled,
-  },
-  primaryButtonText: {
-    color: '#fff',
-    fontWeight: '600',
-    fontSize: 15,
-  },
-  offlineNote: {
+  historyMetaText: {
     fontSize: 12,
-    color: palette.secondaryText,
+    color: '#8A857E',
+    ...brandType.body,
+  },
+  recommendationsList: {
+    gap: 10,
+    marginBottom: 8,
+  },
+  recommendationCard: {
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: '#F0EDE8',
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    ...brand.shadow.card,
+  },
+  recommendationIcon: {
+    fontSize: 20,
+  },
+  recommendationText: {
+    flex: 1,
+    fontSize: 13,
+    color: '#5A564F',
+    lineHeight: 19,
+    ...brandType.body,
+  },
+  recommendationMeta: {
+    fontSize: 11,
+    color: '#B5AFA7',
+    marginBottom: 10,
+    ...brandType.body,
+  },
+  boopButton: {
+    height: 56,
+    borderRadius: 18,
+    backgroundColor: '#D4A252',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 16,
+    ...brand.shadow.card,
+  },
+  boopButtonSent: {
+    backgroundColor: '#7BA68F',
+  },
+  boopButtonDisabled: {
+    opacity: 0.7,
+  },
+  boopButtonText: {
+    fontSize: 15,
+    color: '#FFFFFF',
+    ...brandType.semibold,
+  },
+  mutedText: {
+    fontSize: 13,
+    color: '#8A857E',
+    ...brandType.body,
   },
 });
 

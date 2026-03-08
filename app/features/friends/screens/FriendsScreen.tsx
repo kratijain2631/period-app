@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
+  Animated,
+  Easing,
   Alert,
-  Platform,
-  PlatformColor,
   SafeAreaView,
   ScrollView,
   StyleSheet,
@@ -33,21 +33,23 @@ import { searchUsersByAliasOrEmail, type UserSearchResult } from '../../../servi
 import { fetchFriendCycleSnapshots, type CycleSnapshotRow } from '../../../services/supabase/cycleSnapshots';
 import { computeSyncScore } from '../utils/syncScore';
 import type { CyclePhase } from '../../../../packages/domain/cycles/models';
-
-const iosColor = (name: string, fallback: string) =>
-  Platform.OS === 'ios' ? PlatformColor(name) : fallback;
+import { brand, brandType } from '../../../theme/brand';
+import { DottieAndFriend } from '../../../components/brand/DottieMascot';
+import { PhaseAvatar, getPhaseColor } from '../../../components/brand/CycleRing';
+import { useStaggeredEntrance } from '../../../components/brand/useStaggeredEntrance';
 
 const palette = {
-  background: iosColor('systemGroupedBackground', '#F2F2F7'),
-  card: iosColor('secondarySystemGroupedBackground', '#FFFFFF'),
-  primaryText: iosColor('label', '#111827'),
-  secondaryText: iosColor('secondaryLabel', '#6B7280'),
-  tertiaryText: iosColor('tertiaryLabel', '#9CA3AF'),
-  separator: iosColor('separator', '#E5E7EB'),
-  accent: iosColor('systemBlue', '#007AFF'),
-  fill: iosColor('systemGray5', '#E5E7EB'),
-  mutedFill: iosColor('systemGray6', '#F3F4F6'),
-  destructive: iosColor('systemRed', '#DC2626'),
+  background: brand.colors.background,
+  card: brand.colors.card,
+  primaryText: brand.colors.primaryText,
+  secondaryText: brand.colors.secondaryText,
+  tertiaryText: brand.colors.tertiaryText,
+  separator: brand.colors.separator,
+  accent: brand.colors.accent,
+  fill: brand.colors.fill,
+  mutedFill: brand.colors.mutedFill,
+  destructive: brand.colors.destructive,
+  white: brand.colors.white,
 };
 
 const FriendsScreen = () => {
@@ -315,10 +317,10 @@ const FriendsScreen = () => {
 
   const navigateToFriendSync = useCallback(
     (friendUserId?: string, preview?: boolean) => {
-      navigation.navigate(
-        'FriendSync' as never,
-        { friendId: friendUserId ?? '', preview: preview ?? false } as never,
-      );
+      (navigation as any).navigate('FriendSync', {
+        friendId: friendUserId ?? '',
+        preview: preview ?? false,
+      });
     },
     [navigation],
   );
@@ -399,206 +401,321 @@ const FriendsScreen = () => {
     [friendUsername, loadFriends],
   );
 
+  const deriveCycleDay = useCallback((snapshot?: CycleSnapshotRow['snapshot']) => {
+    const latest = snapshot?.latestSampleStart;
+    if (!latest) {
+      return null;
+    }
+    const latestDate = new Date(latest);
+    if (Number.isNaN(latestDate.getTime())) {
+      return null;
+    }
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const startOfLatest = new Date(
+      latestDate.getFullYear(),
+      latestDate.getMonth(),
+      latestDate.getDate(),
+    ).getTime();
+    const elapsedDays = Math.max(
+      0,
+      Math.floor((startOfToday - startOfLatest) / (24 * 60 * 60 * 1000)),
+    );
+    const cycleLength = snapshot?.cycleLengthDays ?? 28;
+    return (elapsedDays % cycleLength) + 1;
+  }, []);
+  const entranceStyles = useStaggeredEntrance(4, {
+    initialDelay: 40,
+    stagger: 85,
+    distance: 14,
+  });
+  const inviteBob = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(inviteBob, {
+          toValue: 1,
+          duration: 1200,
+          easing: Easing.inOut(Easing.quad),
+          useNativeDriver: true,
+        }),
+        Animated.timing(inviteBob, {
+          toValue: 0,
+          duration: 1200,
+          easing: Easing.inOut(Easing.quad),
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [inviteBob]);
+
+  const inviteBobStyle = useMemo(
+    () => ({
+      transform: [
+        {
+          translateY: inviteBob.interpolate({
+            inputRange: [0, 1],
+            outputRange: [0, -6],
+          }),
+        },
+      ],
+    }),
+    [inviteBob],
+  );
+
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.titleRow}>
-          <Text style={styles.title}>Friends</Text>
-        </View>
+      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        <Animated.View style={entranceStyles[0]}>
+          <View style={styles.headerRow}>
+            <Text style={styles.title}>Your Circle</Text>
+            <TouchableOpacity
+              style={styles.headerAction}
+              onPress={() => {
+                setSearchQuery('');
+                setSearchNotice(null);
+              }}
+              accessibilityLabel="Add a friend"
+            >
+              <Ionicons name="person-add-outline" size={18} color={palette.secondaryText} />
+            </TouchableOpacity>
+          </View>
+        </Animated.View>
 
         {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
 
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Find friends</Text>
-          <View style={styles.searchBar}>
-            <Ionicons name="search" size={16} color={palette.secondaryText} />
-            <TextInput
-              style={styles.searchInput}
-              value={searchQuery}
-              onChangeText={(text) => {
-                setSearchQuery(text);
-                if (searchNotice) {
-                  setSearchNotice(null);
-                }
-              }}
-              placeholder="Search by alias"
-              autoCapitalize="none"
-              autoCorrect={false}
-              textContentType="username"
-            />
-            {searchQuery.length > 0 ? (
-              <TouchableOpacity
-                style={styles.searchClear}
-                onPress={() => {
-                  setSearchQuery('');
-                  setSearchNotice(null);
+        <Animated.View style={entranceStyles[1]}>
+          <View style={styles.searchWrap}>
+            <View style={styles.searchBar}>
+              <Ionicons name="search" size={16} color={palette.tertiaryText} />
+              <TextInput
+                style={styles.searchInput}
+                value={searchQuery}
+                onChangeText={(text) => {
+                  setSearchQuery(text);
+                  if (searchNotice) {
+                    setSearchNotice(null);
+                  }
                 }}
-                accessibilityLabel="Clear search"
-              >
-                <Ionicons name="close-circle" size={18} color={palette.tertiaryText} />
-              </TouchableOpacity>
+                placeholder="Search friends..."
+                placeholderTextColor={palette.tertiaryText}
+                autoCapitalize="none"
+                autoCorrect={false}
+                textContentType="username"
+              />
+              {searchQuery.length > 0 ? (
+                <TouchableOpacity
+                  style={styles.searchClear}
+                  onPress={() => {
+                    setSearchQuery('');
+                    setSearchNotice(null);
+                  }}
+                  accessibilityLabel="Clear search"
+                >
+                  <Ionicons name="close-circle" size={18} color={palette.tertiaryText} />
+                </TouchableOpacity>
+              ) : null}
+            </View>
+
+            {isEmailQuery ? (
+              <View style={styles.searchResultsWrap}>
+                <Text style={styles.helperText}>
+                  Send a private request by email. We won&apos;t reveal whether they have an account.
+                </Text>
+                <TouchableOpacity
+                  style={[styles.primaryButton, isLoading ? styles.buttonDisabled : null]}
+                  onPress={handleSendEmailRequest}
+                  disabled={isLoading}
+                >
+                  <Text style={styles.primaryButtonText}>Send Request</Text>
+                </TouchableOpacity>
+              </View>
+            ) : null}
+
+            {!isEmailQuery && (normalizedQuery.length >= 2 || isSearching || searchNotice) ? (
+              <View style={styles.searchResultsWrap}>
+                {isSearching ? <Text style={styles.mutedText}>Searching...</Text> : null}
+                {!isSearching && normalizedQuery.length >= 2 && searchResults.length === 0 && !searchNotice ? (
+                  <Text style={styles.mutedText}>No matches yet.</Text>
+                ) : null}
+
+                {searchResults.map((result, index) => {
+                  const primaryName = result.alias ? formatAlias(result.alias) : 'Unknown';
+                  const initialSource = result.alias ?? '?';
+                  const initial = initialSource.trim().slice(0, 1).toUpperCase() || '?';
+                  const isInbound = inboundRequestMap.has(result.id);
+                  const isOutbound = outboundRequestIds.has(result.id);
+                  const isFriend = friendIds.has(result.id);
+
+                  return (
+                    <View
+                      key={result.id}
+                      style={[styles.searchRow, index > 0 ? styles.rowDivider : null]}
+                    >
+                      <View style={styles.searchAvatar}>
+                        <Text style={styles.searchAvatarText}>{initial}</Text>
+                      </View>
+                      <View style={styles.searchMeta}>
+                        <Text style={styles.searchName}>{primaryName}</Text>
+                      </View>
+                      <View style={styles.searchActions}>
+                        {isFriend ? (
+                          <TouchableOpacity
+                            style={styles.secondaryButton}
+                            onPress={() => navigateToFriendSync(result.id)}
+                          >
+                            <Text style={styles.secondaryButtonText}>View Sync</Text>
+                          </TouchableOpacity>
+                        ) : isInbound ? (
+                          <View style={styles.pendingChip}>
+                            <Text style={styles.pendingChipText}>Requested you</Text>
+                          </View>
+                        ) : isOutbound ? (
+                          <View style={styles.pendingChip}>
+                            <Text style={styles.pendingChipText}>Requested</Text>
+                          </View>
+                        ) : (
+                          <TouchableOpacity
+                            style={[styles.primaryButton, isLoading ? styles.buttonDisabled : null]}
+                            onPress={() => handleSendRequest(result.id)}
+                            disabled={isLoading}
+                          >
+                            <Text style={styles.primaryButtonText}>Add</Text>
+                          </TouchableOpacity>
+                        )}
+                      </View>
+                    </View>
+                  );
+                })}
+
+                {searchNotice ? (
+                  <Text
+                    style={[
+                      styles.noticeText,
+                      searchNotice.tone === 'error' ? styles.noticeError : styles.noticeInfo,
+                    ]}
+                  >
+                    {searchNotice.message}
+                  </Text>
+                ) : null}
+              </View>
             ) : null}
           </View>
-          {isEmailQuery ? (
-            <View style={styles.emailRequest}>
-              <Text style={styles.helperText}>
-                Send a private request by email. We won&apos;t reveal whether they have an account.
-              </Text>
-              <TouchableOpacity
-                style={[styles.actionButton, styles.primaryAction, isLoading ? styles.disabledAction : null]}
-                onPress={handleSendEmailRequest}
-                disabled={isLoading}
-              >
-                <Text style={styles.primaryActionText}>Send Request</Text>
-              </TouchableOpacity>
-            </View>
-          ) : (
-            <View style={styles.searchResults}>
-              {isSearching ? <Text style={styles.mutedText}>Searching...</Text> : null}
-              {!isSearching && normalizedQuery.length >= 2 && searchResults.length === 0 && !searchNotice ? (
-                <Text style={styles.mutedText}>No matches yet.</Text>
-              ) : null}
-              {searchResults.map((result, index) => {
-                const primaryName = result.alias ? formatAlias(result.alias) : 'Unknown';
-                const initialSource = result.alias ?? '?';
-                const initial = initialSource.trim().slice(0, 1).toUpperCase() || '?';
-                const isInbound = inboundRequestMap.has(result.id);
-                const isOutbound = outboundRequestIds.has(result.id);
-                const isFriend = friendIds.has(result.id);
+        </Animated.View>
 
-                return (
-                  <View
-                    key={result.id}
-                    style={[styles.searchRow, index > 0 ? styles.rowDivider : null]}
-                  >
-                    <View style={styles.searchAvatar}>
-                      <Text style={styles.searchAvatarText}>{initial}</Text>
-                    </View>
-                    <View style={styles.searchMeta}>
-                      <Text style={styles.searchName}>{primaryName}</Text>
-                    </View>
-                    <View style={styles.searchActions}>
-                      {isFriend ? (
-                        <TouchableOpacity
-                          style={[styles.actionButton, styles.secondaryAction]}
-                          onPress={() => navigateToFriendSync(result.id)}
-                        >
-                          <Text style={styles.secondaryActionText}>View Sync</Text>
-                        </TouchableOpacity>
-                      ) : isInbound ? (
-                        <View style={[styles.actionButton, styles.pendingAction]}>
-                          <Text style={styles.pendingActionText}>Requested you</Text>
-                        </View>
-                      ) : isOutbound ? (
-                        <View style={[styles.actionButton, styles.pendingAction]}>
-                          <Text style={styles.pendingActionText}>Requested</Text>
-                        </View>
-                      ) : (
-                        <TouchableOpacity
-                          style={[styles.actionButton, styles.primaryAction]}
-                          onPress={() => handleSendRequest(result.id)}
-                          disabled={isLoading}
-                        >
-                          <Text style={styles.primaryActionText}>Add</Text>
-                        </TouchableOpacity>
-                      )}
-                    </View>
-                  </View>
-                );
-              })}
-            </View>
-          )}
-          {searchNotice ? (
-            <Text
-              style={[
-                styles.noticeText,
-                searchNotice.tone === 'error' ? styles.noticeError : styles.noticeInfo,
-              ]}
-            >
-              {searchNotice.message}
-            </Text>
-          ) : null}
-        </View>
-
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Friends</Text>
+        <Animated.View style={entranceStyles[2]}>
           {friendSnapshots.length === 0 ? (
             <View style={styles.emptyState}>
               <Text style={styles.mutedText}>No friends yet.</Text>
               {__DEV__ ? (
                 <TouchableOpacity
-                  style={[styles.actionButton, styles.primaryAction]}
+                  style={styles.primaryButton}
                   onPress={() => navigateToFriendSync(undefined, true)}
                 >
-                  <Text style={styles.primaryActionText}>Preview Friend Sync</Text>
+                  <Text style={styles.primaryButtonText}>Preview Friend Sync</Text>
                 </TouchableOpacity>
               ) : null}
             </View>
           ) : (
-            friendSnapshots.map((row, index) => {
-              const username = friendUsername(row.user_id);
-              const initial = username.replace('@', '').trim().slice(0, 1).toUpperCase() || '?';
-              const score = friendScores[row.user_id];
-              const normalizedScore =
-                typeof score === 'number'
-                  ? score <= 1
-                    ? Math.round(score * 100)
-                    : Math.round(score)
-                  : null;
-              const scoreTone = normalizedScore !== null ? scoreToneFor(normalizedScore) : null;
-              const scoreLabel = normalizedScore !== null ? `${normalizedScore}%` : 'No data';
-              const scoreStatus = scoreTone?.label ?? 'Sync score';
-              const scoreColor = scoreTone?.color ?? palette.secondaryText;
-              const scoreBackground = scoreTone?.background ?? palette.mutedFill;
-              return (
-                <View
-                  key={row.user_id}
-                  style={[styles.friendRow, index > 0 ? styles.rowDivider : null]}
-                >
-                  <View style={styles.friendAvatar}>
-                    <Text style={styles.friendAvatarText}>{initial}</Text>
-                  </View>
-                  <View style={styles.friendMeta}>
-                    <Text style={styles.friendName} numberOfLines={1}>
-                      {username}
-                    </Text>
-                    <Text style={styles.friendDetail}>
-                      {formatPairSummary(row.snapshot?.currentPhase)}
-                    </Text>
-                    <View style={styles.friendMetaFooter}>
-                      <Text style={styles.friendDetailMuted}>
-                        {formatSyncedAt(row.last_synced_at)}
-                      </Text>
-                      <TouchableOpacity
-                        style={styles.linkAction}
-                        onPress={() => confirmRemoveFriend(row.user_id)}
-                      >
-                        <Text style={styles.linkDestructiveText}>Remove</Text>
-                      </TouchableOpacity>
+            <View style={styles.friendsList}>
+              <Text style={styles.friendsListTitle}>Friends</Text>
+              {friendSnapshots.map((row, index) => {
+                const username = friendUsername(row.user_id);
+                const initial = username.replace('@', '').trim().slice(0, 1).toUpperCase() || '?';
+                const normalizedScoreRaw = friendScores[row.user_id];
+                const normalizedScore =
+                  typeof normalizedScoreRaw === 'number'
+                    ? normalizedScoreRaw <= 1
+                      ? Math.round(normalizedScoreRaw * 100)
+                      : Math.round(normalizedScoreRaw)
+                    : 0;
+                const friendPhaseColor = getPhaseColor(row.snapshot?.currentPhase);
+                const friendCycleDay = deriveCycleDay(row.snapshot);
+                const trendLabel = normalizedScore >= 50 ? 'Converging' : 'Diverging';
+
+                return (
+                  <TouchableOpacity
+                    key={row.user_id}
+                    style={styles.friendCard}
+                    onPress={() => navigateToFriendSync(row.user_id)}
+                    onLongPress={() => confirmRemoveFriend(row.user_id)}
+                    activeOpacity={0.93}
+                  >
+                    <View style={styles.friendCardRow}>
+                      <PhaseAvatar initial={initial} phase={row.snapshot?.currentPhase} size={50} />
+
+                      <View style={styles.friendMeta}>
+                        <View style={styles.friendTitleRow}>
+                          <View style={styles.friendTitleLeft}>
+                            <Text style={styles.friendName} numberOfLines={1}>
+                              {username}
+                            </Text>
+                            <View style={styles.syncBadge}>
+                              <Text style={styles.syncBadgeText}>Sync</Text>
+                            </View>
+                          </View>
+                          <Text style={styles.friendRemove}>Remove</Text>
+                        </View>
+
+                        <Text style={styles.friendSubtitle}>
+                          {`Day ${friendCycleDay ?? '--'} · ${formatPairSummary(row.snapshot?.currentPhase)}`}
+                        </Text>
+
+                        <View style={styles.scoreRow}>
+                          <View style={styles.scoreTrack}>
+                            <View
+                              style={[
+                                styles.scoreFill,
+                                {
+                                  width: `${Math.max(0, Math.min(100, normalizedScore))}%`,
+                                  backgroundColor: friendPhaseColor,
+                                },
+                              ]}
+                            />
+                          </View>
+                          <Text style={styles.scoreValue}>{`${normalizedScore}%`}</Text>
+                        </View>
+
+                        <View style={styles.friendFootRow}>
+                          <Text style={styles.friendStatus}>{trendLabel}</Text>
+                          <Text style={styles.friendLastActive}>{formatSyncedAt(row.last_synced_at)}</Text>
+                        </View>
+                      </View>
+
+                      <Ionicons name="chevron-forward" size={18} color="#DDD9D3" />
                     </View>
-                  </View>
-                  <View style={styles.friendRight}>
-                    <TouchableOpacity
-                      style={styles.friendAction}
-                      onPress={() => navigateToFriendSync(row.user_id)}
-                    >
-                      <Text style={styles.friendActionText}>View Sync</Text>
-                      <Ionicons name="chevron-forward" size={12} color={palette.accent} />
-                    </TouchableOpacity>
-                    <View style={[styles.scoreBadge, { backgroundColor: scoreBackground }]}>
-                      <Text style={[styles.scoreBadgeText, { color: scoreColor }]}>
-                        {scoreStatus}
-                      </Text>
-                      <Text style={[styles.scoreBadgeValue, { color: scoreColor }]}>
-                        {scoreLabel}
-                      </Text>
-                    </View>
-                  </View>
-                </View>
-              );
-            })
+
+                    {index < friendSnapshots.length - 1 ? <View style={styles.friendDivider} /> : null}
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
           )}
-        </View>
+        </Animated.View>
+
+        <Animated.View style={entranceStyles[3]}>
+          <View style={styles.inviteCard}>
+            <Text style={styles.inviteTitle}>Grow Your Circle</Text>
+            <Text style={styles.inviteSubtitle}>Invite friends to sync your cycles together</Text>
+            <Animated.View style={[styles.inviteMascot, inviteBobStyle]}>
+              <DottieAndFriend size={140} color1="#C4654A" color2="#D4A252" />
+            </Animated.View>
+            <TouchableOpacity
+              style={styles.inviteButton}
+              onPress={() => {
+                setSearchNotice({
+                  message: 'Share your friend alias or email in search to invite them.',
+                  tone: 'info',
+                });
+              }}
+            >
+              <Text style={styles.inviteButtonText}>Invite Friends</Text>
+            </TouchableOpacity>
+          </View>
+        </Animated.View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -611,240 +728,351 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 32,
-    gap: 18,
+    paddingTop: 14,
+    paddingBottom: 120,
   },
-  titleRow: {
-    gap: 6,
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    marginBottom: 18,
   },
   title: {
-    fontSize: 28,
-    fontWeight: '700',
+    fontSize: 42,
     color: palette.primaryText,
+    ...brandType.display,
   },
-  card: {
-    backgroundColor: palette.card,
+  headerAction: {
+    width: 44,
+    height: 44,
     borderRadius: 16,
-    padding: 16,
-    gap: 12,
-    shadowColor: '#000',
-    shadowOpacity: 0.03,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 1,
-  },
-  cardTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: palette.primaryText,
+    borderWidth: 1,
+    borderColor: palette.separator,
+    backgroundColor: palette.white,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...brand.shadow.soft,
   },
   errorText: {
     color: palette.destructive,
     fontSize: 12,
+    marginBottom: 8,
+    ...brandType.body,
   },
-  emptyState: {
-    gap: 10,
-  },
-  mutedText: {
-    fontSize: 13,
-    color: palette.secondaryText,
-  },
-  friendRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 12,
-    paddingVertical: 12,
-  },
-  friendAvatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: palette.fill,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  friendAvatarText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: palette.secondaryText,
-  },
-  rowDivider: {
-    borderTopWidth: 1,
-    borderTopColor: palette.separator,
-  },
-  friendMeta: {
-    flex: 1,
-    gap: 4,
-    minWidth: 0,
-  },
-  friendName: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: palette.primaryText,
-    flexShrink: 1,
-  },
-  friendDetail: {
-    fontSize: 12,
-    color: palette.secondaryText,
-  },
-  friendDetailMuted: {
-    fontSize: 11,
-    color: palette.tertiaryText,
-  },
-  friendMetaFooter: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  friendRight: {
-    alignItems: 'flex-end',
-    justifyContent: 'center',
-    gap: 8,
-    paddingTop: 2,
-  },
-  scoreBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 999,
-  },
-  scoreBadgeText: {
-    fontSize: 11,
-    fontWeight: '600',
-  },
-  scoreBadgeValue: {
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  friendAction: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingVertical: 6,
-    paddingHorizontal: 8,
-  },
-  friendActionText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: palette.accent,
-  },
-  actionButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 999,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  primaryAction: {
-    backgroundColor: palette.accent,
-  },
-  primaryActionText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  disabledAction: {
-    opacity: 0.6,
-  },
-  secondaryAction: {
-    backgroundColor: palette.mutedFill,
+  searchWrap: {
+    marginBottom: 18,
+    borderRadius: 24,
     borderWidth: 1,
-    borderColor: palette.separator,
-  },
-  secondaryActionText: {
-    color: palette.primaryText,
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  pendingAction: {
-    backgroundColor: palette.mutedFill,
-  },
-  pendingActionText: {
-    color: palette.secondaryText,
-    fontSize: 12,
-    fontWeight: '600',
+    borderColor: '#EDE9E3',
+    backgroundColor: palette.white,
+    padding: 12,
+    ...brand.shadow.card,
   },
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: palette.separator,
-    borderRadius: 12,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    backgroundColor: palette.mutedFill,
+    borderColor: '#EDE9E3',
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 12,
+    paddingVertical: 11,
   },
   searchInput: {
     flex: 1,
     fontSize: 14,
-    color: palette.primaryText,
+    color: '#2D2A26',
+    ...brandType.body,
   },
   searchClear: {
     padding: 2,
   },
-  searchResults: {
-    gap: 10,
+  searchResultsWrap: {
+    marginTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#F3F0EC',
+    paddingTop: 8,
+  },
+  helperText: {
+    fontSize: 12,
+    color: '#8A857E',
+    marginBottom: 8,
+    ...brandType.body,
   },
   searchRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 10,
     paddingVertical: 8,
+  },
+  rowDivider: {
+    borderTopWidth: 1,
+    borderTopColor: '#F3F0EC',
   },
   searchAvatar: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: palette.fill,
+    backgroundColor: '#F3F0EC',
     alignItems: 'center',
     justifyContent: 'center',
   },
   searchAvatarText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: palette.secondaryText,
+    fontSize: 13,
+    color: '#8A857E',
+    ...brandType.semibold,
   },
   searchMeta: {
     flex: 1,
-    gap: 2,
   },
   searchName: {
     fontSize: 14,
-    fontWeight: '600',
-    color: palette.primaryText,
-  },
-  linkAction: {
-    paddingVertical: 4,
-  },
-  linkDestructiveText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: palette.destructive,
+    color: '#2D2A26',
+    ...brandType.semibold,
   },
   searchActions: {
-    flexDirection: 'row',
+    minWidth: 92,
+    alignItems: 'flex-end',
+  },
+  primaryButton: {
+    backgroundColor: '#C4654A',
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    minWidth: 72,
     alignItems: 'center',
-    gap: 6,
+    justifyContent: 'center',
   },
-  helperText: {
+  primaryButtonText: {
     fontSize: 12,
-    color: palette.secondaryText,
+    color: '#FFFFFF',
+    ...brandType.semibold,
   },
-  emailRequest: {
-    gap: 8,
+  secondaryButton: {
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    minWidth: 72,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#EDE9E3',
+    backgroundColor: '#F7F5F2',
+  },
+  secondaryButtonText: {
+    fontSize: 12,
+    color: '#2D2A26',
+    ...brandType.semibold,
+  },
+  pendingChip: {
+    borderRadius: 999,
+    backgroundColor: '#F7F5F2',
+    borderWidth: 1,
+    borderColor: '#EDE9E3',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  pendingChipText: {
+    fontSize: 11,
+    color: '#8A857E',
+    ...brandType.semibold,
   },
   noticeText: {
+    marginTop: 8,
     fontSize: 12,
+    ...brandType.body,
   },
   noticeError: {
     color: palette.destructive,
   },
   noticeInfo: {
-    color: palette.secondaryText,
+    color: '#8A857E',
+  },
+  buttonDisabled: {
+    opacity: 0.6,
+  },
+  friendsList: {
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: '#F0EDE8',
+    backgroundColor: '#FFFFFF',
+    overflow: 'hidden',
+    marginBottom: 16,
+    ...brand.shadow.card,
+  },
+  friendsListTitle: {
+    fontSize: 37,
+    color: '#2D2A26',
+    marginTop: 14,
+    marginBottom: 8,
+    marginHorizontal: 16,
+    ...brandType.display,
+  },
+  friendCard: {
+    backgroundColor: '#FFFFFF',
+  },
+  friendCardRow: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  friendMeta: {
+    flex: 1,
+    minWidth: 0,
+  },
+  friendTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 3,
+  },
+  friendTitleLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    flex: 1,
+  },
+  friendName: {
+    fontSize: 15,
+    color: '#2D2A26',
+    ...brandType.semibold,
+  },
+  syncBadge: {
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    backgroundColor: '#FFE8E7',
+  },
+  syncBadgeText: {
+    fontSize: 11,
+    color: '#FF6B63',
+    ...brandType.semibold,
+  },
+  friendRemove: {
+    fontSize: 12,
+    color: '#C4654A',
+    ...brandType.semibold,
+  },
+  phaseBadge: {
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  phaseBadgeDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  phaseBadgeText: {
+    fontSize: 11,
+    ...brandType.semibold,
+  },
+  friendSubtitle: {
+    fontSize: 12,
+    color: '#8A857E',
+    marginBottom: 7,
+    ...brandType.body,
+  },
+  scoreRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  scoreTrack: {
+    flex: 1,
+    height: 6,
+    borderRadius: 999,
+    backgroundColor: '#F3F0EC',
+    overflow: 'hidden',
+  },
+  scoreFill: {
+    height: '100%',
+    borderRadius: 999,
+  },
+  scoreValue: {
+    width: 32,
+    textAlign: 'right',
+    fontSize: 12,
+    color: '#5A564F',
+    ...brandType.semibold,
+  },
+  friendFootRow: {
+    marginTop: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  friendStatus: {
+    fontSize: 11,
+    color: '#8A857E',
+    ...brandType.body,
+  },
+  friendLastActive: {
+    fontSize: 11,
+    color: '#B5AFA7',
+    ...brandType.body,
+  },
+  friendDivider: {
+    height: 1,
+    backgroundColor: '#F3F0EC',
+    marginHorizontal: 16,
+  },
+  emptyState: {
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: '#F0EDE8',
+    backgroundColor: '#FFFFFF',
+    padding: 16,
+    gap: 10,
+    marginBottom: 14,
+    ...brand.shadow.card,
+  },
+  mutedText: {
+    fontSize: 13,
+    color: '#8A857E',
+    ...brandType.body,
+  },
+  inviteCard: {
+    backgroundColor: '#FFF0EB',
+    borderRadius: 28,
+    paddingHorizontal: 18,
+    paddingTop: 18,
+    paddingBottom: 20,
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  inviteTitle: {
+    fontSize: 34,
+    color: '#C4654A',
+    marginBottom: 2,
+    ...brandType.display,
+  },
+  inviteSubtitle: {
+    fontSize: 13,
+    color: '#8A857E',
+    textAlign: 'center',
+    marginBottom: 10,
+    ...brandType.body,
+  },
+  inviteMascot: {
+    marginBottom: 8,
+  },
+  inviteButton: {
+    borderRadius: 16,
+    backgroundColor: '#C4654A',
+    paddingHorizontal: 26,
+    paddingVertical: 11,
+  },
+  inviteButtonText: {
+    fontSize: 14,
+    color: '#FFFFFF',
+    ...brandType.semibold,
   },
 });
 
