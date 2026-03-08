@@ -1,6 +1,14 @@
 import 'react-native-get-random-values';
 import 'react-native-url-polyfill/auto';
 import { StatusBar } from 'expo-status-bar';
+import { ActivityIndicator, View } from 'react-native';
+import { useFonts } from 'expo-font';
+import {
+  Inter_400Regular,
+  Inter_500Medium,
+  Inter_600SemiBold,
+} from '@expo-google-fonts/inter';
+import { Nunito_700Bold, Nunito_800ExtraBold } from '@expo-google-fonts/nunito';
 import AppNavigator from './app/navigation/AppNavigator';
 import { useCycleSyncLifecycle } from './app/services/healthkit/useCycleSyncLifecycle';
 import { useSupabaseAuth } from './app/services/supabase/useSupabaseAuth';
@@ -10,12 +18,28 @@ import { useConnectionWatcher } from './app/state/connectionStore';
 import { useBoopQueueSync } from './app/services/boops/useBoopQueueSync';
 
 export default function App() {
+  const [fontsLoaded] = useFonts({
+    Inter_400Regular,
+    Inter_500Medium,
+    Inter_600SemiBold,
+    Nunito_700Bold,
+    Nunito_800ExtraBold,
+  });
+
   useConnectionWatcher();
   useCycleSyncLifecycle();
   useSupabaseAuth();
   useProfileGate();
   usePushNotifications();
   useBoopQueueSync();
+
+  if (!fontsLoaded) {
+    return (
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+        <ActivityIndicator />
+      </View>
+    );
+  }
 
   return (
     <>

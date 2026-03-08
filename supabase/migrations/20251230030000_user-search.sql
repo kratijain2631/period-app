@@ -24,6 +24,5 @@ begin
   end if;
 end;
 $$;
-
 revoke all on function public.search_users(text, int) from public;
 grant execute on function public.search_users(text, int) to authenticated;

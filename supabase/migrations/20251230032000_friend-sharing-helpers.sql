@@ -28,10 +28,8 @@ begin
     set has_shared = excluded.has_shared;
 end;
 $$;
-
 revoke all on function public.ensure_friend_sharing(uuid[]) from public;
 grant execute on function public.ensure_friend_sharing(uuid[]) to authenticated;
-
 create or replace function public.friend_profiles(friend_ids uuid[])
 returns table (friend_id uuid, alias text, full_name text)
 language sql
@@ -56,6 +54,5 @@ as $$
           and fs2.has_shared = true
      );
 $$;
-
 revoke all on function public.friend_profiles(uuid[]) from public;
 grant execute on function public.friend_profiles(uuid[]) to authenticated;
