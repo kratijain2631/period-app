@@ -2,7 +2,7 @@ import { ExpoConfig } from 'expo/config';
 
 // ───────────────────────────────────────────────────────────────────────────
 // Project names & identifiers — single source of truth.
-// Full explanation of each (and how costly it is to change) lives in NAMING.md.
+// Full explanation of each (and how costly it is to change) lives in IDENTIFIERS.md.
 // ───────────────────────────────────────────────────────────────────────────
 
 // Display name — user-facing (home screen, Health prompts, in-app text via

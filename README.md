@@ -1,6 +1,8 @@
-# period-app
+# Cadence
 
 Where your cycle meets your circle.
+
+> **Names & identifiers:** the app's display name, bundle ids, EAS project, scheme, and other identifiers are documented in [IDENTIFIERS.md](IDENTIFIERS.md). The display name lives in one place — `APP_NAME` in `app.config.ts`.
 
 ## Getting Started
 
