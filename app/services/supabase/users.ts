@@ -171,3 +171,15 @@ export const updateUserAlias = async (alias: string) => {
     throw updateError;
   }
 };
+
+export const deleteAccount = async () => {
+  if (!isSupabaseConfigured) {
+    return;
+  }
+  const { error } = await supabase.rpc('delete_account');
+  if (error) {
+    throw error;
+  }
+  // The auth user no longer exists; clear the local session without a network round-trip.
+  await supabase.auth.signOut({ scope: 'local' }).catch(() => undefined);
+};

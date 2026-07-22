@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
+  Alert,
   SafeAreaView,
   ScrollView,
   StyleSheet,
@@ -26,13 +27,20 @@ import {
   type FriendProfileRow,
   type FriendSharingRow,
 } from '../../../services/supabase/friendSharing';
-import { fetchCurrentUserProfile, searchUsersByAliasOrEmail } from '../../../services/supabase/users';
+import {
+  deleteAccount,
+  fetchCurrentUserProfile,
+  searchUsersByAliasOrEmail,
+} from '../../../services/supabase/users';
+import { signOut } from '../../../services/supabase/auth';
 import { fetchFriendCycleSnapshots, type CycleSnapshotRow } from '../../../services/supabase/cycleSnapshots';
 import { useCycleSnapshot } from '../../feed/hooks/useCycleSnapshot';
 import type { CyclePhase } from '../../../../packages/domain/cycles/models';
 
 const ProfileScreen = () => {
   const session = useSessionStore(selectSession);
+  const resetSession = useSessionStore((state) => state.reset);
+  const setSession = useSessionStore((state) => state.setSession);
   const navigation = useNavigation();
   const { snapshot, isStale, lastSyncedAt } = useCycleSnapshot();
   const [profileName, setProfileName] = useState('');
@@ -51,6 +59,44 @@ const ProfileScreen = () => {
   const [phaseFilter, setPhaseFilter] = useState<'all' | CyclePhase>('all');
   const [isLoading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isSigningOut, setIsSigningOut] = useState(false);
+
+  const handleSignOut = useCallback(async () => {
+    setIsSigningOut(true);
+    try {
+      await signOut();
+    } catch (error) {
+      console.warn('[profile] Failed to sign out', error);
+    } finally {
+      setSession(null);
+    }
+  }, [setSession]);
+
+  const handleDeleteAccount = useCallback(() => {
+    Alert.alert(
+      'Delete account?',
+      'This permanently deletes your account and all your data — cycle history, posts, friends, and shares. This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            setIsDeleting(true);
+            try {
+              await deleteAccount();
+              resetSession();
+            } catch (error) {
+              console.warn('[profile] Failed to delete account', error);
+              setIsDeleting(false);
+              Alert.alert('Could not delete account', 'Something went wrong. Please try again.');
+            }
+          },
+        },
+      ],
+    );
+  }, [resetSession]);
 
   const loadProfile = useCallback(async () => {
     try {
@@ -427,6 +473,33 @@ const ProfileScreen = () => {
             })
           )}
         </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Account</Text>
+          <TouchableOpacity
+            style={[styles.signOutButton, isSigningOut ? styles.signOutButtonDisabled : null]}
+            onPress={handleSignOut}
+            disabled={isSigningOut}
+            accessibilityLabel="Sign out"
+          >
+            <Text style={styles.signOutButtonText}>
+              {isSigningOut ? 'Signing out…' : 'Sign out'}
+            </Text>
+          </TouchableOpacity>
+          <Text style={[styles.mutedText, styles.deleteHint]}>
+            Deleting your account permanently removes your data and cannot be undone.
+          </Text>
+          <TouchableOpacity
+            style={[styles.deleteButton, isDeleting ? styles.deleteButtonDisabled : null]}
+            onPress={handleDeleteAccount}
+            disabled={isDeleting}
+            accessibilityLabel="Delete account"
+          >
+            <Text style={styles.deleteButtonText}>
+              {isDeleting ? 'Deleting…' : 'Delete account'}
+            </Text>
+          </TouchableOpacity>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -536,6 +609,41 @@ const styles = StyleSheet.create({
   },
   primaryButtonText: {
     color: '#fff',
+    fontWeight: '600',
+  },
+  signOutButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    backgroundColor: '#111',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  signOutButtonDisabled: {
+    opacity: 0.5,
+  },
+  signOutButtonText: {
+    color: '#fff',
+    fontWeight: '600',
+  },
+  deleteHint: {
+    marginTop: 16,
+  },
+  deleteButton: {
+    marginTop: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#b00020',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  deleteButtonDisabled: {
+    opacity: 0.5,
+  },
+  deleteButtonText: {
+    color: '#b00020',
     fontWeight: '600',
   },
   errorText: {
