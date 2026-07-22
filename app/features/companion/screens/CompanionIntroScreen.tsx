@@ -12,6 +12,7 @@ import { requestCyclePermissions } from '../../../services/healthkit/permissions
 import { syncHealthData } from '../../../services/healthkit/syncHealthData';
 import { useSessionStore } from '../../../state/sessionStore';
 import { healthkitClient, MENSTRUAL_FLOW_IDENTIFIER } from '../../../services/healthkit/healthkitClient';
+import { APP_NAME } from '../../../config/branding';
 
 const CompanionIntroScreen = () => {
   const permissions = useSessionStore((state) => state.permissions);
@@ -45,7 +46,7 @@ const CompanionIntroScreen = () => {
     if (permissions.lastPromptedAt) {
       return 'Permission is pending. Grant read access in Settings → Health to continue.';
     }
-    return 'Cycle Companion needs read-only access to menstrual flow to personalize your feed.';
+    return `${APP_NAME} needs read-only access to menstrual flow to personalize your feed.`;
   }, [permissions]);
 
   const handleGrant = useCallback(async () => {
@@ -98,7 +99,7 @@ const CompanionIntroScreen = () => {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <Text style={styles.kicker}>Meet Cycle Companion</Text>
+        <Text style={styles.kicker}>Meet {APP_NAME}</Text>
         <Text style={styles.title}>Read-only Health sync</Text>
         <Text style={styles.subtitle}>{subtitle}</Text>
 
