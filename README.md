@@ -4,6 +4,8 @@ Where your cycle meets your circle.
 
 > **Names & identifiers:** the app's display name, bundle ids, EAS project, scheme, and other identifiers are documented in [IDENTIFIERS.md](IDENTIFIERS.md). The display name lives in one place — `APP_NAME` in `app.config.ts`.
 
+**Project docs:** [Release notes](RELEASE_NOTES.md) · [Identifiers](IDENTIFIERS.md) · [Open todos](TODO.md)
+
 ## Getting Started
 
 ```bash

@@ -3,11 +3,11 @@
 Open items, roughly in priority order. Done work isn't listed here.
 
 ## Ship the beta (external TestFlight)
-- [ ] Production build: `eas build --profile production --platform ios`
-- [ ] Submit: `eas submit --profile production --platform ios --latest` (creates the App Store Connect app record)
-- [ ] App Store Connect → TestFlight: export compliance, beta description, privacy policy URL, age rating
-- [ ] Create an External tester group + public link, submit for Beta App Review (~1 day)
-- [ ] Share the link with friends
+- [x] Production build (`eas build --profile production --platform ios`)
+- [x] Submit to App Store Connect (`eas submit --profile production --platform ios --latest`)
+- [x] App Store Connect / TestFlight setup: export compliance, beta description, privacy policy URL, review notes
+- [x] Submit for Beta App Review — **awaiting Apple (~1 day)**
+- [ ] Once approved: share the public TestFlight link with friends
 
 ## Privacy policy
 - [ ] **Make the privacy link permanent.** It's currently a Claude artifact (fine for the beta, but tied to Anthropic hosting). Move it to a permanent host before public launch — options: Netlify drag-and-drop (easiest, free), a small separate public repo + GitHub Pages, or your own domain.
