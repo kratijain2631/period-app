@@ -2,6 +2,18 @@
 
 Conventions for anyone — human or AI agent — working in this repo.
 
+## Start here — read the docs first
+
+Before working on this project, read the docs linked from the [README](README.md) for full context. Each has a distinct job:
+
+- **[LEARNINGS.md](LEARNINGS.md)** — background, key decisions and *why*, and how the pieces work.
+- **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** — issues we hit and fixed, accounts/access, env vars, and things that expire.
+- **[IDENTIFIERS.md](IDENTIFIERS.md)** — every name/identifier, where it lives, and how costly it is to change.
+- **[RELEASE_NOTES.md](RELEASE_NOTES.md)** — what shipped in each build.
+- **[TODO.md](TODO.md)** — open work.
+
+AI models especially: don't re-derive this context or repeat past mistakes — it's written down.
+
 ## 1. Update the release notes on every commit
 
 Every commit that changes app behavior, config, or notable docs must also update [RELEASE_NOTES.md](RELEASE_NOTES.md):
