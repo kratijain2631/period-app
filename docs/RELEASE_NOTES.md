@@ -1,6 +1,6 @@
 # Release notes
 
-Changelog for Cadence builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTIONS.md) for how this file is maintained.
+Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTIONS.md) for how this file is maintained.
 
 ## Unreleased
 
@@ -18,6 +18,7 @@ Changes since the MVP 1 build, accumulating toward the next release.
 - TODO.md: added a **user notifications** feature (permission-gated, for friend requests / post reactions / etc.) and a running list of app-name options considered.
 - TROUBLESHOOTING.md: noted that the paid Apple Developer Program ($99/yr) is required for TestFlight.
 - Added `docs/FEATURES.md` (product backlog — moved the user-notifications item here) and `docs/BUGS.md` (open bugs); TODO.md now points to both.
+- Built out `docs/FEATURES.md` into a roadmap (design/aesthetics, core cycle features, social & support, engagement) with rough sequencing; TODO.md now has a single "Improve the app" item pointing to FEATURES/BUGS.
 
 ## MVP 1 — Beta 1 (TestFlight) — 2026-07-22
 

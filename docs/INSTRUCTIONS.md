@@ -46,6 +46,8 @@ When you hit and resolve a problem — or learn something that could bite a futu
 
 Read [IDENTIFIERS.md](IDENTIFIERS.md) first — it lists every name/identifier, where it lives, and how costly it is to change. The display name is a single constant (`APP_NAME` in `app.config.ts`); the iOS bundle id and EAS project id are costly and should not be changed casually.
 
+**In docs and prose, prefer "this app" over the current display name** — the name isn't final, so don't hardcode it. Only use the actual name where a specific value is genuinely needed: the identifier registry (IDENTIFIERS.md), records of a rename (RELEASE_NOTES/LEARNINGS), and name-decision todos.
+
 ## 5. Commits
 
 - Prefer small, **atomic** commits — one logical change each.

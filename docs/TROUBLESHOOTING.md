@@ -1,6 +1,6 @@
 # Troubleshooting & operations
 
-Everything learned bringing Cadence up: the issues we hit and fixed, what's configured where, what can expire or break, and the accounts you need. Read this before debugging a build, a sign-in failure, or an expiry.
+Everything learned bringing this app up: the issues we hit and fixed, what's configured where, what can expire or break, and the accounts you need. Read this before debugging a build, a sign-in failure, or an expiry.
 
 ## Accounts & access you need
 

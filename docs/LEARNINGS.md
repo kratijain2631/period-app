@@ -1,6 +1,6 @@
 # Learnings & context
 
-Background, decisions and their rationale, and reusable concepts from building Cadence — the "why" and the history behind the state of this repo. Things that don't fit in TROUBLESHOOTING (issues/fixes), IDENTIFIERS (names), TODO (open work), or INSTRUCTIONS (conventions) live here.
+Background, decisions and their rationale, and reusable concepts from building this app — the "why" and the history behind the state of this repo. Things that don't fit in TROUBLESHOOTING (issues/fixes), IDENTIFIERS (names), TODO (open work), or INSTRUCTIONS (conventions) live here.
 
 ## Project background
 
