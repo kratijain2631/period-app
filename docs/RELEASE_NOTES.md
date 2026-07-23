@@ -19,7 +19,9 @@ Changes since the MVP 1 build, accumulating toward the next release.
 - TROUBLESHOOTING.md: noted that the paid Apple Developer Program ($99/yr) is required for TestFlight.
 - Added `docs/FEATURES.md` (product backlog — moved the user-notifications item here) and `docs/BUGS.md` (open bugs); TODO.md now points to both.
 - Built out `docs/FEATURES.md` into a roadmap (design/aesthetics, core cycle features, social & support, engagement) with rough sequencing; TODO.md now has a single "Improve the app" item pointing to FEATURES/BUGS.
-- Distilled brainstorming notes into the docs: added `docs/PITCH.md` (vision, philosophy, taglines, positioning, go-to-market); greatly expanded FEATURES.md (predictions, phase recommendations, groups, calendar view, care actions, end-of-year recap, cycle-based task planning, community/location extensions, research); added the Sign in with Apple **web** OAuth secret 6-month expiry to TROUBLESHOOTING; added a "check for bugs after every change" rule to INSTRUCTIONS; added "InSync" to the name options.
+- Distilled brainstorming notes into the docs: added `docs/PITCH.md` (vision, philosophy, taglines, positioning, go-to-market); greatly expanded FEATURES.md (predictions, phase recommendations, groups, calendar view, care actions, end-of-year recap, cycle-based task planning, community/location extensions, research); added the Sign in with Apple **web** OAuth secret 6-month expiry to TROUBLESHOOTING; added a "check for bugs after every change" rule to INSTRUCTIONS.
+- Added `CLAUDE.md` at the repo root — auto-loaded by Claude Code each session; points at INSTRUCTIONS.md and summarizes the key conventions.
+- Expanded the app-name idea list in TODO.md (Rhythm, Tide, Phase, Kora, Lunalink, The Monthly, Cycle Connection, Sisters, Sisters by Blood, InSync, etc.).
 
 ## MVP 1 — Beta 1 (TestFlight) — 2026-07-22
 
