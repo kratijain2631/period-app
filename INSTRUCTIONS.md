@@ -1,0 +1,41 @@
+# Working instructions
+
+Conventions for anyone — human or AI agent — working in this repo.
+
+## 1. Update the release notes on every commit
+
+Every commit that changes app behavior, config, or notable docs must also update [RELEASE_NOTES.md](RELEASE_NOTES.md):
+
+- Keep an **`## Unreleased`** section at the very top of RELEASE_NOTES.md.
+- Add your change under it, in the right bucket: **Added**, **Changed**, **Fixed**, or **Known / not yet done**.
+- Write it in plain language (what a user or teammate would understand) — one line per change.
+- Do this in the **same commit** as the change, so the notes never drift from the code.
+
+## 2. Cut a version on every published build
+
+Every time we publish a build (TestFlight or App Store), "block" the accumulated changes into a named version:
+
+1. Rename the `## Unreleased` section to the new version + date, e.g.
+   `## MVP 2 — Beta 2 (TestFlight) — YYYY-MM-DD`.
+2. Move anything still incomplete into that version's **Known / not yet done** (or leave it in the fresh `## Unreleased`).
+3. Open a new empty `## Unreleased` section at the top for the next cycle.
+4. Bump `version` in `app.config.ts` for a user-facing release. (The native build number auto-increments via EAS `autoIncrement`, so don't manage that by hand.)
+
+So: **changes accumulate under `Unreleased` as we commit, and get blocked into a named version each time we publish.**
+
+## 3. Before changing any name or identifier
+
+Read [IDENTIFIERS.md](IDENTIFIERS.md) first — it lists every name/identifier, where it lives, and how costly it is to change. The display name is a single constant (`APP_NAME` in `app.config.ts`); the iOS bundle id and EAS project id are costly and should not be changed casually.
+
+## 4. Commits
+
+- Prefer small, **atomic** commits — one logical change each.
+- End commit messages authored with an AI agent with a `Co-Authored-By:` trailer.
+
+## 5. Todos
+
+Never **delete** items from [TODO.md](TODO.md) without explicit manual approval. When a todo is done, mark it done (`- [x]`) — leave it in the list. The list is a record of what was decided and completed, not just what's still pending. Removing items requires a human to approve it.
+
+## 6. Secrets
+
+Never commit secrets. Supabase keys and the DB password live in `.env` (gitignored) and EAS environment variables; Apple credentials live in EAS / Keychain. Only non-secret identifiers belong in the repo.

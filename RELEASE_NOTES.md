@@ -1,6 +1,16 @@
 # Release notes
 
-Changelog for Cadence builds. Newest first.
+Changelog for Cadence builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTIONS.md) for how this file is maintained.
+
+## Unreleased
+
+Changes since the MVP 1 build, accumulating toward the next release.
+
+### Added
+- Project docs: `RELEASE_NOTES.md`, `IDENTIFIERS.md` (every name/identifier and where to change it), `TODO.md` (open work), and `INSTRUCTIONS.md` (working conventions — update release notes on every commit, cut a version per published build, never delete todos without approval).
+
+### Changed
+- Cross-linked the docs from the README.
 
 ## MVP 1 — Beta 1 (TestFlight) — 2026-07-22
 
