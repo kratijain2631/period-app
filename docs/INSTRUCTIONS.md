@@ -6,6 +6,7 @@ Conventions for anyone — human or AI agent — working in this repo.
 
 Before working on this project, read the docs linked from the [README](../README.md) for full context. Each has a distinct job:
 
+- **[PITCH.md](PITCH.md)** — the vision, philosophy, and positioning.
 - **[LEARNINGS.md](LEARNINGS.md)** — background, key decisions and *why*, and how the pieces work.
 - **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** — issues we hit and fixed, accounts/access, env vars, and things that expire.
 - **[IDENTIFIERS.md](IDENTIFIERS.md)** — every name/identifier, where it lives, and how costly it is to change.
@@ -42,21 +43,28 @@ So: **changes accumulate under `Unreleased` as we commit, and get blocked into a
 
 When you hit and resolve a problem — or learn something that could bite a future contributor (a gotcha, a thing that could expire or fail, a non-obvious setup step, an account/access requirement, or info someone would need later) — write it into [TROUBLESHOOTING.md](TROUBLESHOOTING.md). Broader background and the "why" behind decisions goes in [LEARNINGS.md](LEARNINGS.md). The goal: nobody should have to re-derive what we already figured out, or repeat a mistake we already fixed.
 
-## 4. Before changing any name or identifier
+## 4. Check for bugs after every change
+
+After every code change, **explicitly review it for bugs before committing**:
+- Re-read the diff for logic errors, missing error handling, edge cases, and race conditions.
+- Run the tests (`npm test`) and confirm the app still bundles/runs where relevant.
+- Log any bug you find but don't fix in [BUGS.md](BUGS.md) so it isn't lost.
+
+## 5. Before changing any name or identifier
 
 Read [IDENTIFIERS.md](IDENTIFIERS.md) first — it lists every name/identifier, where it lives, and how costly it is to change. The display name is a single constant (`APP_NAME` in `app.config.ts`); the iOS bundle id and EAS project id are costly and should not be changed casually.
 
 **In docs and prose, prefer "this app" over the current display name** — the name isn't final, so don't hardcode it. Only use the actual name where a specific value is genuinely needed: the identifier registry (IDENTIFIERS.md), records of a rename (RELEASE_NOTES/LEARNINGS), and name-decision todos.
 
-## 5. Commits
+## 6. Commits
 
 - Prefer small, **atomic** commits — one logical change each.
 - End commit messages authored with an AI agent with a `Co-Authored-By:` trailer.
 
-## 6. Todos
+## 7. Todos
 
 Never **delete** items from [TODO.md](TODO.md) without explicit manual approval. When a todo is done, mark it done (`- [x]`) — leave it in the list. The list is a record of what was decided and completed, not just what's still pending. Removing items requires a human to approve it.
 
-## 7. Secrets
+## 8. Secrets
 
 Never commit secrets. Supabase keys and the DB password live in `.env` (gitignored) and EAS environment variables; Apple credentials live in EAS / Keychain. Only non-secret identifiers belong in the repo.

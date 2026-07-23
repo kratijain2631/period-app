@@ -63,6 +63,7 @@ No secrets are in the repo, so a new contributor has to set a few things up befo
 | Apple distribution certificate (`4404A2DF…`, id `MCZNPC2CDY`) | **2027-07-20** | New builds can't be signed | EAS regenerates on build (cap ~2 distribution certs — reuse, don't hoard) |
 | Provisioning profiles (dev `66GM6HX5Z5` + App Store `LS2KKHYSBX`) | **2027-07-20** | Signing fails | Regenerate on build; decline "reuse" if a profile is stale/missing a capability |
 | Apple Developer membership | ~annually ($99) | Everything Apple-side stops | Renew |
+| Sign in with Apple **web** OAuth secret | every ~6 months | **web** sign-in breaks | Regenerate the Apple secret key. **Not applicable right now** — this app uses the *native* Sign in with Apple flow (the Supabase Apple provider needs only Client IDs, no secret key). Only matters if you ever add the web OAuth flow. |
 | App Store Connect API key (App Manager) | if revoked/expired | `eas submit` fails | Regenerate via `eas` on next submit |
 | Supabase project (free tier) | pauses after ~1 week of inactivity | App can't reach backend | Un-pause in the Supabase dashboard |
 | EAS build quota (free tier) | monthly | Builds queue or block | Wait for reset or upgrade the Expo plan |

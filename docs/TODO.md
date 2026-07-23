@@ -14,7 +14,7 @@ Open items, roughly in priority order. Done work isn't listed here.
 - [ ] Before public launch: consider a legal review of the policy (sensitive menstrual-health data).
 
 ## Naming
-- [ ] Decide the final app name, then check App Store name uniqueness, trademark, and domain availability. Names used / considered so far: **Cadence**, "social menstruation app", "period app", "Cycle Companion", "Sync Sisters" (Cirql / Orbit / Coven also floated). None final.
+- [ ] Decide the final app name, then check App Store name uniqueness, trademark, and domain availability. Names used / considered so far: **Cadence**, **InSync**, "social menstruation app", "period app", "Cycle Companion", "Sync Sisters" (Cirql / Orbit / Coven also floated). None final.
 - [ ] Make naming consistent, or change the name. The display name is "Cadence" but the internal identifiers are mixed — iOS bundle id `com.syncsisters.cycle`, and slug / npm name / repo all `period-app`. Decide whether to align them to one namespace (e.g. cadence) or rename the app entirely. Best done **pre-launch**. Weigh the change-costs in [IDENTIFIERS.md](IDENTIFIERS.md): the bundle id is costly to change and invisible to users; the slug must match the EAS server; scheme / npm name / repo are cheap.
 
 ## Improve the app
