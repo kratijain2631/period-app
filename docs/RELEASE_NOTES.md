@@ -6,6 +6,10 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 Changes since the MVP 1 build, accumulating toward the next release.
 
+### Merged `main` (57 commits) — pending a rebuild
+- Discovered our branch was built on a **stale base**; `main` had 57 commits of features/fixes we were missing. Merged them in, keeping **our identity** (name Cadence, bundle id `com.syncsisters.cycle`, EAS `@kratijain26/period-app`, our Supabase), our `app.config.ts`, and all `/docs`. Dropped our now-redundant sign-out/delete code (main already has both — delete via an edge function).
+- **Still required before this runs** (see TODO.md): apply main's ~19 DB migrations to *our* Supabase, deploy main's 5 edge functions (`delete-account`, `avatar-generator`, `cycle-guidance`, `friend-recommendations`, `notifications-handler`) to *our* Supabase, then **rebuild** (main added native deps `react-native-svg`, `expo-image-picker`, `expo-font`, so a new build is required — the current dev client lacks them). This rebuild also fixes the TestFlight crash (caused by the stale base).
+
 ### Added
 - Project docs: `RELEASE_NOTES.md`, `IDENTIFIERS.md` (every name/identifier and where to change it), `TODO.md` (open work), `INSTRUCTIONS.md` (working conventions — update release notes on every commit, cut a version per published build, never delete todos without approval, read the docs first), `TROUBLESHOOTING.md` (issues we hit + fixes, accounts/access, env vars, expiries, and out-of-git state), and `LEARNINGS.md` (background, decisions and rationale, and reusable concepts).
 - Cross-linked all docs from the README and pointed `INSTRUCTIONS.md` at them so future contributors read the context first.
@@ -71,3 +75,13 @@ The app as it existed before the beta work began — functional, but tied to a c
 - Offline support: local SQLite storage and a queued boop sync.
 - Push notifications.
 - Named **"Cycle Companion."**
+
+**Additional features already on `main`** (the true baseline — we only discovered these when merging; they predate our beta work and came in via the `main` merge above):
+- **Brand identity revamp** (fonts, palette, restyled screens).
+- **Sign-out** (local-first logout) and **account deletion** (via a `delete-account` edge function).
+- **Adaptive cycle-phase signals + source-aware phase labels** (better use of the Health data than the placeholder).
+- **Friend recommendations + sync-score compatibility**, recomputed daily (`friend-recommendations`, `cycle-guidance` edge functions).
+- **Auto-post settings** (choose what posts automatically).
+- **Profile customization + avatar editing** (`avatar-generator` edge function).
+- **Add a mood to your update**, **event reactions**, **friend removal** (`remove_friend` RPC), **swipe-back** on Friend Sync, refreshed home feed / reactions UX.
+- **Jest CI fixes** (jsdom + localStorage/auth), `architecture.md`, simulator-setup doc.
