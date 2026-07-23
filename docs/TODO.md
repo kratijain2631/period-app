@@ -6,7 +6,8 @@ Open items, roughly in priority order. Done work isn't listed here.
 We merged `main` (57 commits) onto our identity/docs. To make it actually run on **our** Supabase + Apple account:
 - [x] `npm install` new native deps (`react-native-svg`, `expo-image-picker`, `expo-font`).
 - [ ] Apply main's ~19 DB migrations (`supabase/migrations/`, dated 2026-01-10 onward) to **our** Supabase via the SQL editor.
-- [ ] Deploy main's 5 edge functions to **our** Supabase (`delete-account`, `avatar-generator`, `cycle-guidance`, `friend-recommendations`, `notifications-handler`). Some need secrets (AI API keys) and pg_cron scheduling — the AI-powered ones (guidance, recs, avatars) can be deferred; `delete-account` is needed for the delete flow.
+- [x] Deploy `delete-account` edge function (done — powers the delete flow; no secrets needed, uses Supabase's auto-injected keys).
+- [ ] Deferred edge functions (need secrets, app degrades gracefully without them): `cycle-guidance`, `friend-recommendations`, `avatar-generator` (need `OPENAI_API_KEY`); `notifications-handler` (needs an Expo push access token). Plus the 3 `schedule-*` migrations (nightly cron) once those are deployed.
 - [ ] **Rebuild** the dev client + a new production build (native deps require it), reinstall, and test.
 - [ ] Rebuild TestFlight — this also fixes the crash (which was caused by the stale base).
 
