@@ -14,16 +14,24 @@ export type HealthPermissionsState = {
   lastPromptedAt?: string;
 };
 
+export type AutoPostSettingsState = {
+  postPeriodDays: boolean;
+  postOnlyPeriodStart: boolean;
+  postPhaseTransitions: boolean;
+};
+
 type SessionState = {
   session: Session | null;
   hasSeenCompanionIntro: boolean;
   permissions: HealthPermissionsState;
+  autoPostSettings: AutoPostSettingsState;
   isHydrating: boolean;
   alias: string | null;
   isProfileHydrating: boolean;
   setSession: (session: Session | null) => void;
   markCompanionIntroSeen: () => void;
   setHealthPermissions: (nextState: Partial<HealthPermissionsState>) => void;
+  setAutoPostSettings: (nextSettings: AutoPostSettingsState) => void;
   setHydrating: (isHydrating: boolean) => void;
   setAlias: (alias: string | null) => void;
   setProfileHydrating: (isHydrating: boolean) => void;
@@ -35,6 +43,12 @@ const initialPermissions: HealthPermissionsState = {
   lastPromptedAt: undefined,
 };
 
+const initialAutoPostSettings: AutoPostSettingsState = {
+  postPeriodDays: true,
+  postOnlyPeriodStart: false,
+  postPhaseTransitions: true,
+};
+
 const persistOptions: PersistOptions<SessionState> = {
   name: 'session-store',
   storage: createJSONStorage<SessionState>(() => AsyncStorage),
@@ -42,9 +56,10 @@ const persistOptions: PersistOptions<SessionState> = {
     session: state.session,
     hasSeenCompanionIntro: state.hasSeenCompanionIntro,
     permissions: state.permissions,
+    autoPostSettings: state.autoPostSettings,
     alias: state.alias,
   }),
-  version: 3,
+  version: 4,
   migrate: (persistedState, version) => {
     const state = persistedState as SessionState | undefined;
     if (!state) {
@@ -55,6 +70,7 @@ const persistOptions: PersistOptions<SessionState> = {
         ...state,
         hasSeenCompanionIntro: state.hasSeenCompanionIntro ?? false,
         permissions: state.permissions ?? initialPermissions,
+        autoPostSettings: initialAutoPostSettings,
         isHydrating: false,
         alias: null,
         isProfileHydrating: false,
@@ -63,6 +79,7 @@ const persistOptions: PersistOptions<SessionState> = {
     if (version < 2) {
       return {
         ...state,
+        autoPostSettings: initialAutoPostSettings,
         isHydrating: false,
         alias: null,
         isProfileHydrating: false,
@@ -71,8 +88,15 @@ const persistOptions: PersistOptions<SessionState> = {
     if (version < 3) {
       return {
         ...state,
+        autoPostSettings: initialAutoPostSettings,
         alias: null,
         isProfileHydrating: false,
+      } as SessionState;
+    }
+    if (version < 4) {
+      return {
+        ...state,
+        autoPostSettings: initialAutoPostSettings,
       } as SessionState;
     }
     return state;
@@ -85,6 +109,7 @@ export const useSessionStore = create<SessionState>()(
       session: null,
       hasSeenCompanionIntro: false,
       permissions: initialPermissions,
+      autoPostSettings: initialAutoPostSettings,
       isHydrating: true,
       alias: null,
       isProfileHydrating: false,
@@ -101,6 +126,7 @@ export const useSessionStore = create<SessionState>()(
                 : state.permissions.lastPromptedAt,
           },
         })),
+      setAutoPostSettings: (autoPostSettings) => set({ autoPostSettings }),
       setHydrating: (isHydrating) => set({ isHydrating }),
       setAlias: (alias) => set({ alias }),
       setProfileHydrating: (isProfileHydrating) => set({ isProfileHydrating }),
@@ -109,6 +135,7 @@ export const useSessionStore = create<SessionState>()(
           session: null,
           hasSeenCompanionIntro: false,
           permissions: initialPermissions,
+          autoPostSettings: initialAutoPostSettings,
           isHydrating: false,
           alias: null,
           isProfileHydrating: false,
@@ -121,6 +148,7 @@ export const useSessionStore = create<SessionState>()(
 export const selectSession = (state: SessionState) => state.session;
 export const selectHasSeenCompanionIntro = (state: SessionState) => state.hasSeenCompanionIntro;
 export const selectHealthPermissions = (state: SessionState) => state.permissions;
+export const selectAutoPostSettings = (state: SessionState) => state.autoPostSettings;
 export const selectIsHydrating = (state: SessionState) => state.isHydrating;
 export const selectAlias = (state: SessionState) => state.alias;
 export const selectIsProfileHydrating = (state: SessionState) => state.isProfileHydrating;

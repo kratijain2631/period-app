@@ -21,6 +21,5 @@ as $$
   where fr.id = any(request_ids)
     and (fr.from_user_id = auth.uid() or fr.to_user_id = auth.uid());
 $$;
-
 revoke all on function public.friend_request_profiles(uuid[]) from public;
 grant execute on function public.friend_request_profiles(uuid[]) to authenticated;

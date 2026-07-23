@@ -1,4 +1,4 @@
-import { signInWithPassword } from '../auth';
+import { signInWithPassword, signOut } from '../auth';
 import { upsertCurrentUserProfile } from '../users';
 
 jest.mock('../users', () => ({
@@ -10,6 +10,7 @@ jest.mock('../client', () => ({
   supabase: {
     auth: {
       signInWithPassword: jest.fn(),
+      signOut: jest.fn(),
     },
   },
 }));
@@ -39,5 +40,16 @@ describe('signInWithPassword', () => {
       expiresAt: 1234,
     });
     expect(upsertCurrentUserProfile).toHaveBeenCalledWith({ email: 'dev@example.com' });
+  });
+});
+
+describe('signOut', () => {
+  it('signs out locally and triggers global revoke', async () => {
+    supabase.auth.signOut.mockResolvedValue({ error: null });
+
+    await signOut();
+
+    expect(supabase.auth.signOut).toHaveBeenNthCalledWith(1, { scope: 'local' });
+    expect(supabase.auth.signOut).toHaveBeenNthCalledWith(2, { scope: 'global' });
   });
 });

@@ -21,8 +21,8 @@ export const fetchFriendCycleSnapshots = async (): Promise<CycleSnapshotRow[]> =
   return (data as CycleSnapshotRow[]) ?? [];
 };
 
-export const fetchFriendCycleSnapshot = async (
-  friendId: string,
+export const fetchCycleSnapshotByUserId = async (
+  userId: string,
 ): Promise<CycleSnapshotRow | null> => {
   if (!isSupabaseConfigured) {
     return null;
@@ -30,7 +30,7 @@ export const fetchFriendCycleSnapshot = async (
   const { data, error } = await supabase
     .from('cycle_snapshots')
     .select('user_id, last_synced_at, snapshot')
-    .eq('user_id', friendId)
+    .eq('user_id', userId)
     .maybeSingle();
   if (error) {
     throw error;
@@ -40,3 +40,7 @@ export const fetchFriendCycleSnapshot = async (
   }
   return data as CycleSnapshotRow;
 };
+
+export const fetchFriendCycleSnapshot = async (
+  friendId: string,
+): Promise<CycleSnapshotRow | null> => fetchCycleSnapshotByUserId(friendId);

@@ -1,78 +1,88 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
   Linking,
+  Platform,
+  PlatformColor,
   SafeAreaView,
   ScrollView,
   StyleSheet,
+  Switch,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
 import { requestCyclePermissions } from '../../../services/healthkit/permissions';
 import { syncHealthData } from '../../../services/healthkit/syncHealthData';
-import { useSessionStore } from '../../../state/sessionStore';
-import { healthkitClient, MENSTRUAL_FLOW_IDENTIFIER } from '../../../services/healthkit/healthkitClient';
-import { APP_NAME } from '../../../config/branding';
+import {
+  selectAutoPostSettings,
+  useSessionStore,
+} from '../../../state/sessionStore';
+import {
+  saveCurrentUserAutoPostSettings,
+} from '../../../services/supabase/users';
+import type { AutoPostSettings } from '../../../services/healthkit/autoPostSettings';
+
+const iosColor = (name: string, fallback: string) =>
+  Platform.OS === 'ios' ? PlatformColor(name) : fallback;
+
+const palette = {
+  background: iosColor('systemGroupedBackground', '#F2F2F7'),
+  card: iosColor('secondarySystemGroupedBackground', '#FFFFFF'),
+  border: iosColor('separator', '#E5E7EB'),
+  primaryText: iosColor('label', '#111827'),
+  secondaryText: iosColor('secondaryLabel', '#6B7280'),
+  tertiaryText: iosColor('tertiaryLabel', '#9CA3AF'),
+  accent: iosColor('systemBlue', '#007AFF'),
+  accentSoft: '#E8F1FF',
+  warning: iosColor('systemRed', '#B42318'),
+};
 
 const CompanionIntroScreen = () => {
   const permissions = useSessionStore((state) => state.permissions);
   const markIntroSeen = useSessionStore((state) => state.markCompanionIntroSeen);
+  const autoPostSettings = useSessionStore(selectAutoPostSettings);
+  const setAutoPostSettings = useSessionStore((state) => state.setAutoPostSettings);
   const [status, setStatus] = useState<string | null>(null);
   const [isRequesting, setIsRequesting] = useState(false);
-  const [debugStatus, setDebugStatus] = useState<string | null>(null);
-  const [hkStatus, setHkStatus] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (permissions.granted) {
-      markIntroSeen();
-    }
-  }, [permissions.granted, markIntroSeen]);
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const statusValue = await healthkitClient.authorizationStatusFor(MENSTRUAL_FLOW_IDENTIFIER);
-        setHkStatus(`HK status: ${statusValue}`);
-      } catch {
-        setHkStatus(null);
-      }
-    })();
-  }, []);
+  const [autoPostStatus, setAutoPostStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>(
+    'idle',
+  );
+  const showAutoPostStep = permissions.granted;
 
   const subtitle = useMemo(() => {
-    if (permissions.granted) {
-      return 'You can now sync menstrual flow data securely in the background.';
+    if (showAutoPostStep) {
+      return 'Health sync is connected. Pick what posts automatically.';
     }
     if (permissions.lastPromptedAt) {
-      return 'Permission is pending. Grant read access in Settings → Health to continue.';
+      return 'Grant read access in Health to finish setup, or continue for now.';
     }
-    return `${APP_NAME} needs read-only access to menstrual flow to personalize your feed.`;
-  }, [permissions]);
+    return 'Connect read-only cycle data from Apple Health.';
+  }, [permissions, showAutoPostStep]);
 
   const handleGrant = useCallback(async () => {
     setIsRequesting(true);
     setStatus(null);
-    setDebugStatus(null);
     try {
       const result = await requestCyclePermissions();
       if (!result.granted) {
         setStatus(result.error ?? 'Health access was not granted. Please try again.');
-        setDebugStatus('Still not granted after request');
         return;
       }
-      setDebugStatus('Health permissions granted');
       await syncHealthData({ trigger: 'manual' });
-      markIntroSeen();
     } catch (error) {
       setStatus('Something went wrong while requesting permissions. Please try again.');
       console.error('requestCyclePermissions failed', error);
     } finally {
       setIsRequesting(false);
     }
-  }, [markIntroSeen]);
+  }, []);
 
   const handleSkip = useCallback(() => {
     console.log('[intro] User tapped Not now');
+    markIntroSeen();
+  }, [markIntroSeen]);
+
+  const handleFinishSetup = useCallback(() => {
     markIntroSeen();
   }, [markIntroSeen]);
 
@@ -89,63 +99,202 @@ const CompanionIntroScreen = () => {
 
   const features = useMemo(
     () => [
-      'Read-only access to Apple Health menstrual flow entries.',
-      'Surface PMS + menstruation insights just for you and approved friends.',
-      'Sync in the background without draining battery life.',
+      'Read-only access to cycle and fertility entries (when available).',
+      'No writes back to Apple Health.',
+      'Background sync that respects battery life.',
     ],
     [],
+  );
+
+  const saveAutoPostSettings = useCallback(
+    async (nextSettings: AutoPostSettings, rollbackSettings: AutoPostSettings) => {
+      setAutoPostSettings(nextSettings);
+      setAutoPostStatus('saving');
+      try {
+        await saveCurrentUserAutoPostSettings(nextSettings);
+        setAutoPostStatus('saved');
+        setTimeout(() => setAutoPostStatus('idle'), 1200);
+      } catch (error) {
+        console.warn('[onboarding] Failed to save auto-post settings', error);
+        setAutoPostSettings(rollbackSettings);
+        setAutoPostStatus('error');
+      }
+    },
+    [setAutoPostSettings],
+  );
+
+  const handleTogglePeriodDays = useCallback(
+    (enabled: boolean) => {
+      const nextSettings: AutoPostSettings = enabled
+        ? { ...autoPostSettings, postPeriodDays: true }
+        : { ...autoPostSettings, postPeriodDays: false, postOnlyPeriodStart: false };
+      void saveAutoPostSettings(nextSettings, autoPostSettings);
+    },
+    [autoPostSettings, saveAutoPostSettings],
+  );
+
+  const handleTogglePeriodStartOnly = useCallback(
+    (enabled: boolean) => {
+      const nextSettings: AutoPostSettings = {
+        ...autoPostSettings,
+        postPeriodDays: true,
+        postOnlyPeriodStart: enabled,
+      };
+      void saveAutoPostSettings(nextSettings, autoPostSettings);
+    },
+    [autoPostSettings, saveAutoPostSettings],
+  );
+
+  const handleTogglePhaseTransitions = useCallback(
+    (enabled: boolean) => {
+      const nextSettings: AutoPostSettings = {
+        ...autoPostSettings,
+        postPhaseTransitions: enabled,
+      };
+      void saveAutoPostSettings(nextSettings, autoPostSettings);
+    },
+    [autoPostSettings, saveAutoPostSettings],
   );
 
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <Text style={styles.kicker}>Meet {APP_NAME}</Text>
-        <Text style={styles.title}>Read-only Health sync</Text>
+        <Text style={styles.kicker}>{showAutoPostStep ? 'Step 2 of 2' : 'Step 1 of 2'}</Text>
+        <Text style={styles.title}>
+          {showAutoPostStep ? 'Auto-post preferences' : 'Connect Apple Health'}
+        </Text>
         <Text style={styles.subtitle}>{subtitle}</Text>
 
-        <View style={styles.featureList}>
-          {features.map((feature) => (
-            <View key={feature} style={styles.featureItem}>
-              <View style={styles.featureBullet} />
-              <Text style={styles.featureText}>{feature}</Text>
-            </View>
-          ))}
-        </View>
-
-        {permissions.lastPromptedAt ? (
-          <Text style={styles.meta}>
-            Last prompted {new Date(permissions.lastPromptedAt).toLocaleString()}.
-          </Text>
+        {!showAutoPostStep ? (
+          <View style={styles.infoCard}>
+            {features.map((feature) => (
+              <View key={feature} style={styles.featureItem}>
+                <View style={styles.featureBullet} />
+                <Text style={styles.featureText}>{feature}</Text>
+              </View>
+            ))}
+          </View>
         ) : null}
 
-        {debugStatus ? <Text style={styles.meta}>{debugStatus}</Text> : null}
-        {hkStatus ? <Text style={styles.meta}>{hkStatus}</Text> : null}
+        {showAutoPostStep ? (
+          <View style={styles.settingsCard}>
+            <View style={styles.settingsHeader}>
+              <Text style={styles.settingsTitle}>Choose what auto-posts</Text>
+              <Text style={styles.settingsStatus}>
+                {autoPostStatus === 'saving'
+                  ? 'Saving...'
+                  : autoPostStatus === 'saved'
+                  ? 'Saved'
+                  : autoPostStatus === 'error'
+                  ? 'Could not save'
+                  : 'You can change this anytime in Profile settings'}
+              </Text>
+            </View>
+
+            <View style={styles.settingRow}>
+              <View style={styles.settingTextWrap}>
+                <Text style={styles.settingLabel}>Post period updates</Text>
+                <Text style={styles.settingDescription}>
+                  Share cycle updates from Apple Health to your feed.
+                </Text>
+              </View>
+              <Switch
+                value={autoPostSettings.postPeriodDays}
+                onValueChange={handleTogglePeriodDays}
+                trackColor={{ false: '#D1D5DB', true: '#BFDBFE' }}
+                thumbColor={autoPostSettings.postPeriodDays ? '#7d50ff' : '#FFFFFF'}
+              />
+            </View>
+
+            <View style={styles.settingRow}>
+              <View style={styles.settingTextWrap}>
+                <Text
+                  style={[
+                    styles.settingLabel,
+                    !autoPostSettings.postPeriodDays ? styles.settingDisabledText : null,
+                  ]}
+                >
+                  First day only
+                </Text>
+                <Text
+                  style={[
+                    styles.settingDescription,
+                    !autoPostSettings.postPeriodDays ? styles.settingDisabledText : null,
+                  ]}
+                >
+                  Only post the start of each period.
+                </Text>
+              </View>
+              <Switch
+                value={autoPostSettings.postOnlyPeriodStart}
+                onValueChange={handleTogglePeriodStartOnly}
+                disabled={!autoPostSettings.postPeriodDays}
+                trackColor={{ false: '#D1D5DB', true: '#BFDBFE' }}
+                thumbColor={autoPostSettings.postOnlyPeriodStart ? '#7d50ff' : '#FFFFFF'}
+              />
+            </View>
+
+            <View style={[styles.settingRow, styles.settingRowLast]}>
+              <View style={styles.settingTextWrap}>
+                <Text style={styles.settingLabel}>Post phase transitions</Text>
+                <Text style={styles.settingDescription}>
+                  Share updates when your cycle phase changes.
+                </Text>
+              </View>
+              <Switch
+                value={autoPostSettings.postPhaseTransitions}
+                onValueChange={handleTogglePhaseTransitions}
+                trackColor={{ false: '#D1D5DB', true: '#BFDBFE' }}
+                thumbColor={autoPostSettings.postPhaseTransitions ? '#7d50ff' : '#FFFFFF'}
+              />
+            </View>
+          </View>
+        ) : null}
+
+        {permissions.lastPromptedAt && !showAutoPostStep ? (
+          <Text style={styles.meta}>
+            Last prompt: {new Date(permissions.lastPromptedAt).toLocaleString()}.
+          </Text>
+        ) : null}
 
         {status ? <Text style={styles.status}>{status}</Text> : null}
       </ScrollView>
 
       <View style={styles.footer}>
-        <TouchableOpacity
-          style={[styles.primaryButton, permissions.granted && styles.primaryButtonDisabled]}
-          onPress={handleGrant}
-          disabled={isRequesting || permissions.granted}
-        >
-          <Text style={styles.primaryLabel}>
-            {permissions.granted ? 'Access Granted' : isRequesting ? 'Requesting…' : 'Connect Apple Health'}
-          </Text>
-        </TouchableOpacity>
+        {!showAutoPostStep ? (
+          <>
+            <TouchableOpacity
+              style={styles.primaryButton}
+              onPress={handleGrant}
+              disabled={isRequesting}
+            >
+              <Text style={styles.primaryLabel}>
+                {isRequesting ? 'Requesting…' : 'Connect Apple Health'}
+              </Text>
+            </TouchableOpacity>
 
-        <TouchableOpacity style={styles.secondaryButton} onPress={handleSkip}>
-          <Text style={styles.secondaryLabel}>Not now</Text>
-        </TouchableOpacity>
+            <TouchableOpacity style={styles.secondaryButton} onPress={handleSkip}>
+              <Text style={styles.secondaryLabel}>Not now</Text>
+            </TouchableOpacity>
 
-        {!permissions.granted ? (
-          <TouchableOpacity style={styles.secondaryButton} onPress={handleOpenHealthSettings}>
-            <Text style={styles.secondaryLabel}>Open Health settings</Text>
-          </TouchableOpacity>
-        ) : null}
+            {permissions.lastPromptedAt ? (
+              <TouchableOpacity style={styles.tertiaryButton} onPress={handleOpenHealthSettings}>
+                <Text style={styles.tertiaryLabel}>Open Health settings</Text>
+              </TouchableOpacity>
+            ) : null}
+          </>
+        ) : (
+          <>
+            <TouchableOpacity style={styles.primaryButton} onPress={handleFinishSetup}>
+              <Text style={styles.primaryLabel}>Finish setup</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.secondaryButton} onPress={handleSkip}>
+              <Text style={styles.secondaryLabel}>Skip for now</Text>
+            </TouchableOpacity>
+          </>
+        )}
 
-        <TouchableOpacity style={styles.tertiaryButton} onPress={handleLearnMore}>
+        <TouchableOpacity style={styles.learnMoreButton} onPress={handleLearnMore}>
           <Text style={styles.tertiaryLabel}>Learn more</Text>
         </TouchableOpacity>
       </View>
@@ -156,34 +305,39 @@ const CompanionIntroScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: palette.background,
   },
   scrollContent: {
     paddingHorizontal: 24,
-    paddingTop: 48,
+    paddingTop: 40,
     paddingBottom: 24,
-    gap: 16,
+    gap: 14,
   },
   kicker: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
-    letterSpacing: 0.3,
+    letterSpacing: 0.4,
     textTransform: 'uppercase',
-    color: '#7d50ff',
+    color: palette.secondaryText,
   },
   title: {
     fontSize: 32,
     fontWeight: '700',
-    color: '#111',
+    color: palette.primaryText,
   },
   subtitle: {
     fontSize: 18,
-    color: '#333',
-    lineHeight: 24,
+    color: palette.secondaryText,
+    lineHeight: 25,
   },
-  featureList: {
-    marginTop: 16,
-    gap: 12,
+  infoCard: {
+    marginTop: 8,
+    borderRadius: 16,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: palette.border,
+    backgroundColor: palette.card,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
   },
   featureItem: {
     flexDirection: 'row',
@@ -191,24 +345,79 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   featureBullet: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: '#7d50ff',
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginTop: 7,
+    backgroundColor: palette.accent,
   },
   featureText: {
     flex: 1,
     fontSize: 16,
-    color: '#333',
+    color: palette.secondaryText,
     lineHeight: 22,
   },
+  settingsCard: {
+    marginTop: 8,
+    borderRadius: 16,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: palette.border,
+    backgroundColor: palette.card,
+    overflow: 'hidden',
+  },
+  settingsHeader: {
+    paddingHorizontal: 14,
+    paddingTop: 12,
+    paddingBottom: 8,
+    gap: 4,
+  },
+  settingsTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: palette.primaryText,
+  },
+  settingsStatus: {
+    fontSize: 12,
+    color: palette.tertiaryText,
+  },
+  settingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 11,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: palette.border,
+    backgroundColor: palette.accentSoft,
+  },
+  settingRowLast: {
+    borderBottomWidth: 0,
+  },
+  settingTextWrap: {
+    flex: 1,
+    gap: 2,
+    paddingRight: 8,
+  },
+  settingLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: palette.primaryText,
+  },
+  settingDescription: {
+    fontSize: 12,
+    color: palette.secondaryText,
+  },
+  settingDisabledText: {
+    color: palette.tertiaryText,
+  },
   status: {
-    color: '#b3261e',
+    color: palette.warning,
     fontSize: 14,
     lineHeight: 20,
   },
   meta: {
-    color: '#666',
+    color: palette.tertiaryText,
     fontSize: 13,
   },
   footer: {
@@ -217,13 +426,10 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   primaryButton: {
-    backgroundColor: '#7d50ff',
+    backgroundColor: palette.accent,
     borderRadius: 16,
     paddingVertical: 16,
     alignItems: 'center',
-  },
-  primaryButtonDisabled: {
-    backgroundColor: '#cdbafc',
   },
   primaryLabel: {
     color: '#fff',
@@ -235,7 +441,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   secondaryLabel: {
-    color: '#7d50ff',
+    color: palette.accent,
     fontSize: 15,
     fontWeight: '600',
   },
@@ -243,10 +449,13 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     alignItems: 'center',
   },
+  learnMoreButton: {
+    paddingVertical: 8,
+    alignItems: 'center',
+  },
   tertiaryLabel: {
-    color: '#333',
+    color: palette.secondaryText,
     fontSize: 14,
-    textDecorationLine: 'underline',
   },
 });
 

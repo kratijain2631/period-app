@@ -78,6 +78,22 @@ export const sendFriendRequest = async (toUserId: string) => {
   }
 };
 
+export const sendFriendRequestByEmail = async (email: string) => {
+  if (!isSupabaseConfigured) {
+    return;
+  }
+  const trimmed = email.trim();
+  if (!trimmed) {
+    return;
+  }
+  const { error } = await supabase.rpc('send_friend_request_by_email', {
+    target_email: trimmed,
+  });
+  if (error) {
+    throw error;
+  }
+};
+
 export const respondToFriendRequest = async (requestId: string, status: 'accepted' | 'declined') => {
   if (!isSupabaseConfigured) {
     return;

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { DeviceEventEmitter } from 'react-native';
 import type { CycleSnapshot } from '../../../../packages/domain/cycles/models';
+import { resolveCyclePhase } from '../../../../packages/domain/cycles/models';
 import { CYCLE_SNAPSHOT_UPDATED } from '../../../services/healthkit/syncHealthData';
 import {
   getLatestCycleSnapshot,
@@ -35,8 +36,22 @@ export const useCycleSnapshot = (): CycleSnapshotState => {
         return;
       }
       const stale = isSnapshotStale(stored.lastSyncedAt);
+      const referenceDate = new Date(stored.lastSyncedAt ?? stored.snapshot.syncedAt);
+      const resolved = Number.isNaN(referenceDate.getTime())
+        ? null
+        : resolveCyclePhase({
+            samples: stored.snapshot.samples,
+            signals: stored.snapshot.signalSamples ?? [],
+            referenceDate,
+          });
       setSnapshotState({
-        snapshot: stored.snapshot,
+        snapshot: {
+          ...stored.snapshot,
+          currentPhase: resolved?.phase ?? stored.snapshot.currentPhase,
+          phaseSource: resolved?.source ?? stored.snapshot.phaseSource ?? 'unknown',
+          cycleLengthDays: resolved?.cycleLengthDays ?? stored.snapshot.cycleLengthDays,
+          lutealLengthDays: resolved?.lutealLengthDays ?? stored.snapshot.lutealLengthDays,
+        },
         lastSyncedAt: stored.lastSyncedAt,
         isStale: stale,
       });

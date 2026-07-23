@@ -46,3 +46,27 @@ export const addPostReaction = async (postId: string, emoji: string) => {
   }
   return inserted as PostReactionRow;
 };
+
+export const removePostReaction = async (postId: string, emoji: string) => {
+  if (!isSupabaseConfigured) {
+    return false;
+  }
+  const { data, error } = await supabase.auth.getUser();
+  if (error) {
+    throw error;
+  }
+  if (!data.user) {
+    throw new Error('Supabase user is not available.');
+  }
+  const { data: deleted, error: deleteError } = await supabase
+    .from('post_reactions')
+    .delete()
+    .eq('post_id', postId)
+    .eq('user_id', data.user.id)
+    .eq('emoji', emoji)
+    .select('id');
+  if (deleteError) {
+    throw deleteError;
+  }
+  return Boolean(deleted && deleted.length > 0);
+};

@@ -62,6 +62,7 @@ const config: ExpoConfig = {
     './plugins/withNitroModulesPod',
     'expo-sqlite',
     'expo-notifications',
+    'expo-image-picker',
   ],
   ios: {
     supportsTablet: false,
