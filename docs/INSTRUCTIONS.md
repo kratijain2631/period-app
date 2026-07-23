@@ -4,11 +4,12 @@ Conventions for anyone — human or AI agent — working in this repo.
 
 ## Start here — read the docs first
 
-Before working on this project, read the docs linked from the [README](README.md) for full context. Each has a distinct job:
+Before working on this project, read the docs linked from the [README](../README.md) for full context. Each has a distinct job:
 
 - **[LEARNINGS.md](LEARNINGS.md)** — background, key decisions and *why*, and how the pieces work.
 - **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** — issues we hit and fixed, accounts/access, env vars, and things that expire.
 - **[IDENTIFIERS.md](IDENTIFIERS.md)** — every name/identifier, where it lives, and how costly it is to change.
+- **[SCHEMA.md](SCHEMA.md)** — the Supabase database (tables, functions, how it works).
 - **[RELEASE_NOTES.md](RELEASE_NOTES.md)** — what shipped in each build.
 - **[TODO.md](TODO.md)** — open work.
 

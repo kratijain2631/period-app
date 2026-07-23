@@ -14,8 +14,11 @@ Open items, roughly in priority order. Done work isn't listed here.
 - [ ] Before public launch: consider a legal review of the policy (sensitive menstrual-health data).
 
 ## Naming
-- [ ] Decide the final app name (Cadence vs. alternatives) and check App Store name uniqueness, trademark, and domain availability
+- [ ] Decide the final app name, then check App Store name uniqueness, trademark, and domain availability. Names used / considered so far: **Cadence**, "social menstruation app", "period app", "Cycle Companion", "Sync Sisters" (Cirql / Orbit / Coven also floated). None final.
 - [ ] Make naming consistent, or change the name. The display name is "Cadence" but the internal identifiers are mixed — iOS bundle id `com.syncsisters.cycle`, and slug / npm name / repo all `period-app`. Decide whether to align them to one namespace (e.g. cadence) or rename the app entirely. Best done **pre-launch**. Weigh the change-costs in [IDENTIFIERS.md](IDENTIFIERS.md): the bundle id is costly to change and invisible to users; the slug must match the EAS server; scheme / npm name / repo are cheap.
+
+## Features
+- [ ] **User notifications.** Ask for notification permission first, then send a push notification on key events — a new friend request, a reaction to your post, etc. Expandable to more events later. Infra partly exists (`expo-notifications`, the `device_tokens` table, the `usePushNotifications` hook, and the `notifications-handler` Supabase edge function) — wire these up to the events and add the permission prompt.
 
 ## Before a public App Store release (not needed for beta)
 - [ ] App Privacy "nutrition labels" + age rating in App Store Connect (declare health-data collection)
