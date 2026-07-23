@@ -22,6 +22,8 @@ Changes since the MVP 1 build, accumulating toward the next release.
 - Distilled brainstorming notes into the docs: added `docs/PITCH.md` (vision, philosophy, taglines, positioning, go-to-market); greatly expanded FEATURES.md (predictions, phase recommendations, groups, calendar view, care actions, end-of-year recap, cycle-based task planning, community/location extensions, research); added the Sign in with Apple **web** OAuth secret 6-month expiry to TROUBLESHOOTING; added a "check for bugs after every change" rule to INSTRUCTIONS.
 - Added `CLAUDE.md` at the repo root — auto-loaded by Claude Code each session; points at INSTRUCTIONS.md and summarizes the key conventions.
 - Expanded the app-name idea list in TODO.md (Rhythm, Tide, Phase, Kora, Lunalink, The Monthly, Cycle Connection, Sisters, Sisters by Blood, InSync, etc.).
+- INSTRUCTIONS.md §1: release notes must now capture **non-code changes too** (Supabase config, project/account creation, EAS env vars, privacy-policy URL, App Store Connect setup); added an "Infrastructure & release setup" bucket, and backfilled the MVP 1 entry with all the TestFlight setup steps.
+- Restructured FEATURES.md — **sequencing-first** ("The plan" up top with Now/Next/Later/Bets + a priority note), categories as a reference library, Levels folded in as historical; added **Onboarding**, **Privacy & data controls**, **Accessibility & reliability**, and notification-strategy areas; and added concrete **cycle-model / HealthKit** next steps (the Health data is read today but barely used — only a placeholder "current phase").
 
 ## MVP 1 — Beta 1 (TestFlight) — 2026-07-22
 
@@ -44,6 +46,14 @@ First external TestFlight beta, and the first build that runs entirely under our
   1. The provisioning profile didn't carry the Sign in with Apple entitlement → fixed by regenerating the profile (declining "reuse" on rebuild).
   2. Supabase rejected the token's audience (`unacceptable audience`) → fixed by adding `com.syncsisters.cycle` to the Supabase Apple provider's Client IDs.
 - Production builds now reach Supabase — the Supabase URL/key are stored as EAS environment variables so they're bundled into cloud builds (they were previously only in the gitignored `.env`, which cloud builds don't see).
+
+### Infrastructure & release setup (non-code)
+- Stood up our **own Supabase project** and applied the full schema (10 tables, functions, RLS) via the migrations; added the `delete_account()` function; configured the **Apple sign-in provider** (`com.syncsisters.cycle` in Client IDs).
+- Set the Supabase URL + publishable key as **EAS environment variables** (production) so cloud builds reach the backend.
+- Created the **Apple App ID** `com.syncsisters.cycle` (HealthKit + Sign in with Apple enabled), generated the distribution certificate + provisioning profiles, and registered the test device.
+- Created the **App Store Connect app record** and an **App Store Connect API key** (App Manager role) for `eas submit`.
+- Published the **privacy policy** and provided its URL + App Review notes (Sign in with Apple only; reviewers use their own Apple ID).
+- Ran the production build via EAS, submitted to TestFlight with `eas submit`, and **submitted for external Beta App Review**.
 
 ### Known / not yet done
 - Deleting the auth user relies on a Postgres function (works today); may move to an Edge Function if project permissions change.

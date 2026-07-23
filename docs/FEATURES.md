@@ -1,6 +1,6 @@
 # Features
 
-The product roadmap — planned features, design improvements, and ideas. Vision and philosophy live in [PITCH.md](PITCH.md). Pull an item into a build, then record what shipped in [RELEASE_NOTES.md](RELEASE_NOTES.md). Operational/shipping tasks live in [TODO.md](TODO.md); open bugs in [BUGS.md](BUGS.md).
+The product roadmap. Vision and philosophy live in [PITCH.md](PITCH.md). Pull an item into a build, then record what shipped in [RELEASE_NOTES.md](RELEASE_NOTES.md). Operational/shipping tasks live in [TODO.md](TODO.md); open bugs in [BUGS.md](BUGS.md).
 
 ## Guiding idea
 
@@ -8,68 +8,118 @@ A period tracker that's **social** — going through your cycle *with* the frien
 
 ## Already shipped (V0 baseline)
 
-Auth (Sign in with Apple), read-only ingest of menstrual data from Apple Health, friends (requests + mutual-consent sharing), a feed with posts/reactions/boops, and a (dummy) sync score. See [RELEASE_NOTES.md](RELEASE_NOTES.md) and [SCHEMA.md](SCHEMA.md).
+Auth (Sign in with Apple), read-only ingest of menstrual-flow data from Apple Health, friends (requests + mutual-consent sharing), a feed with posts/reactions/boops, and a (dummy) sync score. The HealthKit data is read but barely used yet (see the cycle-model note below). See [RELEASE_NOTES.md](RELEASE_NOTES.md) and [SCHEMA.md](SCHEMA.md).
 
-## 1. Design & aesthetics — highest leverage
+---
 
-The app works but looks utilitarian. A cohesive visual identity is the single biggest thing that will make the app *feel* real. Design ethos: **serious, not pink/girly/fluffy** — clean, considered, trustworthy; and **fast, low-friction period entry**.
+# The plan (start here)
+
+The sequencing below **is** the plan; the category sections after it are a reference library the plan pulls from.
+
+> **Priority note:** design-first is right *right now* — you're about to put this in front of friend testers, and polish drives retention. But the **social layer + a real cycle/prediction model are the actual moat**, so keep them close behind, not deferred to "Later."
+
+### Now — make it feel real & usable
+- **Design system + app icon/splash** (§ Design)
+- A **real cycle model** and a home-screen **cycle visualization** built on it (§ Cycle) — today's phase derivation is a placeholder; this is the unlock.
+- **Onboarding flow**: permissions → add a friend → see your data (§ Onboarding)
+- **User notifications**, permission-gated (§ Engagement)
+
+### Next — the moat
+- **Prediction model** — next period, fertile/ovulation, PMS (§ Cycle)
+- **Phase-based recommendations** (§ Cycle)
+- **Friends overview + calendar-of-friends + a real sync score** (§ Social)
+- **Groups** of friends (§ Social)
+- **Privacy & data-controls dashboard** (§ Privacy)
+
+### Later
+Calendar/history view, care actions, end-of-year recap, richer feed, granular per-friend sharing, home-screen widget, forum/Q&A, check-in streaks, plus **accessibility** and **reliability/offline** polish.
+
+### Bets
+Cycle-based task planning, community/location extensions, and the research-data platform.
+
+---
+
+# Reference: feature areas
+
+## Design & aesthetics — highest leverage
+
+The app works but looks utilitarian. A cohesive visual identity is the single biggest thing that will make it *feel* real. Ethos: **serious, not pink/girly/fluffy** — clean, considered, trustworthy; and **fast, low-friction period entry**.
 
 - **Design system** — a considered palette (not stereotypically "girly"), type scale, spacing, and shared components to replace the ad-hoc inline styles.
 - **App icon & splash** — branded, using the red-drop motif from the "Sisters by Blood" origin story (see PITCH.md).
 - **Cycle visualization** — a cycle wheel or calendar as the home-screen centerpiece.
 - **Empty & loading states**, **micro-interactions + haptics** on boops/reactions, **dark mode**.
 
-## 2. Core cycle features — make tracking genuinely valuable
+## Onboarding
 
-- **Predictions from Apple Health** — ingest and display predicted days (next period, fertile window, PMS); push notifications for them.
+First-run flow is make-or-break for a social health app:
+- **Permission priming** — explain *why* before the system prompts (Apple Health, notifications), so people don't reflexively deny.
+- **Guided first steps** — grant Health access → see your cycle → add your first friend.
+- **Graceful states** — clear paths when permissions are denied or there's no cycle data yet.
+
+## Cycle model & HealthKit — the substance
+
+> **Foundation first — actually *use* the HealthKit data.** Today the app **reads** menstrual-flow data from Apple Health and stores it (locally + in Supabase, shared with friends), but only derives a crude "current phase" — a placeholder that maps the *latest flow sample* to a phase (`deriveSnapshot`, commented "minimal mapping until prediction data is available") — and the UI shows just the phase name + a sample count. Concrete next steps, in order:
+> 1. **Build a real cycle model** — from the flow samples, compute period start/end dates, cycle length, current **cycle day**, and the true phase (menstrual / follicular / ovulation / luteal) from cycle day, not just the latest flow value. *The unlock everything else depends on.*
+> 2. **Prediction model** — next period, fertile/ovulation window, PMS window from history. This is a **genuinely hard core problem** and arguably the substance of the app — it needs a real model, not just "ingest from Apple Health."
+> 3. **Surface it on the home screen** — cycle day + phase + "days until next period," replacing the bare phase label.
+> 4. **Calendar / history view** — past cycles + predictions.
+> 5. **Read more HealthKit types** — basal body temperature, symptoms (cramps, mood, headache), sexual activity, and Apple's own cycle predictions, to improve the model.
+
 - **Phase-based recommendations & reminders** — what to do today based on your phase (nutrition, exercise, skincare, productivity, emotional support). Not just educate — *facilitate* a cycle-based lifestyle.
-- **Daily state summary** — "where you are in your cycle" at a glance.
-- **Calendar view** — your cycle month by month; past + predictions.
 - **In-app logging** — mood, alcohol, diet, exercise, products used, habits, pain, flow. Pattern-match habits/products against outcomes (cycle length, variability, pain) and share aggregate insights across the community.
 - **Phase as identity** — optionally display your current phase as a status / bio so friends know.
 - **Calendar app sync** *(later)* — reflect cycle phases into a personal calendar.
 
-## 3. Social & support — the part that makes this app different
+## Social & support — the differentiator
 
 - **Friends & groups** — friend/de-friend by Apple ID or phone; also **group** relations you can join/leave like an individual friend.
 - **Friends overview** — see approved friends' current phases at a glance (consent-gated).
 - **Calendar of friends** — who's PMSing on which day, visualized with memoji-like faces; collapse many into an iOS-group-chat-style stack to avoid clutter.
 - **Feed** — chronological timeline of friends' events; react with emojis; "boop" a friend.
-- **Blended profile / sync score** — how "in sync" you and a friend are, with recommendations for what to do together that day (V0 can use dummy data).
-- **PMS / phase notifications** — get a heads-up when a friend (or partner) is PMSing — playful, opt-in.
+- **Blended profile / real sync score** — how "in sync" you and a friend are, with recommendations for what to do together (currently dummy data — make it real).
+- **PMS / phase notifications** — a heads-up when a friend (or partner) is PMSing — playful, opt-in.
 - **Care actions** — send support when a friend is cramping/PMSing (e.g. a "send a tiramisu" gesture).
-- **End-of-year recap** — how similar your cycle was to each friend, who you synced with most, top fitness overlaps.
+- **End-of-year recap** — how similar your cycle was to each friend, who you synced with most.
 - **Granular sharing** — share your phase but not your symptoms, per friend.
-- **Forum / Q&A** *(later)* — cluster responses by demographic / cycle data so people see answers from those most similar to them.
+- **Forum / Q&A** *(later)* — cluster responses by demographic / cycle data so answers come from people most similar to you.
 
-## 4. Engagement & notifications
+## Engagement & notifications
 
-- **User notifications** *(next up — infra partly exists: `expo-notifications`, `device_tokens`, `usePushNotifications`, the `notifications-handler` edge function)* — ask permission, then notify on: a new friend request, a reaction to your post, a friend starting their period ("send support"), and cycle-sync events. Expandable later.
+- **User notifications** *(next up — infra partly exists: `expo-notifications`, `device_tokens`, `usePushNotifications`, the `notifications-handler` edge function)* — ask permission, then notify on: a new friend request, a reaction to your post, a friend starting their period ("send support"), and cycle-sync events.
+- **Notification strategy** — for a social app, *not being annoying* is a design problem in its own right: think frequency caps, batching, quiet hours, and per-type user controls.
 - **Home-screen widget** — current cycle day at a glance.
 - **Gentle check-in streaks** — encourage logging without nagging.
 
-## 5. Lifestyle integration *(bigger bets)*
+## Privacy & data controls
 
-- **Cycle-based task planning** — sync with to-do apps and distribute tasks across the weeks by phase (creative / planning / active), so you do things when you're best placed to.
+For menstrual data specifically, privacy is a **feature area**, not just a design principle:
+- **Privacy/consent dashboard** — see and control exactly what each friend (or group) can see.
+- **Data export** — let users download their own data.
+- **Deletion** — account + data deletion (shipped) and clear, honest disclosure of what's stored and shared.
+
+## Accessibility & reliability
+
+Table stakes for a "real, good" app:
+- **Accessibility** — VoiceOver labels, Dynamic Type, sufficient contrast, reduce-motion support.
+- **Reliability** — robust offline handling (the boop queue is a start — extend the pattern), clear error/retry states, and no silent data loss.
+
+## Lifestyle integration *(bets)*
+
+- **Cycle-based task planning** — sync with to-do apps and distribute tasks across the weeks by phase (creative / planning / active).
 - **Calendar integration** for the same.
 
-## 6. Community & location *(extensions / research)*
+## Community & location *(bets / research)*
 
-- **Nearby supply sharing** — need a pad and can't find a store? See if anyone nearby has one. Generalizes to other supplies/needs.
-- **Proximity & cycle-syncing** — location-based closeness tied to cycle-syncing data (research on whether proximity drives syncing); monthly/yearly "period compatibility" + time-together reports.
-- **Research data** *(opt-in, anonymized)* — location + syncing, cycle variation from travel/weather, Apple workout data vs. cycle, skin/beauty vs. ovulation. Always privacy-first. (See PITCH.md → research angle.)
+- **Nearby supply sharing** — need a pad and can't find a store? See if anyone nearby has one. Generalizes to other needs.
+- **Proximity & cycle-syncing** — location-based closeness tied to syncing data (research on whether proximity drives syncing); monthly/yearly "period compatibility" + time-together reports.
+- **Research data** *(opt-in, anonymized)* — location + syncing, cycle variation from travel/weather, workout data vs. cycle, skin/beauty vs. ovulation. Always privacy-first. (See PITCH.md → research angle.)
 
-## Rough sequencing
+## Levels (historical framing)
 
-1. **Now** — design system + app icon/splash + a home-screen cycle visualization, plus user notifications. (Biggest "this feels real" jump.)
-2. **Next** — predictions/insights + phase recommendations + calendar view + friends overview + groups.
-3. **Later** — care actions, richer feed, granular sharing, end-of-year recap, widget, forum, lifestyle/calendar integration.
-4. **Bets** — community/location extensions and the research data platform.
-
-## Levels (from early planning)
-
-- **Level 0 (MVP):** Apple Health sync, Apple ID accounts, private-by-default social (feed + friend/sync score). *(largely shipped)*
+Early planning framed the roadmap as levels — largely superseded by the plan above, kept for reference:
+- **Level 0 (MVP):** Apple Health sync, Apple ID accounts, private-by-default social (feed + sync score). *(shipped)*
 - **Level 1:** blogs / advice.
 - **Level 2:** other auth methods; in-app tracking (vs. read-only).
 
-_(Add new ideas under the theme they fit. This is a living plan — reprioritize freely.)_
+_(Add new ideas under the theme they fit, and pull them into "The plan" when prioritized.)_
