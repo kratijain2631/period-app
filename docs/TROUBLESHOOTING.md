@@ -12,6 +12,8 @@ Everything learned bringing Cadence up: the issues we hit and fixed, what's conf
 | Supabase | account owning project `mmomoyszozclfjdvjbeb` | Auth + Postgres database | Free tier pauses on inactivity |
 | GitHub | `kratijain2631/period-app` (private) | Source | — |
 
+> **The paid Apple Developer Program ($99/year) is required for TestFlight.** A free Apple ID cannot distribute builds at all — no TestFlight, no App Store, and no installing signed builds on physical devices via EAS. The membership must be active (it renews annually); if it lapses, builds can't be signed or distributed until it's renewed.
+
 The original collaborator's (Lukas's) accounts are **no longer needed** — we migrated everything to the accounts above. Note: this Apple ID is still a *member* of Lukas's Apple team, so at build time EAS shows two "providers" — always pick **Krati Jain (129196348)**, not Lukas.
 
 ## Environment variables & config (where each lives)

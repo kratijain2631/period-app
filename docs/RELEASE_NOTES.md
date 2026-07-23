@@ -16,6 +16,7 @@ Changes since the MVP 1 build, accumulating toward the next release.
 - INSTRUCTIONS.md: added a rule to record issues and future-relevant info in TROUBLESHOOTING.md.
 - Moved all docs into a `docs/` folder (README stays at root) and updated every cross-link; added `docs/SCHEMA.md` (Supabase tables, functions, and how they work).
 - TODO.md: added a **user notifications** feature (permission-gated, for friend requests / post reactions / etc.) and a running list of app-name options considered.
+- TROUBLESHOOTING.md: noted that the paid Apple Developer Program ($99/yr) is required for TestFlight.
 
 ## MVP 1 — Beta 1 (TestFlight) — 2026-07-22
 
