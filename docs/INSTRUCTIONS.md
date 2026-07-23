@@ -10,8 +10,10 @@ Before working on this project, read the docs linked from the [README](../README
 - **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** — issues we hit and fixed, accounts/access, env vars, and things that expire.
 - **[IDENTIFIERS.md](IDENTIFIERS.md)** — every name/identifier, where it lives, and how costly it is to change.
 - **[SCHEMA.md](SCHEMA.md)** — the Supabase database (tables, functions, how it works).
+- **[FEATURES.md](FEATURES.md)** — the product/feature backlog.
+- **[BUGS.md](BUGS.md)** — known open bugs.
 - **[RELEASE_NOTES.md](RELEASE_NOTES.md)** — what shipped in each build.
-- **[TODO.md](TODO.md)** — open work.
+- **[TODO.md](TODO.md)** — operational/shipping tasks.
 
 AI models especially: don't re-derive this context or repeat past mistakes — it's written down.
 
