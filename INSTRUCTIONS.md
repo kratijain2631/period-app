@@ -35,19 +35,23 @@ Every time we publish a build (TestFlight or App Store), "block" the accumulated
 
 So: **changes accumulate under `Unreleased` as we commit, and get blocked into a named version each time we publish.**
 
-## 3. Before changing any name or identifier
+## 3. Record issues and future-relevant info in TROUBLESHOOTING.md
+
+When you hit and resolve a problem — or learn something that could bite a future contributor (a gotcha, a thing that could expire or fail, a non-obvious setup step, an account/access requirement, or info someone would need later) — write it into [TROUBLESHOOTING.md](TROUBLESHOOTING.md). Broader background and the "why" behind decisions goes in [LEARNINGS.md](LEARNINGS.md). The goal: nobody should have to re-derive what we already figured out, or repeat a mistake we already fixed.
+
+## 4. Before changing any name or identifier
 
 Read [IDENTIFIERS.md](IDENTIFIERS.md) first — it lists every name/identifier, where it lives, and how costly it is to change. The display name is a single constant (`APP_NAME` in `app.config.ts`); the iOS bundle id and EAS project id are costly and should not be changed casually.
 
-## 4. Commits
+## 5. Commits
 
 - Prefer small, **atomic** commits — one logical change each.
 - End commit messages authored with an AI agent with a `Co-Authored-By:` trailer.
 
-## 5. Todos
+## 6. Todos
 
 Never **delete** items from [TODO.md](TODO.md) without explicit manual approval. When a todo is done, mark it done (`- [x]`) — leave it in the list. The list is a record of what was decided and completed, not just what's still pending. Removing items requires a human to approve it.
 
-## 6. Secrets
+## 7. Secrets
 
 Never commit secrets. Supabase keys and the DB password live in `.env` (gitignored) and EAS environment variables; Apple credentials live in EAS / Keychain. Only non-secret identifiers belong in the repo.

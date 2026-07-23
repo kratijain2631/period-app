@@ -12,6 +12,8 @@ Changes since the MVP 1 build, accumulating toward the next release.
 
 ### Changed
 - Cross-linked the docs from the README.
+- TROUBLESHOOTING.md: added a teammate onboarding / local-dev-setup guide (what's committed vs. not, and what a contributor needs) and a "how to verify env vars loaded" note.
+- INSTRUCTIONS.md: added a rule to record issues and future-relevant info in TROUBLESHOOTING.md.
 
 ## MVP 1 — Beta 1 (TestFlight) — 2026-07-22
 
