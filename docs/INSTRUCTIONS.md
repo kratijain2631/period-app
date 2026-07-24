@@ -67,6 +67,7 @@ Read [IDENTIFIERS.md](IDENTIFIERS.md) first — it lists every name/identifier, 
 
 - Prefer small, **atomic** commits — one logical change each.
 - End commit messages authored with an AI agent with a `Co-Authored-By:` trailer.
+- **Preserve history — don't squash.** When merging a PR, use a **merge commit** (`--merge`), never squash, unless explicitly asked to squash. **Pushing directly to `main` is fine too** — it preserves each commit. The goal is to keep the full, atomic commit history either way.
 
 ## 7. Todos
 
