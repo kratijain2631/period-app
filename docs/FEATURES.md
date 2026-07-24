@@ -78,7 +78,7 @@ First-run flow is make-or-break for a social health app:
 - **Friends & groups** — friend/de-friend by Apple ID or phone; also **group** relations you can join/leave like an individual friend.
 - **Friends overview** — see approved friends' current phases at a glance (consent-gated).
 - **Calendar of friends** — who's PMSing on which day, visualized with memoji-like faces; collapse many into an iOS-group-chat-style stack to avoid clutter.
-- **Feed** — chronological timeline of friends' events; react with emojis; "boop" a friend.
+- **Feed** — chronological timeline of friends' events; react with emojis; "boop" a friend; delete your own posts _(shipped)_.
 - **Blended profile / real sync score** — how "in sync" you and a friend are, with recommendations for what to do together (currently dummy data — make it real).
 - **PMS / phase notifications** — a heads-up when a friend (or partner) is PMSing — playful, opt-in.
 - **Care actions** — send support when a friend is cramping/PMSing (e.g. a "send a tiramisu" gesture).

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
+  Alert,
   Animated,
   Dimensions,
   FlatList,
@@ -20,7 +21,7 @@ import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import NotificationsSheet from '../../notifications/components/NotificationsSheet';
 import { useNotifications } from '../../notifications/hooks/useNotifications';
-import { createPost, fetchPosts, type PostRow } from '../../../services/supabase/posts';
+import { createPost, deletePost, fetchPosts, type PostRow } from '../../../services/supabase/posts';
 import { fetchCycleEvents, type CycleEventRow } from '../../../services/supabase/cycleEvents';
 import {
   addPostReaction,
@@ -587,6 +588,31 @@ const HomeScreen = () => {
       postPressRef.current = false;
     }
   }, [alias, clearComposerMoods, composerMoods, composerText]);
+
+  const handleDeletePost = useCallback((post: PostRow) => {
+    if (post.user_id !== session?.userId) {
+      return;
+    }
+    Alert.alert('Delete post', 'This permanently removes your post. This cannot be undone.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          // Optimistically drop it; restore on failure.
+          const previous = post;
+          setPosts((prev) => prev.filter((item) => item.id !== post.id));
+          try {
+            await deletePost(post.id);
+          } catch (error) {
+            console.warn('[home] Failed to delete post', error);
+            setPosts((prev) => [previous, ...prev].sort((a, b) => b.created_at.localeCompare(a.created_at)));
+            Alert.alert('Could not delete post', 'Please try again.');
+          }
+        },
+      },
+    ]);
+  }, [session?.userId]);
 
   const handleQuickTag = useCallback(
     async (label: string) => {
@@ -1181,7 +1207,19 @@ const HomeScreen = () => {
               <Text style={styles.feedSubline}>{moodLabel}</Text>
             </View>
           </View>
-          {timeLabel ? <Text style={styles.feedTime}>{timeLabel}</Text> : null}
+          <View style={styles.feedHeaderRight}>
+            {timeLabel ? <Text style={styles.feedTime}>{timeLabel}</Text> : null}
+            {isSelf ? (
+              <TouchableOpacity
+                style={styles.feedDeleteButton}
+                onPress={() => handleDeletePost(item)}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                accessibilityLabel="Delete post"
+              >
+                <Ionicons name="trash-outline" size={15} color={palette.tertiaryText} />
+              </TouchableOpacity>
+            ) : null}
+          </View>
         </View>
 
         {item.body ? <Text style={styles.feedBody}>{item.body}</Text> : null}
@@ -1922,6 +1960,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
     flex: 1,
+  },
+  feedHeaderRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  feedDeleteButton: {
+    padding: 2,
   },
   feedAvatar: {
     width: 40,

@@ -4,6 +4,9 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## Unreleased
 
+### Added
+- **Delete your own posts.** Your posts now show a trash button; deleting asks for confirmation, removes the post optimistically, and restores it if the delete fails. Backed by the existing `posts_delete_own` RLS policy (reactions cascade).
+
 ### Fixed
 - **Composer keyboard can now be dismissed.** Dragging the feed dismisses the keyboard (`keyboardDismissMode="on-drag"`), and the "What's on your mind" input now shows a **Done** return key.
 - **Boop & heart states on your own post/event now look and act disabled.** You can no longer heart your own post/cycle event (it was working when it shouldn't), and both the boop and heart controls render in the disabled color on your own items.
