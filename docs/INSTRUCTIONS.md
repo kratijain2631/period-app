@@ -72,7 +72,7 @@ Read [IDENTIFIERS.md](IDENTIFIERS.md) first — it lists every name/identifier, 
 
 Never **delete** items from [TODO.md](TODO.md) without explicit manual approval. When a todo is done, mark it done (`- [x]`) — leave it in the list. The list is a record of what was decided and completed, not just what's still pending. Removing items requires a human to approve it.
 
-Same for [BUGS.md](BUGS.md) and [FEATURES.md](FEATURES.md): **cross off bugs/features after implementing and adding to releasenotes so that multiple people can work at the same time and know where to pick up from.**
+Same for [BUGS.md](BUGS.md) and [FEATURES.md](FEATURES.md): **cross off bugs/features after implementing and adding to releasenotes so that multiple people can work at the same time and know where to pick up from.** ("Cross off" here means **mark as done** — check the box (`- [x]`), don't delete the item. Nothing gets removed without explicit approval.)
 
 ## 8. Secrets
 
