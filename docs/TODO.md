@@ -14,6 +14,10 @@ We merged `main` (57 commits) onto our identity/docs. To make it actually run on
 - [x] Get an **OpenAI API key** and set it as an edge-function secret (`supabase secrets set OPENAI_API_KEY=…`), then deploy the AI edge functions (`avatar-generator`, `cycle-guidance`, `friend-recommendations`). This fixes the avatar feature and the AI guidance/recommendations. _(Done 2026-07-24: secret set + all three functions deployed ACTIVE via the Supabase CLI. Key kept out of the repo — **rotate it**, it was shared in a chat transcript.)_
 - [ ] Deploy `notifications-handler` (needs an Expo push access token) and then run the 3 `schedule-*` cron migrations.
 
+## Deploy / data follow-ups (2026-07-24)
+- [ ] **Redeploy the `delete-account` edge function** — it now also deletes the user's `posts`, `post_reactions`, `event_reactions`, and `boops` (previously orphaned). `npx supabase functions deploy delete-account`.
+- [ ] **One-time cleanup of already-orphaned rows** from accounts deleted before the fix (posts/reactions/boops whose `user_id` no longer exists in `auth.users`), and of the backdated flood posts on already-synced accounts. Run via the SQL editor.
+
 ## New features (Beta 2 feedback — 2026-07-24)
 Larger asks that need their own design + PRs (not part of the composer/reaction bugfix PR):
 - [ ] **Sign in without Apple.** Add an alternative auth path so people can use the app without an Apple ID (e.g. email/OTP via Supabase Auth). Touches `AuthScreen`, `appleAuth`/auth services, Supabase Auth config, and onboarding. See FEATURES.md → "other auth methods" (Level 2).

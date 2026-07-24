@@ -9,6 +9,7 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ### Fixed
 - **New accounts no longer flood the feed with backdated cycle history.** Auto-post now only creates period events dated on/after account creation (the 180-day HealthKit lookback is still used for cycle-length estimation, just not for posting). Requires re-login to pick up the account-creation timestamp on existing sessions.
+- **Deleting your account now removes your posts, reactions, and boops.** The `delete-account` edge function cleared only the auth user, which cascade-deletes most tables but left `posts`, `post_reactions`, `event_reactions`, and `boops` orphaned (no cascading FK); it now deletes those explicitly first. **Requires redeploying the `delete-account` edge function**, and a one-time cleanup of already-orphaned rows.
 - **Composer keyboard can now be dismissed.** Dragging the feed dismisses the keyboard (`keyboardDismissMode="on-drag"`), and the "What's on your mind" input now shows a **Done** return key.
 - **Boop & heart states on your own post/event now look and act disabled.** You can no longer heart your own post/cycle event (it was working when it shouldn't), and both the boop and heart controls render in the disabled color on your own items.
 - **A mood picked under "+ more" now also shows in the quick mood row.** Previously a selected mood that lived under "+ more" was invisible outside the modal even though it would still send.

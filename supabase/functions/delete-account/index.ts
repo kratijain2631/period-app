@@ -55,7 +55,30 @@ Deno.serve(async (request) => {
     const adminClient = createClient(supabaseUrl, serviceRoleKey, {
       auth: { persistSession: false },
     });
-    const { error: deleteError } = await adminClient.auth.admin.deleteUser(userData.user.id, true);
+
+    const uid = userData.user.id;
+
+    // Tables whose user_id has no cascading foreign key to auth.users must be
+    // cleared explicitly — otherwise the user's posts, reactions, and boops are
+    // orphaned and stay visible after the account is deleted.
+    const cleanups = [
+      adminClient.from('post_reactions').delete().eq('user_id', uid),
+      adminClient.from('event_reactions').delete().eq('user_id', uid),
+      adminClient.from('posts').delete().eq('user_id', uid),
+      adminClient.from('boops').delete().or(`from_user_id.eq.${uid},to_user_id.eq.${uid}`),
+    ];
+    for (const cleanup of cleanups) {
+      const { error: cleanupError } = await cleanup;
+      if (cleanupError) {
+        console.error('[delete-account] Failed to clear user data', cleanupError);
+        return jsonResponse(500, { ok: false, error: 'Failed to delete account data.' });
+      }
+    }
+
+    // Deleting the auth user cascades the rest (users, cycle_events,
+    // cycle_snapshots, notifications, device_tokens, friend_requests,
+    // friend_sharing, friend_recommendations).
+    const { error: deleteError } = await adminClient.auth.admin.deleteUser(uid, true);
     if (deleteError) {
       console.error('[delete-account] Failed to delete user', deleteError);
       return jsonResponse(500, { ok: false, error: 'Failed to delete account.' });
