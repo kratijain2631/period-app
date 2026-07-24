@@ -162,7 +162,6 @@ const HomeScreen = () => {
   const [composerText, setComposerText] = useState('');
   const [isPosting, setPosting] = useState(false);
   const [composerMoods, setComposerMoods] = useState<string[]>([]);
-  const [isMoodModalVisible, setMoodModalVisible] = useState(false);
   const [reactionTarget, setReactionTarget] = useState<ReactionTarget | null>(null);
   const [isReactionPickerExpanded, setReactionPickerExpanded] = useState(false);
   const [reactionAnchor, setReactionAnchor] = useState<{ x: number; y: number } | null>(null);
@@ -179,7 +178,6 @@ const HomeScreen = () => {
   const [boopLoadingByEvent, setBoopLoadingByEvent] = useState<Record<string, boolean>>({});
   const [likedPosts, setLikedPosts] = useState<Set<string>>(new Set());
   const [likedEvents, setLikedEvents] = useState<Set<string>>(new Set());
-  const [quickMoodRowWidth, setQuickMoodRowWidth] = useState(0);
   const postPressRef = useRef(false);
   const lastTapRef = useRef<{ postId: string | null; timestamp: number | null }>({
     postId: null,
@@ -196,73 +194,15 @@ const HomeScreen = () => {
   );
 
   const quickReactionsKey = session?.userId ? `quick-reactions:${session.userId}` : null;
-  const visibleQuickMoodLabels = useMemo(() => {
-    const widthVisible = (() => {
-      if (!quickMoodRowWidth) {
-        return MOOD_TAGS.slice(0, 3);
-      }
-      const GAP = 8;
-      const MORE_CHIP_WIDTH = 78;
-      const available = quickMoodRowWidth - MORE_CHIP_WIDTH - GAP;
-      if (available <= 0) {
-        return MOOD_TAGS.slice(0, 1);
-      }
-
-      const estimateChipWidth = (label: string) => {
-        const text = `${MOOD_EMOJI_MAP[label] ?? '•'} ${label}`;
-        return Math.min(170, 30 + text.length * 7.1);
-      };
-
-      const visible: string[] = [];
-      let used = 0;
-      for (const label of MOOD_TAGS) {
-        const nextWidth = estimateChipWidth(label);
-        if (visible.length === 0 && nextWidth > available) {
-          visible.push(label);
-          break;
-        }
-        if (visible.length > 0 && used + GAP + nextWidth > available) {
-          break;
-        }
-        used += visible.length > 0 ? GAP + nextWidth : nextWidth;
-        visible.push(label);
-      }
-      return visible.length ? visible : MOOD_TAGS.slice(0, 1);
-    })();
-
-    // Always surface a mood the user has selected, even if it normally lives
-    // under "+ more" — otherwise a selected-and-sending mood is invisible.
-    const shown = new Set(widthVisible);
-    composerMoods.forEach((label) => {
-      if (MOOD_TAGS.includes(label)) {
-        shown.add(label);
-      }
-    });
-    return MOOD_TAGS.filter((label) => shown.has(label));
-  }, [quickMoodRowWidth, composerMoods]);
 
   const toggleComposerMood = useCallback((label: string) => {
-    setComposerMoods((prev) => {
-      if (prev.includes(label)) {
-        return prev.filter((item) => item !== label);
-      }
-      return [...prev, label];
-    });
+    // Single-select: a post only ever displays one mood, so picking a mood
+    // replaces any previous choice (tapping the selected one clears it).
+    setComposerMoods((prev) => (prev.includes(label) ? [] : [label]));
   }, []);
 
   const clearComposerMoods = useCallback(() => {
     setComposerMoods([]);
-  }, []);
-
-  const openMoodModal = useCallback(() => {
-    if (!isComposerOpen) {
-      setComposerOpen(true);
-    }
-    setMoodModalVisible(true);
-  }, [isComposerOpen]);
-
-  const closeMoodModal = useCallback(() => {
-    setMoodModalVisible(false);
   }, []);
 
   const toggleLikedPost = useCallback((postId: string) => {
@@ -1402,7 +1342,7 @@ const HomeScreen = () => {
       <FlatList
         data={feedItems}
         keyExtractor={(item) => item.id}
-        keyboardShouldPersistTaps="handled"
+        keyboardShouldPersistTaps="never"
         keyboardDismissMode="on-drag"
         contentContainerStyle={styles.listContent}
         ListHeaderComponent={
@@ -1478,11 +1418,13 @@ const HomeScreen = () => {
                     />
                   </TouchableOpacity>
                 </View>
-                <View
-                  style={styles.quickMoodRow}
-                  onLayout={(event) => setQuickMoodRowWidth(event.nativeEvent.layout.width)}
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  keyboardShouldPersistTaps="always"
+                  contentContainerStyle={styles.quickMoodRow}
                 >
-                  {visibleQuickMoodLabels.map((label) => {
+                  {MOOD_TAGS.map((label) => {
                     const selected = composerMoods.includes(label);
                     return (
                       <TouchableOpacity
@@ -1510,11 +1452,7 @@ const HomeScreen = () => {
                       </TouchableOpacity>
                     );
                   })}
-                  <TouchableOpacity style={styles.quickMoodMoreChip} onPress={openMoodModal}>
-                    <Ionicons name="add" size={12} color={palette.secondaryText} />
-                    <Text style={styles.quickMoodMoreText}>more</Text>
-                  </TouchableOpacity>
-                </View>
+                </ScrollView>
               </View>
             </Animated.View>
 
@@ -1643,53 +1581,6 @@ const HomeScreen = () => {
               </View>
             </View>
           ) : null}
-        </View>
-      </Modal>
-
-      <Modal
-        visible={isMoodModalVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={closeMoodModal}
-      >
-        <View style={styles.overlayBottom}>
-          <Pressable style={styles.modalDismiss} onPress={closeMoodModal} />
-          <View style={styles.moodSheet}>
-            <View style={styles.sheetHandle} />
-            <View style={styles.moodSheetHeader}>
-              <Text style={styles.moodSheetTitle}>How are you feeling?</Text>
-              <TouchableOpacity onPress={closeMoodModal}>
-                <Text style={styles.moodSheetDone}>Done</Text>
-              </TouchableOpacity>
-            </View>
-            <View style={styles.moodSheetGrid}>
-              {MOOD_TAGS.map((label) => {
-                const selected = composerMoods.includes(label);
-                return (
-                  <TouchableOpacity
-                    key={label}
-                    style={[styles.sheetMoodChip, selected ? styles.sheetMoodChipSelected : null]}
-                    onPress={() => toggleComposerMood(label)}
-                  >
-                    <Text style={styles.sheetMoodEmoji}>{MOOD_EMOJI_MAP[label] ?? '🙂'}</Text>
-                    <Text
-                      style={[
-                        styles.sheetMoodText,
-                        selected ? styles.sheetMoodTextSelected : null,
-                      ]}
-                    >
-                      {label}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-            {composerMoods.length ? (
-              <TouchableOpacity style={styles.clearMoodButton} onPress={clearComposerMoods}>
-                <Text style={styles.clearMoodButtonText}>Clear all</Text>
-              </TouchableOpacity>
-            ) : null}
-          </View>
         </View>
       </Modal>
     </SafeAreaView>
@@ -1871,8 +1762,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    flexWrap: 'nowrap',
-    overflow: 'hidden',
+    paddingRight: 4,
   },
   quickMoodChip: {
     flexDirection: 'row',

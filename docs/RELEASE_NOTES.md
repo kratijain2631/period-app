@@ -7,12 +7,18 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 ### Added
 - **Delete your own posts.** Your posts now show a trash button; deleting asks for confirmation, removes the post optimistically, and restores it if the delete fails. Backed by the existing `posts_delete_own` RLS policy (reactions cascade).
 
+### Changed
+- **Redesigned the composer mood picker.** Previously moods showed as the few chips that fit on one line plus a **"+ more"** button that opened a separate sheet: the row didn't scroll, moods past the first few were hidden, and it let you select **several** moods even though a post only ever displays one (the extras were saved but never shown — misleading). It's now a **single horizontally-scrollable row of all moods** with no "+ more" sheet. How it works now:
+  - **Swipe** the row left/right to see every mood.
+  - **Single-select:** tap a mood to choose it; picking another **replaces** the previous one; tap the selected mood again to clear it. Whatever you pick is exactly what attaches to the post and shows on your card.
+  - Tapping a mood **while the keyboard is open** selects it in one tap (the row keeps the keyboard up).
+  - Removed the now-unused mood sheet/modal and the width-based "which chips fit" logic.
+
 ### Fixed
 - **New accounts no longer flood the feed with backdated cycle history.** Auto-post now only creates period events dated on/after account creation (the 180-day HealthKit lookback is still used for cycle-length estimation, just not for posting). Requires re-login to pick up the account-creation timestamp on existing sessions.
 - **Deleting your account now removes your posts, reactions, and boops.** The `delete-account` edge function cleared only the auth user, which cascade-deletes most tables but left `posts`, `post_reactions`, `event_reactions`, and `boops` orphaned (no cascading FK); it now deletes those explicitly first. **Requires redeploying the `delete-account` edge function**, and a one-time cleanup of already-orphaned rows.
-- **Composer keyboard can now be dismissed.** Dragging the feed dismisses the keyboard (`keyboardDismissMode="on-drag"`), and the "What's on your mind" input now shows a **Done** return key.
+- **Composer keyboard can now be dismissed** three ways: **tapping anywhere outside the text box** (a post, your cycle card, or empty space), **dragging** the feed (`keyboardDismissMode="on-drag"`), or the **Done** return key. The feed now uses `keyboardShouldPersistTaps="never"`, so a tap outside the input is consumed to dismiss the keyboard rather than also activating what you tapped.
 - **Boop & heart states on your own post/event now look and act disabled.** You can no longer heart your own post/cycle event (it was working when it shouldn't), and both the boop and heart controls render in the disabled color on your own items.
-- **A mood picked under "+ more" now also shows in the quick mood row.** Previously a selected mood that lived under "+ more" was invisible outside the modal even though it would still send.
 - **"Connect Apple Health" bullet points now align with their text** (they previously sat below the line).
 - **Clearer auto-post wording** on the onboarding step ("Choose which updates post automatically" instead of the confusing "Pick what posts automatically" / "Choose what auto-posts").
 
