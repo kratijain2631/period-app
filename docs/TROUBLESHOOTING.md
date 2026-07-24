@@ -30,24 +30,9 @@ The original collaborator's (Lukas's) accounts are **no longer needed** — we m
 >
 > **How to verify it's working:** at the start of a build, the log prints which env vars were loaded, e.g. `Environment variables ... loaded from the production environment: EXPO_PUBLIC_SUPABASE_ANON_KEY, EXPO_PUBLIC_SUPABASE_URL`. If those two aren't listed there, the build will ship without Supabase config and the app won't reach the backend — add them to EAS before building.
 
-## Onboarding a teammate / running local dev builds
+## Onboarding a teammate
 
-No secrets are in the repo, so a new contributor has to set a few things up before they can run the app locally.
-
-**What's committed vs. what isn't:**
-- **Not committed (secrets):** Supabase keys (publishable *and* service_role) and the DB password live in `.env` (gitignored) and EAS env vars. Apple ID password, signing certificates, and private keys live in EAS / macOS Keychain. **None are in the repo.**
-- **Committed (non-secret identifiers):** `app.config.ts` holds the EAS owner (`kratijain26`), EAS project id, and bundle id — standard and unavoidable in any Expo config. `IDENTIFIERS.md` additionally lists the Apple Team ID (`8AMCNWFZ39`) and Supabase project ref (`mmomoyszozclfjdvjbeb`). These are identifiers, not credentials — they can't access anything without real auth.
-
-**To run local dev builds, a teammate needs:**
-1. **Clone + install:** `git clone …` then `npm install`.
-2. **Create their own `.env`** (gitignored — copy the keys, never commit it):
-   - `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_ANON_KEY` — from the Supabase dashboard (Project Settings → API) if they have access to the shared project, or from their own Supabase project.
-   - `EXPO_PUBLIC_DEV_AUTH=true` — enables the email/password dev login so they can sign in without Sign in with Apple during development.
-3. **Access to build/run:**
-   - **EAS:** be added as a member of `@kratijain26/period-app`, or use their own EAS account (`eas init`).
-   - **A dev client on their device:** dev builds are **device-locked**, so they need a dev client built with *their* iPhone's UDID registered — either the owner registers their device and rebuilds, or they build their own under their own Apple account (`eas build --profile development --platform ios`).
-   - **Supabase:** access to the shared project, or their own with the `supabase/migrations/` applied *and* the Apple provider configured (bundle id in Client IDs, or Sign in with Apple fails with "unacceptable audience").
-4. **Start Metro:** `npx expo start --dev-client --tunnel` (tunnel avoids LAN restrictions), then open the dev client and load the `…exp.direct` URL.
+Moved to [ONBOARDING.md](ONBOARDING.md) — contributor setup (access checklist, `.env` keys, running dev builds).
 
 ## Key URLs
 

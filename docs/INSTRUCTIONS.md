@@ -6,6 +6,7 @@ Conventions for anyone — human or AI agent — working in this repo.
 
 Before working on this project, read the docs linked from the [README](../README.md) for full context. Each has a distinct job:
 
+- **[ONBOARDING.md](ONBOARDING.md)** — get set up to run/contribute (access checklist, `.env` keys).
 - **[PITCH.md](PITCH.md)** — the vision, philosophy, and positioning.
 - **[LEARNINGS.md](LEARNINGS.md)** — background, key decisions and *why*, and how the pieces work.
 - **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** — issues we hit and fixed, accounts/access, env vars, and things that expire.
