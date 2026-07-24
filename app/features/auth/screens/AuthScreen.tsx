@@ -13,6 +13,7 @@ import {
 import { signInWithApple } from '../../../services/auth/appleAuth';
 import { signInWithPassword } from '../../../services/supabase/auth';
 import { useSessionStore } from '../../../state/sessionStore';
+import { APP_NAME } from '../../../config/branding';
 
 const AuthScreen = () => {
   const setSession = useSessionStore((state) => state.setSession);
@@ -90,7 +91,7 @@ const AuthScreen = () => {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.card}>
-        <Text style={styles.title}>Welcome to Cycle Companion</Text>
+        <Text style={styles.title}>Welcome to {APP_NAME}</Text>
         <Text style={styles.description}>
           Sign in to sync your menstrual health data. We never write back to Apple Health.
         </Text>
