@@ -43,6 +43,10 @@ Contributor setup (access checklist, `.env` keys, running dev builds) lives in [
 - **Supabase project:** https://supabase.com/dashboard/project/mmomoyszozclfjdvjbeb
 - **App Store Connect:** https://appstoreconnect.apple.com
 
+## Installing a build from a raw `.ipa`
+
+To install a build directly from an `.ipa` file (outside TestFlight or the EAS install page), you can use **[Diawi](https://www.diawi.com)** — upload the `.ipa` and it gives you an install link + QR to open on the device. Handy for ad-hoc / dev builds. Note: it doesn't bypass Apple signing — the device's UDID must still be in the build's provisioning profile (for `development` / `preview` builds), same as the EAS install page.
+
 ## Things that expire or can lapse
 
 | Thing | When / trigger | What breaks | Fix |
