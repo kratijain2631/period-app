@@ -6,7 +6,7 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 _(nothing yet — accumulating toward the next build)_
 
-## Dev build — 2026-07-23
+## 2026-07-23 — Dev build
 
 Caught this branch up to the full, current codebase and rebuilt as a dev build (not a TestFlight / App Store submission).
 
@@ -26,9 +26,9 @@ Caught this branch up to the full, current codebase and rebuilt as a dev build (
 ### Docs
 - Added a full documentation suite under `/docs` — PITCH (vision), FEATURES (roadmap), SCHEMA (database), IDENTIFIERS, TODO, BUGS, TROUBLESHOOTING, LEARNINGS, INSTRUCTIONS — plus `CLAUDE.md`, all cross-linked from the README.
 
-## MVP 1 — Beta 1 (TestFlight) — 2026-07-22
+## 2026-07-22 — Beta 1 · TestFlight · submitted for review
 
-First external TestFlight beta build.
+First external TestFlight beta build, submitted for Beta App Review.
 
 ### Added
 - **Sign out** — Profile → Account.
@@ -60,16 +60,16 @@ First external TestFlight beta build.
 - Privacy policy is currently hosted as a Claude artifact — to be moved to a permanent host before public launch.
 - App Privacy "nutrition labels" + age rating still needed before a public App Store release.
 
-## MVP 0 — Baseline (pre-beta)
+## 2026-07-21 — Dev build (baseline)
 
-The app as it existed before the beta work began.
+The app as it existed before this work began.
 
 ### Features
-- Menstrual cycle tracking via **Apple Health** (HealthKit, read-only — never writes back).
+- **Reads menstrual-flow data from Apple Health** (HealthKit, read-only — never writes back). Only a basic placeholder "current phase" is derived from it — no in-app logging, tracking, or predictions yet.
 - **Sign in with Apple**, backed by Supabase auth.
 - Social layer: friend requests, mutual-consent cycle sharing, a cycle-sync score, and a feed with posts, reactions, and "boops."
 - Offline support: local SQLite storage and a queued boop sync.
-- Push notifications.
+- **Push notifications** — real client-side implementation (permission, Expo push token registered to Supabase, notification handling + deep-link nav). Actually *sending* them relies on the `notifications-handler` edge function being deployed with an Expo push-token secret.
 - Named **"Cycle Companion."**
 
 **Additional features already in the full codebase** (discovered when catching up via the dev-build merge — these predate the beta work):

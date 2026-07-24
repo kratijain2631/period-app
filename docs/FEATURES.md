@@ -20,12 +20,12 @@ The sequencing below **is** the plan; the category sections after it are a refer
 
 ### Now — make it feel real & usable
 - **Design system + app icon/splash** (§ Design)
-- A **real cycle model** and a home-screen **cycle visualization** built on it (§ Cycle) — today's phase derivation is a placeholder; this is the unlock.
+- **Read Apple Health's cycle data + predictions and display them** — a cycle wheel/calendar and a clear "which phase you're in" (§ Cycle). Lean on Apple's predictions; don't build our own model yet.
 - **Onboarding flow**: permissions → add a friend → see your data (§ Onboarding)
 - **User notifications**, permission-gated (§ Engagement)
 
 ### Next — the moat
-- **Prediction model** — next period, fertile/ovulation, PMS (§ Cycle)
+- **Richer cycle/calendar view** on Apple's data + predictions (§ Cycle)
 - **Phase-based recommendations** (§ Cycle)
 - **Friends overview + calendar-of-friends + a real sync score** (§ Social)
 - **Groups** of friends (§ Social)
@@ -59,12 +59,13 @@ First-run flow is make-or-break for a social health app:
 
 ## Cycle model & HealthKit — the substance
 
-> **Foundation first — actually *use* the HealthKit data.** Today the app **reads** menstrual-flow data from Apple Health and stores it (locally + in Supabase, shared with friends), but only derives a crude "current phase" — a placeholder that maps the *latest flow sample* to a phase (`deriveSnapshot`, commented "minimal mapping until prediction data is available") — and the UI shows just the phase name + a sample count. Concrete next steps, in order:
-> 1. **Build a real cycle model** — from the flow samples, compute period start/end dates, cycle length, current **cycle day**, and the true phase (menstrual / follicular / ovulation / luteal) from cycle day, not just the latest flow value. *The unlock everything else depends on.*
-> 2. **Prediction model** — next period, fertile/ovulation window, PMS window from history. This is a **genuinely hard core problem** and arguably the substance of the app — it needs a real model, not just "ingest from Apple Health."
-> 3. **Surface it on the home screen** — cycle day + phase + "days until next period," replacing the bare phase label.
-> 4. **Calendar / history view** — past cycles + predictions.
-> 5. **Read more HealthKit types** — basal body temperature, symptoms (cramps, mood, headache), sexual activity, and Apple's own cycle predictions, to improve the model.
+> **Read and display Apple's cycle data + predictions — don't build our own model (yet).** Today the app **reads** menstrual-flow data from Apple Health and stores it, but only derives a crude placeholder "current phase" and shows the phase name + a sample count. The near-term direction is to **lean on Apple Health's own cycle data and predictions** rather than compute them ourselves. Concrete next steps, in order:
+> 1. **Read Apple's cycle data + predictions** — current phase, and predicted period / fertile / PMS days (whatever HealthKit exposes) — instead of computing them ourselves.
+> 2. **Display it** — a **cycle wheel / calendar** view and a clear "which phase you're in" on the home screen, replacing the bare phase label.
+> 3. **Calendar / history view** — past cycles + Apple's predictions.
+> 4. **Read more HealthKit types** — symptoms, basal body temperature, etc., to enrich the display.
+>
+> *Building our own cycle/prediction model is deferred to **Later** — maybe in the future, but not now (it's a genuinely hard problem, and Apple already provides predictions).*
 
 - **Phase-based recommendations & reminders** — what to do today based on your phase (nutrition, exercise, skincare, productivity, emotional support). Not just educate — *facilitate* a cycle-based lifestyle.
 - **In-app logging** — mood, alcohol, diet, exercise, products used, habits, pain, flow. Pattern-match habits/products against outcomes (cycle length, variability, pain) and share aggregate insights across the community.

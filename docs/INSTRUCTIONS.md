@@ -31,10 +31,11 @@ This includes **non-code changes that happen outside git** — e.g. Supabase con
 
 ## 2. Cut a version on every published build
 
-Every time we publish a build (TestFlight or App Store), "block" the accumulated changes into a named version:
+Every time we make a build (dev, TestFlight, or App Store), "block" the accumulated changes into a dated entry:
 
-1. Rename the `## Unreleased` section to the new version + date, e.g.
-   `## MVP 2 — Beta 2 (TestFlight) — YYYY-MM-DD`.
+1. Rename the `## Unreleased` section to a header that **starts with the date, then describes exactly what the build was** — any of `dev` / `beta` / `mvp` / `testflight` / `submitted for review` that apply. Examples:
+   - `## 2026-07-23 — Dev build`
+   - `## 2026-07-22 — Beta 1 · TestFlight · submitted for review`
 2. Move anything still incomplete into that version's **Known / not yet done** (or leave it in the fresh `## Unreleased`).
 3. Open a new empty `## Unreleased` section at the top for the next cycle.
 4. Bump `version` in `app.config.ts` for a user-facing release. (The native build number auto-increments via EAS `autoIncrement`, so don't manage that by hand.)

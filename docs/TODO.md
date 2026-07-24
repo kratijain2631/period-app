@@ -5,11 +5,13 @@ Open items, roughly in priority order. Done work isn't listed here.
 ## Finish the `main` integration (post-merge) — do this next
 We merged `main` (57 commits) onto our identity/docs. To make it actually run on **our** Supabase + Apple account:
 - [x] `npm install` new native deps (`react-native-svg`, `expo-image-picker`, `expo-font`).
-- [ ] Apply main's ~19 DB migrations (`supabase/migrations/`, dated 2026-01-10 onward) to **our** Supabase via the SQL editor.
+- [x] Apply main's DB migrations to **our** Supabase (schema, done via the SQL editor).
 - [x] Deploy `delete-account` edge function (done — powers the delete flow; no secrets needed, uses Supabase's auto-injected keys).
-- [ ] Deferred edge functions (need secrets, app degrades gracefully without them): `cycle-guidance`, `friend-recommendations`, `avatar-generator` (need `OPENAI_API_KEY`); `notifications-handler` (needs an Expo push access token). Plus the 3 `schedule-*` migrations (nightly cron) once those are deployed.
-- [ ] **Rebuild** the dev client + a new production build (native deps require it), reinstall, and test.
-- [ ] Rebuild TestFlight — this also fixes the crash (which was caused by the stale base).
+- [ ] **Rebuild** (native deps require it), reinstall, and test — this also fixes the crash (from the stale base).
+- [ ] **Resubmit to TestFlight, but do NOT submit for Beta App Review yet** — just get the build up on TestFlight.
+
+## Fix avatars + AI features (OpenAI key)
+- [ ] Get an **OpenAI API key** and set it as an edge-function secret (`supabase secrets set OPENAI_API_KEY=…`), then deploy the AI edge functions (`avatar-generator`, `cycle-guidance`, `friend-recommendations`). This fixes the avatar feature and the AI guidance/recommendations. Also deploy `notifications-handler` (needs an Expo push access token) and then the 3 `schedule-*` cron migrations.
 
 ## Ship the beta (external TestFlight)
 - [x] Production build (`eas build --profile production --platform ios`)
