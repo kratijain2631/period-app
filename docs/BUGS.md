@@ -11,6 +11,7 @@ Found in the Beta 2 build (2026-07-23):
 - [ ] **Boop / heart button states on your *own* post are backwards.** Boop buttons on self should look **disabled** (they don't/shouldn't work). The heart button is the opposite — it looks disabled on self but actually works, and shouldn't. Fix the enabled/disabled states so self-actions that don't apply look disabled.
 - [ ] **Selected mood inside "+ more" isn't shown outside "+ more".** When you pick a mood that lives under "+ more", it should also surface outside "+ more" (it's selected and will send).
 - [ ] **Phase shows "unknown" despite Apple Health being synced earlier.** Unsure if a corrupted snapshot row or a real bug. Also: add a **"connected to Apple Health"** flag/wording somewhere so users know sync status.
+- [ ] **Accepting a friend request doesn't result in a friendship.** Krati accepted Lukas's friend request, but they don't show as friends afterward. Investigate the accept flow (`respondToFriendRequest` → the `friend_requests` status update, `ensure_friend_sharing`, and the accepted-friends listing/query) — the acceptance isn't turning into a mutual friend relationship.
 
 When adding a bug, note: what happens, steps to reproduce, and where it seems to originate if known.
 
