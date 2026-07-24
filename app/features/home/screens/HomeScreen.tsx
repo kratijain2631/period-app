@@ -196,37 +196,49 @@ const HomeScreen = () => {
 
   const quickReactionsKey = session?.userId ? `quick-reactions:${session.userId}` : null;
   const visibleQuickMoodLabels = useMemo(() => {
-    if (!quickMoodRowWidth) {
-      return MOOD_TAGS.slice(0, 3);
-    }
-    const GAP = 8;
-    const MORE_CHIP_WIDTH = 78;
-    const available = quickMoodRowWidth - MORE_CHIP_WIDTH - GAP;
-    if (available <= 0) {
-      return MOOD_TAGS.slice(0, 1);
-    }
+    const widthVisible = (() => {
+      if (!quickMoodRowWidth) {
+        return MOOD_TAGS.slice(0, 3);
+      }
+      const GAP = 8;
+      const MORE_CHIP_WIDTH = 78;
+      const available = quickMoodRowWidth - MORE_CHIP_WIDTH - GAP;
+      if (available <= 0) {
+        return MOOD_TAGS.slice(0, 1);
+      }
 
-    const estimateChipWidth = (label: string) => {
-      const text = `${MOOD_EMOJI_MAP[label] ?? '•'} ${label}`;
-      return Math.min(170, 30 + text.length * 7.1);
-    };
+      const estimateChipWidth = (label: string) => {
+        const text = `${MOOD_EMOJI_MAP[label] ?? '•'} ${label}`;
+        return Math.min(170, 30 + text.length * 7.1);
+      };
 
-    const visible: string[] = [];
-    let used = 0;
-    for (const label of MOOD_TAGS) {
-      const nextWidth = estimateChipWidth(label);
-      if (visible.length === 0 && nextWidth > available) {
+      const visible: string[] = [];
+      let used = 0;
+      for (const label of MOOD_TAGS) {
+        const nextWidth = estimateChipWidth(label);
+        if (visible.length === 0 && nextWidth > available) {
+          visible.push(label);
+          break;
+        }
+        if (visible.length > 0 && used + GAP + nextWidth > available) {
+          break;
+        }
+        used += visible.length > 0 ? GAP + nextWidth : nextWidth;
         visible.push(label);
-        break;
       }
-      if (visible.length > 0 && used + GAP + nextWidth > available) {
-        break;
+      return visible.length ? visible : MOOD_TAGS.slice(0, 1);
+    })();
+
+    // Always surface a mood the user has selected, even if it normally lives
+    // under "+ more" — otherwise a selected-and-sending mood is invisible.
+    const shown = new Set(widthVisible);
+    composerMoods.forEach((label) => {
+      if (MOOD_TAGS.includes(label)) {
+        shown.add(label);
       }
-      used += visible.length > 0 ? GAP + nextWidth : nextWidth;
-      visible.push(label);
-    }
-    return visible.length ? visible : MOOD_TAGS.slice(0, 1);
-  }, [quickMoodRowWidth]);
+    });
+    return MOOD_TAGS.filter((label) => shown.has(label));
+  }, [quickMoodRowWidth, composerMoods]);
 
   const toggleComposerMood = useCallback((label: string) => {
     setComposerMoods((prev) => {
@@ -1133,8 +1145,9 @@ const HomeScreen = () => {
     const boopSent = boopStatus === 'sent';
     const boopQueued = boopStatus === 'queued';
     const boopSending = boopStatus === 'sending';
-    const boopTextColor =
-      boopSending || isSelf
+    const boopTextColor = isSelf
+      ? palette.disabled
+      : boopSending
         ? palette.secondaryText
         : boopSent
           ? palette.success
@@ -1181,17 +1194,18 @@ const HomeScreen = () => {
             <TouchableOpacity
               style={styles.feedIconButton}
               onPress={() => toggleLikedPost(item.id)}
+              disabled={isSelf}
               accessibilityLabel="Toggle like"
             >
               <Ionicons
                 name={isLiked ? 'heart' : 'heart-outline'}
                 size={15}
-                color={isLiked ? palette.accent : palette.tertiaryText}
+                color={isSelf ? palette.disabled : isLiked ? palette.accent : palette.tertiaryText}
               />
               <Text
                 style={[
                   styles.feedIconCount,
-                  isLiked ? { color: palette.accent } : null,
+                  isSelf ? { color: palette.disabled } : isLiked ? { color: palette.accent } : null,
                 ]}
               >
                 {likeCount}
@@ -1232,8 +1246,9 @@ const HomeScreen = () => {
     const boopSent = boopStatus === 'sent';
     const boopLoading = boopLoadingByEvent[item.id];
     const boopCount = boopCountsByEvent[item.id] ?? 0;
-    const boopTextColor =
-      boopLoading || isSelf
+    const boopTextColor = isSelf
+      ? palette.disabled
+      : boopLoading
         ? palette.secondaryText
         : boopSent
           ? palette.success
@@ -1307,17 +1322,18 @@ const HomeScreen = () => {
             <TouchableOpacity
               style={styles.feedIconButton}
               onPress={() => toggleLikedEvent(item.id)}
+              disabled={isSelf}
               accessibilityLabel="Toggle like"
             >
               <Ionicons
                 name={isLiked ? 'heart' : 'heart-outline'}
                 size={15}
-                color={isLiked ? palette.accent : palette.tertiaryText}
+                color={isSelf ? palette.disabled : isLiked ? palette.accent : palette.tertiaryText}
               />
               <Text
                 style={[
                   styles.feedIconCount,
-                  isLiked ? { color: palette.accent } : null,
+                  isSelf ? { color: palette.disabled } : isLiked ? { color: palette.accent } : null,
                 ]}
               >
                 {likeCount}
@@ -1349,6 +1365,7 @@ const HomeScreen = () => {
         data={feedItems}
         keyExtractor={(item) => item.id}
         keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
         contentContainerStyle={styles.listContent}
         ListHeaderComponent={
           <View style={styles.header}>
@@ -1402,6 +1419,7 @@ const HomeScreen = () => {
                     onChangeText={setComposerText}
                     placeholder="What's on your mind..."
                     placeholderTextColor={palette.placeholder}
+                    returnKeyType="done"
                     onFocus={() => setComposerOpen(true)}
                   />
                   <TouchableOpacity

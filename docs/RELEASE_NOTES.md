@@ -4,7 +4,10 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## Unreleased
 
-_(nothing yet — accumulating toward the next build)_
+### Fixed
+- **Composer keyboard can now be dismissed.** Dragging the feed dismisses the keyboard (`keyboardDismissMode="on-drag"`), and the "What's on your mind" input now shows a **Done** return key.
+- **Boop & heart states on your own post/event now look and act disabled.** You can no longer heart your own post/cycle event (it was working when it shouldn't), and both the boop and heart controls render in the disabled color on your own items.
+- **A mood picked under "+ more" now also shows in the quick mood row.** Previously a selected mood that lived under "+ more" was invisible outside the modal even though it would still send.
 
 ## 2026-07-23 — Beta 2 · TestFlight · approved
 
