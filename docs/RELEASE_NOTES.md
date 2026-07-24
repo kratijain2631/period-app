@@ -8,6 +8,8 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 - **Composer keyboard can now be dismissed.** Dragging the feed dismisses the keyboard (`keyboardDismissMode="on-drag"`), and the "What's on your mind" input now shows a **Done** return key.
 - **Boop & heart states on your own post/event now look and act disabled.** You can no longer heart your own post/cycle event (it was working when it shouldn't), and both the boop and heart controls render in the disabled color on your own items.
 - **A mood picked under "+ more" now also shows in the quick mood row.** Previously a selected mood that lived under "+ more" was invisible outside the modal even though it would still send.
+- **"Connect Apple Health" bullet points now align with their text** (they previously sat below the line).
+- **Clearer auto-post wording** on the onboarding step ("Choose which updates post automatically" instead of the confusing "Pick what posts automatically" / "Choose what auto-posts").
 
 ## 2026-07-23 — Beta 2 · TestFlight · approved
 

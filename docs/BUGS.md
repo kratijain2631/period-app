@@ -13,6 +13,12 @@ Found in the Beta 2 build (2026-07-23):
 - [ ] **Phase shows "unknown" despite Apple Health being synced earlier.** Unsure if a corrupted snapshot row or a real bug. Also: add a **"connected to Apple Health"** flag/wording somewhere so users know sync status.
 - [ ] **Accepting a friend request doesn't result in a friendship.** Krati accepted Lukas's friend request, but they don't show as friends afterward. Investigate the accept flow (`respondToFriendRequest` → the `friend_requests` status update, `ensure_friend_sharing`, and the accepted-friends listing/query) — the acceptance isn't turning into a mutual friend relationship.
 
+Onboarding / Apple Health feedback (Beta 2 testers):
+
+- [x] **"Connect Apple Health" bullet points misaligned with their text.** The bullet dot sat below the line. _(Fixed: `featureItem` now aligns to `flex-start` in `CompanionIntroScreen`.)_
+- [x] **Auto-post copy unclear** — "Pick what posts automatically" / "Choose what auto-posts" were confusing. _(Fixed: reworded to "Choose which updates post automatically" in `CompanionIntroScreen`.)_
+- [ ] **"Cadence would like to connect and update your Apple Health data" is misleading — we never write to Apple Health** (read-only: `requestAuthorization([], cycleReadTypes)`). The "update" wording comes from the iOS permission sheet. Likely fix: remove the now-unneeded `NSHealthUpdateUsageDescription` from `app.config.ts` so iOS drops the write language — **needs a native rebuild and on-device verification** of the sheet text.
+
 When adding a bug, note: what happens, steps to reproduce, and where it seems to originate if known.
 
 ## Fixed

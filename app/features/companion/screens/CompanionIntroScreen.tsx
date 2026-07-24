@@ -51,7 +51,7 @@ const CompanionIntroScreen = () => {
 
   const subtitle = useMemo(() => {
     if (showAutoPostStep) {
-      return 'Health sync is connected. Pick what posts automatically.';
+      return 'Health sync is connected. Choose which updates post automatically.';
     }
     if (permissions.lastPromptedAt) {
       return 'Grant read access in Health to finish setup, or continue for now.';
@@ -179,7 +179,7 @@ const CompanionIntroScreen = () => {
         {showAutoPostStep ? (
           <View style={styles.settingsCard}>
             <View style={styles.settingsHeader}>
-              <Text style={styles.settingsTitle}>Choose what auto-posts</Text>
+              <Text style={styles.settingsTitle}>Choose which updates post automatically</Text>
               <Text style={styles.settingsStatus}>
                 {autoPostStatus === 'saving'
                   ? 'Saving...'
@@ -342,7 +342,7 @@ const styles = StyleSheet.create({
   featureItem: {
     flexDirection: 'row',
     gap: 12,
-    alignItems: 'center',
+    alignItems: 'flex-start',
   },
   featureBullet: {
     width: 8,
