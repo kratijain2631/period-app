@@ -32,7 +32,9 @@ The original collaborator's (Lukas's) accounts are **no longer needed** — we m
 
 ## Onboarding a teammate
 
-Moved to [ONBOARDING.md](ONBOARDING.md) — contributor setup (access checklist, `.env` keys, running dev builds).
+Contributor setup (access checklist, `.env` keys, running dev builds) lives in [ONBOARDING.md](ONBOARDING.md).
+
+**If a contributor can't run the app or hits access/permission errors** (can't clone, can't reach Supabase, can't install a build, sign-in fails), first check the **access checklist in [ONBOARDING.md](ONBOARDING.md)** for missing access — GitHub repo, Supabase dashboard membership, EAS membership, a registered device UDID, or TestFlight. Most "it doesn't work for me" issues are missing access, not a code problem.
 
 ## Key URLs
 
