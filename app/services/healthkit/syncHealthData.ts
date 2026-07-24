@@ -218,7 +218,14 @@ export const syncHealthData = async ({
       } catch (error) {
         console.warn('[cycle-sync] Failed to load remote auto-post settings; using local settings', error);
       }
-      const autoPostedSamples = selectAutoPostedPeriodSamples(samples, autoPostSettings);
+      // Only auto-post period events that occur on/after account creation — a
+      // fresh account must not flood the feed with backdated cycle history.
+      const accountCreatedAtMs = session.createdAt ? new Date(session.createdAt).getTime() : null;
+      const autoPostedSamples = selectAutoPostedPeriodSamples(
+        samples,
+        autoPostSettings,
+        accountCreatedAtMs,
+      );
       await upsertCycleSnapshotRemote(session.userId, snapshot);
       const phaseMetadata = {
         phase_source: snapshot.phaseSource ?? 'unknown',

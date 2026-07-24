@@ -48,15 +48,28 @@ const toDayStart = (isoString: string) => {
 export const selectAutoPostedPeriodSamples = (
   samples: readonly CycleSample[],
   settings: AutoPostSettings,
+  sinceMs?: number | null,
 ): CycleSample[] => {
   if (!settings.postPeriodDays || samples.length === 0) {
     return [];
   }
+  // Never auto-post backdated events from before the cutoff (e.g. period
+  // history that predates account creation) — only new events after it.
+  const inWindow =
+    typeof sinceMs === 'number' && Number.isFinite(sinceMs)
+      ? samples.filter((sample) => {
+          const startMs = new Date(sample.startDate).getTime();
+          return Number.isFinite(startMs) && startMs >= sinceMs;
+        })
+      : samples;
+  if (inWindow.length === 0) {
+    return [];
+  }
   if (!settings.postOnlyPeriodStart) {
-    return [...samples];
+    return [...inWindow];
   }
 
-  const sorted = [...samples].sort(
+  const sorted = [...inWindow].sort(
     (left, right) =>
       new Date(left.startDate).getTime() - new Date(right.startDate).getTime(),
   );

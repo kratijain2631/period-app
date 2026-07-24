@@ -12,6 +12,7 @@ Found in the Beta 2 build (2026-07-23):
 - [x] **Selected mood inside "+ more" isn't shown outside "+ more".** When you pick a mood that lives under "+ more", it should also surface outside "+ more" (it's selected and will send). _(Fixed: selected moods are always added to the quick mood row.)_
 - [ ] **Phase shows "unknown" despite Apple Health being synced earlier.** Unsure if a corrupted snapshot row or a real bug. Also: add a **"connected to Apple Health"** flag/wording somewhere so users know sync status.
 - [ ] **Accepting a friend request doesn't result in a friendship.** Krati accepted Lukas's friend request, but they don't show as friends afterward. Investigate the accept flow (`respondToFriendRequest` → the `friend_requests` status update, `ensure_friend_sharing`, and the accepted-friends listing/query) — the acceptance isn't turning into a mutual friend relationship.
+- [x] **New account floods the feed with backdated period posts.** On first HealthKit sync, every historical menstrual-flow sample in the 180-day lookback was auto-posted as a backdated `menstrual_flow` event. _(Fixed: `selectAutoPostedPeriodSamples` now takes a cutoff and `syncHealthData` only posts samples on/after the account-creation time from `session.createdAt`. Existing sessions need a re-login to populate `createdAt`.)_
 
 Onboarding / Apple Health feedback (Beta 2 testers):
 

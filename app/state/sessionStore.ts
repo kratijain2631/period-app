@@ -7,6 +7,8 @@ export type Session = {
   accessToken: string;
   refreshToken?: string;
   expiresAt?: number;
+  /** Account creation time (ISO). Used to avoid auto-posting pre-account cycle history. */
+  createdAt?: string;
 };
 
 export type HealthPermissionsState = {

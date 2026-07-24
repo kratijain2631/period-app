@@ -10,6 +10,7 @@ const mapSupabaseSession = (session: SupabaseSession): Session => ({
   accessToken: session.access_token,
   refreshToken: session.refresh_token ?? undefined,
   expiresAt: session.expires_at ?? undefined,
+  createdAt: session.user.created_at ?? undefined,
 });
 
 export const getMappedSession = (session: SupabaseSession | null): Session | null =>
