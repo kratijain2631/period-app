@@ -11,7 +11,8 @@ We merged `main` (57 commits) onto our identity/docs. To make it actually run on
 - [ ] **Resubmit to TestFlight, but do NOT submit for Beta App Review yet** — just get the build up on TestFlight.
 
 ## Fix avatars + AI features (OpenAI key)
-- [ ] Get an **OpenAI API key** and set it as an edge-function secret (`supabase secrets set OPENAI_API_KEY=…`), then deploy the AI edge functions (`avatar-generator`, `cycle-guidance`, `friend-recommendations`). This fixes the avatar feature and the AI guidance/recommendations. Also deploy `notifications-handler` (needs an Expo push access token) and then the 3 `schedule-*` cron migrations.
+- [x] Get an **OpenAI API key** and set it as an edge-function secret (`supabase secrets set OPENAI_API_KEY=…`), then deploy the AI edge functions (`avatar-generator`, `cycle-guidance`, `friend-recommendations`). This fixes the avatar feature and the AI guidance/recommendations. _(Done 2026-07-24: secret set + all three functions deployed ACTIVE via the Supabase CLI. Key kept out of the repo — **rotate it**, it was shared in a chat transcript.)_
+- [ ] Deploy `notifications-handler` (needs an Expo push access token) and then run the 3 `schedule-*` cron migrations.
 
 ## New features (Beta 2 feedback — 2026-07-24)
 Larger asks that need their own design + PRs (not part of the composer/reaction bugfix PR):
