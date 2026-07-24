@@ -16,7 +16,7 @@ We merged `main` (57 commits) onto our identity/docs. To make it actually run on
 
 ## Deploy / data follow-ups (2026-07-24)
 - [ ] **Redeploy the `delete-account` edge function** — it now also deletes the user's `posts`, `post_reactions`, `event_reactions`, and `boops` (previously orphaned). `npx supabase functions deploy delete-account`.
-- [ ] **One-time cleanup of already-orphaned rows** from accounts deleted before the fix (posts/reactions/boops whose `user_id` no longer exists in `auth.users`), and of the backdated flood posts on already-synced accounts. Run via the SQL editor.
+- [ ] **One-time cleanup of already-orphaned rows** from accounts deleted before the fix (posts/reactions/boops whose `user_id` no longer exists in `auth.users`), and of the backdated flood posts on already-synced accounts. Run [`supabase/cleanup/2026-07-24-orphaned-and-backdated-cleanup.sql`](../supabase/cleanup/2026-07-24-orphaned-and-backdated-cleanup.sql) via the SQL editor (preview counts, then the delete block). Note: it also removes the demo seed rows, since their user_ids aren't real accounts.
 
 ## New features (Beta 2 feedback — 2026-07-24)
 Larger asks that need their own design + PRs (not part of the composer/reaction bugfix PR):
