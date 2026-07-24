@@ -18,6 +18,8 @@ Before working on this project, read the docs linked from the [README](../README
 
 AI models especially: don't re-derive this context or repeat past mistakes — it's written down.
 
+**Docs as code — keep adding to them.** These docs are our source of truth, kept in the repo *on purpose* — instead of Google Docs — so they're AI-readable alongside the code (context on goals/features), version-controlled, and all in one place. Add to them liberally: dump notes, ideas, bugs, decisions, and context into the right doc rather than losing them elsewhere. When in doubt, write it down.
+
 ## 1. Update the release notes on every change — code *and* non-code
 
 Record every notable change in [RELEASE_NOTES.md](RELEASE_NOTES.md) under `## Unreleased`.
@@ -68,6 +70,8 @@ Read [IDENTIFIERS.md](IDENTIFIERS.md) first — it lists every name/identifier, 
 ## 7. Todos
 
 Never **delete** items from [TODO.md](TODO.md) without explicit manual approval. When a todo is done, mark it done (`- [x]`) — leave it in the list. The list is a record of what was decided and completed, not just what's still pending. Removing items requires a human to approve it.
+
+Same for [BUGS.md](BUGS.md) and [FEATURES.md](FEATURES.md): **cross off bugs/features after implementing and adding to releasenotes so that multiple people can work at the same time and know where to pick up from.**
 
 ## 8. Secrets
 
