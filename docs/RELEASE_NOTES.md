@@ -6,6 +6,13 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 _(nothing yet — accumulating toward the next build)_
 
+## 2026-07-23 — Beta 2 · TestFlight · approved
+
+The post-merge build (production build `ea0a717f`) uploaded to TestFlight and **submitted for external Beta App Review**. Same code as the Dev build below — includes all of main's features and the crash fix.
+
+### Test instructions (what testers were told)
+> You'll need some period data logged in Apple Health to see your cycle info. Please flag anything confusing, broken, or slow. We'd like to hear about any crashes, bugs, or feature requests.
+
 ## 2026-07-23 — Dev build
 
 Caught this branch up to the full, current codebase and rebuilt as a dev build (not a TestFlight / App Store submission).
@@ -26,7 +33,7 @@ Caught this branch up to the full, current codebase and rebuilt as a dev build (
 ### Docs
 - Added a full documentation suite under `/docs` — PITCH (vision), FEATURES (roadmap), SCHEMA (database), IDENTIFIERS, TODO, BUGS, TROUBLESHOOTING, LEARNINGS, INSTRUCTIONS — plus `CLAUDE.md`, all cross-linked from the README.
 
-## 2026-07-22 — Beta 1 · TestFlight · submitted for review
+## 2026-07-22 — Beta 1 · TestFlight · approved
 
 First external TestFlight beta build, submitted for Beta App Review.
 

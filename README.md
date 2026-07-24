@@ -4,7 +4,7 @@ Where your cycle meets your circle.
 
 > **Names & identifiers:** the app's display name, bundle ids, EAS project, scheme, and other identifiers are documented in [docs/IDENTIFIERS.md](docs/IDENTIFIERS.md). The display name lives in one place — `APP_NAME` in `app.config.ts`.
 
-**Project docs** (read these for context): [Pitch & vision](docs/PITCH.md) · [Learnings & context](docs/LEARNINGS.md) · [Schema](docs/SCHEMA.md) · [Features](docs/FEATURES.md) · [Bugs](docs/BUGS.md) · [Release notes](docs/RELEASE_NOTES.md) · [Identifiers](docs/IDENTIFIERS.md) · [Open todos](docs/TODO.md) · [Troubleshooting & ops](docs/TROUBLESHOOTING.md) · [Working instructions](docs/INSTRUCTIONS.md)
+**Project docs** (read these for context): [Onboarding](docs/ONBOARDING.md) · [Pitch & vision](docs/PITCH.md) · [Learnings & context](docs/LEARNINGS.md) · [Schema](docs/SCHEMA.md) · [Features](docs/FEATURES.md) · [Bugs](docs/BUGS.md) · [Release notes](docs/RELEASE_NOTES.md) · [Identifiers](docs/IDENTIFIERS.md) · [Open todos](docs/TODO.md) · [Troubleshooting & ops](docs/TROUBLESHOOTING.md) · [Working instructions](docs/INSTRUCTIONS.md)
 
 ## Getting Started
 

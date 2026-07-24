@@ -6,6 +6,7 @@ Conventions for anyone — human or AI agent — working in this repo.
 
 Before working on this project, read the docs linked from the [README](../README.md) for full context. Each has a distinct job:
 
+- **[ONBOARDING.md](ONBOARDING.md)** — get set up to run/contribute (access checklist, `.env` keys).
 - **[PITCH.md](PITCH.md)** — the vision, philosophy, and positioning.
 - **[LEARNINGS.md](LEARNINGS.md)** — background, key decisions and *why*, and how the pieces work.
 - **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** — issues we hit and fixed, accounts/access, env vars, and things that expire.
@@ -17,6 +18,8 @@ Before working on this project, read the docs linked from the [README](../README
 - **[TODO.md](TODO.md)** — operational/shipping tasks.
 
 AI models especially: don't re-derive this context or repeat past mistakes — it's written down.
+
+**Docs as code — keep adding to them.** These docs are our source of truth, kept in the repo *on purpose* — instead of Google Docs — so they're AI-readable alongside the code (context on goals/features), version-controlled, and all in one place. Add to them liberally: dump notes, ideas, bugs, decisions, and context into the right doc rather than losing them elsewhere. When in doubt, write it down.
 
 ## 1. Update the release notes on every change — code *and* non-code
 
@@ -33,9 +36,10 @@ This includes **non-code changes that happen outside git** — e.g. Supabase con
 
 Every time we make a build (dev, TestFlight, or App Store), "block" the accumulated changes into a dated entry:
 
-1. Rename the `## Unreleased` section to a header that **starts with the date, then describes exactly what the build was** — any of `dev` / `beta` / `mvp` / `testflight` / `submitted for review` that apply. Examples:
+1. Rename the `## Unreleased` section to a header that **starts with the date, then describes exactly what that build was** — combine every label that applies: `dev` / `beta N` / `mvp` / `testflight` / `submitted for review` / `reviewed` (approved) / `app store`. Update the header later if its status changes (e.g. add `· approved` once Beta App Review passes). Examples:
    - `## 2026-07-23 — Dev build`
    - `## 2026-07-22 — Beta 1 · TestFlight · submitted for review`
+   - `## 2026-08-01 — Beta 2 · TestFlight · reviewed & released`
 2. Move anything still incomplete into that version's **Known / not yet done** (or leave it in the fresh `## Unreleased`).
 3. Open a new empty `## Unreleased` section at the top for the next cycle.
 4. Bump `version` in `app.config.ts` for a user-facing release. (The native build number auto-increments via EAS `autoIncrement`, so don't manage that by hand.)
@@ -67,6 +71,8 @@ Read [IDENTIFIERS.md](IDENTIFIERS.md) first — it lists every name/identifier, 
 ## 7. Todos
 
 Never **delete** items from [TODO.md](TODO.md) without explicit manual approval. When a todo is done, mark it done (`- [x]`) — leave it in the list. The list is a record of what was decided and completed, not just what's still pending. Removing items requires a human to approve it.
+
+Same for [BUGS.md](BUGS.md) and [FEATURES.md](FEATURES.md): **cross off bugs/features after implementing and adding to releasenotes so that multiple people can work at the same time and know where to pick up from.** ("Cross off" here means **mark as done** — check the box (`- [x]`), don't delete the item. Nothing gets removed without explicit approval.)
 
 ## 8. Secrets
 

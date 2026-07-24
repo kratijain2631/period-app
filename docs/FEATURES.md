@@ -49,6 +49,7 @@ The app works but looks utilitarian. A cohesive visual identity is the single bi
 - **App icon & splash** — branded, using the red-drop motif from the "Sisters by Blood" origin story (see PITCH.md).
 - **Cycle visualization** — a cycle wheel or calendar as the home-screen centerpiece.
 - **Empty & loading states**, **micro-interactions + haptics** on boops/reactions, **dark mode**.
+- **Icon polish** — the boop "hand/wave" icon doesn't read as a wave; try a "poke" or a clearer gesture icon.
 
 ## Onboarding
 

@@ -4,7 +4,13 @@ Known bugs to fix. This is for **open** bugs; problems we already diagnosed and 
 
 ## Open
 
-_(none currently tracked)_
+Found in the Beta 2 build (2026-07-23):
+
+- [ ] **Can see other users' data without being friends / without consent.** There's already data in the app (e.g. Neha's) visible even though we aren't friends. Investigate: is the feed meant to be friends-only? This is likely the demo **seed data** (`seed-posts.sql`) showing to everyone — but check RLS on `posts` and whether any *cycle* data leaks. Possible privacy issue.
+- [ ] **Can't dismiss the keyboard** after typing in "what's on your mind" (post composer). Need tap-to-dismiss / a Done affordance / KeyboardAvoidingView fix.
+- [ ] **Boop / heart button states on your *own* post are backwards.** Boop buttons on self should look **disabled** (they don't/shouldn't work). The heart button is the opposite — it looks disabled on self but actually works, and shouldn't. Fix the enabled/disabled states so self-actions that don't apply look disabled.
+- [ ] **Selected mood inside "+ more" isn't shown outside "+ more".** When you pick a mood that lives under "+ more", it should also surface outside "+ more" (it's selected and will send).
+- [ ] **Phase shows "unknown" despite Apple Health being synced earlier.** Unsure if a corrupted snapshot row or a real bug. Also: add a **"connected to Apple Health"** flag/wording somewhere so users know sync status.
 
 When adding a bug, note: what happens, steps to reproduce, and where it seems to originate if known.
 
