@@ -8,7 +8,7 @@ A period tracker that's **social** — going through your cycle *with* the frien
 
 ## Already shipped (V0 baseline)
 
-Auth (Sign in with Apple), read-only ingest of menstrual-flow data from Apple Health, friends (requests + mutual-consent sharing), a feed with posts/reactions/boops, and a (dummy) sync score. The HealthKit data is read but barely used yet (see the cycle-model note below). See [RELEASE_NOTES.md](RELEASE_NOTES.md) and [SCHEMA.md](SCHEMA.md).
+Auth (Sign in with Apple), read-only ingest of menstrual-flow data from Apple Health, friends (requests + mutual-consent sharing), a feed with posts/reactions/boops (including deleting your own posts), and a (dummy) sync score. The HealthKit data is read but barely used yet (see the cycle-model note below). See [RELEASE_NOTES.md](RELEASE_NOTES.md) and [SCHEMA.md](SCHEMA.md).
 
 ---
 
