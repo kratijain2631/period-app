@@ -80,7 +80,7 @@ The single biggest strategic point from studying the comparables: **the sticky o
 
 The app works but looks utilitarian. A cohesive visual identity is the single biggest thing that will make it *feel* real. Ethos: **serious, not pink/girly/fluffy** — clean, considered, trustworthy; and **fast, low-friction period entry**.
 
-- **Design system** — a considered palette (not stereotypically "girly"), type scale, spacing, and shared components to replace the ad-hoc inline styles.
+- **Design system** — a **foundation already exists** (`app/theme/brand.ts` colors/type + `app/config/branding.ts`, imported by ~8 screens), but it's only a palette/type layer: screens still each define their own `StyleSheet.create` and there are **no shared UI components** yet. Next: extract shared components (buttons, cards, chips, empty/loading states) so the look is consistent and screens stop re-declaring styles. Ethos: a considered palette (not stereotypically "girly"), type scale, spacing.
 - **App icon & splash** — branded, using the red-drop motif from the "Sisters by Blood" origin story (see PITCH.md).
 - **Cycle visualization** — a cycle wheel or calendar as the home-screen centerpiece.
 - **Empty & loading states**, **micro-interactions + haptics** on boops/reactions, **dark mode**.

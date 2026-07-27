@@ -34,13 +34,13 @@ The full schema — tables, functions, RLS policies, indexes — is defined in `
 
 1. **Auth:** Sign in with Apple → Supabase Auth → the `handle_new_auth_user` trigger creates the `users` profile row.
 2. **Cycle data:** the app reads menstrual data from Apple Health (read-only) and writes it to `cycle_events` / `cycle_snapshots`.
-3. **Friends:** send a request (`friend_requests`); on accept, `friend_sharing` tracks each side's `has_shared`. **Both** sides must opt in before they can see each other's cycle snapshot.
+3. **Friends:** send a request (`friend_requests`); on accept, `friend_sharing` tracks each side's `has_shared`. The RLS gate requires `has_shared = true` on **both** sides before either can see the other's cycle snapshot — but note the app currently **auto-sets both sides true on accept** (no explicit opt-in step, no revoke UI); see [BUGS.md](BUGS.md) → consent model.
 4. **Feed:** `posts`, `post_reactions`, and `boops` form the social layer.
 5. **Security:** row-level security on all 10 tables (32 policies) scopes each user's data to themselves and approved friends.
 
 ## Data & schema notes
 
-- **RLS everywhere** — each user only sees their own rows plus what approved friends explicitly shared.
+- **RLS everywhere** — each user only sees their own rows plus what approved friends shared with them (sharing is auto-granted on accept today — see the consent-model caveat in step 3 and [BUGS.md](BUGS.md)).
 - **Schema is in code** (`supabase/migrations/`); **real data is not** (database only); **demo seed data is in code** (`seed-posts.sql`).
 - Applying the migrations to a fresh Supabase project reproduces the schema exactly.
 - Whether another project (e.g. the original collaborator's) matches is only guaranteed if it was built from these same migrations with no out-of-band dashboard changes — see [LEARNINGS.md](LEARNINGS.md).

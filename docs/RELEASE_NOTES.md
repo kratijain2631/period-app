@@ -11,6 +11,8 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
   - **FEATURES.md** — added "The retention loop" (concrete build order translating the market playbook: auto-populating feed, sync-score leaderboard, shareable cycle recap, care actions, streaks/groups); corrected the sync score from "dummy" to the real `computeSyncScore` model; flagged the consent-model gap.
   - **BUGS.md** — new findings: consent is auto-granted on friend-accept with no revoke UI (dead `setFriendSharing`), contradicting the "explicit mutual consent" docs; duplicate underscore/hyphen migration pairs; `npm test` red-by-default because `architecture-sync.test.ts` hard-fails without `OPENAI_API_KEY`; slow networked tests; double-tap "like" un-likes; `loadFeed` serial waterfall; a minor DST off-by-one in the cycle model. Re-scoped the "friend accept → no friendship" bug as likely stale soft-deleted-account data.
   - **TODO.md** — added a "Code health / tech debt" section (fix consent model, reconcile migrations, green/fast tests, decompose god-components, parallelize `loadFeed`).
+  - **LEARNINGS.md & SCHEMA.md** — reconciled the stale "explicit mutual consent" claims: both docs described consent as a two-sided opt-in, but the app auto-grants sharing on friend-accept. Reframed as schema-intent-vs-actual-behavior with pointers to the consent-model bug.
+  - **FEATURES.md** — corrected the design-system status: a brand palette/type foundation (`theme/brand.ts`) already exists; what's missing is shared UI components (screens still each declare their own styles).
 
 ## 2026-07-26 — Beta 3 · TestFlight · submitted for review
 
