@@ -28,6 +28,39 @@ The **social layer** lets users connect with friends, see when their cycles sync
 - **Easy to use**, especially fast, low-friction period entry.
 - Build a **community** around wellness and hormonal awareness.
 
+## Market landscape & comparables
+
+**Thesis:** the winning move in consumer tracking apps over the last decade has been to take a *solo logging habit* and wrap it in a *consent-based social layer*. That layer — not the tracking itself — is what drives **retention** (you come back for your friends, not the data), **virality** (invites + shareable stats), and a **logging flywheel** (a little social pull → more logging → better personal insights). No one has run this playbook for the **menstrual cycle**. That's the opening.
+
+### The playbook, proven in adjacent niches
+
+| App | Solo habit it made social | Social mechanic | What we borrow |
+|---|---|---|---|
+| **Strava** | Running / cycling | Activity feed, kudos, comments, segments & leaderboards, clubs | A feed + lightweight reactions ("boops"); friends turn a private metric into motivation |
+| **Beli** | Eating out | Rank restaurants, friends' lists & recs, invite-gated growth | Referral-gated launch, friend recommendations, rankings/taste (we already cite this below) |
+| **Flighty** | Flying | Share trips with friends/family, annual "Passport" recap | Premium design + a shareable, "wrapped"-style recap as word-of-mouth |
+| **Letterboxd** | Watching films | Diary + reviews + following + lists | Identity/self-expression around logging; community |
+| **Duolingo** | Learning a language | Streaks + friend leaderboards | Streaks and gentle accountability to drive daily logging |
+| **Oura / Whoop** | Sleep / recovery (intimate biometrics) | Oura "Circles", Whoop "Teams" — share readiness with trusted people | Proof that even sensitive health data gets shared **when it's consent-gated to a trusted circle** — the closest analog to sharing cycle data |
+
+**Common thread:** each turned a private number into a shared experience, and the social layer is what made it sticky and viral. The flip side — the risk we inherit — is **cold-start network effects**: like early Strava, the app is dull until your friends are on it. That's why invite-only + referral growth (below) matters.
+
+### The period-tracking space specifically
+
+The category is enormous, but its "social" is thin — almost always **anonymous forums** or **single-partner sharing**, never a real friend graph:
+
+| App | Position | "Social" today |
+|---|---|---|
+| **Flo** | Category leader (largest by far) | Anonymous community ("Secret Chats") + 1:1 **partner mode** — no friend network |
+| **Clue** | Science- / privacy-first | Solo |
+| **Stardust** | Period + astrology, TikTok-viral, privacy-forward | Community vibe, but not friend-to-friend cycle sharing |
+| **Natural Cycles** | FDA-cleared contraception | Solo / clinical |
+| **Apple Health – Cycle Tracking** | Built-in default on iPhone | Solo (Health data can be shared 1:1, but it isn't a social product) |
+
+**The white space:** a **friend-graph, consent-based social layer for cycles** — "Strava / Beli for your period." Everyone already tracks; nobody has made it social *with the friends you choose*. The bet is that the dynamic that made fitness, dining, and film logging social will work for cycle tracking too — with the added pull that going through your cycle *with* friends is genuinely supportive, not just gamified.
+
+> **Caveat:** this is a founder-level scan, not verified market sizing. Before fundraising or launch, firm up per-competitor downloads/revenue and re-confirm each app's current feature set — they ship fast, and the "social" gaps above may narrow.
+
 ## Origin story
 
 The logo nods to the little red-drop emoji from the founders' group chat, **"Sisters by Blood"** — connecting the app to the friendship that inspired it. (Worth fleshing this story out for marketing.)
