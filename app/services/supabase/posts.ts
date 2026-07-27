@@ -59,3 +59,15 @@ export const createPost = async ({ body, moodTag, alias }: CreatePostPayload) =>
   }
   return inserted as PostRow;
 };
+
+export const deletePost = async (postId: string): Promise<void> => {
+  if (!isSupabaseConfigured) {
+    return;
+  }
+  // RLS (`posts_delete_own`) restricts this to the author; related
+  // post_reactions cascade on delete.
+  const { error } = await supabase.from('posts').delete().eq('id', postId);
+  if (error) {
+    throw error;
+  }
+};

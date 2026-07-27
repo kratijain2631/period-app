@@ -33,6 +33,25 @@ describe('selectAutoPostedPeriodSamples', () => {
     expect(result.map((item) => item.id)).toEqual(['a', 'b', 'c']);
   });
 
+  it('excludes samples that start before the cutoff (e.g. pre-account history)', () => {
+    const samples = [
+      sample('old', '2026-01-15T08:00:00.000Z'),
+      sample('cutoff', '2026-02-01T00:00:00.000Z'),
+      sample('new', '2026-02-05T08:00:00.000Z'),
+    ];
+    const cutoffMs = new Date('2026-02-01T00:00:00.000Z').getTime();
+    const result = selectAutoPostedPeriodSamples(samples, DEFAULT_AUTO_POST_SETTINGS, cutoffMs);
+
+    // The cutoff sample is included (>=); the older one is dropped.
+    expect(result.map((item) => item.id)).toEqual(['cutoff', 'new']);
+  });
+
+  it('ignores the cutoff when it is null or not finite', () => {
+    const samples = [sample('a', '2026-01-01T08:00:00.000Z')];
+    expect(selectAutoPostedPeriodSamples(samples, DEFAULT_AUTO_POST_SETTINGS, null)).toHaveLength(1);
+    expect(selectAutoPostedPeriodSamples(samples, DEFAULT_AUTO_POST_SETTINGS, NaN)).toHaveLength(1);
+  });
+
   it('returns only first-day entries of each contiguous period run', () => {
     const samples = [
       sample('d', '2026-02-11T10:00:00.000Z'),

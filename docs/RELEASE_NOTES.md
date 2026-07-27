@@ -4,7 +4,26 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## Unreleased
 
-_(nothing yet — accumulating toward the next build)_
+### Added
+- **Delete your own posts.** Your posts now show a trash button; deleting asks for confirmation, removes the post optimistically, and restores it if the delete fails. Backed by the existing `posts_delete_own` RLS policy (reactions cascade).
+
+### Changed
+- **Redesigned the composer mood picker.** Previously moods showed as the few chips that fit on one line plus a **"+ more"** button that opened a separate sheet: the row didn't scroll, moods past the first few were hidden, and it let you select **several** moods even though a post only ever displays one (the extras were saved but never shown — misleading). It's now a **single horizontally-scrollable row of all moods** with no "+ more" sheet. How it works now:
+  - **Swipe** the row left/right to see every mood.
+  - **Single-select:** tap a mood to choose it; picking another **replaces** the previous one; tap the selected mood again to clear it. Whatever you pick is exactly what attaches to the post and shows on your card.
+  - Tapping a mood **while the keyboard is open** selects it in one tap (the row keeps the keyboard up).
+  - Removed the now-unused mood sheet/modal and the width-based "which chips fit" logic.
+
+### Fixed
+- **New accounts no longer flood the feed with backdated cycle history.** Auto-post now only creates period events dated on/after account creation (the 180-day HealthKit lookback is still used for cycle-length estimation, just not for posting). Requires re-login to pick up the account-creation timestamp on existing sessions.
+- **Deleting your account now actually removes all your data.** The `delete-account` edge function did a **soft** delete of the auth user (`shouldSoftDelete = true`), which left the auth row in place so *nothing* cascaded, and it never touched the non-cascading tables. It now (1) explicitly clears `posts`, `post_reactions`, `event_reactions`, and `boops` (best-effort — a single table error is logged, not fatal), then (2) **hard-deletes** the auth user so the cascading tables (`users`, `cycle_events`, `cycle_snapshots`, `notifications`, `device_tokens`, `friend_requests`, `friend_sharing`, `friend_recommendations`) are removed. Fixes the "Could not delete account right now" error from the earlier attempt. **Requires redeploying the `delete-account` edge function**, plus a one-time cleanup of rows orphaned before the fix.
+- **Composer keyboard can now be dismissed** three ways: **tapping anywhere outside the text box** (a post, your cycle card, or empty space), **dragging** the feed (`keyboardDismissMode="on-drag"`), or the **Done** return key. The feed now uses `keyboardShouldPersistTaps="never"`, so a tap outside the input is consumed to dismiss the keyboard rather than also activating what you tapped.
+- **Boop & heart states on your own post/event now look and act disabled.** You can no longer heart your own post/cycle event (it was working when it shouldn't), and both the boop and heart controls render in the disabled color on your own items.
+- **"Connect Apple Health" bullet points now align with their text** (they previously sat below the line).
+- **Clearer auto-post wording** on the onboarding step ("Choose which updates post automatically" instead of the confusing "Pick what posts automatically" / "Choose what auto-posts").
+
+### Infrastructure & release setup
+- **Enabled the AI edge functions.** Set the `OPENAI_API_KEY` edge-function secret and deployed `avatar-generator`, `cycle-guidance`, and `friend-recommendations` (all ACTIVE, v1) via the Supabase CLI. This turns on avatar generation and the AI cycle-guidance / friend-recommendation features. _(Still pending: `notifications-handler` + the `schedule-*` cron migrations — need an Expo push token.)_
 
 ## 2026-07-23 — Beta 2 · TestFlight · approved
 

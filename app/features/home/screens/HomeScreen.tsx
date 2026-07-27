@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
+  Alert,
   Animated,
   Dimensions,
   FlatList,
@@ -20,7 +21,7 @@ import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import NotificationsSheet from '../../notifications/components/NotificationsSheet';
 import { useNotifications } from '../../notifications/hooks/useNotifications';
-import { createPost, fetchPosts, type PostRow } from '../../../services/supabase/posts';
+import { createPost, deletePost, fetchPosts, type PostRow } from '../../../services/supabase/posts';
 import { fetchCycleEvents, type CycleEventRow } from '../../../services/supabase/cycleEvents';
 import {
   addPostReaction,
@@ -161,7 +162,6 @@ const HomeScreen = () => {
   const [composerText, setComposerText] = useState('');
   const [isPosting, setPosting] = useState(false);
   const [composerMoods, setComposerMoods] = useState<string[]>([]);
-  const [isMoodModalVisible, setMoodModalVisible] = useState(false);
   const [reactionTarget, setReactionTarget] = useState<ReactionTarget | null>(null);
   const [isReactionPickerExpanded, setReactionPickerExpanded] = useState(false);
   const [reactionAnchor, setReactionAnchor] = useState<{ x: number; y: number } | null>(null);
@@ -178,7 +178,6 @@ const HomeScreen = () => {
   const [boopLoadingByEvent, setBoopLoadingByEvent] = useState<Record<string, boolean>>({});
   const [likedPosts, setLikedPosts] = useState<Set<string>>(new Set());
   const [likedEvents, setLikedEvents] = useState<Set<string>>(new Set());
-  const [quickMoodRowWidth, setQuickMoodRowWidth] = useState(0);
   const postPressRef = useRef(false);
   const lastTapRef = useRef<{ postId: string | null; timestamp: number | null }>({
     postId: null,
@@ -195,61 +194,15 @@ const HomeScreen = () => {
   );
 
   const quickReactionsKey = session?.userId ? `quick-reactions:${session.userId}` : null;
-  const visibleQuickMoodLabels = useMemo(() => {
-    if (!quickMoodRowWidth) {
-      return MOOD_TAGS.slice(0, 3);
-    }
-    const GAP = 8;
-    const MORE_CHIP_WIDTH = 78;
-    const available = quickMoodRowWidth - MORE_CHIP_WIDTH - GAP;
-    if (available <= 0) {
-      return MOOD_TAGS.slice(0, 1);
-    }
-
-    const estimateChipWidth = (label: string) => {
-      const text = `${MOOD_EMOJI_MAP[label] ?? '•'} ${label}`;
-      return Math.min(170, 30 + text.length * 7.1);
-    };
-
-    const visible: string[] = [];
-    let used = 0;
-    for (const label of MOOD_TAGS) {
-      const nextWidth = estimateChipWidth(label);
-      if (visible.length === 0 && nextWidth > available) {
-        visible.push(label);
-        break;
-      }
-      if (visible.length > 0 && used + GAP + nextWidth > available) {
-        break;
-      }
-      used += visible.length > 0 ? GAP + nextWidth : nextWidth;
-      visible.push(label);
-    }
-    return visible.length ? visible : MOOD_TAGS.slice(0, 1);
-  }, [quickMoodRowWidth]);
 
   const toggleComposerMood = useCallback((label: string) => {
-    setComposerMoods((prev) => {
-      if (prev.includes(label)) {
-        return prev.filter((item) => item !== label);
-      }
-      return [...prev, label];
-    });
+    // Single-select: a post only ever displays one mood, so picking a mood
+    // replaces any previous choice (tapping the selected one clears it).
+    setComposerMoods((prev) => (prev.includes(label) ? [] : [label]));
   }, []);
 
   const clearComposerMoods = useCallback(() => {
     setComposerMoods([]);
-  }, []);
-
-  const openMoodModal = useCallback(() => {
-    if (!isComposerOpen) {
-      setComposerOpen(true);
-    }
-    setMoodModalVisible(true);
-  }, [isComposerOpen]);
-
-  const closeMoodModal = useCallback(() => {
-    setMoodModalVisible(false);
   }, []);
 
   const toggleLikedPost = useCallback((postId: string) => {
@@ -575,6 +528,31 @@ const HomeScreen = () => {
       postPressRef.current = false;
     }
   }, [alias, clearComposerMoods, composerMoods, composerText]);
+
+  const handleDeletePost = useCallback((post: PostRow) => {
+    if (post.user_id !== session?.userId) {
+      return;
+    }
+    Alert.alert('Delete post', 'This permanently removes your post. This cannot be undone.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          // Optimistically drop it; restore on failure.
+          const previous = post;
+          setPosts((prev) => prev.filter((item) => item.id !== post.id));
+          try {
+            await deletePost(post.id);
+          } catch (error) {
+            console.warn('[home] Failed to delete post', error);
+            setPosts((prev) => [previous, ...prev].sort((a, b) => b.created_at.localeCompare(a.created_at)));
+            Alert.alert('Could not delete post', 'Please try again.');
+          }
+        },
+      },
+    ]);
+  }, [session?.userId]);
 
   const handleQuickTag = useCallback(
     async (label: string) => {
@@ -1133,8 +1111,9 @@ const HomeScreen = () => {
     const boopSent = boopStatus === 'sent';
     const boopQueued = boopStatus === 'queued';
     const boopSending = boopStatus === 'sending';
-    const boopTextColor =
-      boopSending || isSelf
+    const boopTextColor = isSelf
+      ? palette.disabled
+      : boopSending
         ? palette.secondaryText
         : boopSent
           ? palette.success
@@ -1168,7 +1147,19 @@ const HomeScreen = () => {
               <Text style={styles.feedSubline}>{moodLabel}</Text>
             </View>
           </View>
-          {timeLabel ? <Text style={styles.feedTime}>{timeLabel}</Text> : null}
+          <View style={styles.feedHeaderRight}>
+            {timeLabel ? <Text style={styles.feedTime}>{timeLabel}</Text> : null}
+            {isSelf ? (
+              <TouchableOpacity
+                style={styles.feedDeleteButton}
+                onPress={() => handleDeletePost(item)}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                accessibilityLabel="Delete post"
+              >
+                <Ionicons name="trash-outline" size={15} color={palette.tertiaryText} />
+              </TouchableOpacity>
+            ) : null}
+          </View>
         </View>
 
         {item.body ? <Text style={styles.feedBody}>{item.body}</Text> : null}
@@ -1181,17 +1172,18 @@ const HomeScreen = () => {
             <TouchableOpacity
               style={styles.feedIconButton}
               onPress={() => toggleLikedPost(item.id)}
+              disabled={isSelf}
               accessibilityLabel="Toggle like"
             >
               <Ionicons
                 name={isLiked ? 'heart' : 'heart-outline'}
                 size={15}
-                color={isLiked ? palette.accent : palette.tertiaryText}
+                color={isSelf ? palette.disabled : isLiked ? palette.accent : palette.tertiaryText}
               />
               <Text
                 style={[
                   styles.feedIconCount,
-                  isLiked ? { color: palette.accent } : null,
+                  isSelf ? { color: palette.disabled } : isLiked ? { color: palette.accent } : null,
                 ]}
               >
                 {likeCount}
@@ -1232,8 +1224,9 @@ const HomeScreen = () => {
     const boopSent = boopStatus === 'sent';
     const boopLoading = boopLoadingByEvent[item.id];
     const boopCount = boopCountsByEvent[item.id] ?? 0;
-    const boopTextColor =
-      boopLoading || isSelf
+    const boopTextColor = isSelf
+      ? palette.disabled
+      : boopLoading
         ? palette.secondaryText
         : boopSent
           ? palette.success
@@ -1307,17 +1300,18 @@ const HomeScreen = () => {
             <TouchableOpacity
               style={styles.feedIconButton}
               onPress={() => toggleLikedEvent(item.id)}
+              disabled={isSelf}
               accessibilityLabel="Toggle like"
             >
               <Ionicons
                 name={isLiked ? 'heart' : 'heart-outline'}
                 size={15}
-                color={isLiked ? palette.accent : palette.tertiaryText}
+                color={isSelf ? palette.disabled : isLiked ? palette.accent : palette.tertiaryText}
               />
               <Text
                 style={[
                   styles.feedIconCount,
-                  isLiked ? { color: palette.accent } : null,
+                  isSelf ? { color: palette.disabled } : isLiked ? { color: palette.accent } : null,
                 ]}
               >
                 {likeCount}
@@ -1348,7 +1342,8 @@ const HomeScreen = () => {
       <FlatList
         data={feedItems}
         keyExtractor={(item) => item.id}
-        keyboardShouldPersistTaps="handled"
+        keyboardShouldPersistTaps="never"
+        keyboardDismissMode="on-drag"
         contentContainerStyle={styles.listContent}
         ListHeaderComponent={
           <View style={styles.header}>
@@ -1402,6 +1397,7 @@ const HomeScreen = () => {
                     onChangeText={setComposerText}
                     placeholder="What's on your mind..."
                     placeholderTextColor={palette.placeholder}
+                    returnKeyType="done"
                     onFocus={() => setComposerOpen(true)}
                   />
                   <TouchableOpacity
@@ -1422,11 +1418,13 @@ const HomeScreen = () => {
                     />
                   </TouchableOpacity>
                 </View>
-                <View
-                  style={styles.quickMoodRow}
-                  onLayout={(event) => setQuickMoodRowWidth(event.nativeEvent.layout.width)}
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  keyboardShouldPersistTaps="always"
+                  contentContainerStyle={styles.quickMoodRow}
                 >
-                  {visibleQuickMoodLabels.map((label) => {
+                  {MOOD_TAGS.map((label) => {
                     const selected = composerMoods.includes(label);
                     return (
                       <TouchableOpacity
@@ -1454,11 +1452,7 @@ const HomeScreen = () => {
                       </TouchableOpacity>
                     );
                   })}
-                  <TouchableOpacity style={styles.quickMoodMoreChip} onPress={openMoodModal}>
-                    <Ionicons name="add" size={12} color={palette.secondaryText} />
-                    <Text style={styles.quickMoodMoreText}>more</Text>
-                  </TouchableOpacity>
-                </View>
+                </ScrollView>
               </View>
             </Animated.View>
 
@@ -1587,53 +1581,6 @@ const HomeScreen = () => {
               </View>
             </View>
           ) : null}
-        </View>
-      </Modal>
-
-      <Modal
-        visible={isMoodModalVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={closeMoodModal}
-      >
-        <View style={styles.overlayBottom}>
-          <Pressable style={styles.modalDismiss} onPress={closeMoodModal} />
-          <View style={styles.moodSheet}>
-            <View style={styles.sheetHandle} />
-            <View style={styles.moodSheetHeader}>
-              <Text style={styles.moodSheetTitle}>How are you feeling?</Text>
-              <TouchableOpacity onPress={closeMoodModal}>
-                <Text style={styles.moodSheetDone}>Done</Text>
-              </TouchableOpacity>
-            </View>
-            <View style={styles.moodSheetGrid}>
-              {MOOD_TAGS.map((label) => {
-                const selected = composerMoods.includes(label);
-                return (
-                  <TouchableOpacity
-                    key={label}
-                    style={[styles.sheetMoodChip, selected ? styles.sheetMoodChipSelected : null]}
-                    onPress={() => toggleComposerMood(label)}
-                  >
-                    <Text style={styles.sheetMoodEmoji}>{MOOD_EMOJI_MAP[label] ?? '🙂'}</Text>
-                    <Text
-                      style={[
-                        styles.sheetMoodText,
-                        selected ? styles.sheetMoodTextSelected : null,
-                      ]}
-                    >
-                      {label}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-            {composerMoods.length ? (
-              <TouchableOpacity style={styles.clearMoodButton} onPress={clearComposerMoods}>
-                <Text style={styles.clearMoodButtonText}>Clear all</Text>
-              </TouchableOpacity>
-            ) : null}
-          </View>
         </View>
       </Modal>
     </SafeAreaView>
@@ -1815,8 +1762,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    flexWrap: 'nowrap',
-    overflow: 'hidden',
+    paddingRight: 4,
   },
   quickMoodChip: {
     flexDirection: 'row',
@@ -1904,6 +1850,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
     flex: 1,
+  },
+  feedHeaderRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  feedDeleteButton: {
+    padding: 2,
   },
   feedAvatar: {
     width: 40,
