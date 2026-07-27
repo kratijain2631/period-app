@@ -86,3 +86,47 @@ commit;
 -- ---------------------------------------------------------------------------
 -- STEP 3 — VERIFY. Re-run STEP 1; every count should now be 0.
 -- ---------------------------------------------------------------------------
+
+
+-- ===========================================================================
+-- STEP 4 — Purge SOFT-DELETED accounts (deleted before the hard-delete fix).
+--
+-- Accounts deleted before 2026-07-26 were only *soft*-deleted: their row still
+-- exists in auth.users (with deleted_at set), so nothing cascaded and they
+-- still appear in friends' lists and their posts still show. This purges them.
+-- ===========================================================================
+
+-- PREVIEW (read-only): who is soft-deleted, and what data lingers.
+select u.id, u.email, u.deleted_at,
+       (select count(*) from public.posts p where p.user_id = u.id) as posts,
+       (select count(*) from public.friend_requests fr
+          where fr.from_user_id = u.id or fr.to_user_id = u.id) as friend_links,
+       (select count(*) from public.friend_sharing fs
+          where fs.user_id = u.id or fs.friend_id = u.id) as sharing_rows
+from auth.users u
+where u.deleted_at is not null
+order by u.deleted_at desc;
+
+-- DELETE: run after reviewing the preview. ROLLBACK instead of COMMIT if unsure.
+begin;
+
+-- Non-cascading tables first (by the soft-deleted user ids).
+delete from public.post_reactions
+ where user_id in (select id from auth.users where deleted_at is not null);
+delete from public.event_reactions
+ where user_id in (select id from auth.users where deleted_at is not null);
+delete from public.posts
+ where user_id in (select id from auth.users where deleted_at is not null);
+delete from public.boops
+ where from_user_id in (select id from auth.users where deleted_at is not null)
+    or to_user_id   in (select id from auth.users where deleted_at is not null);
+
+-- Hard-delete the auth rows → cascades users, cycle_events, cycle_snapshots,
+-- notifications, device_tokens, friend_requests, friend_sharing,
+-- friend_recommendations (removing them from everyone's friend lists).
+delete from auth.users where deleted_at is not null;
+
+commit;
+
+-- VERIFY: should be 0.
+select count(*) as remaining_soft_deleted from auth.users where deleted_at is not null;
