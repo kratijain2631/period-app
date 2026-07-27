@@ -4,6 +4,10 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## Unreleased
 
+_(nothing yet — accumulating toward the next build)_
+
+## 2026-07-26 — Beta 3 · TestFlight
+
 ### Added
 - **Delete your own posts.** Your posts now show a trash button; deleting asks for confirmation, removes the post optimistically, and restores it if the delete fails. Backed by the existing `posts_delete_own` RLS policy (reactions cascade).
 
@@ -25,6 +29,10 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ### Infrastructure & release setup
 - **Enabled the AI edge functions.** Set the `OPENAI_API_KEY` edge-function secret and deployed `avatar-generator`, `cycle-guidance`, and `friend-recommendations` (all ACTIVE, v1) via the Supabase CLI. This turns on avatar generation and the AI cycle-guidance / friend-recommendation features. _(Still pending: `notifications-handler` + the `schedule-*` cron migrations — need an Expo push token.)_
+- **Server-side fixes already applied to Supabase** (live without this build): friends-only feed RLS, `delete-account` v4, and the one-time data cleanup. This build ships the client-side fixes (composer/keyboard, delete-post, self boop/heart, mood picker, backdating cutoff, onboarding copy).
+
+### Test instructions (for testers)
+> You'll need some **menstrual** data logged in Apple Health to see your cycle info. Please flag anything confusing, broken, or slow — and tell us about any crashes, bugs, or feature requests.
 
 ## 2026-07-23 — Beta 2 · TestFlight · approved
 
