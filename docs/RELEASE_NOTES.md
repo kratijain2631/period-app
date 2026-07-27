@@ -13,6 +13,7 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
   - **TODO.md** — added a "Code health / tech debt" section (fix consent model, reconcile migrations, green/fast tests, decompose god-components, parallelize `loadFeed`).
   - **LEARNINGS.md & SCHEMA.md** — reconciled the stale "explicit mutual consent" claims: both docs described consent as a two-sided opt-in, but the app auto-grants sharing on friend-accept. Reframed as schema-intent-vs-actual-behavior with pointers to the consent-model bug.
   - **FEATURES.md** — corrected the design-system status: a brand palette/type foundation (`theme/brand.ts`) already exists; what's missing is shared UI components (screens still each declare their own styles).
+- **Logged testing findings + feature requests (2026-07-27).** BUGS.md: incoming friend requests don't refresh live (only fetched on mount — no focus-refetch/realtime/pull-to-refresh), push notifications not wired up (`notifications-handler` undeployed), Circle-tab "Add a friend" button is a no-op (should focus search), and `ProfileScreen` is duplicated across the Home cycle-card and the "You" tab. FEATURES.md: branded launch/intro screen with tagline, biometric (Face ID) app lock, and an expanded settings page.
 
 ## 2026-07-26 — Beta 3 · TestFlight · submitted for review
 

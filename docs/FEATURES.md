@@ -82,6 +82,7 @@ The app works but looks utilitarian. A cohesive visual identity is the single bi
 
 - **Design system** — a **foundation already exists** (`app/theme/brand.ts` colors/type + `app/config/branding.ts`, imported by ~8 screens), but it's only a palette/type layer: screens still each define their own `StyleSheet.create` and there are **no shared UI components** yet. Next: extract shared components (buttons, cards, chips, empty/loading states) so the look is consistent and screens stop re-declaring styles. Ethos: a considered palette (not stereotypically "girly"), type scale, spacing.
 - **App icon & splash** — branded, using the red-drop motif from the "Sisters by Blood" origin story (see PITCH.md).
+- **Branded launch/intro screen (requested 2026-07-27)** — on every app open, show a short (~2–3s) animated splash with the name and tagline (**"Cadence — where your cycle meets your circle"**) that then transitions into the feed. Distinct from the OS static splash; this is an in-app branded moment. Keep it fast and skippable so it never feels like a loading wall (ideally overlap it with the auth/data hydration that already happens on launch).
 - **Cycle visualization** — a cycle wheel or calendar as the home-screen centerpiece.
 - **Empty & loading states**, **micro-interactions + haptics** on boops/reactions, **dark mode**.
 - **Icon polish** — the boop "hand/wave" icon doesn't read as a wave; try a "poke" or a clearer gesture icon.
@@ -135,6 +136,8 @@ For menstrual data specifically, privacy is a **feature area**, not just a desig
 - **Privacy/consent dashboard** — see and control exactly what each friend (or group) can see.
 - **Data export** — let users download their own data.
 - **Deletion** — account + data deletion (shipped) and clear, honest disclosure of what's stored and shared.
+- **Biometric app lock — Face ID / Touch ID (requested 2026-07-27)** — gate opening the app (and/or re-auth for sensitive actions) behind Face ID / Touch ID via `expo-local-authentication`, opt-in in settings. Especially fitting for intimate cycle data. Note: this is *device-unlock*, separate from the account-level "Sign in with Face ID / passkey" auth path (which pairs with the "Sign in without Apple" TODO).
+- **Expand the settings page (requested 2026-07-27, future task)** — the profile/settings screen needs more controls. Candidates: sharing/consent controls (ties into the consent-model fix), notification preferences (per-type toggles, quiet hours), the biometric lock toggle above, auto-post settings entry, data export/deletion, and account/name management. Scope as its own design pass.
 
 ## Accessibility & reliability
 
