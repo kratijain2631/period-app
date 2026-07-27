@@ -111,6 +111,7 @@ First-run flow is make-or-break for a social health app:
 ## Social & support — the differentiator
 
 - **Friends & groups** — friend/de-friend by Apple ID or phone; also **group** relations you can join/leave like an individual friend.
+- **Make "Remove friend" discoverable.** The capability already ships (`remove_friend` RPC → `removeFriend` → `FriendsScreen`), but it's only reachable via a **long-press** on a friend row, so users can't find it. Add a visible affordance — an overflow (•••) menu on each friend row and/or a "Remove friend" button on the friend's profile — with the existing confirm dialog. Also note: removing a friend is currently the *only* way to stop sharing cycle data (see the consent-model item in [BUGS.md](BUGS.md)).
 - **Friends overview** — see approved friends' current phases at a glance (consent-gated).
 - **Calendar of friends** — who's PMSing on which day, visualized with memoji-like faces; collapse many into an iOS-group-chat-style stack to avoid clutter.
 - **Feed** — chronological timeline of friends' events; react with emojis; "boop" a friend; delete your own posts _(shipped)_.
