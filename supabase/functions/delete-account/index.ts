@@ -58,27 +58,37 @@ Deno.serve(async (request) => {
 
     const uid = userData.user.id;
 
-    // Tables whose user_id has no cascading foreign key to auth.users must be
-    // cleared explicitly — otherwise the user's posts, reactions, and boops are
-    // orphaned and stay visible after the account is deleted.
-    const cleanups = [
-      adminClient.from('post_reactions').delete().eq('user_id', uid),
-      adminClient.from('event_reactions').delete().eq('user_id', uid),
-      adminClient.from('posts').delete().eq('user_id', uid),
-      adminClient.from('boops').delete().or(`from_user_id.eq.${uid},to_user_id.eq.${uid}`),
-    ];
-    for (const cleanup of cleanups) {
-      const { error: cleanupError } = await cleanup;
-      if (cleanupError) {
-        console.error('[delete-account] Failed to clear user data', cleanupError);
-        return jsonResponse(500, { ok: false, error: 'Failed to delete account data.' });
+    // Best-effort cleanup of tables whose user_id has no cascading foreign key
+    // to auth.users (posts, reactions, boops). A failure here is logged but must
+    // NOT block the account deletion itself — the priority is removing the
+    // account and its visible data; any residue can be swept by the cleanup
+    // script. (Each delete has an explicit filter, so PostgREST allows it.)
+    const logCleanup = (table: string, error: unknown) => {
+      if (error) {
+        console.error(`[delete-account] cleanup of ${table} failed`, error);
       }
-    }
+    };
+    logCleanup(
+      'post_reactions',
+      (await adminClient.from('post_reactions').delete().eq('user_id', uid)).error,
+    );
+    logCleanup(
+      'event_reactions',
+      (await adminClient.from('event_reactions').delete().eq('user_id', uid)).error,
+    );
+    logCleanup('posts', (await adminClient.from('posts').delete().eq('user_id', uid)).error);
+    logCleanup(
+      'boops(from)',
+      (await adminClient.from('boops').delete().eq('from_user_id', uid)).error,
+    );
+    logCleanup('boops(to)', (await adminClient.from('boops').delete().eq('to_user_id', uid)).error);
 
-    // Deleting the auth user cascades the rest (users, cycle_events,
+    // Hard-delete the auth user (shouldSoftDelete defaults to false) so the
+    // cascading tables are actually removed: users, cycle_events,
     // cycle_snapshots, notifications, device_tokens, friend_requests,
-    // friend_sharing, friend_recommendations).
-    const { error: deleteError } = await adminClient.auth.admin.deleteUser(uid, true);
+    // friend_sharing, friend_recommendations. (A soft delete would leave all of
+    // that behind.)
+    const { error: deleteError } = await adminClient.auth.admin.deleteUser(uid);
     if (deleteError) {
       console.error('[delete-account] Failed to delete user', deleteError);
       return jsonResponse(500, { ok: false, error: 'Failed to delete account.' });
