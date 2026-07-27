@@ -61,6 +61,10 @@ The category is enormous, but its "social" is thin — almost always **anonymous
 
 > **Caveat:** this is a founder-level scan, not verified market sizing. Before fundraising or launch, firm up per-competitor downloads/revenue and re-confirm each app's current feature set — they ship fast, and the "social" gaps above may narrow.
 
+### The engagement loop (the actual bet)
+
+The lesson from Strava and Flighty isn't "add a feed" — it's that **the content logs itself.** GPS and flight-imports mean the feed fills with zero effort and you get social reward for just living your life. This app has the same latent superpower in **Apple Health auto-ingest**: cycle events can post themselves to your circle (consented), so the loop is *auto-logged data → friends react/support → you open the app more → better personal insights → repeat*. Manual text posts are the weak version of this; the auto-updates are the moat. Two hard parts gate it: **cold-start** (dull until your friends join → invite/referral growth + a useful solo mode) and **consent** (cycle data is intimate → sharing must be explicit, granular, and revocable before any auto-broadcast ships). See [FEATURES.md](FEATURES.md) → "The retention loop" for the concrete build order.
+
 ## Origin story
 
 The logo nods to the little red-drop emoji from the founders' group chat, **"Sisters by Blood"** — connecting the app to the friendship that inspired it. (Worth fleshing this story out for marketing.)

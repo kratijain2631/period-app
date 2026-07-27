@@ -8,7 +8,9 @@ A period tracker that's **social** — going through your cycle *with* the frien
 
 ## Already shipped (V0 baseline)
 
-Auth (Sign in with Apple), read-only ingest of menstrual-flow data from Apple Health, friends (requests + mutual-consent sharing), a feed with posts/reactions/boops (including deleting your own posts), and a (dummy) sync score. The HealthKit data is read but barely used yet (see the cycle-model note below). See [RELEASE_NOTES.md](RELEASE_NOTES.md) and [SCHEMA.md](SCHEMA.md).
+Auth (Sign in with Apple), read-only ingest of menstrual-flow data from Apple Health, friends (requests + sharing), a feed with posts/reactions/boops (including deleting your own posts), and a real computed sync score (`computeSyncScore`). The HealthKit data is read but barely used yet (see the cycle-model note below). See [RELEASE_NOTES.md](RELEASE_NOTES.md) and [SCHEMA.md](SCHEMA.md).
+
+> **Note on "mutual-consent sharing":** the *schema* supports it, but the app currently **auto-grants** sharing both ways on friend-accept and has no revoke UI (see [BUGS.md](BUGS.md) — consent-model + dead-toggle bugs). The Privacy section below tracks closing that gap.
 
 ---
 
@@ -36,6 +38,39 @@ Calendar/history view, care actions, end-of-year recap, richer feed, granular pe
 
 ### Bets
 Cycle-based task planning, community/location extensions, and the research-data platform.
+
+---
+
+# The retention loop (running the Strava/Beli/Flighty playbook)
+
+PITCH.md argues the moat is a *consent-based social layer* over a solo tracking habit. This section turns that thesis into the concrete in-product loop and names where today's code already helps or falls short. The loop we want:
+
+**auto-logged cycle data → shows up in friends' feeds (consented) → friends react/boop/support → that pull makes you log & open the app more → better personal insights → repeat.**
+
+The single biggest strategic point from studying the comparables: **the sticky ones minimize manual logging.** Strava has GPS, Flighty auto-imports flights — the content posts *itself*, so the feed is never empty and you get social reward for zero effort. This app has the same superpower latent in **Apple Health auto-ingest** — lean into it instead of leaning on manual text posts.
+
+### 1. Make the feed auto-populate (Strava/Flighty's "it logs itself")
+- **Consented auto-updates are the core content**, not manual posts. "Maya started her period," "you and Neha are both in luteal this week," "3 friends are in their fertile window." Infra exists (`AutoPostSettings`, cycle-event feed items) — expand the event vocabulary and make it the default feed material. *(Gate on the consent model — see Privacy below; don't ship auto-broadcast until revoke works.)*
+- **Keeps the feed alive at low friction** — the failure mode of a social app is an empty feed; auto-events solve the cold-open.
+
+### 2. Turn the sync score into the Beli-style comparative hook
+- **Sync leaderboard** — "who am I most in sync with." The score is already computed per friend in `FriendsScreen`; rank and surface it. Beli's addictive core is *relative* standing, not absolute numbers.
+- **Sync milestones & notifications** — "You and Priya synced up this month 🔴" is exactly the shareable, delightful moment the pitch describes.
+
+### 3. Stats-flex & the shareable recap (Flighty Passport / Spotify Wrapped)
+- **"Your cycle year"** — total days, average/most-variable cycle, most-synced friend, how travel shifted your cycle. A beautiful, screenshot-ready recap is the top word-of-mouth driver for Flighty/Wrapped. Highest-leverage *viral* feature; needs the design system first.
+- **Home-screen widget & phase-as-identity status** (Flighty live activity / Strava) — current cycle day at a glance; optionally show your phase as a status your circle sees.
+
+### 4. Lightweight, warm reactions — already the right instinct
+- **Boops + emoji reactions = kudos.** Keep them frictionless (fix the double-tap-un-like bug in BUGS.md). Add **care actions** ("send a tiramisu / heat pad") for the emotional layer the fitness/dining apps *don't* have — this is the differentiator.
+
+### 5. Gentle streaks & groups (Duolingo / Strava clubs) — later
+- **Check-in streaks** to nudge logging *without* nagging (streaks on a health app must never shame — quiet, opt-in).
+- **Friend groups** ("the group chat, in-app") — already on the roadmap under Social.
+
+### The two things that will make or break the loop
+- **Cold-start / network effects.** Like early Strava, the app is boring until *your* friends are on it. → invite-only + referral-gated growth (PITCH → Go-to-market), and a genuinely useful *solo* mode (cycle wheel + insights) so a lone user still gets value on day one.
+- **Consent as a feature, not a blocker.** Unlike runs or restaurants, cycle data is intimate. The engagement mechanics above (auto-broadcast, leaderboards, status) are only acceptable if sharing is **explicit, granular, and revocable** — which today it isn't (BUGS.md). Fixing the consent model is a *prerequisite* for the social loop, not a side quest. Oura Circles / Whoop Teams prove sensitive data *does* get shared — but only inside a trusted, consent-gated circle.
 
 ---
 
@@ -79,7 +114,7 @@ First-run flow is make-or-break for a social health app:
 - **Friends overview** — see approved friends' current phases at a glance (consent-gated).
 - **Calendar of friends** — who's PMSing on which day, visualized with memoji-like faces; collapse many into an iOS-group-chat-style stack to avoid clutter.
 - **Feed** — chronological timeline of friends' events; react with emojis; "boop" a friend; delete your own posts _(shipped)_.
-- **Blended profile / real sync score** — how "in sync" you and a friend are, with recommendations for what to do together (currently dummy data — make it real).
+- **Blended profile / sync score** — how "in sync" you and a friend are, with recommendations for what to do together. _(No longer dummy: `computeSyncScore` in `syncScore.ts` is a real model — phase alignment 45% + recent-flow timing 35% + 28-day flow overlap 20%, with a low/med/high confidence flag, highlights, a timeline, and a cycle-trend table. Next: surface it more prominently and add the leaderboard framing below.)_
 - **PMS / phase notifications** — a heads-up when a friend (or partner) is PMSing — playful, opt-in.
 - **Care actions** — send support when a friend is cramping/PMSing (e.g. a "send a tiramisu" gesture).
 - **End-of-year recap** — how similar your cycle was to each friend, who you synced with most.

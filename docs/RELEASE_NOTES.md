@@ -6,8 +6,15 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ### Docs
 - **PITCH.md — added a "Market landscape & comparables" section**: the social-tracking playbook (Strava, Beli, Flighty, Letterboxd, Duolingo, Oura/Whoop), the period-app competitors (Flo, Clue, Stardust, Natural Cycles, Apple Cycle Tracking), and the friend-graph white space.
+- **Full-codebase review pass (2026-07-27)** — logged findings across the docs (no code changed):
+  - **PITCH.md** — added "The engagement loop (the actual bet)": auto-logged Health data is the Strava/Flighty "it logs itself" superpower; cold-start + consent are the gating risks.
+  - **FEATURES.md** — added "The retention loop" (concrete build order translating the market playbook: auto-populating feed, sync-score leaderboard, shareable cycle recap, care actions, streaks/groups); corrected the sync score from "dummy" to the real `computeSyncScore` model; flagged the consent-model gap.
+  - **BUGS.md** — new findings: consent is auto-granted on friend-accept with no revoke UI (dead `setFriendSharing`), contradicting the "explicit mutual consent" docs; duplicate underscore/hyphen migration pairs; `npm test` red-by-default because `architecture-sync.test.ts` hard-fails without `OPENAI_API_KEY`; slow networked tests; double-tap "like" un-likes; `loadFeed` serial waterfall; a minor DST off-by-one in the cycle model. Re-scoped the "friend accept → no friendship" bug as likely stale soft-deleted-account data.
+  - **TODO.md** — added a "Code health / tech debt" section (fix consent model, reconcile migrations, green/fast tests, decompose god-components, parallelize `loadFeed`).
 
-## 2026-07-26 — Beta 3 · TestFlight
+## 2026-07-26 — Beta 3 · TestFlight · submitted for review
+
+Build `1.0.1` submitted for external Beta App Review on 2026-07-27. Ships the client-side fixes below; the server-side fixes (friends-only feed RLS, `delete-account` v4, data cleanup) were already applied live.
 
 ### Added
 - **Delete your own posts.** Your posts now show a trash button; deleting asks for confirmation, removes the post optimistically, and restores it if the delete fails. Backed by the existing `posts_delete_own` RLS policy (reactions cascade).

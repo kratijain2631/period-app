@@ -30,8 +30,9 @@ Larger asks that need their own design + PRs (not part of the composer/reaction 
 - [x] Submit to App Store Connect (`eas submit --profile production --platform ios --latest`)
 - [x] App Store Connect / TestFlight setup: export compliance, beta description, privacy policy URL, review notes
 - [x] Submit for Beta App Review — **awaiting Apple (~1 day)**
-- [ ] Once approved: share the public TestFlight link with friends
-- [ ] **Next TestFlight submission — fix the tester test-description.** Say **"menstrual"** data, not "period" data, and fix typos. (Tester feedback, Beta 2.)
+- [x] **Beta 3 (1.0.1) built + submitted for Beta App Review** (2026-07-27) — ships the client-side fixes; server-side fixes already live.
+- [x] **Fixed the tester test-description** — now says **"menstrual"** not "period", typos fixed. (Applied in the Beta 3 test instructions.)
+- [ ] Once approved: share the (public) TestFlight link with testers.
 
 ## Privacy policy
 - [ ] **Make the privacy link permanent.** It's currently a Claude artifact (fine for the beta, but tied to Anthropic hosting). Move it to a permanent host before public launch — options: Netlify drag-and-drop (easiest, free), a small separate public repo + GitHub Pages, or your own domain.
@@ -46,6 +47,14 @@ Larger asks that need their own design + PRs (not part of the composer/reaction 
 
 ## Improve the app
 - [ ] Improve the app — see [FEATURES.md](FEATURES.md) for the feature/design roadmap and [BUGS.md](BUGS.md) for known bugs.
+
+## Code health / tech debt (from the 2026-07-27 codebase review)
+Structural cleanups — not user-facing, but they make everything after them cheaper and safer. Details/rationale in [BUGS.md](BUGS.md).
+- [ ] **Fix the consent model (highest priority — it's a privacy-honesty issue on menstrual data).** Either (a) make sharing genuinely explicit + revocable — wire up the unused `setFriendSharing`, add grant/revoke UI, and stop `loadFriends` from force-resetting `has_shared` via `ensure_friend_sharing`; or (b) drop the "explicit mutual consent" framing from copy + LEARNINGS.md and own the "auto-share within your circle" model. Code, UI copy, and docs must agree. Gates the social auto-broadcast features in FEATURES.md.
+- [ ] **Reconcile duplicate migrations.** ~8 underscore-vs-hyphen migration pairs (`event_reactions`/`event-reactions`, `friend_recommendations`, `remove_friend`, `cycle_guidance`, `sync_score`, etc.). Confirm which set was actually applied to prod, keep one of each, and note the resolution so a fresh `supabase db reset` reproduces prod exactly.
+- [ ] **Make `npm test` green + fast by default.** Skip (don't fail) `architecture-sync.test.ts` when `OPENAI_API_KEY` is absent outside CI, and split the networked Supabase integration tests (~150s each) out of the default `test` script so the fast unit tests can run in seconds.
+- [ ] **Decompose the god-components.** `HomeScreen.tsx` (~2,200 lines, 20+ `useState`, feed + composer + reactions + boops + notifications + cycle card in one file), `ProfileScreen` (~1,280), `FriendSyncScreen` (~1,200), `FriendsScreen` (~1,080). Extract feed rows, the composer, and the reaction/boop optimistic-update logic (currently near-duplicated 4× for post×event / add×remove) into hooks/components. Improves testability and reduces merge pain.
+- [ ] **Parallelize `loadFeed`.** Replace the 8-step serial `await` waterfall with `Promise.all` for the independent reads so feed load isn't the sum of every round-trip.
 
 ## Before a public App Store release (not needed for beta)
 - [ ] App Privacy "nutrition labels" + age rating in App Store Connect (declare health-data collection)
