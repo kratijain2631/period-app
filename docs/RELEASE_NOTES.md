@@ -4,6 +4,9 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## Unreleased
 
+### Fixed
+- **Circle tab "Add a friend" button now works.** The top-right person-plus button in the Circle tab previously just cleared an already-empty search box, so it looked broken. It now **focuses the search field** (opening the keyboard) so you can immediately type a friend's name or email. JS-only change — no rebuild needed. (`FriendsScreen.tsx`.)
+
 ### Docs
 - **PITCH.md — added a "Market landscape & comparables" section**: the social-tracking playbook (Strava, Beli, Flighty, Letterboxd, Duolingo, Oura/Whoop), the period-app competitors (Flo, Clue, Stardust, Natural Cycles, Apple Cycle Tracking), and the friend-graph white space.
 - **Full-codebase review pass (2026-07-27)** — logged findings across the docs (no code changed):

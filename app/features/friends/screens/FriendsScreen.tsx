@@ -71,6 +71,7 @@ const FriendsScreen = () => {
   const [selfPhase, setSelfPhase] = useState<CyclePhase>('unknown');
   const [isLoading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const searchInputRef = useRef<TextInput>(null);
 
   const loadFriends = useCallback(async () => {
     setLoading(true);
@@ -475,8 +476,8 @@ const FriendsScreen = () => {
             <TouchableOpacity
               style={styles.headerAction}
               onPress={() => {
-                setSearchQuery('');
                 setSearchNotice(null);
+                searchInputRef.current?.focus();
               }}
               accessibilityLabel="Add a friend"
             >
@@ -492,6 +493,7 @@ const FriendsScreen = () => {
             <View style={styles.searchBar}>
               <Ionicons name="search" size={16} color={palette.tertiaryText} />
               <TextInput
+                ref={searchInputRef}
                 style={styles.searchInput}
                 value={searchQuery}
                 onChangeText={(text) => {
