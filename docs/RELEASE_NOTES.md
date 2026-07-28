@@ -6,6 +6,7 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ### Fixed
 - **Circle tab "Add a friend" button now works.** The top-right person-plus button in the Circle tab previously just cleared an already-empty search box, so it looked broken. It now **focuses the search field** (opening the keyboard) so you can immediately type a friend's name or email. JS-only change — no rebuild needed. (`FriendsScreen.tsx`.)
+- **The feed, friends, and notifications now refresh without restarting the app.** Previously everything loaded only once on mount, so new posts, incoming friend requests, and newly-accepted friends wouldn't appear until you force-quit and reopened. Now they refresh three ways: **pull down** on the Home feed or Circle screen to refresh manually; the tab **auto-refreshes when you open it** (`useFocusEffect`); and it **silently polls every 60 seconds** while open. Home refreshes feed + notifications + friend requests; Circle refreshes friends + requests. JS-only — no rebuild needed. (`HomeScreen.tsx`, `FriendsScreen.tsx`, `useNotifications.ts`.)
 
 ### Docs
 - **PITCH.md — added a "Market landscape & comparables" section**: the social-tracking playbook (Strava, Beli, Flighty, Letterboxd, Duolingo, Oura/Whoop), the period-app competitors (Flo, Clue, Stardust, Natural Cycles, Apple Cycle Tracking), and the friend-graph white space.

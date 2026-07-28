@@ -47,6 +47,23 @@ export const useNotifications = () => {
     }
   }, [session]);
 
+  const loadNotifications = useCallback(async () => {
+    if (!session) {
+      setNotifications([]);
+      return;
+    }
+    try {
+      const rows = await fetchNotifications();
+      setNotifications(rows);
+    } catch (error) {
+      console.warn('[notifications] Failed to fetch', error);
+    }
+  }, [session]);
+
+  const reload = useCallback(async () => {
+    await Promise.all([loadNotifications(), loadFriendRequests()]);
+  }, [loadNotifications, loadFriendRequests]);
+
   useEffect(() => {
     if (!session) {
       setNotifications([]);
@@ -55,16 +72,7 @@ export const useNotifications = () => {
       return;
     }
 
-    let active = true;
-    fetchNotifications()
-      .then((rows) => {
-        if (active) {
-          setNotifications(rows);
-        }
-      })
-      .catch((error) => {
-        console.warn('[notifications] Failed to fetch', error);
-      });
+    loadNotifications();
     loadFriendRequests();
 
     const channel = subscribeToNotifications((notification) => {
@@ -77,10 +85,9 @@ export const useNotifications = () => {
     });
 
     return () => {
-      active = false;
       channel?.unsubscribe();
     };
-  }, [loadFriendRequests, session]);
+  }, [loadFriendRequests, loadNotifications, session]);
 
   const unreadCount = useMemo(
     () => notifications.length + friendRequests.length,
@@ -105,5 +112,6 @@ export const useNotifications = () => {
     friendRequests,
     requestProfileMap,
     respondToFriendRequest: handleRespond,
+    reload,
   };
 };

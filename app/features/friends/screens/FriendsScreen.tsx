@@ -3,6 +3,7 @@ import {
   Animated,
   Easing,
   Alert,
+  RefreshControl,
   SafeAreaView,
   ScrollView,
   StyleSheet,
@@ -12,7 +13,7 @@ import {
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { selectSession, useSessionStore } from '../../../state/sessionStore';
 import {
   fetchInboundFriendRequests,
@@ -70,6 +71,7 @@ const FriendsScreen = () => {
   const [friendScores, setFriendScores] = useState<Record<string, number | null>>({});
   const [selfPhase, setSelfPhase] = useState<CyclePhase>('unknown');
   const [isLoading, setLoading] = useState(false);
+  const [isRefreshing, setRefreshing] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const searchInputRef = useRef<TextInput>(null);
 
@@ -175,8 +177,23 @@ const FriendsScreen = () => {
     }
   }, [session?.userId]);
 
-  useEffect(() => {
-    loadFriends();
+  // Refetch friends + requests whenever the tab regains focus, and keep it
+  // fresh with a silent poll every 60s while the screen is open.
+  useFocusEffect(
+    useCallback(() => {
+      loadFriends();
+      const intervalId = setInterval(() => loadFriends(), 60000);
+      return () => clearInterval(intervalId);
+    }, [loadFriends]),
+  );
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await loadFriends();
+    } finally {
+      setRefreshing(false);
+    }
   }, [loadFriends]);
 
   const trimmedQuery = searchQuery.trim();
@@ -469,7 +486,18 @@ const FriendsScreen = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={handleRefresh}
+            tintColor={palette.accent}
+            colors={[palette.accent]}
+          />
+        }
+      >
         <Animated.View style={entranceStyles[0]}>
           <View style={styles.headerRow}>
             <Text style={styles.title}>Your Circle</Text>

@@ -8,6 +8,7 @@ import {
   Image,
   Modal,
   Pressable,
+  RefreshControl,
   ScrollView,
   SafeAreaView,
   StyleSheet,
@@ -17,7 +18,7 @@ import {
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import NotificationsSheet from '../../notifications/components/NotificationsSheet';
 import { useNotifications } from '../../notifications/hooks/useNotifications';
@@ -145,8 +146,14 @@ const EXPANDED_HEADER_HEIGHT = 28;
 
 const HomeScreen = () => {
   const navigation = useNavigation();
-  const { notifications, unreadCount, friendRequests, requestProfileMap, respondToFriendRequest } =
-    useNotifications();
+  const {
+    notifications,
+    unreadCount,
+    friendRequests,
+    requestProfileMap,
+    respondToFriendRequest,
+    reload: reloadNotifications,
+  } = useNotifications();
   const session = useSessionStore(selectSession);
   const alias = useSessionStore(selectAlias);
   const isOnline = useConnectionStore(selectIsOnline);
@@ -157,6 +164,7 @@ const HomeScreen = () => {
   const [cycleNameMap, setCycleNameMap] = useState<Record<string, string>>({});
   const [userProfileMap, setUserProfileMap] = useState<Record<string, FeedUserProfile>>({});
   const [isLoading, setLoading] = useState(false);
+  const [isRefreshing, setRefreshing] = useState(false);
   const [isSheetVisible, setSheetVisible] = useState(false);
   const [isComposerOpen, setComposerOpen] = useState(false);
   const [composerText, setComposerText] = useState('');
@@ -465,9 +473,30 @@ const HomeScreen = () => {
     }
   }, [session?.userId]);
 
-  useEffect(() => {
-    loadFeed();
-  }, [loadFeed]);
+  // Refetch the feed + notifications whenever the tab regains focus, and
+  // keep it fresh with a silent poll every 60s while the screen is open.
+  useFocusEffect(
+    useCallback(() => {
+      loadFeed();
+      reloadNotifications();
+      const intervalId = setInterval(() => {
+        loadFeed();
+        reloadNotifications();
+      }, 60000);
+      return () => clearInterval(intervalId);
+    }, [loadFeed, reloadNotifications]),
+  );
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await Promise.all([loadFeed(), reloadNotifications()]);
+    } catch (error) {
+      console.warn('[home] Pull-to-refresh failed', error);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [loadFeed, reloadNotifications]);
 
   useEffect(() => {
     if (!quickReactionsKey) {
@@ -1345,6 +1374,14 @@ const HomeScreen = () => {
         keyboardShouldPersistTaps="never"
         keyboardDismissMode="on-drag"
         contentContainerStyle={styles.listContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={handleRefresh}
+            tintColor={palette.accent}
+            colors={[palette.accent]}
+          />
+        }
         ListHeaderComponent={
           <View style={styles.header}>
             <Animated.View style={entranceStyles[0]}>
