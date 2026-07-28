@@ -83,11 +83,12 @@ Never commit secrets. Supabase keys and the DB password live in `.env` (gitignor
 
 When asked to make progress **without specific instructions** (e.g. "keep going", "make progress", "oneshot the backlog"), run this loop autonomously — don't stop to ask which item to do next:
 
-1. **Pick the next item** — highest-value open item from [BUGS.md](BUGS.md) (bugs first) or [FEATURES.md](FEATURES.md). Prefer quick, high-impact, low-risk wins; skip anything that genuinely needs a product decision (surface those instead of guessing).
+0. **Prioritize across the whole backlog first.** Read the **entire** [BUGS.md](BUGS.md) and [FEATURES.md](FEATURES.md) open lists and rank them. Priority order: (1) crashes / data-loss / privacy, (2) quick high-impact user-facing wins, (3) low-risk correctness + perf fixes, (4) dev-health, (5) larger features. **Defer** (surface, don't guess) anything needing a **product decision** (e.g. the consent model), anything **risky without verification** (e.g. reconciling prod migrations, live-data re-tests), or infra that needs credentials not on hand (e.g. Expo push token). Work top-down from that ranking.
+1. **Pick the next item** from that ranking.
 2. **Fix it**, then re-read the diff for bugs and run `npm test` where relevant (§4).
 3. **Update the docs in the same commit** — check off the item in BUGS/FEATURES (`- [x]`), add a line to RELEASE_NOTES `## Unreleased`.
-4. **Commit atomically** (one logical change) with a `Co-Authored-By:` trailer, and **push**.
-5. **Repeat** for a few items.
-6. **At a good stopping point** (a coherent batch, no half-finished work), **publish a build**: cut the RELEASE_NOTES version + bump `app.config.ts` version (§2), then `eas build --platform ios --profile production --auto-submit --non-interactive` (headless now that `ascAppId` is set). **Then tell the user** what shipped and that a build is up.
+4. **Commit atomically** (one logical change) with a `Co-Authored-By:` trailer, and **always `git push` after every commit** — never leave work unpushed.
+5. **Repeat for several items — batch multiple fixes into ONE build.** Don't build after every single fix; accumulate a coherent batch under `## Unreleased` first.
+6. **At a good stopping point** (a coherent batch, no half-finished work), **publish a build**: cut the RELEASE_NOTES version + bump `app.config.ts` version (§2), then `eas build --platform ios --profile production --auto-submit --non-interactive` (headless now that `ascAppId` is set), and push. **Then tell the user** what shipped and that a build is up.
 
 Keep each change small and reversible; if something needs a decision or is risky/outward-facing beyond a normal build, pause and ask.
