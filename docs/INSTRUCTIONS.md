@@ -42,7 +42,7 @@ Every time we make a build (dev, TestFlight, or App Store), "block" the accumula
    - `## 2026-08-01 — Beta 2 · TestFlight · reviewed & released`
 2. Move anything still incomplete into that version's **Known / not yet done** (or leave it in the fresh `## Unreleased`).
 3. Open a new empty `## Unreleased` section at the top for the next cycle.
-4. Bump `version` in `app.config.ts` for a user-facing release. (The native build number auto-increments via EAS `autoIncrement`, so don't manage that by hand.)
+4. **Bump `version` in `app.config.ts` on every TestFlight submission** (patch bump, e.g. `1.0.2 → 1.0.3`), so each submitted build has a distinct, trackable version — not just for user-facing releases. (The native **build number** *also* auto-increments via EAS `autoIncrement` — e.g. build 6, 7, 8 — so don't manage that by hand; but bump the marketing version too so TestFlight entries are easy to tell apart.)
 
 So: **changes accumulate under `Unreleased` as we commit, and get blocked into a named version each time we publish.**
 
