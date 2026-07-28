@@ -814,14 +814,17 @@ const HomeScreen = () => {
       if (result.isDoubleTap) {
         lastTapRef.current = result.nextState;
         const defaultEmoji = quickReactions[0];
-        if (defaultEmoji) {
+        // Double-tap always likes and never un-likes; skip if already reacted
+        // with the default emoji (handleReaction toggles, so calling it on an
+        // already-liked item would remove the like).
+        if (defaultEmoji && !reactionSelections[postId]?.[defaultEmoji]) {
           handleReaction({ type: 'post', id: postId }, defaultEmoji);
         }
         return;
       }
       lastTapRef.current = result.nextState;
     },
-    [handleReaction, quickReactions],
+    [handleReaction, quickReactions, reactionSelections],
   );
 
   const handleEventPress = useCallback(
@@ -832,14 +835,15 @@ const HomeScreen = () => {
       if (result.isDoubleTap) {
         lastTapRef.current = result.nextState;
         const defaultEmoji = quickReactions[0];
-        if (defaultEmoji) {
+        // Double-tap always likes and never un-likes (see handlePostPress).
+        if (defaultEmoji && !eventReactionSelections[eventId]?.[defaultEmoji]) {
           handleReaction({ type: 'cycle', id: eventId }, defaultEmoji);
         }
         return;
       }
       lastTapRef.current = result.nextState;
     },
-    [handleReaction, quickReactions],
+    [handleReaction, quickReactions, eventReactionSelections],
   );
 
   const reactionBarLayout = useMemo(() => {

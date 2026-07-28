@@ -4,6 +4,9 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## Unreleased
 
+### Fixed
+- **Double-tapping a post/event always likes it now (never un-likes).** Previously, double-tapping something you'd already liked with the default emoji removed the like; now double-tap only ever adds/keeps the like, Instagram-style. (`HomeScreen.tsx`.)
+
 ## 2026-07-28 — Beta 5 (1.0.3, build 7) · TestFlight
 
 Build `1.0.3` (buildNumber 7) — **built and submitted to TestFlight** (headless via `--auto-submit`, now that `ascAppId` is set; uploaded to App Store Connect, processing on Apple's side). **The TestFlight crash fix.** Diagnosed from the crash logs as a native HealthKit crash: serializing an `HKSampleQuery`'s `NSSortDescriptor` over XPC aborts on iOS 26 whenever there's real menstrual data to read (which is why it slipped past Apple's review on empty Health data but crashed real testers). Patched `@kingstinct/react-native-healthkit` (via `patch-package`) to stop sending the sort descriptor — behavior-neutral, since the app already sorts samples by date in JS. Also ships the earlier hardening (app-wide error boundary + module-scope background task).
