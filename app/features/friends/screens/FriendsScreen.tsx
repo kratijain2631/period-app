@@ -687,7 +687,14 @@ const FriendsScreen = () => {
                               <Text style={styles.syncBadgeText}>Sync</Text>
                             </View>
                           </View>
-                          <Text style={styles.friendRemove}>Remove</Text>
+                          <TouchableOpacity
+                            onPress={() => confirmRemoveFriend(row.user_id)}
+                            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                            accessibilityRole="button"
+                            accessibilityLabel={`Remove ${username}`}
+                          >
+                            <Text style={styles.friendRemove}>Remove</Text>
+                          </TouchableOpacity>
                         </View>
 
                         <Text style={styles.friendSubtitle}>
