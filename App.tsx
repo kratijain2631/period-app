@@ -10,6 +10,7 @@ import {
 } from '@expo-google-fonts/inter';
 import { Nunito_700Bold, Nunito_800ExtraBold } from '@expo-google-fonts/nunito';
 import AppNavigator from './app/navigation/AppNavigator';
+import ErrorBoundary from './app/components/ErrorBoundary';
 import { useCycleSyncLifecycle } from './app/services/healthkit/useCycleSyncLifecycle';
 import { useSupabaseAuth } from './app/services/supabase/useSupabaseAuth';
 import { useProfileGate } from './app/services/supabase/useProfileGate';
@@ -17,7 +18,7 @@ import { usePushNotifications } from './app/services/notifications/usePushNotifi
 import { useConnectionWatcher } from './app/state/connectionStore';
 import { useBoopQueueSync } from './app/services/boops/useBoopQueueSync';
 
-export default function App() {
+function AppInner() {
   const [fontsLoaded] = useFonts({
     Inter_400Regular,
     Inter_500Medium,
@@ -46,5 +47,15 @@ export default function App() {
       <StatusBar style="auto" />
       <AppNavigator />
     </>
+  );
+}
+
+// ErrorBoundary must wrap the component that runs the launch hooks (AppInner),
+// not sit inside it — a boundary only catches errors thrown by its descendants.
+export default function App() {
+  return (
+    <ErrorBoundary>
+      <AppInner />
+    </ErrorBoundary>
   );
 }

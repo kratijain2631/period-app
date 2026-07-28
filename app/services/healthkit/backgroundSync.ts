@@ -29,6 +29,14 @@ const defineBackgroundTask = () => {
   }
 };
 
+// Register the task handler at module load (top-level scope). Expo requires
+// `defineTask` to run in the global scope on every app start — including when
+// iOS relaunches the app headlessly to run the background task (this task uses
+// startOnBoot / !stopOnTerminate). Defining it only inside the register call
+// (which runs from a React hook after mount) means the handler may be missing
+// when the OS invokes the task, which is a known source of instability/crashes.
+defineBackgroundTask();
+
 export const registerCompanionBackgroundSync = async () => {
   defineBackgroundTask();
   const existing = await TaskManager.isTaskRegisteredAsync(CYCLE_SYNC_TASK);

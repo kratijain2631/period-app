@@ -4,6 +4,11 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## Unreleased
 
+### Fixed / hardening (TestFlight crash investigation, 2026-07-28)
+- **Background task now registers correctly on every launch.** `TaskManager.defineTask` for the cycle background-sync was only called inside the register function (post-mount); it now runs at module scope, as Expo requires — so when iOS relaunches the app headlessly to run the task, the handler is always defined. This was a likely contributor to intermittent launch crashes. (`app/services/healthkit/backgroundSync.ts`.)
+- **Added an app-wide error boundary.** A JS error on launch used to hard-crash the release build to a blank screen; it now shows a readable "Something went wrong" screen with the error text, so testers can screenshot it and we can diagnose. (Native crashes are unaffected — those still need the device crash log.) (`app/components/ErrorBoundary.tsx`, `App.tsx`.)
+- _See [BUGS.md](BUGS.md) → Crashes for the full investigation, remaining hypotheses (New Architecture + Nitro/HealthKit), and how to pull the crash log._
+
 ## 2026-07-28 — Beta 4 · TestFlight
 
 Build `1.0.2` (buildNumber 6) — built on EAS and **submitted to TestFlight** (headless, via the ASC API key, after setting `submit.production.ios.ascAppId` in `eas.json` — see [TROUBLESHOOTING.md](TROUBLESHOOTING.md) #14). Apple processes it for a few min–hours before it reaches testers. The friend-graph refresh + social batch: the Circle "Add a friend" button, pull-to-refresh + focus-refetch + 60s polling across the feed/circle/notifications, the in-app "friend accepted your request" notification, and a visible **mutual** Remove-friend button. All client-side; the server (Supabase) is unchanged since Beta 3. Plus the product-doc additions (empowerment mission, sync-score leaderboard, pair recommendations) and the codebase-review findings.
