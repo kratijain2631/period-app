@@ -7,6 +7,9 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 ### Fixed
 - **Double-tapping a post/event always likes it now (never un-likes).** Previously, double-tapping something you'd already liked with the default emoji removed the like; now double-tap only ever adds/keeps the like, Instagram-style. (`HomeScreen.tsx`.)
 
+### Added
+- **Branded launch screen.** On every app open, a short (~2.4s) intro shows **Cadence — "where your cycle meets your circle"** with a red-drop mark, then fades into the app. It overlays the app while it loads, so it doesn't add a loading wall. (`app/components/brand/BrandSplash.tsx`, `App.tsx`.)
+
 ### Developer
 - **`npm test` is green by default.** The architecture-sync LLM-eval test now skips (instead of hard-failing) when `OPENAI_API_KEY` isn't set locally; it still runs in CI. (`__tests__/architecture-sync.test.ts`.)
 
