@@ -4,7 +4,7 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## Unreleased
 
-## 2026-07-28 — Beta 7 (1.0.5, build 9) · TestFlight
+## 2026-07-28 — TestFlight build 1.0.5 (build 9)
 
 Build `1.0.5` (buildNumber 9) — **built and submitted to TestFlight** (headless auto-submit). Friends UX + polish batch: a working Invite button, Remove-friend moved to the friend's page, no more duplicate profile page from the cycle card, and more accurate cycle math around daylight-saving days. All client-side.
 
@@ -16,7 +16,7 @@ Build `1.0.5` (buildNumber 9) — **built and submitted to TestFlight** (headles
 - **Tapping your cycle card no longer opens a duplicate profile page.** The Home cycle card and the "You" tab used to open two separate copies of the same profile screen; the cycle card now just switches to the single "You" tab. (`AppNavigator.tsx`, `HomeScreen.tsx`.)
 - **More accurate cycle math around daylight-saving days.** Day counts and period-run detection now round to whole calendar days, so a 23h/25h DST day can't split a period or shift your cycle day by one. (`packages/domain/cycles/models.ts`.)
 
-## 2026-07-28 — Beta 6 (1.0.4, build 8) · TestFlight
+## 2026-07-28 — TestFlight build 1.0.4 (build 8)
 
 Build `1.0.4` (buildNumber 8) — **built and submitted to TestFlight** (headless auto-submit). A small polish batch on top of the Beta 5 crash fix: the double-tap-to-like fix and a branded launch screen (plus a dev-only test fix). All client-side.
 
@@ -29,7 +29,7 @@ Build `1.0.4` (buildNumber 8) — **built and submitted to TestFlight** (headles
 ### Developer
 - **`npm test` is green by default.** The architecture-sync LLM-eval test now skips (instead of hard-failing) when `OPENAI_API_KEY` isn't set locally; it still runs in CI. (`__tests__/architecture-sync.test.ts`.)
 
-## 2026-07-28 — Beta 5 (1.0.3, build 7) · TestFlight
+## 2026-07-28 — TestFlight build 1.0.3 (build 7)
 
 Build `1.0.3` (buildNumber 7) — **built and submitted to TestFlight** (headless via `--auto-submit`, now that `ascAppId` is set; uploaded to App Store Connect, processing on Apple's side). **The TestFlight crash fix.** Diagnosed from the crash logs as a native HealthKit crash: serializing an `HKSampleQuery`'s `NSSortDescriptor` over XPC aborts on iOS 26 whenever there's real menstrual data to read (which is why it slipped past Apple's review on empty Health data but crashed real testers). Patched `@kingstinct/react-native-healthkit` (via `patch-package`) to stop sending the sort descriptor — behavior-neutral, since the app already sorts samples by date in JS. Also ships the earlier hardening (app-wide error boundary + module-scope background task).
 
@@ -41,7 +41,7 @@ Build `1.0.3` (buildNumber 7) — **built and submitted to TestFlight** (headles
 - **Added an app-wide error boundary.** A JS error on launch used to hard-crash the release build to a blank screen; it now shows a readable "Something went wrong" screen with the error text, so testers can screenshot it and we can diagnose. (Native crashes are unaffected — those still need the device crash log.) (`app/components/ErrorBoundary.tsx`, `App.tsx`.)
 - _See [BUGS.md](BUGS.md) → Crashes for the full investigation, remaining hypotheses (New Architecture + Nitro/HealthKit), and how to pull the crash log._
 
-## 2026-07-28 — Beta 4 (1.0.2, build 6) · TestFlight
+## 2026-07-28 — TestFlight build 1.0.2 (build 6)
 
 Build `1.0.2` (buildNumber 6) — built on EAS and **submitted to TestFlight** (headless, via the ASC API key, after setting `submit.production.ios.ascAppId` in `eas.json` — see [TROUBLESHOOTING.md](TROUBLESHOOTING.md) #14). Apple processes it for a few min–hours before it reaches testers. The friend-graph refresh + social batch: the Circle "Add a friend" button, pull-to-refresh + focus-refetch + 60s polling across the feed/circle/notifications, the in-app "friend accepted your request" notification, and a visible **mutual** Remove-friend button. All client-side; the server (Supabase) is unchanged since Beta 3. Plus the product-doc additions (empowerment mission, sync-score leaderboard, pair recommendations) and the codebase-review findings.
 
@@ -65,7 +65,7 @@ Build `1.0.2` (buildNumber 6) — built on EAS and **submitted to TestFlight** (
 - **Added core pitch/feature pillars (2026-07-27, requested).** PITCH.md: elevated **women's empowerment** to the stated mission; added **sync scores (incl. a top-friends leaderboard)** and **relational, phase-aware recommendations** ("go work out with your friend," "send her some love") as signature hooks. FEATURES.md: expanded the sync score into a **top-5 "most in sync" leaderboard**, added **phase-aware pair recommendations**, broadened Care actions ("send some love"), and threaded the empowerment mission through the guiding idea.
 - **Logged testing findings + feature requests (2026-07-27).** BUGS.md: incoming friend requests don't refresh live (only fetched on mount — no focus-refetch/realtime/pull-to-refresh), push notifications not wired up (`notifications-handler` undeployed), Circle-tab "Add a friend" button is a no-op (should focus search), and `ProfileScreen` is duplicated across the Home cycle-card and the "You" tab. FEATURES.md: branded launch/intro screen with tagline, biometric (Face ID) app lock, and an expanded settings page.
 
-## 2026-07-26 — Beta 3 (1.0.1) · TestFlight · approved
+## 2026-07-26 — TestFlight build 1.0.1 · approved
 
 Build `1.0.1` submitted for external Beta App Review on 2026-07-27. Ships the client-side fixes below; the server-side fixes (friends-only feed RLS, `delete-account` v4, data cleanup) were already applied live.
 
@@ -95,7 +95,7 @@ Build `1.0.1` submitted for external Beta App Review on 2026-07-27. Ships the cl
 ### Test instructions (for testers)
 > You'll need some **menstrual** data logged in Apple Health to see your cycle info. Please flag anything confusing, broken, or slow — and tell us about any crashes, bugs, or feature requests.
 
-## 2026-07-23 — Beta 2 (1.0.0) · TestFlight · approved
+## 2026-07-23 — TestFlight build 1.0.0 (build 5) · approved
 
 The post-merge build (production build `ea0a717f`) uploaded to TestFlight and **submitted for external Beta App Review**. Same code as the Dev build below — includes all of main's features and the crash fix.
 
@@ -122,7 +122,7 @@ Caught this branch up to the full, current codebase and rebuilt as a dev build (
 ### Docs
 - Added a full documentation suite under `/docs` — PITCH (vision), FEATURES (roadmap), SCHEMA (database), IDENTIFIERS, TODO, BUGS, TROUBLESHOOTING, LEARNINGS, INSTRUCTIONS — plus `CLAUDE.md`, all cross-linked from the README.
 
-## 2026-07-22 — Beta 1 (1.0.0) · TestFlight · approved
+## 2026-07-22 — TestFlight build 1.0.0 (build 4) · approved
 
 First external TestFlight beta build, submitted for Beta App Review.
 

@@ -36,10 +36,10 @@ This includes **non-code changes that happen outside git** — e.g. Supabase con
 
 Every time we make a build (dev, TestFlight, or App Store), "block" the accumulated changes into a dated entry:
 
-1. Rename the `## Unreleased` section to a header that **starts with the date, includes the version and native build number, then describes exactly what that build was** — combine every label that applies: `dev` / `beta N` / `mvp` / `testflight` / `submitted for review` / `reviewed` (approved) / `app store`. **Always put the version + build number in the header** as `(<version>, build <n>)` — e.g. `(1.0.3, build 7)` — so each entry is unambiguous (get the build number from the `eas build` output / `eas build:list`). Update the header later if its status changes (e.g. add `· approved` once Beta App Review passes). Examples:
+1. Rename the `## Unreleased` section to a header that **starts with the date, then names the build type + version + native build number**. **Don't use "Beta N"** — the owner prefers **`TestFlight build <version> (build <n>)`** (get the build number from the `eas build` output / `eas build:list`). Append status labels that apply with `·`: `submitted for review` / `approved` / `app store`. Local-only builds are `Dev build`. Update the header later if its status changes (e.g. add `· approved` once App Review passes). Examples:
    - `## 2026-07-23 — Dev build`
-   - `## 2026-07-22 — Beta 1 (1.0.0, build 4) · TestFlight · submitted for review`
-   - `## 2026-08-01 — Beta 2 (1.0.3, build 7) · TestFlight · reviewed & released`
+   - `## 2026-07-22 — TestFlight build 1.0.0 (build 4) · submitted for review`
+   - `## 2026-08-01 — TestFlight build 1.0.3 (build 7) · approved`
 2. Move anything still incomplete into that version's **Known / not yet done** (or leave it in the fresh `## Unreleased`).
 3. Open a new empty `## Unreleased` section at the top for the next cycle.
 4. **Bump `version` in `app.config.ts` on every TestFlight submission** (patch bump, e.g. `1.0.2 → 1.0.3`), so each submitted build has a distinct, trackable version — not just for user-facing releases. (The native **build number** *also* auto-increments via EAS `autoIncrement` — e.g. build 6, 7, 8 — so don't manage that by hand; but bump the marketing version too so TestFlight entries are easy to tell apart.)

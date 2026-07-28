@@ -20,7 +20,7 @@ We merged `main` (57 commits) onto our identity/docs. To make it actually run on
 - [x] **One-time cleanup of orphaned + backdated rows** via [`supabase/cleanup/2026-07-24-orphaned-and-backdated-cleanup.sql`](../supabase/cleanup/2026-07-24-orphaned-and-backdated-cleanup.sql) (orphaned rows, demo seed rows, backdated flood). _(Done, 2026-07-26.)_
 - [ ] **Purge pre-fix soft-deleted accounts** (STEP 4 of the cleanup script) — accounts deleted before the hard-delete fix are only soft-deleted and still linger in friend lists. _(In progress 2026-07-26.)_
 
-## New features (Beta 2 feedback — 2026-07-24)
+## New features (early tester feedback — 2026-07-24)
 Larger asks that need their own design + PRs (not part of the composer/reaction bugfix PR):
 - [ ] **Sign in without Apple.** Add an alternative auth path so people can use the app without an Apple ID (e.g. email/OTP via Supabase Auth). Touches `AuthScreen`, `appleAuth`/auth services, Supabase Auth config, and onboarding. See FEATURES.md → "other auth methods" (Level 2).
 - [ ] **Manual cycle entry (no Apple Health).** Let users enter/log cycle data by hand instead of requiring HealthKit — needed for non-iOS-Health users and Android later. Requires new logging UI + data model. See FEATURES.md → "In-app logging" / Level 2 "in-app tracking (vs. read-only)".
@@ -30,13 +30,13 @@ Larger asks that need their own design + PRs (not part of the composer/reaction 
 - [x] Submit to App Store Connect (`eas submit --profile production --platform ios --latest`)
 - [x] App Store Connect / TestFlight setup: export compliance, beta description, privacy policy URL, review notes
 - [x] Submit for Beta App Review — **awaiting Apple (~1 day)**
-- [x] **Beta 3 (1.0.1) built + submitted for Beta App Review** (2026-07-27) — ships the client-side fixes; server-side fixes already live.
-- [x] **Beta 4 (1.0.2) production build** (2026-07-28) — friend-graph refresh + social batch (add-friend button, pull-to-refresh + focus + 60s polling, acceptance notification, mutual remove-friend). Build #6 finished on EAS (`.ipa` ready). Friend-graph refresh + social batch.
-- [x] **Beta 4 (1.0.2) TestFlight submit** (2026-07-28) — done, headless. Root cause of the earlier block: `eas.json` `submit.production` was `{}`, so `--non-interactive`/`--auto-submit` fell back to an interactive Apple ID login. **Fixed by adding `submit.production.ios.ascAppId = "6793724458"`** (the iOS submit fields nest under an `ios` key — that tripped a first attempt). Now `eas submit --platform ios --profile production --latest --non-interactive` runs with EAS's stored ASC API key, no Apple login. Build #6 uploaded to App Store Connect ([submission 9088362f](https://expo.dev/accounts/kratijain26/projects/period-app/submissions/9088362f-2568-4912-8ef8-f123332785f7)). See [TROUBLESHOOTING.md](TROUBLESHOOTING.md) #14.
-- [x] **Beta 5 (1.0.3, build 7) built + submitted to TestFlight** (2026-07-28) — the native HealthKit crash fix (NSSortDescriptor XPC patch). Built + auto-submitted headless in one command. Processing on Apple's side.
-- [x] **Beta 5 — crash fix verified** (2026-07-28): 1.0.3 (7) no longer crashes on startup. Give **1.0.3** to testers (not 1.0.2 — only 1.0.3 has the fix).
-- [ ] **Share the Beta 5 tester link** and confirm with a few testers (incl. someone with lots of Apple Health cycle data) that it's stable.
-- [x] **Fixed the tester test-description** — now says **"menstrual"** not "period", typos fixed. (Applied in the Beta 3 test instructions.)
+- [x] **TestFlight build 1.0.1 built + submitted for Beta App Review** (2026-07-27) — ships the client-side fixes; server-side fixes already live.
+- [x] **TestFlight build 1.0.2 production build** (2026-07-28) — friend-graph refresh + social batch (add-friend button, pull-to-refresh + focus + 60s polling, acceptance notification, mutual remove-friend). Build #6 finished on EAS (`.ipa` ready). Friend-graph refresh + social batch.
+- [x] **TestFlight build 1.0.2 submit** (2026-07-28) — done, headless. Root cause of the earlier block: `eas.json` `submit.production` was `{}`, so `--non-interactive`/`--auto-submit` fell back to an interactive Apple ID login. **Fixed by adding `submit.production.ios.ascAppId = "6793724458"`** (the iOS submit fields nest under an `ios` key — that tripped a first attempt). Now `eas submit --platform ios --profile production --latest --non-interactive` runs with EAS's stored ASC API key, no Apple login. Build #6 uploaded to App Store Connect ([submission 9088362f](https://expo.dev/accounts/kratijain26/projects/period-app/submissions/9088362f-2568-4912-8ef8-f123332785f7)). See [TROUBLESHOOTING.md](TROUBLESHOOTING.md) #14.
+- [x] **TestFlight build 1.0.3 (build 7) built + submitted to TestFlight** (2026-07-28) — the native HealthKit crash fix (NSSortDescriptor XPC patch). Built + auto-submitted headless in one command. Processing on Apple's side.
+- [x] **TestFlight build 1.0.3 — crash fix verified** (2026-07-28): 1.0.3 (7) no longer crashes on startup. Give **1.0.3** to testers (not 1.0.2 — only 1.0.3 has the fix).
+- [ ] **Share the 1.0.3 tester link** and confirm with a few testers (incl. someone with lots of Apple Health cycle data) that it's stable.
+- [x] **Fixed the tester test-description** — now says **"menstrual"** not "period", typos fixed. (Applied in the 1.0.1 test instructions.)
 - [ ] Once approved: share the (public) TestFlight link with testers.
 
 ## Privacy policy
