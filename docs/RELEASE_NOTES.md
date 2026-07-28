@@ -4,9 +4,9 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## Unreleased
 
-## 2026-07-27 — Beta 4 · TestFlight
+## 2026-07-28 — Beta 4 · production build (TestFlight submit pending)
 
-Build `1.0.2` — the friend-graph refresh + social batch: the Circle "Add a friend" button, pull-to-refresh + focus-refetch + 60s polling across the feed/circle/notifications, the in-app "friend accepted your request" notification, and a visible **mutual** Remove-friend button. All client-side; the server (Supabase) is unchanged since Beta 3. Plus the product-doc additions (empowerment mission, sync-score leaderboard, pair recommendations) and the codebase-review findings.
+Build `1.0.2` (buildNumber 6) — **built successfully on EAS**; the TestFlight submit is blocked on adding `ascAppId` to `eas.json` (see [TROUBLESHOOTING.md](TROUBLESHOOTING.md) #14 / [TODO.md](TODO.md)). The friend-graph refresh + social batch: the Circle "Add a friend" button, pull-to-refresh + focus-refetch + 60s polling across the feed/circle/notifications, the in-app "friend accepted your request" notification, and a visible **mutual** Remove-friend button. All client-side; the server (Supabase) is unchanged since Beta 3. Plus the product-doc additions (empowerment mission, sync-score leaderboard, pair recommendations) and the codebase-review findings.
 
 ### Fixed
 - **Circle tab "Add a friend" button now works.** The top-right person-plus button in the Circle tab previously just cleared an already-empty search box, so it looked broken. It now **focuses the search field** (opening the keyboard) so you can immediately type a friend's name or email. JS-only change — no rebuild needed. (`FriendsScreen.tsx`.)
