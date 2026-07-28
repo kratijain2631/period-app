@@ -12,7 +12,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { APP_NAME } from '../../../config/branding';
+import { APP_NAME, TESTFLIGHT_INVITE_URL } from '../../../config/branding';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { selectSession, useSessionStore } from '../../../state/sessionStore';
@@ -705,7 +705,7 @@ const FriendsScreen = () => {
               onPress={async () => {
                 try {
                   await Share.share({
-                    message: `Join me on ${APP_NAME} — where your cycle meets your circle. Let's sync up! 🩸`,
+                    message: `Join me on ${APP_NAME} — where your cycle meets your circle. Let's sync up! 🩸\n\nDownload the app: ${TESTFLIGHT_INVITE_URL}`,
                   });
                 } catch (error) {
                   console.warn('[friends] Share failed', error);

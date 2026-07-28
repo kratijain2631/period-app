@@ -4,6 +4,15 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## Unreleased
 
+### Changed
+- **"Invite Friends" now shares the TestFlight download link.** The invite message (from "Grow Your Circle") includes the public TestFlight join link so friends can actually install the app, not just a text blurb. (`FriendsScreen.tsx`, link constant in `app/config/branding.ts`.)
+
+### Docs / process
+- **Renamed build entries to "TestFlight build X.Y.Z (build n)"** (dropped "Beta N") across RELEASE_NOTES + TODO, and updated the INSTRUCTIONS §2 header convention to match. (Kept Apple's own term "Beta App Review".)
+- **INSTRUCTIONS.md** — added §9 (the **unsupervised-work loop**: prioritize the whole backlog, batch fixes per build, always push) and §10 (**minimize permission prompts**); §2 now requires the version + build number in each header.
+- **FEATURES.md** — reconciled the "Remove friend" item to reflect its move to the friend's sync page (was still describing the old on-list button).
+- **Dev env (not shipped):** broadened the local permission allowlist and set `permissions.defaultMode` in the git-ignored `.claude/settings.local.json` to reduce prompts.
+
 ## 2026-07-28 — TestFlight build 1.0.5 (build 9)
 
 Build `1.0.5` (buildNumber 9) — **built and submitted to TestFlight** (headless auto-submit). Friends UX + polish batch: a working Invite button, Remove-friend moved to the friend's page, no more duplicate profile page from the cycle card, and more accurate cycle math around daylight-saving days. All client-side.
@@ -52,6 +61,9 @@ Build `1.0.2` (buildNumber 6) — built on EAS and **submitted to TestFlight** (
 ### Added
 - **Remove a friend with a visible button (mutual).** Each friend row in the Circle tab now has a tappable **Remove** control (it was previously just a label; removing was only possible via an undiscoverable long-press). It asks for confirmation, then removes the friendship for **both** people — you both stop seeing each other's updates and would need a fresh request to reconnect. (Backed by the existing `remove_friend` RPC, which already cleared both sides.) (`FriendsScreen.tsx`.)
 - **"X accepted your request 🎉" notification.** When someone accepts your friend request, you now get an in-app notification (a "New friends" section in the notifications bell). It's computed on the client during the normal refresh cycle (pull / tab-focus / 60s poll) — no server changes — by comparing your accepted sent-requests against a locally-remembered "already seen" list, so each acceptance notifies once. (Existing friends are baselined silently on first launch, so the bell doesn't flood.) Instant push and lock-screen notifications while the app is closed are still to come. (`useNotifications.ts`, `NotificationsSheet.tsx`, `HomeScreen.tsx`.)
+
+### Infrastructure & release setup
+- **Headless TestFlight submits.** Set `submit.production.ios.ascAppId = "6793724458"` in `eas.json`, so `eas build --auto-submit --non-interactive` (and `eas submit`) upload to App Store Connect using the stored ASC API key — no interactive Apple ID login. This is what made every build from here on submit in one command. (See [TROUBLESHOOTING.md](TROUBLESHOOTING.md) #14.)
 
 ### Docs
 - **PITCH.md — added a "Market landscape & comparables" section**: the social-tracking playbook (Strava, Beli, Flighty, Letterboxd, Duolingo, Oura/Whoop), the period-app competitors (Flo, Clue, Stardust, Natural Cycles, Apple Cycle Tracking), and the friend-graph white space.
