@@ -4,6 +4,10 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## Unreleased
 
+## 2026-07-28 — Beta 6 (1.0.4, build 8) · TestFlight
+
+Build `1.0.4` — a small polish batch on top of the Beta 5 crash fix: the double-tap-to-like fix and a branded launch screen (plus a dev-only test fix). All client-side.
+
 ### Fixed
 - **Double-tapping a post/event always likes it now (never un-likes).** Previously, double-tapping something you'd already liked with the default emoji removed the like; now double-tap only ever adds/keeps the like, Instagram-style. (`HomeScreen.tsx`.)
 
