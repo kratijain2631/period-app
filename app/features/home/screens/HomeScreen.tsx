@@ -262,14 +262,10 @@ const HomeScreen = () => {
   }, []);
 
   const navigateToProfile = () => {
-    const state = navigation.getState();
-    if (state?.routeNames?.includes('HomeProfile')) {
-      (navigation as any).navigate('HomeProfile');
-      return;
-    }
-    if (state?.routeNames?.includes('Profile')) {
-      (navigation as any).navigate('Profile');
-    }
+    // Open the single "You" (Profile) tab. Previously this pushed a separate
+    // `HomeProfile` instance of ProfileScreen inside the Home stack, so the
+    // cycle card and the You tab showed two different copies of the same page.
+    (navigation as any).navigate('Profile');
   };
 
   const navigateToFriendSync = useCallback(

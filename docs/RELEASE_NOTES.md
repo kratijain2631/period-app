@@ -4,6 +4,9 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## Unreleased
 
+### Fixed
+- **Tapping your cycle card no longer opens a duplicate profile page.** The Home cycle card and the "You" tab used to open two separate copies of the same profile screen; the cycle card now just switches to the single "You" tab. (`AppNavigator.tsx`, `HomeScreen.tsx`.)
+
 ## 2026-07-28 — Beta 6 (1.0.4, build 8) · TestFlight
 
 Build `1.0.4` (buildNumber 8) — **built and submitted to TestFlight** (headless auto-submit). A small polish batch on top of the Beta 5 crash fix: the double-tap-to-like fix and a branded launch screen (plus a dev-only test fix). All client-side.

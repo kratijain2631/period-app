@@ -89,18 +89,10 @@ const AuthLoadingScreen = () => (
 );
 
 const HomeStackScreen = () => (
+  // Profile lives only in the "You" tab now — the Home cycle card navigates
+  // there instead of pushing a duplicate ProfileScreen (HomeProfile) here.
   <HomeStack.Navigator screenOptions={{ headerShown: false, gestureEnabled: true }}>
     <HomeStack.Screen name="HomeRoot" component={HomeScreen} />
-    <HomeStack.Screen
-      name="HomeProfile"
-      component={ProfileScreen}
-      options={{ gestureEnabled: true, fullScreenGestureEnabled: true }}
-    />
-    <HomeStack.Screen
-      name="AutoPostSettings"
-      component={AutoPostSettingsScreen}
-      options={{ gestureEnabled: true, fullScreenGestureEnabled: true }}
-    />
   </HomeStack.Navigator>
 );
 
