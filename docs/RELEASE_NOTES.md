@@ -4,6 +4,13 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## Unreleased
 
+## 2026-07-28 — Beta 5 (1.0.3) · TestFlight
+
+Build `1.0.3` — **the TestFlight crash fix.** Diagnosed from the crash logs as a native HealthKit crash: serializing an `HKSampleQuery`'s `NSSortDescriptor` over XPC aborts on iOS 26 whenever there's real menstrual data to read (which is why it slipped past Apple's review on empty Health data but crashed real testers). Patched `@kingstinct/react-native-healthkit` (via `patch-package`) to stop sending the sort descriptor — behavior-neutral, since the app already sorts samples by date in JS. Also ships the earlier hardening (app-wide error boundary + module-scope background task).
+
+### Fixed
+- **Fixed the crash on launch / when reading Apple Health data.** See above — the app no longer crashes when it queries your menstrual data from Apple Health. (`patches/@kingstinct+react-native-healthkit+10.1.0.patch`, `package.json` postinstall.)
+
 ### Fixed / hardening (TestFlight crash investigation, 2026-07-28)
 - **Background task now registers correctly on every launch.** `TaskManager.defineTask` for the cycle background-sync was only called inside the register function (post-mount); it now runs at module scope, as Expo requires — so when iOS relaunches the app headlessly to run the task, the handler is always defined. This was a likely contributor to intermittent launch crashes. (`app/services/healthkit/backgroundSync.ts`.)
 - **Added an app-wide error boundary.** A JS error on launch used to hard-crash the release build to a blank screen; it now shows a readable "Something went wrong" screen with the error text, so testers can screenshot it and we can diagnose. (Native crashes are unaffected — those still need the device crash log.) (`app/components/ErrorBoundary.tsx`, `App.tsx`.)

@@ -1,0 +1,19 @@
+diff --git a/node_modules/@kingstinct/react-native-healthkit/ios/Helpers.swift b/node_modules/@kingstinct/react-native-healthkit/ios/Helpers.swift
+index c6f048f..42accec 100644
+--- a/node_modules/@kingstinct/react-native-healthkit/ios/Helpers.swift
++++ b/node_modules/@kingstinct/react-native-healthkit/ios/Helpers.swift
+@@ -283,7 +283,13 @@ func createPredicateForSamples(filter: Variant_PredicateWithUUID_PredicateWithUU
+ }
+ 
+ func getSortDescriptors(ascending: Bool?) -> [NSSortDescriptor] {
+-    return [NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: ascending ?? false)]
++    // PATCHED (period-app): return no sort descriptor. On iOS 26, serializing an
++    // HKSampleQuery's NSSortDescriptor over XPC crashes in
++    // -[NSSortDescriptor encodeWithCoder:] (EXC_CRASH/SIGABRT) whenever there is
++    // real menstrual data to query. The app re-sorts samples by date in JS and
++    // its query limit (400) never truncates realistic data, so dropping the
++    // native sort is behavior-neutral and avoids the crash. See docs/BUGS.md.
++    return []
+ }
+ 
+ func getSortDescsdsdriptors(ascending: Bool?) -> [NSSortDescriptor] {
