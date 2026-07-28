@@ -4,6 +4,10 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## Unreleased
 
+## 2026-07-28 — Beta 7 (1.0.5, build 9) · TestFlight
+
+Build `1.0.5` — friends UX + polish batch: a working Invite button, Remove-friend moved to the friend's page, no more duplicate profile page from the cycle card, and more accurate cycle math around daylight-saving days. All client-side.
+
 ### Added / Changed
 - **"Invite Friends" now actually invites.** The button opened nothing (just set an invisible notice); it now opens the native share sheet with an invite message so you can text/share it. (`FriendsScreen.tsx`.)
 - **Remove-friend moved to the friend's page.** The Remove control is no longer on the friends list; instead, open a friend (their sync page) and use **Remove friend** at the bottom (below Boop), which asks for confirmation and then removes for both of you and returns to the list. (`FriendSyncScreen.tsx`, `FriendsScreen.tsx`.)
