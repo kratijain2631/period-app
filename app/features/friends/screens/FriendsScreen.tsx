@@ -2,16 +2,17 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated,
   Easing,
-  Alert,
   RefreshControl,
   SafeAreaView,
   ScrollView,
+  Share,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
+import { APP_NAME } from '../../../config/branding';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { selectSession, useSessionStore } from '../../../state/sessionStore';
@@ -27,7 +28,6 @@ import {
 import {
   fetchFriendProfiles,
   fetchFriendSharing,
-  removeFriend,
   type FriendProfileRow,
 } from '../../../services/supabase/friendSharing';
 import { searchUsersByAliasOrEmail, type UserSearchResult } from '../../../services/supabase/users';
@@ -388,37 +388,6 @@ const FriendsScreen = () => {
     }
   }, [isEmailQuery, trimmedQuery]);
 
-  const confirmRemoveFriend = useCallback(
-    (friendUserId: string) => {
-      const friendName = friendUsername(friendUserId);
-      Alert.alert(
-        'Remove friend?',
-        `${friendName} will no longer see your updates, and you'll need to send a new request to reconnect.`,
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Remove',
-            style: 'destructive',
-            onPress: async () => {
-              setLoading(true);
-              setErrorMessage(null);
-              try {
-                await removeFriend(friendUserId);
-                await loadFriends();
-              } catch (error) {
-                console.warn('[friends] Failed to remove friend', error);
-                setErrorMessage('Could not remove friend. Try again.');
-              } finally {
-                setLoading(false);
-              }
-            },
-          },
-        ],
-      );
-    },
-    [friendUsername, loadFriends],
-  );
-
   const deriveCycleDay = useCallback((snapshot?: CycleSnapshotRow['snapshot']) => {
     const latest = snapshot?.latestSampleStart;
     if (!latest) {
@@ -671,7 +640,6 @@ const FriendsScreen = () => {
                     key={row.user_id}
                     style={styles.friendCard}
                     onPress={() => navigateToFriendSync(row.user_id)}
-                    onLongPress={() => confirmRemoveFriend(row.user_id)}
                     activeOpacity={0.93}
                   >
                     <View style={styles.friendCardRow}>
@@ -687,14 +655,6 @@ const FriendsScreen = () => {
                               <Text style={styles.syncBadgeText}>Sync</Text>
                             </View>
                           </View>
-                          <TouchableOpacity
-                            onPress={() => confirmRemoveFriend(row.user_id)}
-                            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                            accessibilityRole="button"
-                            accessibilityLabel={`Remove ${username}`}
-                          >
-                            <Text style={styles.friendRemove}>Remove</Text>
-                          </TouchableOpacity>
                         </View>
 
                         <Text style={styles.friendSubtitle}>
@@ -742,11 +702,14 @@ const FriendsScreen = () => {
             </Animated.View>
             <TouchableOpacity
               style={styles.inviteButton}
-              onPress={() => {
-                setSearchNotice({
-                  message: 'Share your friend alias or email in search to invite them.',
-                  tone: 'info',
-                });
+              onPress={async () => {
+                try {
+                  await Share.share({
+                    message: `Join me on ${APP_NAME} — where your cycle meets your circle. Let's sync up! 🩸`,
+                  });
+                } catch (error) {
+                  console.warn('[friends] Share failed', error);
+                }
               }}
             >
               <Text style={styles.inviteButtonText}>Invite Friends</Text>

@@ -4,6 +4,10 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## Unreleased
 
+### Added / Changed
+- **"Invite Friends" now actually invites.** The button opened nothing (just set an invisible notice); it now opens the native share sheet with an invite message so you can text/share it. (`FriendsScreen.tsx`.)
+- **Remove-friend moved to the friend's page.** The Remove control is no longer on the friends list; instead, open a friend (their sync page) and use **Remove friend** at the bottom (below Boop), which asks for confirmation and then removes for both of you and returns to the list. (`FriendSyncScreen.tsx`, `FriendsScreen.tsx`.)
+
 ### Fixed
 - **Tapping your cycle card no longer opens a duplicate profile page.** The Home cycle card and the "You" tab used to open two separate copies of the same profile screen; the cycle card now just switches to the single "You" tab. (`AppNavigator.tsx`, `HomeScreen.tsx`.)
 - **More accurate cycle math around daylight-saving days.** Day counts and period-run detection now round to whole calendar days, so a 23h/25h DST day can't split a period or shift your cycle day by one. (`packages/domain/cycles/models.ts`.)

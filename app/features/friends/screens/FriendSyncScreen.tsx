@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
+  Alert,
   Animated,
   Dimensions,
   Easing,
@@ -13,7 +14,11 @@ import {
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import Svg, { Circle, Defs, LinearGradient, Path, Stop } from 'react-native-svg';
-import { fetchFriendProfiles, fetchFriendSharing } from '../../../services/supabase/friendSharing';
+import {
+  fetchFriendProfiles,
+  fetchFriendSharing,
+  removeFriend,
+} from '../../../services/supabase/friendSharing';
 import { fetchUserProfilesByIds } from '../../../services/supabase/users';
 import { fetchCycleSnapshotByUserId } from '../../../services/supabase/cycleSnapshots';
 import { sendBoop } from '../../../services/supabase/boops';
@@ -45,6 +50,7 @@ const palette = {
   fill: brand.colors.fill,
   mutedFill: brand.colors.mutedFill,
   disabled: brand.colors.disabled,
+  destructive: brand.colors.destructive,
   white: brand.colors.white,
 };
 
@@ -115,6 +121,7 @@ const FriendSyncScreen = () => {
   const [hasConsent, setHasConsent] = useState<boolean | null>(null);
   const [isLoading, setLoading] = useState(false);
   const [boopStatus, setBoopStatus] = useState<'idle' | 'sending' | 'sent' | 'queued'>('idle');
+  const [isRemoving, setRemoving] = useState(false);
   const progress = useRef(new Animated.Value(0)).current;
   const animatedScore = useRef(new Animated.Value(0)).current;
   const [displayScore, setDisplayScore] = useState(0);
@@ -522,6 +529,34 @@ const FriendSyncScreen = () => {
     return friendId;
   }, [friendAlias, friendId]);
 
+  const handleRemoveFriend = useCallback(() => {
+    if (!friendId || isRemoving) {
+      return;
+    }
+    Alert.alert(
+      'Remove friend?',
+      `${displayFriendName} will no longer see your updates, and you'll need to send a new request to reconnect.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Remove',
+          style: 'destructive',
+          onPress: async () => {
+            setRemoving(true);
+            try {
+              await removeFriend(friendId);
+              (navigation as any).goBack();
+            } catch (error) {
+              console.warn('[friend-sync] Failed to remove friend', error);
+              setRemoving(false);
+              Alert.alert('Could not remove friend', 'Please try again.');
+            }
+          },
+        },
+      ],
+    );
+  }, [displayFriendName, friendId, isRemoving, navigation]);
+
   const latestGapDays = syncScore?.metrics.daysApart ?? null;
   const overlapDays = syncScore?.metrics.overlapDays ?? 0;
   const flowGapHistory = useMemo(() => {
@@ -834,6 +869,18 @@ const FriendSyncScreen = () => {
                         : boopStatus === 'sending'
                           ? 'Sending...'
                   : `Boop ${displayFriendName}`}
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.removeFriendButton}
+                onPress={handleRemoveFriend}
+                disabled={!friendId || isRemoving}
+                accessibilityRole="button"
+                accessibilityLabel={`Remove ${displayFriendName}`}
+              >
+                <Text style={styles.removeFriendText}>
+                  {isRemoving ? 'Removing…' : 'Remove friend'}
                 </Text>
               </TouchableOpacity>
               </View>
@@ -1181,6 +1228,17 @@ const styles = StyleSheet.create({
     gap: 8,
     marginBottom: 16,
     ...brand.shadow.card,
+  },
+  removeFriendButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    marginBottom: 8,
+  },
+  removeFriendText: {
+    fontSize: 14,
+    color: palette.destructive,
+    ...brandType.semibold,
   },
   boopButtonSent: {
     backgroundColor: '#7BA68F',
