@@ -24,7 +24,11 @@ describe('Architecture Documentation Sync', () => {
   const packageJsonPath = path.join(__dirname, '..', 'package.json');
   const openaiApiKey = process.env.OPENAI_API_KEY;
   const openaiModel = process.env.OPENAI_MODEL || 'gpt-4o-mini';
-  
+  const isCI = process.env.CI === 'true' || process.env.CIRCLECI === 'true';
+  // Locally without a key, SKIP (don't fail) so `npm test` is green by default;
+  // in CI, still run it so a missing key surfaces as a failure.
+  const syncTest = openaiApiKey || isCI ? it : it.skip;
+
   // Debug: Log environment info (without exposing the key)
   if (process.env.CI === 'true' || process.env.CIRCLECI === 'true') {
     console.log('[architecture-sync] CI environment detected');
@@ -225,7 +229,7 @@ describe('Architecture Documentation Sync', () => {
     }
   };
 
-  it('should be in sync with the codebase', async () => {
+  syncTest('should be in sync with the codebase', async () => {
     // Fail test if no API key (reduce silent failures)
     if (!openaiApiKey) {
       const isCI = process.env.CI === 'true' || process.env.CIRCLECI === 'true';
