@@ -31,6 +31,7 @@ Larger asks that need their own design + PRs (not part of the composer/reaction 
 - [x] App Store Connect / TestFlight setup: export compliance, beta description, privacy policy URL, review notes
 - [x] Submit for Beta App Review — **awaiting Apple (~1 day)**
 - [x] **Beta 3 (1.0.1) built + submitted for Beta App Review** (2026-07-27) — ships the client-side fixes; server-side fixes already live.
+- [ ] **Beta 4 (1.0.2) build + TestFlight submit** (2026-07-27) — friend-graph refresh + social batch (add-friend button, pull-to-refresh + focus + 60s polling, acceptance notification, mutual remove-friend). Building via `eas build --profile production --platform ios --auto-submit`. Update this + RELEASE_NOTES header to "submitted for review" / "reviewed" as the status advances.
 - [x] **Fixed the tester test-description** — now says **"menstrual"** not "period", typos fixed. (Applied in the Beta 3 test instructions.)
 - [ ] Once approved: share the (public) TestFlight link with testers.
 

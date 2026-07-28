@@ -4,6 +4,10 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## Unreleased
 
+## 2026-07-27 — Beta 4 · TestFlight
+
+Build `1.0.2` — the friend-graph refresh + social batch: the Circle "Add a friend" button, pull-to-refresh + focus-refetch + 60s polling across the feed/circle/notifications, the in-app "friend accepted your request" notification, and a visible **mutual** Remove-friend button. All client-side; the server (Supabase) is unchanged since Beta 3. Plus the product-doc additions (empowerment mission, sync-score leaderboard, pair recommendations) and the codebase-review findings.
+
 ### Fixed
 - **Circle tab "Add a friend" button now works.** The top-right person-plus button in the Circle tab previously just cleared an already-empty search box, so it looked broken. It now **focuses the search field** (opening the keyboard) so you can immediately type a friend's name or email. JS-only change — no rebuild needed. (`FriendsScreen.tsx`.)
 - **The feed, friends, and notifications now refresh without restarting the app.** Previously everything loaded only once on mount, so new posts, incoming friend requests, and newly-accepted friends wouldn't appear until you force-quit and reopened. Now they refresh three ways: **pull down** on the Home feed or Circle screen to refresh manually; the tab **auto-refreshes when you open it** (`useFocusEffect`); and it **silently polls every 60 seconds** while open. Home refreshes feed + notifications + friend requests; Circle refreshes friends + requests. JS-only — no rebuild needed. (`HomeScreen.tsx`, `FriendsScreen.tsx`, `useNotifications.ts`.)
