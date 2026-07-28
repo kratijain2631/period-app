@@ -74,8 +74,13 @@ const MAX_PERIOD_LENGTH = 8;
 const toDayStart = (date: Date) => new Date(date.getFullYear(), date.getMonth(), date.getDate());
 const isFiniteDate = (date: Date) => !Number.isNaN(date.getTime());
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
+// Calendar days between two local-midnight timestamps. Rounds (not floors) the
+// ms/DAY_MS ratio so a daylight-saving day (23h or 25h between midnights) still
+// counts as one day — otherwise runs get split or day counts shift by one.
+const calendarDaysBetween = (fromMs: number, toMs: number) =>
+  Math.round((toMs - fromMs) / DAY_MS);
 const dayDiff = (left: Date, right: Date) =>
-  Math.floor((toDayStart(left).getTime() - toDayStart(right).getTime()) / DAY_MS);
+  calendarDaysBetween(toDayStart(right).getTime(), toDayStart(left).getTime());
 const toDateKey = (date: Date) => toDayStart(date).toISOString().slice(0, 10);
 const parseIsoDate = (value: string) => new Date(value);
 
@@ -120,15 +125,15 @@ const buildFlowRuns = (samples: readonly CycleSample[]): FlowRun[] => {
 
   for (let index = 1; index < dayStarts.length; index += 1) {
     const current = dayStarts[index];
-    if (current - previous > DAY_MS) {
-      const lengthDays = Math.floor((previous - runStart) / DAY_MS) + 1;
+    if (calendarDaysBetween(previous, current) > 1) {
+      const lengthDays = calendarDaysBetween(runStart, previous) + 1;
       runs.push({ start: new Date(runStart), end: new Date(previous), lengthDays });
       runStart = current;
     }
     previous = current;
   }
 
-  const trailingLength = Math.floor((previous - runStart) / DAY_MS) + 1;
+  const trailingLength = calendarDaysBetween(runStart, previous) + 1;
   runs.push({ start: new Date(runStart), end: new Date(previous), lengthDays: trailingLength });
   return runs;
 };

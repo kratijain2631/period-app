@@ -6,6 +6,7 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ### Fixed
 - **Tapping your cycle card no longer opens a duplicate profile page.** The Home cycle card and the "You" tab used to open two separate copies of the same profile screen; the cycle card now just switches to the single "You" tab. (`AppNavigator.tsx`, `HomeScreen.tsx`.)
+- **More accurate cycle math around daylight-saving days.** Day counts and period-run detection now round to whole calendar days, so a 23h/25h DST day can't split a period or shift your cycle day by one. (`packages/domain/cycles/models.ts`.)
 
 ## 2026-07-28 — Beta 6 (1.0.4, build 8) · TestFlight
 
