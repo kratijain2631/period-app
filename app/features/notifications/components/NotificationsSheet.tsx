@@ -1,6 +1,7 @@
 import { FlatList, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import type { NotificationRow } from '../../../services/supabase/notifications';
 import type { FriendRequestRow } from '../../../services/supabase/friendRequests';
+import type { AcceptanceNotification } from '../hooks/useNotifications';
 import { brand, brandType } from '../../../theme/brand';
 
 type NotificationsSheetProps = {
@@ -8,6 +9,7 @@ type NotificationsSheetProps = {
   notifications: NotificationRow[];
   friendRequests: FriendRequestRow[];
   requestProfileMap: Record<string, { alias?: string | null }>;
+  acceptances?: AcceptanceNotification[];
   onRespondRequest: (requestId: string, status: 'accepted' | 'declined') => void | Promise<void>;
   onClose: () => void;
 };
@@ -32,6 +34,7 @@ const NotificationsSheet = ({
   notifications,
   friendRequests,
   requestProfileMap,
+  acceptances = [],
   onRespondRequest,
   onClose,
 }: NotificationsSheetProps) => {
@@ -50,7 +53,19 @@ const NotificationsSheet = ({
             keyExtractor={(item) => item.id}
             contentContainerStyle={styles.listContent}
             ListHeaderComponent={
-              friendRequests.length ? (
+              <View style={{ gap: 12 }}>
+                {acceptances.length ? (
+                  <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>New friends</Text>
+                    {acceptances.map((item) => (
+                      <View key={item.id} style={styles.row}>
+                        <Text style={styles.rowTitle}>{item.name} accepted your request 🎉</Text>
+                        <Text style={styles.rowMeta}>{formatTimestamp(item.createdAt)}</Text>
+                      </View>
+                    ))}
+                  </View>
+                ) : null}
+                {friendRequests.length ? (
                 <View style={styles.section}>
                   <Text style={styles.sectionTitle}>Friend requests</Text>
                   {friendRequests.map((request) => {
@@ -82,10 +97,11 @@ const NotificationsSheet = ({
                     );
                   })}
                 </View>
-              ) : null
+                ) : null}
+              </View>
             }
             ListEmptyComponent={
-              friendRequests.length ? null : (
+              friendRequests.length || acceptances.length ? null : (
                 <Text style={styles.empty}>No notifications yet.</Text>
               )
             }

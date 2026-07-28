@@ -151,6 +151,8 @@ const HomeScreen = () => {
     unreadCount,
     friendRequests,
     requestProfileMap,
+    acceptances,
+    markAcceptancesSeen,
     respondToFriendRequest,
     reload: reloadNotifications,
   } = useNotifications();
@@ -1526,8 +1528,12 @@ const HomeScreen = () => {
         notifications={notifications}
         friendRequests={friendRequests}
         requestProfileMap={requestProfileMap}
+        acceptances={acceptances}
         onRespondRequest={respondToFriendRequest}
-        onClose={() => setSheetVisible(false)}
+        onClose={() => {
+          markAcceptancesSeen();
+          setSheetVisible(false);
+        }}
       />
 
       <Modal
