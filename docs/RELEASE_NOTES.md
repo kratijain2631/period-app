@@ -9,7 +9,7 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 - **Added an app-wide error boundary.** A JS error on launch used to hard-crash the release build to a blank screen; it now shows a readable "Something went wrong" screen with the error text, so testers can screenshot it and we can diagnose. (Native crashes are unaffected — those still need the device crash log.) (`app/components/ErrorBoundary.tsx`, `App.tsx`.)
 - _See [BUGS.md](BUGS.md) → Crashes for the full investigation, remaining hypotheses (New Architecture + Nitro/HealthKit), and how to pull the crash log._
 
-## 2026-07-28 — Beta 4 · TestFlight
+## 2026-07-28 — Beta 4 (1.0.2, build 6) · TestFlight
 
 Build `1.0.2` (buildNumber 6) — built on EAS and **submitted to TestFlight** (headless, via the ASC API key, after setting `submit.production.ios.ascAppId` in `eas.json` — see [TROUBLESHOOTING.md](TROUBLESHOOTING.md) #14). Apple processes it for a few min–hours before it reaches testers. The friend-graph refresh + social batch: the Circle "Add a friend" button, pull-to-refresh + focus-refetch + 60s polling across the feed/circle/notifications, the in-app "friend accepted your request" notification, and a visible **mutual** Remove-friend button. All client-side; the server (Supabase) is unchanged since Beta 3. Plus the product-doc additions (empowerment mission, sync-score leaderboard, pair recommendations) and the codebase-review findings.
 
@@ -33,7 +33,7 @@ Build `1.0.2` (buildNumber 6) — built on EAS and **submitted to TestFlight** (
 - **Added core pitch/feature pillars (2026-07-27, requested).** PITCH.md: elevated **women's empowerment** to the stated mission; added **sync scores (incl. a top-friends leaderboard)** and **relational, phase-aware recommendations** ("go work out with your friend," "send her some love") as signature hooks. FEATURES.md: expanded the sync score into a **top-5 "most in sync" leaderboard**, added **phase-aware pair recommendations**, broadened Care actions ("send some love"), and threaded the empowerment mission through the guiding idea.
 - **Logged testing findings + feature requests (2026-07-27).** BUGS.md: incoming friend requests don't refresh live (only fetched on mount — no focus-refetch/realtime/pull-to-refresh), push notifications not wired up (`notifications-handler` undeployed), Circle-tab "Add a friend" button is a no-op (should focus search), and `ProfileScreen` is duplicated across the Home cycle-card and the "You" tab. FEATURES.md: branded launch/intro screen with tagline, biometric (Face ID) app lock, and an expanded settings page.
 
-## 2026-07-26 — Beta 3 · TestFlight · submitted for review
+## 2026-07-26 — Beta 3 (1.0.1) · TestFlight · approved
 
 Build `1.0.1` submitted for external Beta App Review on 2026-07-27. Ships the client-side fixes below; the server-side fixes (friends-only feed RLS, `delete-account` v4, data cleanup) were already applied live.
 
@@ -63,7 +63,7 @@ Build `1.0.1` submitted for external Beta App Review on 2026-07-27. Ships the cl
 ### Test instructions (for testers)
 > You'll need some **menstrual** data logged in Apple Health to see your cycle info. Please flag anything confusing, broken, or slow — and tell us about any crashes, bugs, or feature requests.
 
-## 2026-07-23 — Beta 2 · TestFlight · approved
+## 2026-07-23 — Beta 2 (1.0.0) · TestFlight · approved
 
 The post-merge build (production build `ea0a717f`) uploaded to TestFlight and **submitted for external Beta App Review**. Same code as the Dev build below — includes all of main's features and the crash fix.
 
@@ -90,7 +90,7 @@ Caught this branch up to the full, current codebase and rebuilt as a dev build (
 ### Docs
 - Added a full documentation suite under `/docs` — PITCH (vision), FEATURES (roadmap), SCHEMA (database), IDENTIFIERS, TODO, BUGS, TROUBLESHOOTING, LEARNINGS, INSTRUCTIONS — plus `CLAUDE.md`, all cross-linked from the README.
 
-## 2026-07-22 — Beta 1 · TestFlight · approved
+## 2026-07-22 — Beta 1 (1.0.0) · TestFlight · approved
 
 First external TestFlight beta build, submitted for Beta App Review.
 
