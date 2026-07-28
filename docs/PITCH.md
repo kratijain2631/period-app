@@ -16,8 +16,11 @@ The **social layer** lets users connect with friends, see when their cycles sync
 
 ## Why (philosophy)
 
+- **Women's empowerment is the mission, not a feature.** The whole product exists to make women's health **visible, shared, and celebrated** — to take a monthly experience women are taught to hide and reframe it as a source of connection, self-knowledge, and even pride. Every design and feature decision should ladder up to this: reduce stigma and shame, give women language and data about their own bodies, and let them go through their cycle *supported by the friends they choose* instead of alone. This is also the brand's heart and its marketing story (the "Sisters by Blood" origin).
 - **Plan life around the menstrual cycle to increase productivity** — organize work, fitness, and life around a woman's monthly cycle rather than a man's daily one (creative / planning / active weeks).
-- **Social layer = empowerment & celebration** — surface and celebrate menstruation instead of hiding it as a private struggle. Reimagine your period as part of your identity, not something to conceal. Take away the stigma and shame.
+- **Social layer = empowerment & celebration** — surface and celebrate menstruation instead of hiding it as a private struggle. Reimagine your period as part of your identity, not something to conceal.
+- **Sync scores are the signature hook** — see how "in sync" you are with each friend, and a **leaderboard of your most-synced friends** (your top 5). Relative, social, and genuinely delightful — the thing people screenshot and talk about.
+- **Recommendations turn insight into action, together** — phase-aware nudges for what to do *with* a friend: "you're both high-energy this week — go work out together," or "she's in her PMS phase — send her some love." Advice that facilitates a supportive friendship, not just a solo dashboard.
 - **It's fun** — knowing whether you're synced up with friends is genuinely delightful.
 - **Useful research data** — opt-in location + cycle data can advance real research on cycle syncing and variation.
 - **A logging flywheel** — the social layer motivates people to log more, which makes the personal insights more valuable to them.

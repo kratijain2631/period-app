@@ -4,7 +4,7 @@ The product roadmap. Vision and philosophy live in [PITCH.md](PITCH.md). Pull an
 
 ## Guiding idea
 
-A period tracker that's **social** — going through your cycle *with* the friends you choose, and planning your life around it. Every feature should either (a) make personal cycle tracking genuinely useful, (b) deepen the supportive social layer, or (c) help you organize life around your cycle. Keep it **warm, private, consent-first — and serious, not fluffy**.
+A period tracker that's **social** — going through your cycle *with* the friends you choose, and planning your life around it. Every feature should either (a) make personal cycle tracking genuinely useful, (b) deepen the supportive social layer, or (c) help you organize life around your cycle — and all of it in service of the mission: **women's empowerment**, making a hidden monthly experience visible, shared, and celebrated (see [PITCH.md](PITCH.md)). Keep it **warm, private, consent-first — and serious, not fluffy**.
 
 ## Already shipped (V0 baseline)
 
@@ -116,9 +116,11 @@ First-run flow is make-or-break for a social health app:
 - **Friends overview** — see approved friends' current phases at a glance (consent-gated).
 - **Calendar of friends** — who's PMSing on which day, visualized with memoji-like faces; collapse many into an iOS-group-chat-style stack to avoid clutter.
 - **Feed** — chronological timeline of friends' events; react with emojis; "boop" a friend; delete your own posts _(shipped)_.
-- **Blended profile / sync score** — how "in sync" you and a friend are, with recommendations for what to do together. _(No longer dummy: `computeSyncScore` in `syncScore.ts` is a real model — phase alignment 45% + recent-flow timing 35% + 28-day flow overlap 20%, with a low/med/high confidence flag, highlights, a timeline, and a cycle-trend table. Next: surface it more prominently and add the leaderboard framing below.)_
+- **Blended profile / sync score** — how "in sync" you and a friend are, with recommendations for what to do together. _(No longer dummy: `computeSyncScore` in `syncScore.ts` is a real model — phase alignment 45% + recent-flow timing 35% + 28-day flow overlap 20%, with a low/med/high confidence flag, highlights, a timeline, and a cycle-trend table.)_
+- **Sync-score leaderboard — your top friends (signature feature).** Rank your friends by sync score and surface a **"most in sync" list (top 5)** — the Beli-style *relative* hook that drives engagement and sharing. Per-friend scores are already computed in `FriendsScreen`; this is about ranking + presenting them (leaderboard on the Circle screen, "you're most in sync with X" moments, monthly "who you synced with most"). See PITCH → "sync scores are the signature hook."
+- **Phase-aware recommendations — do something *with* a friend.** Turn the sync score + both phases into a concrete suggestion for the pair: e.g. *"you're both high-energy this week — plan a workout together,"* or *"she's in her PMS phase — send her some love."* Builds on `fallbackRecommendations`/`cycle-guidance`; the point is the recommendation is **relational** (an action you take together / for each other), which is the app's differentiator over solo trackers. Ties into Care actions below.
 - **PMS / phase notifications** — a heads-up when a friend (or partner) is PMSing — playful, opt-in.
-- **Care actions** — send support when a friend is cramping/PMSing (e.g. a "send a tiramisu" gesture).
+- **Care actions** — send support when a friend is cramping/PMSing (e.g. "send some love," a "send a tiramisu / heat pad" gesture). The emotional layer fitness/dining apps don't have.
 - **End-of-year recap** — how similar your cycle was to each friend, who you synced with most.
 - **Granular sharing** — share your phase but not your symptoms, per friend.
 - **Forum / Q&A** *(later)* — cluster responses by demographic / cycle data so answers come from people most similar to you.
