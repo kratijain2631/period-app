@@ -92,3 +92,12 @@ When asked to make progress **without specific instructions** (e.g. "keep going"
 6. **At a good stopping point** (a coherent batch, no half-finished work), **publish a build**: cut the RELEASE_NOTES version + bump `app.config.ts` version (§2), then `eas build --platform ios --profile production --auto-submit --non-interactive` (headless now that `ascAppId` is set), and push. **Then tell the user** what shipped and that a build is up.
 
 Keep each change small and reversible; if something needs a decision or is risky/outward-facing beyond a normal build, pause and ask.
+
+## 10. Permissions — minimize interruptions
+
+The owner prefers **not** to be interrupted by permission prompts for routine project work — **assume you have permission** for ordinary in-repo operations (reads, `Edit`/`Write`, git, `eas`, `npm`/`npx`, tests) and just proceed. Reserve confirmation for genuinely destructive or outward-facing actions (deleting data, force-pushing, anything a normal build/commit wouldn't cover).
+
+Practical setup (already applied; re-apply if a fresh machine keeps prompting):
+- The personal, git-ignored **`.claude/settings.local.json`** holds the allowlist. It includes `Edit`, `Write`, and a broad project-scoped `Bash(cd /Users/kratijain/Documents/period-app*)` (which covers the compound shell commands used here), plus `git`/`eas`/`npm`/`npx` patterns. Add new safe patterns there as needed — never commit broad write-access into the shared repo config.
+- Those prompts are enforced by Claude Code itself, not chosen by the agent; the allowlist is the way to reduce them.
+- For **zero** prompts, the owner can relaunch with `claude --dangerously-skip-permissions` (bypass mode) — the agent cannot set this itself.
