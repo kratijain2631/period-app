@@ -6,7 +6,7 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## 2026-07-28 — Beta 7 (1.0.5, build 9) · TestFlight
 
-Build `1.0.5` — friends UX + polish batch: a working Invite button, Remove-friend moved to the friend's page, no more duplicate profile page from the cycle card, and more accurate cycle math around daylight-saving days. All client-side.
+Build `1.0.5` (buildNumber 9) — **built and submitted to TestFlight** (headless auto-submit). Friends UX + polish batch: a working Invite button, Remove-friend moved to the friend's page, no more duplicate profile page from the cycle card, and more accurate cycle math around daylight-saving days. All client-side.
 
 ### Added / Changed
 - **"Invite Friends" now actually invites.** The button opened nothing (just set an invisible notice); it now opens the native share sheet with an invite message so you can text/share it. (`FriendsScreen.tsx`.)
