@@ -36,10 +36,10 @@ This includes **non-code changes that happen outside git** — e.g. Supabase con
 
 Every time we make a build (dev, TestFlight, or App Store), "block" the accumulated changes into a dated entry:
 
-1. Rename the `## Unreleased` section to a header that **starts with the date, then describes exactly what that build was** — combine every label that applies: `dev` / `beta N` / `mvp` / `testflight` / `submitted for review` / `reviewed` (approved) / `app store`. Update the header later if its status changes (e.g. add `· approved` once Beta App Review passes). Examples:
+1. Rename the `## Unreleased` section to a header that **starts with the date, includes the version and native build number, then describes exactly what that build was** — combine every label that applies: `dev` / `beta N` / `mvp` / `testflight` / `submitted for review` / `reviewed` (approved) / `app store`. **Always put the version + build number in the header** as `(<version>, build <n>)` — e.g. `(1.0.3, build 7)` — so each entry is unambiguous (get the build number from the `eas build` output / `eas build:list`). Update the header later if its status changes (e.g. add `· approved` once Beta App Review passes). Examples:
    - `## 2026-07-23 — Dev build`
-   - `## 2026-07-22 — Beta 1 · TestFlight · submitted for review`
-   - `## 2026-08-01 — Beta 2 · TestFlight · reviewed & released`
+   - `## 2026-07-22 — Beta 1 (1.0.0, build 4) · TestFlight · submitted for review`
+   - `## 2026-08-01 — Beta 2 (1.0.3, build 7) · TestFlight · reviewed & released`
 2. Move anything still incomplete into that version's **Known / not yet done** (or leave it in the fresh `## Unreleased`).
 3. Open a new empty `## Unreleased` section at the top for the next cycle.
 4. **Bump `version` in `app.config.ts` on every TestFlight submission** (patch bump, e.g. `1.0.2 → 1.0.3`), so each submitted build has a distinct, trackable version — not just for user-facing releases. (The native **build number** *also* auto-increments via EAS `autoIncrement` — e.g. build 6, 7, 8 — so don't manage that by hand; but bump the marketing version too so TestFlight entries are easy to tell apart.)
@@ -78,3 +78,16 @@ Same for [BUGS.md](BUGS.md) and [FEATURES.md](FEATURES.md): **cross off bugs/fea
 ## 8. Secrets
 
 Never commit secrets. Supabase keys and the DB password live in `.env` (gitignored) and EAS environment variables; Apple credentials live in EAS / Keychain. Only non-secret identifiers belong in the repo.
+
+## 9. Unsupervised / oneshot progress (default loop when asked to "make progress")
+
+When asked to make progress **without specific instructions** (e.g. "keep going", "make progress", "oneshot the backlog"), run this loop autonomously — don't stop to ask which item to do next:
+
+1. **Pick the next item** — highest-value open item from [BUGS.md](BUGS.md) (bugs first) or [FEATURES.md](FEATURES.md). Prefer quick, high-impact, low-risk wins; skip anything that genuinely needs a product decision (surface those instead of guessing).
+2. **Fix it**, then re-read the diff for bugs and run `npm test` where relevant (§4).
+3. **Update the docs in the same commit** — check off the item in BUGS/FEATURES (`- [x]`), add a line to RELEASE_NOTES `## Unreleased`.
+4. **Commit atomically** (one logical change) with a `Co-Authored-By:` trailer, and **push**.
+5. **Repeat** for a few items.
+6. **At a good stopping point** (a coherent batch, no half-finished work), **publish a build**: cut the RELEASE_NOTES version + bump `app.config.ts` version (§2), then `eas build --platform ios --profile production --auto-submit --non-interactive` (headless now that `ascAppId` is set). **Then tell the user** what shipped and that a build is up.
+
+Keep each change small and reversible; if something needs a decision or is risky/outward-facing beyond a normal build, pause and ask.
