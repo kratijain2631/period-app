@@ -7,7 +7,7 @@ export const APP_NAME = (Constants.expoConfig?.name as string | undefined) ?? 'C
 // Tagline shown on the launch screen and usable elsewhere in the UI.
 export const APP_TAGLINE = 'where your cycle meets your circle';
 
-// Public TestFlight join link, shared from the "Invite Friends" button so
-// people can install the (beta) app. Update when the TestFlight/App Store
-// distribution link changes. See docs/TODO.md.
-export const TESTFLIGHT_INVITE_URL = 'https://testflight.apple.com/join/akMkE8kW';
+// Public install link shared from the "Invite Friends" button. Points at the
+// TestFlight join link for now; swap to the App Store URL at public launch.
+// See docs/TODO.md.
+export const APP_INVITE_URL = 'https://testflight.apple.com/join/akMkE8kW';
