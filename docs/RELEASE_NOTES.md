@@ -8,15 +8,13 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ### Changed
 - **"Invite Friends" now shares the TestFlight download link.** The invite message (from "Grow Your Circle") includes the public TestFlight join link so friends can actually install the app, not just a text blurb. (`FriendsScreen.tsx`, link constant in `app/config/branding.ts`.)
+- **Your profile ("You" tab) shows your @handle, not your email.** The top of the profile used to show your email (twice); it now shows your alias/@handle, and your **email moved into the Account settings** below. (`ProfileScreen.tsx`.)
 
 ### Docs / process
 - **Renamed build entries to "TestFlight build X.Y.Z (build n)"** (dropped "Beta N") across RELEASE_NOTES + TODO, and updated the INSTRUCTIONS §2 header convention to match. (Kept Apple's own term "Beta App Review".)
 - **INSTRUCTIONS.md** — added §9 (the **unsupervised-work loop**: prioritize the whole backlog, batch fixes per build, always push) and §10 (**minimize permission prompts**); §2 now requires the version + build number in each header.
 - **FEATURES.md** — reconciled the "Remove friend" item to reflect its move to the friend's sync page (was still describing the old on-list button).
 - **Dev env (not shipped):** broadened the local permission allowlist and set `permissions.defaultMode` in the git-ignored `.claude/settings.local.json` to reduce prompts.
-
-### Changed
-- **Your profile ("You" tab) shows your @handle, not your email.** The top of the profile used to show your email (twice); it now shows your alias/@handle, and your **email moved into the Account settings** below. (`ProfileScreen.tsx`.)
 
 ## 2026-07-28 — TestFlight build 1.0.5 (build 9) · submitted for review · **public**
 
