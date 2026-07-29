@@ -6,6 +6,10 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## Unreleased
 
+## 2026-07-28 — TestFlight build 1.0.6 (build 10)
+
+Build `1.0.6` — the two user-facing changes that were sitting unreleased: the **Invite Friends** button now shares the TestFlight download link, and your **profile shows your @handle** instead of your email (email moved into Account settings). Plus the docs/process cleanup below. _Uploaded to TestFlight; submit for Beta App Review in App Store Connect to make it `· public`._
+
 ### Changed
 - **"Invite Friends" now shares the TestFlight download link.** The invite message (from "Grow Your Circle") includes the public TestFlight join link so friends can actually install the app, not just a text blurb. (`FriendsScreen.tsx`, link constant in `app/config/branding.ts`.)
 - **Your profile ("You" tab) shows your @handle, not your email.** The top of the profile used to show your email (twice); it now shows your alias/@handle, and your **email moved into the Account settings** below. (`ProfileScreen.tsx`.)
