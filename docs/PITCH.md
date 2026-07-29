@@ -20,7 +20,7 @@ The current store-listing description (App Store Connect → App Information). K
 
 > **Cadence is where your cycle meets your circle** — cycle tracking you actually share with the friends you choose.
 >
-> Cadence reads your cycle data from Apple Health (read-only — it never writes anything back) to show you personalized insights about your current phase and symptoms. Then it connects you with friends: see when your cycles sync up, send each other support, and share moments in a feed — but only with friends you've approved. Nothing about your cycle is shared until you say so.
+> Cadence reads your cycle data from Apple Health (read-only — it never writes anything back) to show you personalized insights. Accepting a friend request shares only core phase and calendar timing so you can see when you sync up; detailed Health data stays private. Posts and moods are visible when you choose to publish them, and removing a friend ends their access.
 >
 > Sign in with Apple, grant Apple Health access, add a friend or two, and see what it's like to go through your cycle together instead of alone.
 
@@ -76,7 +76,7 @@ The category is enormous, but its "social" is thin — almost always **anonymous
 
 ### The engagement loop (the actual bet)
 
-The lesson from Strava and Flighty isn't "add a feed" — it's that **the content logs itself.** GPS and flight-imports mean the feed fills with zero effort and you get social reward for just living your life. This app has the same latent superpower in **Apple Health auto-ingest**: cycle events can post themselves to your circle (consented), so the loop is *auto-logged data → friends react/support → you open the app more → better personal insights → repeat*. Manual text posts are the weak version of this; the auto-updates are the moat. Two hard parts gate it: **cold-start** (dull until your friends join → invite/referral growth + a useful solo mode) and **consent** (cycle data is intimate → sharing must be explicit, granular, and revocable before any auto-broadcast ships). See [FEATURES.md](FEATURES.md) → "The retention loop" for the concrete build order.
+The lesson from Strava and Flighty isn't "add a feed" — it's that **the content logs itself.** GPS and flight-imports mean the feed fills with zero effort and you get social reward for just living your life. This app has the same latent superpower in **Apple Health auto-ingest**: cycle events can post themselves to your circle, so the loop is *auto-logged data → friends react/support → you open the app more → better personal insights → repeat*. Manual text posts are the weak version of this; the auto-updates are the moat. Two hard parts gate it: **cold-start** (dull until your friends join → invite/referral growth + a useful solo mode) and **privacy clarity** (accepting a friend deliberately shares only the safe phase/calendar layer; detailed health observations remain private, and post settings control auto-publishing). See [FEATURES.md](FEATURES.md) → "The retention loop" for the concrete build order.
 
 ## Origin story
 

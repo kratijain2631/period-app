@@ -20,7 +20,7 @@ import {
   removeFriend,
 } from '../../../services/supabase/friendSharing';
 import { fetchUserProfilesByIds } from '../../../services/supabase/users';
-import { fetchCycleSnapshotByUserId } from '../../../services/supabase/cycleSnapshots';
+import { fetchFriendCycleSnapshots } from '../../../services/supabase/cycleSnapshots';
 import { sendBoop } from '../../../services/supabase/boops';
 import {
   fetchFriendRecommendations,
@@ -184,15 +184,16 @@ const FriendSyncScreen = () => {
         return;
       }
 
-      const [sharingRows, friendSnapshotRow, selfSnapshotRow, recRow, friendProfileRows, userProfiles] =
+      const [sharingRows, snapshotRows, recRow, friendProfileRows, userProfiles] =
         await Promise.all([
         fetchFriendSharing(),
-        fetchCycleSnapshotByUserId(friendId).catch(() => null),
-        fetchCycleSnapshotByUserId(session.userId).catch(() => null),
+        fetchFriendCycleSnapshots().catch(() => []),
         fetchFriendRecommendations(friendId).catch(() => null),
         fetchFriendProfiles([friendId]).catch(() => []),
         fetchUserProfilesByIds([session.userId, friendId]).catch(() => []),
       ]);
+      const friendSnapshotRow = snapshotRows.find((row) => row.user_id === friendId) ?? null;
+      const selfSnapshotRow = snapshotRows.find((row) => row.user_id === session.userId) ?? null;
       const friendProfile = userProfiles.find((profile) => profile.id === friendId);
       const selfProfile = userProfiles.find((profile) => profile.id === session.userId);
       setSelfAvatarUrl(selfProfile?.avatar_url ?? null);
@@ -606,9 +607,9 @@ const FriendSyncScreen = () => {
           </View>
         ) : hasConsent === false ? (
           <View style={styles.noticeCard}>
-            <Text style={styles.noticeTitle}>Consent Needed</Text>
+            <Text style={styles.noticeTitle}>Friend Sync Unavailable</Text>
             <Text style={styles.noticeText}>
-              Friend Sync unlocks once both of you approve sharing.
+              Cycle sharing starts when a friend request is accepted. Refresh your circle or try again.
             </Text>
           </View>
         ) : (

@@ -6,6 +6,16 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## Unreleased
 
+### Added / Changed
+- **Friendship now has a clear, privacy-enforced cycle-sharing boundary.** Accepting a friend request automatically shares the core social data—phase, cycle/calendar timing, date-only period history needed for sync scores, and freshness. Manual posts and selected moods remain visible when deliberately published. Removing the friend ends access.
+
+### Fixed
+- **Raw HealthKit detail is no longer readable by friends.** Raw snapshot/event tables are owner-only; new server-side projections omit flow intensity, symptoms, BBT, cervical mucus, ovulation/progesterone signals, IDs, and metadata. Friends receive only safe cycle summaries and published cycle-event fields.
+- **Circle refresh no longer rewrites sharing state every 60 seconds.** Sharing is created once on friend acceptance (with an existing-friend backfill) instead of being repeatedly upserted on focus, pull-to-refresh, and polling.
+
+### Infrastructure & release setup
+- **Pending deployment:** apply `20260729000000_friend-cycle-summary-privacy.sql` to Supabase before testing this client change; it creates the safe friend-summary/event RPCs and makes raw cycle tables owner-only.
+
 ### Docs / process
 - **Claimed active work (2026-07-29).** Marked the explicit/revocable consent-model fix (including removal of the 60-second sharing reset) and contact-based friend discovery as WIP so concurrent contributors do not duplicate them.
 - **Backlog updated from tester feedback (2026-07-29).** Removed the resolved data-only "unknown phase" report; added post editing with an Edited label, removal of the redundant Circle person-plus control, consolidated profile settings/account actions, avatar UX scoping, and contact-based friend discovery; marked the stale rebuild/resubmit TODOs complete because TestFlight build 1.0.3 (build 7) superseded them.

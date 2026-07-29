@@ -10,7 +10,7 @@ A period tracker that's **social** — going through your cycle *with* the frien
 
 Auth (Sign in with Apple), read-only ingest of menstrual-flow data from Apple Health, friends (requests + sharing), a feed with posts/reactions/boops (including deleting your own posts), and a real computed sync score (`computeSyncScore`). The HealthKit data is read but barely used yet (see the cycle-model note below). See [RELEASE_NOTES.md](RELEASE_NOTES.md) and [SCHEMA.md](SCHEMA.md).
 
-> **Note on "mutual-consent sharing":** the *schema* supports it, but the app currently **auto-grants** sharing both ways on friend-accept and has no revoke UI (see [BUGS.md](BUGS.md) — consent-model + dead-toggle bugs). The Privacy section below tracks closing that gap.
+> **Friendship is the consent boundary:** accepting a request starts mutual sharing of a restricted phase/calendar summary. It does not expose raw HealthKit samples, flow intensity, symptoms, tests, signals, or metadata. Intentionally published posts and their selected moods remain visible to friends. Removing the friend ends access; finer per-category controls remain future work.
 
 ---
 
@@ -70,7 +70,7 @@ The single biggest strategic point from studying the comparables: **the sticky o
 
 ### The two things that will make or break the loop
 - **Cold-start / network effects.** Like early Strava, the app is boring until *your* friends are on it. → invite-only + referral-gated growth (PITCH → Go-to-market), and a genuinely useful *solo* mode (cycle wheel + insights) so a lone user still gets value on day one.
-- **Consent as a feature, not a blocker.** Unlike runs or restaurants, cycle data is intimate. The engagement mechanics above (auto-broadcast, leaderboards, status) are only acceptable if sharing is **explicit, granular, and revocable** — which today it isn't (BUGS.md). Fixing the consent model is a *prerequisite* for the social loop, not a side quest. Oura Circles / Whoop Teams prove sensitive data *does* get shared — but only inside a trusted, consent-gated circle.
+- **Consent as a feature, not a blocker.** Unlike runs or restaurants, cycle data is intimate. Accepting a friend is the explicit consent action for a deliberately restricted phase/calendar summary; removing the friend revokes it. Raw health observations stay private, while posts and moods someone chooses to publish stay social. Future granular controls can expand that boundary without weakening the safe default.
 
 ---
 

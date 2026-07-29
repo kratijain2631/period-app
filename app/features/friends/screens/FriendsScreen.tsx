@@ -18,9 +18,7 @@ import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { selectSession, useSessionStore } from '../../../state/sessionStore';
 import {
   fetchInboundFriendRequests,
-  fetchAcceptedFriendRequests,
   fetchOutboundFriendRequests,
-  ensureFriendSharingForRequests,
   sendFriendRequest,
   sendFriendRequestByEmail,
   type FriendRequestRow,
@@ -79,14 +77,6 @@ const FriendsScreen = () => {
     setLoading(true);
     setErrorMessage(null);
     try {
-      const acceptedRequests = await fetchAcceptedFriendRequests();
-      if (acceptedRequests.length > 0) {
-        try {
-          await ensureFriendSharingForRequests(acceptedRequests.map((request) => request.id));
-        } catch (error) {
-          console.warn('[friends] Failed to ensure friend sharing', error);
-        }
-      }
       const [inbound, outbound, sharingRows, snapshots] = await Promise.all([
         fetchInboundFriendRequests(),
         fetchOutboundFriendRequests(),

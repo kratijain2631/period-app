@@ -10,7 +10,7 @@ The full schema — tables, functions, RLS policies, indexes — is defined in `
 | `cycle_events` | Menstrual/cycle events synced from Apple Health (event type, phase, symptoms, start time). |
 | `cycle_snapshots` | A rolled-up snapshot of the user's current cycle state (jsonb). |
 | `friend_requests` | Friend requests between users (from / to / status). |
-| `friend_sharing` | Mutual sharing consent — the `has_shared` flag per direction (default `false`). |
+| `friend_sharing` | Records the automatic two-way cycle-summary sharing created when a friend request is accepted. |
 | `posts` | Feed posts (alias, body, mood tag). |
 | `post_reactions` | Emoji reactions to posts. |
 | `boops` | Friend "boop" nudges (from / to / optional cycle event). |
@@ -34,13 +34,13 @@ The full schema — tables, functions, RLS policies, indexes — is defined in `
 
 1. **Auth:** Sign in with Apple → Supabase Auth → the `handle_new_auth_user` trigger creates the `users` profile row.
 2. **Cycle data:** the app reads menstrual data from Apple Health (read-only) and writes it to `cycle_events` / `cycle_snapshots`.
-3. **Friends:** send a request (`friend_requests`); on accept, `friend_sharing` tracks each side's `has_shared`. The RLS gate requires `has_shared = true` on **both** sides before either can see the other's cycle snapshot — but note the app currently **auto-sets both sides true on accept** (no explicit opt-in step, no revoke UI); see [BUGS.md](BUGS.md) → consent model.
+3. **Friends:** send a request (`friend_requests`); accepting it is the mutual consent action and creates `friend_sharing` rows in both directions. Friends read a safe phase/calendar projection through `friend_cycle_summaries()` and safe published cycle events through `shared_cycle_events()`; removing the friendship ends access.
 4. **Feed:** `posts`, `post_reactions`, and `boops` form the social layer.
 5. **Security:** row-level security on all 10 tables (32 policies) scopes each user's data to themselves and approved friends.
 
 ## Data & schema notes
 
-- **RLS everywhere** — each user only sees their own rows plus what approved friends shared with them (sharing is auto-granted on accept today — see the consent-model caveat in step 3 and [BUGS.md](BUGS.md)).
+- **RLS everywhere** — raw `cycle_snapshots` and raw `cycle_events` are owner-only. Approved friends receive only server-built projections: phase/calendar timing and date-only period ranges for sync calculations, plus deliberately published cycle-event type/phase/date. Flow intensity, symptoms, signal samples, and raw HealthKit metadata are never included.
 - **Schema is in code** (`supabase/migrations/`); **real data is not** (database only); **demo seed data is in code** (`seed-posts.sql`).
 - Applying the migrations to a fresh Supabase project reproduces the schema exactly.
 - Whether another project (e.g. the original collaborator's) matches is only guaranteed if it was built from these same migrations with no out-of-band dashboard changes — see [LEARNINGS.md](LEARNINGS.md).

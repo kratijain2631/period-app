@@ -41,30 +41,6 @@ export const fetchFriendProfiles = async (friendIds: string[]): Promise<FriendPr
   return (data as FriendProfileRow[]) ?? [];
 };
 
-export const setFriendSharing = async (friendId: string, hasShared: boolean) => {
-  if (!isSupabaseConfigured) {
-    return;
-  }
-  const { data, error } = await supabase.auth.getUser();
-  if (error) {
-    throw error;
-  }
-  if (!data.user) {
-    throw new Error('Supabase user is not available.');
-  }
-  const { error: upsertError } = await supabase.from('friend_sharing').upsert(
-    {
-      user_id: data.user.id,
-      friend_id: friendId,
-      has_shared: hasShared,
-    },
-    { onConflict: 'user_id,friend_id' },
-  );
-  if (upsertError) {
-    throw upsertError;
-  }
-};
-
 export const removeFriend = async (friendId: string) => {
   if (!isSupabaseConfigured) {
     return;
