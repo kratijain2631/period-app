@@ -6,6 +6,9 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## Unreleased
 
+### Docs / process
+- **INSTRUCTIONS.md §11 — multi-person collaboration.** Added a workflow for more than one person (and their Claude) on the repo: `git pull --rebase` before starting and before every push, claim an item by marking it `- [~] 🚧 (WIP — name)` and pushing before you work, coordinate lanes to avoid the big shared screens, and treat RELEASE_NOTES `## Unreleased` as the shared record.
+
 ## 2026-07-28 — TestFlight build 1.0.6 (build 10)
 
 Build `1.0.6` — the two user-facing changes that were sitting unreleased: the **Invite Friends** button now shares the TestFlight download link, and your **profile shows your @handle** instead of your email (email moved into Account settings). Plus the docs/process cleanup below. _Uploaded to TestFlight; submit for Beta App Review in App Store Connect to make it `· public`._

@@ -101,3 +101,21 @@ Practical setup (already applied; re-apply if a fresh machine keeps prompting):
 - The personal, git-ignored **`.claude/settings.local.json`** holds the allowlist. It includes `Edit`, `Write`, and a broad project-scoped `Bash(cd /Users/kratijain/Documents/period-app*)` (which covers the compound shell commands used here), plus `git`/`eas`/`npm`/`npx` patterns. Add new safe patterns there as needed — never commit broad write-access into the shared repo config.
 - Those prompts are enforced by Claude Code itself, not chosen by the agent; the allowlist is the way to reduce them.
 - For **zero** prompts, the owner can relaunch with `claude --dangerously-skip-permissions` (bypass mode) — the agent cannot set this itself.
+
+## 11. Collaborating — multiple people (and their Claudes) on this repo
+
+More than one person may work on this repo at once, each pushing to `main`. To stay conflict-free and avoid two people doing the same task, follow this exactly:
+
+**Stay in sync (the part that actually prevents conflicts):**
+1. **`git pull --rebase origin main` before you start an item, and again right before every push.** This is non-negotiable — atomic commits and WIP-claims don't help if you're pushing onto a stale `main`. If a push is rejected, `git pull --rebase` and push again.
+2. Keep commits **small and atomic** (§6) and **push after every commit** — small, frequent pushes rebase cleanly; big batches cause painful conflicts.
+
+**Claim before you work (so no one duplicates it):**
+3. Before starting, **claim the item on the item itself**: in [BUGS.md](BUGS.md)/[FEATURES.md](FEATURES.md)/[TODO.md](TODO.md), change its checkbox to `- [~]` and append `🚧 (WIP — <your name>, <date>)`. Commit (`claim: <item>`) and **push immediately** (pull --rebase first).
+4. **Re-check after the rebase.** If the item is already `[~]`/`[x]` when you sync, it's taken — pick a different one. When done, flip `[~]` → `[x]` with the fix + release-notes line, and push.
+
+**Reduce the collision surface:**
+5. **Coordinate lanes** — avoid two people editing the same file at once, *especially* the large screens (`HomeScreen.tsx`, `ProfileScreen.tsx`, `FriendsScreen.tsx`, `FriendSyncScreen.tsx`), which are the worst merge-conflict magnets. Split by feature area (e.g. one on friends, one on cycle) rather than both in one file.
+6. **RELEASE_NOTES is the shared source of truth** for what shipped — always add your line under `## Unreleased` in the same commit, so the other person sees what changed. Whoever cuts a build blocks `## Unreleased` into a version (§2) and pushes the build; the other syncs before continuing.
+
+_(If a conflict does happen, it'll almost always be in the append-only docs — resolve by keeping both entries.)_
