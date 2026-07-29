@@ -2,13 +2,13 @@
 
 Open items, roughly in priority order. Done work isn't listed here.
 
-## Finish the `main` integration (post-merge) — do this next
+## Finish the `main` integration (post-merge) — completed
 We merged `main` (57 commits) onto our identity/docs. To make it actually run on **our** Supabase + Apple account:
 - [x] `npm install` new native deps (`react-native-svg`, `expo-image-picker`, `expo-font`).
 - [x] Apply main's DB migrations to **our** Supabase (schema, done via the SQL editor).
 - [x] Deploy `delete-account` edge function (done — powers the delete flow; no secrets needed, uses Supabase's auto-injected keys).
-- [ ] **Rebuild** (native deps require it), reinstall, and test — this also fixes the crash (from the stale base).
-- [ ] **Resubmit to TestFlight, but do NOT submit for Beta App Review yet** — just get the build up on TestFlight.
+- [x] **Rebuild, reinstall, and test.** _(Completed and superseded by the later verified TestFlight build 1.0.3 (build 7), 2026-07-28.)_
+- [x] **Resubmit to TestFlight without Beta App Review.** _(Completed and superseded by TestFlight build 1.0.3 (build 7), which was built, uploaded, and verified stable on 2026-07-28.)_
 
 ## Fix avatars + AI features (OpenAI key)
 - [x] Get an **OpenAI API key** and set it as an edge-function secret (`supabase secrets set OPENAI_API_KEY=…`), then deploy the AI edge functions (`avatar-generator`, `cycle-guidance`, `friend-recommendations`). This fixes the avatar feature and the AI guidance/recommendations. _(Done 2026-07-24: secret set + all three functions deployed ACTIVE via the Supabase CLI. Key kept out of the repo — **rotate it**, it was shared in a chat transcript.)_

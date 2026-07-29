@@ -112,10 +112,12 @@ First-run flow is make-or-break for a social health app:
 ## Social & support — the differentiator
 
 - **Friends & groups** — friend/de-friend by Apple ID or phone; also **group** relations you can join/leave like an individual friend.
+- **Find friends from contacts.** With explicit Contacts permission and privacy-conscious matching, show which contacts already use this app and make it easy to invite the rest.
 - [x] **Make "Remove friend" discoverable.** _(Done 2026-07-27.)_ The capability already shipped (`remove_friend` RPC → `removeFriend` → `FriendsScreen`) and is **mutual** — the SECURITY DEFINER RPC sets `has_shared = false` on **both** sides and deletes the `friend_requests` row **both** directions, so either person removing ends the friendship for both (and it doesn't get resurrected by `ensure_friend_sharing`, since the accepted request is deleted). It was only reachable via a hidden **long-press**; then briefly a "Remove" button on each list row; and now (2026-07-28, per request) it lives on the **friend's sync page** — a "Remove friend" button below Boop, with a confirm dialog (mutual remove → back to the list) — and is **off the friends list** entirely. See [BUGS.md](BUGS.md) "Found in testing (2026-07-28)". Note: removing a friend is still the *only* way to stop sharing cycle data (see the consent-model item in [BUGS.md](BUGS.md)).
 - **Friends overview** — see approved friends' current phases at a glance (consent-gated).
 - **Calendar of friends** — who's PMSing on which day, visualized with memoji-like faces; collapse many into an iOS-group-chat-style stack to avoid clutter.
 - **Feed** — chronological timeline of friends' events; react with emojis; "boop" a friend; delete your own posts _(shipped)_.
+- **Edit your own posts.** Let authors update a post after publishing and display an **Edited** label on any changed post. Preserve ownership checks and update timestamps server-side.
 - **Blended profile / sync score** — how "in sync" you and a friend are, with recommendations for what to do together. _(No longer dummy: `computeSyncScore` in `syncScore.ts` is a real model — phase alignment 45% + recent-flow timing 35% + 28-day flow overlap 20%, with a low/med/high confidence flag, highlights, a timeline, and a cycle-trend table.)_
 - **Sync-score leaderboard — your top friends (signature feature).** Rank your friends by sync score and surface a **"most in sync" list (top 5)** — the Beli-style *relative* hook that drives engagement and sharing. Per-friend scores are already computed in `FriendsScreen`; this is about ranking + presenting them (leaderboard on the Circle screen, "you're most in sync with X" moments, monthly "who you synced with most"). See PITCH → "sync scores are the signature hook."
 - **Phase-aware recommendations — do something *with* a friend.** Turn the sync score + both phases into a concrete suggestion for the pair: e.g. *"you're both high-energy this week — plan a workout together,"* or *"she's in her PMS phase — send her some love."* Builds on `fallbackRecommendations`/`cycle-guidance`; the point is the recommendation is **relational** (an action you take together / for each other), which is the app's differentiator over solo trackers. Ties into Care actions below.
@@ -140,6 +142,10 @@ For menstrual data specifically, privacy is a **feature area**, not just a desig
 - **Deletion** — account + data deletion (shipped) and clear, honest disclosure of what's stored and shared.
 - **Biometric app lock — Face ID / Touch ID (requested 2026-07-27)** — gate opening the app (and/or re-auth for sensitive actions) behind Face ID / Touch ID via `expo-local-authentication`, opt-in in settings. Especially fitting for intimate cycle data. Note: this is *device-unlock*, separate from the account-level "Sign in with Face ID / passkey" auth path (which pairs with the "Sign in without Apple" TODO).
 - **Expand the settings page (requested 2026-07-27, future task)** — the profile/settings screen needs more controls. Candidates: sharing/consent controls (ties into the consent-model fix), notification preferences (per-type toggles, quiet hours), the biometric lock toggle above, auto-post settings entry, data export/deletion, and account/name management. Scope as its own design pass.
+
+## Profiles & identity
+
+- **Scope and complete avatar setup/editing.** Avatar-generation infrastructure and profile avatar editing already exist, but define the intended user flow and states: adding an avatar for the first time, replacing/removing it, loading and failure handling, whether users can upload a photo versus generate one, and where avatars appear across profiles, the feed, and friend discovery.
 
 ## Accessibility & reliability
 
