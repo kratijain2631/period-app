@@ -2,13 +2,13 @@
 
 Open items, roughly in priority order. Done work isn't listed here.
 
-## Finish the `main` integration (post-merge) — do this next
+## Finish the `main` integration (post-merge) — completed
 We merged `main` (57 commits) onto our identity/docs. To make it actually run on **our** Supabase + Apple account:
 - [x] `npm install` new native deps (`react-native-svg`, `expo-image-picker`, `expo-font`).
 - [x] Apply main's DB migrations to **our** Supabase (schema, done via the SQL editor).
 - [x] Deploy `delete-account` edge function (done — powers the delete flow; no secrets needed, uses Supabase's auto-injected keys).
-- [ ] **Rebuild** (native deps require it), reinstall, and test — this also fixes the crash (from the stale base).
-- [ ] **Resubmit to TestFlight, but do NOT submit for Beta App Review yet** — just get the build up on TestFlight.
+- [x] **Rebuild, reinstall, and test.** _(Completed and superseded by the later verified TestFlight build 1.0.3 (build 7), 2026-07-28.)_
+- [x] **Resubmit to TestFlight without Beta App Review.** _(Completed and superseded by TestFlight build 1.0.3 (build 7), which was built, uploaded, and verified stable on 2026-07-28.)_
 
 ## Fix avatars + AI features (OpenAI key)
 - [x] Get an **OpenAI API key** and set it as an edge-function secret (`supabase secrets set OPENAI_API_KEY=…`), then deploy the AI edge functions (`avatar-generator`, `cycle-guidance`, `friend-recommendations`). This fixes the avatar feature and the AI guidance/recommendations. _(Done 2026-07-24: secret set + all three functions deployed ACTIVE via the Supabase CLI. Key kept out of the repo — **rotate it**, it was shared in a chat transcript.)_
@@ -55,7 +55,7 @@ Larger asks that need their own design + PRs (not part of the composer/reaction 
 
 ## Code health / tech debt (from the 2026-07-27 codebase review)
 Structural cleanups — not user-facing, but they make everything after them cheaper and safer. Details/rationale in [BUGS.md](BUGS.md).
-- [ ] **Fix the consent model (highest priority — it's a privacy-honesty issue on menstrual data).** Either (a) make sharing genuinely explicit + revocable — wire up the unused `setFriendSharing`, add grant/revoke UI, and stop `loadFriends` from force-resetting `has_shared` via `ensure_friend_sharing`; or (b) drop the "explicit mutual consent" framing from copy + LEARNINGS.md and own the "auto-share within your circle" model. Code, UI copy, and docs must agree. Gates the social auto-broadcast features in FEATURES.md.
+- [~] **Fix the consent model (highest priority — it's a privacy-honesty issue on menstrual data).** 🚧 (WIP — Codex, 2026-07-29) Make sharing genuinely explicit + revocable: wire up the unused `setFriendSharing`, add grant/revoke UI, and stop `loadFriends` from force-resetting `has_shared` via `ensure_friend_sharing`. Code, UI copy, and docs must agree. Gates the social auto-broadcast features in FEATURES.md.
 - [ ] **Reconcile duplicate migrations.** ~8 underscore-vs-hyphen migration pairs (`event_reactions`/`event-reactions`, `friend_recommendations`, `remove_friend`, `cycle_guidance`, `sync_score`, etc.). Confirm which set was actually applied to prod, keep one of each, and note the resolution so a fresh `supabase db reset` reproduces prod exactly.
 - [ ] **Make `npm test` green + fast by default.** Skip (don't fail) `architecture-sync.test.ts` when `OPENAI_API_KEY` is absent outside CI, and split the networked Supabase integration tests (~150s each) out of the default `test` script so the fast unit tests can run in seconds.
 - [ ] **Decompose the god-components.** `HomeScreen.tsx` (~2,200 lines, 20+ `useState`, feed + composer + reactions + boops + notifications + cycle card in one file), `ProfileScreen` (~1,280), `FriendSyncScreen` (~1,200), `FriendsScreen` (~1,080). Extract feed rows, the composer, and the reaction/boop optimistic-update logic (currently near-duplicated 4× for post×event / add×remove) into hooks/components. Improves testability and reduces merge pain.
