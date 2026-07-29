@@ -7,6 +7,7 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 ## Unreleased
 
 ### Docs / process
+- **Atomic, rollback-able builds via git tags.** Every build is now tagged `v<version>-build<n>` (e.g. `v1.0.6-build10`) on its version-cut commit, so each build maps to one immutable commit you can roll back to (`git checkout v1.0.5-build9`). Tagged builds 6–10 retroactively; codified in INSTRUCTIONS §2 & §9.
 - **INSTRUCTIONS.md §11 — multi-person collaboration.** Added a workflow for more than one person (and their Claude) on the repo: `git pull --rebase` before starting and before every push, claim an item by marking it `- [~] 🚧 (WIP — name)` and pushing before you work, coordinate lanes to avoid the big shared screens, and treat RELEASE_NOTES `## Unreleased` as the shared record.
 
 ## 2026-07-28 — TestFlight build 1.0.6 (build 10)

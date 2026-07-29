@@ -43,8 +43,14 @@ Every time we make a build (dev, TestFlight, or App Store), "block" the accumula
 2. Move anything still incomplete into that version's **Known / not yet done** (or leave it in the fresh `## Unreleased`).
 3. Open a new empty `## Unreleased` section at the top for the next cycle.
 4. **Bump `version` in `app.config.ts` on every TestFlight submission** (patch bump, e.g. `1.0.2 → 1.0.3`), so each submitted build has a distinct, trackable version — not just for user-facing releases. (The native **build number** *also* auto-increments via EAS `autoIncrement` — e.g. build 6, 7, 8 — so don't manage that by hand; but bump the marketing version too so TestFlight entries are easy to tell apart.)
+5. **Tag the build commit for atomic, rollback-able builds.** After the version-cut commit is pushed (and just before running `eas build`), create an annotated git tag on that exact commit and push it:
+   ```
+   git tag -a v<version>-build<n> -m "TestFlight build <version> (build <n>)"   # e.g. v1.0.6-build10
+   git push origin v<version>-build<n>
+   ```
+   Each build then maps to one immutable commit, so you can **roll back** by checking out the tag and rebuilding (`git checkout v1.0.5-build9`), and `git tag` lists every shipped build. (EAS also stores every build's `.ipa`, and TestFlight/App Store Connect can expire or re-promote builds — the git tag is the code-level checkpoint that ties it all together.)
 
-So: **changes accumulate under `Unreleased` as we commit, and get blocked into a named version each time we publish.**
+So: **changes accumulate under `Unreleased` as we commit, get blocked into a named version each time we publish, and every build is tagged so it's an atomic rollback point.**
 
 ## 3. Record issues and future-relevant info in TROUBLESHOOTING.md
 
@@ -89,7 +95,7 @@ When asked to make progress **without specific instructions** (e.g. "keep going"
 3. **Update the docs in the same commit** — check off the item in BUGS/FEATURES (`- [x]`), add a line to RELEASE_NOTES `## Unreleased`.
 4. **Commit atomically** (one logical change) with a `Co-Authored-By:` trailer, and **always `git push` after every commit** — never leave work unpushed.
 5. **Repeat for several items — batch multiple fixes into ONE build.** Don't build after every single fix; accumulate a coherent batch under `## Unreleased` first.
-6. **At a good stopping point** (a coherent batch, no half-finished work), **publish a build**: cut the RELEASE_NOTES version + bump `app.config.ts` version (§2), then `eas build --platform ios --profile production --auto-submit --non-interactive` (headless now that `ascAppId` is set), and push. **Then tell the user** what shipped and that a build is up.
+6. **At a good stopping point** (a coherent batch, no half-finished work), **publish a build**: cut the RELEASE_NOTES version + bump `app.config.ts` version (§2), commit and push, then **tag that commit** (see §2 — atomic, rollback-able builds), then `eas build --platform ios --profile production --auto-submit --non-interactive` (headless now that `ascAppId` is set). **Then tell the user** what shipped and that a build is up.
 
 Keep each change small and reversible; if something needs a decision or is risky/outward-facing beyond a normal build, pause and ask.
 
