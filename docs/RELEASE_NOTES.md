@@ -2,6 +2,8 @@
 
 Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTIONS.md) for how this file is maintained.
 
+**`· public`** on a header means the build was **submitted for Beta App Review / available to external (public) TestFlight testers**. Builds without it were uploaded to TestFlight but kept **internal** (not submitted for external review).
+
 ## Unreleased
 
 ### Changed
@@ -13,7 +15,7 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 - **FEATURES.md** — reconciled the "Remove friend" item to reflect its move to the friend's sync page (was still describing the old on-list button).
 - **Dev env (not shipped):** broadened the local permission allowlist and set `permissions.defaultMode` in the git-ignored `.claude/settings.local.json` to reduce prompts.
 
-## 2026-07-28 — TestFlight build 1.0.5 (build 9)
+## 2026-07-28 — TestFlight build 1.0.5 (build 9) · submitted for review · **public**
 
 Build `1.0.5` (buildNumber 9) — **built and submitted to TestFlight** (headless auto-submit). Friends UX + polish batch: a working Invite button, Remove-friend moved to the friend's page, no more duplicate profile page from the cycle card, and more accurate cycle math around daylight-saving days. All client-side.
 
@@ -77,7 +79,7 @@ Build `1.0.2` (buildNumber 6) — built on EAS and **submitted to TestFlight** (
 - **Added core pitch/feature pillars (2026-07-27, requested).** PITCH.md: elevated **women's empowerment** to the stated mission; added **sync scores (incl. a top-friends leaderboard)** and **relational, phase-aware recommendations** ("go work out with your friend," "send her some love") as signature hooks. FEATURES.md: expanded the sync score into a **top-5 "most in sync" leaderboard**, added **phase-aware pair recommendations**, broadened Care actions ("send some love"), and threaded the empowerment mission through the guiding idea.
 - **Logged testing findings + feature requests (2026-07-27).** BUGS.md: incoming friend requests don't refresh live (only fetched on mount — no focus-refetch/realtime/pull-to-refresh), push notifications not wired up (`notifications-handler` undeployed), Circle-tab "Add a friend" button is a no-op (should focus search), and `ProfileScreen` is duplicated across the Home cycle-card and the "You" tab. FEATURES.md: branded launch/intro screen with tagline, biometric (Face ID) app lock, and an expanded settings page.
 
-## 2026-07-26 — TestFlight build 1.0.1 · approved
+## 2026-07-26 — TestFlight build 1.0.1 · approved · **public**
 
 Build `1.0.1` submitted for external Beta App Review on 2026-07-27. Ships the client-side fixes below; the server-side fixes (friends-only feed RLS, `delete-account` v4, data cleanup) were already applied live.
 
@@ -107,7 +109,7 @@ Build `1.0.1` submitted for external Beta App Review on 2026-07-27. Ships the cl
 ### Test instructions (for testers)
 > You'll need some **menstrual** data logged in Apple Health to see your cycle info. Please flag anything confusing, broken, or slow — and tell us about any crashes, bugs, or feature requests.
 
-## 2026-07-23 — TestFlight build 1.0.0 (build 5) · approved
+## 2026-07-23 — TestFlight build 1.0.0 (build 5) · approved · **public**
 
 The post-merge build (production build `ea0a717f`) uploaded to TestFlight and **submitted for external Beta App Review**. Same code as the Dev build below — includes all of main's features and the crash fix.
 
@@ -134,7 +136,7 @@ Caught this branch up to the full, current codebase and rebuilt as a dev build (
 ### Docs
 - Added a full documentation suite under `/docs` — PITCH (vision), FEATURES (roadmap), SCHEMA (database), IDENTIFIERS, TODO, BUGS, TROUBLESHOOTING, LEARNINGS, INSTRUCTIONS — plus `CLAUDE.md`, all cross-linked from the README.
 
-## 2026-07-22 — TestFlight build 1.0.0 (build 4) · approved
+## 2026-07-22 — TestFlight build 1.0.0 (build 4) · approved · **public**
 
 First external TestFlight beta build, submitted for Beta App Review.
 

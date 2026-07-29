@@ -14,6 +14,16 @@ This app turns menstrual tracking into a **social and empowering** experience, w
 
 The **social layer** lets users connect with friends, see when their cycles sync up, and get friendly updates on each other's phases — fostering awareness, empathy, and connection. Anonymized, opt-in, location-based data can fuel **new research** on hormonal trends and cycle syncing — bridging science, community, and empowerment.
 
+## App Store / TestFlight description (live copy)
+
+The current store-listing description (App Store Connect → App Information). Keep this in sync with what's live:
+
+> **Cadence is where your cycle meets your circle** — cycle tracking you actually share with the friends you choose.
+>
+> Cadence reads your cycle data from Apple Health (read-only — it never writes anything back) to show you personalized insights about your current phase and symptoms. Then it connects you with friends: see when your cycles sync up, send each other support, and share moments in a feed — but only with friends you've approved. Nothing about your cycle is shared until you say so.
+>
+> Sign in with Apple, grant Apple Health access, add a friend or two, and see what it's like to go through your cycle together instead of alone.
+
 ## Why (philosophy)
 
 - **Women's empowerment is the mission, not a feature.** The whole product exists to make women's health **visible, shared, and celebrated** — to take a monthly experience women are taught to hide and reframe it as a source of connection, self-knowledge, and even pride. Every design and feature decision should ladder up to this: reduce stigma and shame, give women language and data about their own bodies, and let them go through their cycle *supported by the friends they choose* instead of alone. This is also the brand's heart and its marketing story (the "Sisters by Blood" origin).
