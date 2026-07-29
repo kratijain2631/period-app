@@ -19,7 +19,7 @@ import { Buffer } from 'buffer';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
-import { selectSession, useSessionStore } from '../../../state/sessionStore';
+import { selectAlias, selectSession, useSessionStore } from '../../../state/sessionStore';
 import {
   fetchCurrentUserProfile,
   updateCurrentUserProfile,
@@ -140,6 +140,7 @@ const FlipGuideCard = ({ title, body, bg, color, theme, accessibilityLabel }: Fl
 
 const ProfileScreen = () => {
   const session = useSessionStore(selectSession);
+  const alias = useSessionStore(selectAlias);
   const navigation = useNavigation();
   const { snapshot, isStale, lastSyncedAt } = useCycleSnapshot();
   const [profileName, setProfileName] = useState('');
@@ -455,23 +456,24 @@ const ProfileScreen = () => {
     }, [loadCycleGuidance]),
   );
 
-  const displayName = useMemo(() => {
-    const normalize = (value: string) => value.trim().toUpperCase();
-    if (profileName) {
-      return normalize(profileName);
-    }
-    if (profileEmail) {
-      return normalize(profileEmail);
-    }
-    return 'Your Name';
-  }, [profileEmail, profileName]);
-
-  const displayEmail = useMemo(() => {
-    if (!profileEmail) {
+  // Your @handle — used for display instead of the email.
+  const aliasHandle = useMemo(() => {
+    const value = alias?.trim();
+    if (!value) {
       return '';
     }
-    return profileEmail.trim().toUpperCase();
-  }, [profileEmail]);
+    return value.startsWith('@') ? value : `@${value}`;
+  }, [alias]);
+
+  const displayName = useMemo(() => {
+    if (profileName.trim()) {
+      return profileName.trim().toUpperCase();
+    }
+    if (aliasHandle) {
+      return aliasHandle;
+    }
+    return 'Your Name';
+  }, [aliasHandle, profileName]);
 
   const canSaveBio = useMemo(
     () => bioDraft.trim() !== profileBio.trim() && bioDraft.trim().length <= BIO_MAX_LENGTH,
@@ -491,7 +493,8 @@ const ProfileScreen = () => {
     }
   }, [bioDraft, bioStatus]);
 
-  const avatarInitial = displayName.trim().slice(0, 1).toUpperCase() || '?';
+  const avatarInitial =
+    (profileName.trim() || alias?.replace(/^@/, '') || '?').slice(0, 1).toUpperCase();
 
   const navigateToFriendSync = useCallback(
     (friendUserId: string) => {
@@ -741,7 +744,9 @@ const ProfileScreen = () => {
             </Pressable>
             <View style={styles.identityMeta}>
               <Text style={styles.profileName}>{displayName}</Text>
-              {displayEmail ? <Text style={styles.profileEmail}>{displayEmail}</Text> : null}
+              {profileName.trim() && aliasHandle ? (
+                <Text style={styles.profileEmail}>{aliasHandle}</Text>
+              ) : null}
               {isAvatarBusy ? <Text style={styles.inlineStatus}>Glamifying your photo...</Text> : null}
               {avatarError ? <Text style={styles.inlineError}>{avatarError}</Text> : null}
             </View>
@@ -890,6 +895,13 @@ const ProfileScreen = () => {
 
         <Text style={styles.sectionTitle}>Account</Text>
         <View style={styles.accountCard}>
+          {profileEmail ? (
+            <View style={[styles.accountRow, styles.accountRowDivider]}>
+              <Ionicons name="mail-outline" size={18} color="#8A857E" />
+              <Text style={styles.accountRowText}>{profileEmail}</Text>
+            </View>
+          ) : null}
+
           <TouchableOpacity style={[styles.accountRow, styles.accountRowDivider]} onPress={navigateToAutoPostSettings}>
             <Ionicons name="settings-outline" size={18} color="#8A857E" />
             <Text style={styles.accountRowText}>Post Settings</Text>

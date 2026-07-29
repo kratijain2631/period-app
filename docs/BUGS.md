@@ -16,6 +16,7 @@ Known bugs to fix. This is for **open** bugs; problems we already diagnosed and 
 
 ### Found in testing (2026-07-28)
 
+- [x] **"You" page showed the email (twice) at the top.** The profile header showed the email as both the name (it fell back to email when no full name) and a second email line. _(Fixed: the header now shows your alias/@handle for display (`selectAlias`), and the email was moved into the Account settings card as a read-only info row. `ProfileScreen.tsx`.)_
 - [x] **"Invite Friends" button did nothing.** It only set an in-app notice (not visible as an action). _(Fixed: opens the native share sheet via `Share.share` with an invite message. `FriendsScreen.tsx`.)_
 - [x] **Remove-friend was on the friends list; move it to the friend's page + confirm.** _(Done per request: removed the Remove control from each list row (and the hidden long-press); added a **Remove friend** button at the bottom of the friend's sync page — below Boop — with a confirm dialog that removes mutually and navigates back. `FriendSyncScreen.tsx`, `FriendsScreen.tsx`.)_
 

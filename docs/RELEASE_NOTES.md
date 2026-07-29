@@ -15,6 +15,9 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 - **FEATURES.md** — reconciled the "Remove friend" item to reflect its move to the friend's sync page (was still describing the old on-list button).
 - **Dev env (not shipped):** broadened the local permission allowlist and set `permissions.defaultMode` in the git-ignored `.claude/settings.local.json` to reduce prompts.
 
+### Changed
+- **Your profile ("You" tab) shows your @handle, not your email.** The top of the profile used to show your email (twice); it now shows your alias/@handle, and your **email moved into the Account settings** below. (`ProfileScreen.tsx`.)
+
 ## 2026-07-28 — TestFlight build 1.0.5 (build 9) · submitted for review · **public**
 
 Build `1.0.5` (buildNumber 9) — **built and submitted to TestFlight** (headless auto-submit). Friends UX + polish batch: a working Invite button, Remove-friend moved to the friend's page, no more duplicate profile page from the cycle card, and more accurate cycle math around daylight-saving days. All client-side.
