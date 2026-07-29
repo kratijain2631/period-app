@@ -94,7 +94,7 @@ When asked to make progress **without specific instructions** (e.g. "keep going"
 2. **Fix it**, then re-read the diff for bugs and run `npm test` where relevant (§4).
 3. **Update the docs in the same commit** — check off the item in BUGS/FEATURES (`- [x]`), add a line to RELEASE_NOTES `## Unreleased`.
 4. **Commit atomically** (one logical change) with a `Co-Authored-By:` trailer, and **always `git push` after every commit** — never leave work unpushed.
-5. **Repeat for several items — batch multiple fixes into ONE build.** Don't build after every single fix; accumulate a coherent batch under `## Unreleased` first.
+5. **Batch a *small* handful of changes per build — a few, not one, not a big pile.** Don't build after every single fix (too many builds), but keep each build to a few coherent changes so builds stay **atomic**: since each build is a tagged rollback point (§2), a small batch means rolling back loses as little work as possible. Accumulate the few changes under `## Unreleased`, then build.
 6. **At a good stopping point** (a coherent batch, no half-finished work), **publish a build**: cut the RELEASE_NOTES version + bump `app.config.ts` version (§2), commit and push, then **tag that commit** (see §2 — atomic, rollback-able builds), then `eas build --platform ios --profile production --auto-submit --non-interactive` (headless now that `ascAppId` is set). **Then tell the user** what shipped and that a build is up.
 
 Keep each change small and reversible; if something needs a decision or is risky/outward-facing beyond a normal build, pause and ask.
