@@ -54,13 +54,17 @@ const initialAutoPostSettings: AutoPostSettingsState = {
 const persistOptions: PersistOptions<SessionState> = {
   name: 'session-store',
   storage: createJSONStorage<SessionState>(() => AsyncStorage),
-  partialize: (state) => ({
-    session: state.session,
-    hasSeenCompanionIntro: state.hasSeenCompanionIntro,
-    permissions: state.permissions,
-    autoPostSettings: state.autoPostSettings,
-    alias: state.alias,
-  }),
+  // Only these keys are persisted; `PersistOptions<SessionState>` types partialize
+  // as returning the full state, so cast the persisted subset (the actions and
+  // hydration flags are intentionally not persisted).
+  partialize: (state) =>
+    ({
+      session: state.session,
+      hasSeenCompanionIntro: state.hasSeenCompanionIntro,
+      permissions: state.permissions,
+      autoPostSettings: state.autoPostSettings,
+      alias: state.alias,
+    }) as SessionState,
   version: 4,
   migrate: (persistedState, version) => {
     const state = persistedState as SessionState | undefined;

@@ -40,8 +40,10 @@ export const signInWithApple = async (): Promise<AppleSignInResult> => {
       AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
       AppleAuthentication.AppleAuthenticationScope.EMAIL,
     ],
+    // `nonce` is supported at runtime and is required for our server-side nonce
+    // check, but the installed type definitions omit it — cast so it's preserved.
     nonce: hashedNonce,
-  });
+  } as AppleAuthentication.AppleAuthenticationSignInOptions);
 
   if (!credential.identityToken) {
     throw new Error('Apple did not return an identity token.');

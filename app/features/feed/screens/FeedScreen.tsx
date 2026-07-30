@@ -86,7 +86,9 @@ const FeedScreen = () => {
 
   const navigateToFriendSync = useCallback(
     (friendUserId: string) => {
-      navigation.navigate('FriendSync' as never, { friendId: friendUserId } as never);
+      (navigation.navigate as (name: string, params?: object) => void)('FriendSync', {
+        friendId: friendUserId,
+      });
     },
     [navigation],
   );

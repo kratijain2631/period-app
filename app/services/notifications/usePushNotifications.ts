@@ -14,7 +14,12 @@ const NAV_RETRY_DELAY_MS = 500;
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
+    // `shouldShowAlert` is deprecated in newer expo-notifications; `shouldShowBanner`
+    // + `shouldShowList` replace it. Keep all three so behavior is unchanged across
+    // SDK versions (foreground notifications show as a banner and in the list).
     shouldShowAlert: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
     shouldPlaySound: true,
     shouldSetBadge: false,
   }),
@@ -48,8 +53,11 @@ const registerForPushNotificationsAsync = async () => {
 };
 
 const navigateFromNotification = (data: Record<string, unknown>) => {
+  // The container ref is untyped (no RootParamList), so `navigate` resolves to a
+  // never-typed signature. Cast the function, not the args, to pass name + params.
+  const navigate = navigationRef.navigate as (name: string, params?: object) => void;
   if (navigationRef.isReady()) {
-    navigationRef.navigate('MainTabs', { screen: 'Home', params: { notification: data } } as never);
+    navigate('MainTabs', { screen: 'Home', params: { notification: data } });
     return;
   }
 
@@ -57,10 +65,7 @@ const navigateFromNotification = (data: Record<string, unknown>) => {
   const interval = setInterval(() => {
     attempts += 1;
     if (navigationRef.isReady()) {
-      navigationRef.navigate(
-        'MainTabs',
-        { screen: 'Home', params: { notification: data } } as never,
-      );
+      navigate('MainTabs', { screen: 'Home', params: { notification: data } });
       clearInterval(interval);
     } else if (attempts >= NAV_RETRY_COUNT) {
       clearInterval(interval);
