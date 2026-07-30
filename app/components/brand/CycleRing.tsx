@@ -77,7 +77,25 @@ export const CycleRing = memo(
     const normalizedDay = Number.isFinite(currentDay)
       ? Math.max(1, Math.min(TOTAL_DAYS, Math.round(currentDay ?? 1)))
       : 1;
-    const dayAngle = ((normalizedDay - 1) / TOTAL_DAYS) * 360;
+    // Position the "you are here" dot inside the segment matching the current
+    // phase, so its color always sits on the same-colored arc. (Positioning it by
+    // raw day-fraction on this idealized 28-day ring let a real, longer cycle put
+    // an "ovulation"-colored dot over the luteal arc — see BUGS.md.) Falls back to
+    // day-fraction only when the phase is unknown/unrecognized.
+    const matchedPhaseIndex = PHASES.findIndex(
+      (item) => item.name === normalizePhase(currentPhase),
+    );
+    let dayAngle: number;
+    if (matchedPhaseIndex >= 0) {
+      let arcStart = 0;
+      for (let i = 0; i < matchedPhaseIndex; i += 1) {
+        arcStart += (PHASES[i].days / TOTAL_DAYS) * 360;
+      }
+      const phaseSweep = (PHASES[matchedPhaseIndex].days / TOTAL_DAYS) * 360;
+      dayAngle = arcStart + phaseSweep / 2;
+    } else {
+      dayAngle = ((normalizedDay - 1) / TOTAL_DAYS) * 360;
+    }
     const dot = polarToCartesian(center, center, radius, dayAngle);
     const dotRadius = Math.max(4, sw * 0.55);
     const currentColor = getPhaseColor(currentPhase);

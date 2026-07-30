@@ -6,6 +6,9 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## Unreleased
 
+### Fixed
+- **Cycle ring: the day marker now sits on the phase it says you're in.** Previously the "you are here" dot was placed by raw day-count on an idealized 28-day ring while its color came from your real phase — so on a longer cycle it could show an "ovulation" dot sitting over the (longer) luteal arc. The dot is now anchored to the segment matching your current phase, so its color and position always agree. (`CycleRing.tsx`.) _(Deeper redesign to make the ring's proportions reflect your real cycle length is tracked as a follow-up in BUGS.md.)_
+
 ### In progress
 - **Claimed active work (2026-07-29).** Marked the explicit/revocable consent-model fix (including removal of the 60-second sharing reset) and contact-based friend discovery as WIP so concurrent contributors do not duplicate them. _(Not in build 1.0.7 — still in progress.)_
 
