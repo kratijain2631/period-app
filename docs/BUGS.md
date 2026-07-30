@@ -4,7 +4,9 @@ Known bugs to fix. This is for **open** bugs; problems we already diagnosed and 
 
 ## Open
 
-### Found in testing (2026-07-29)
+### Dev health (found 2026-07-30)
+
+- [ ] **`npx tsc --noEmit` reports 6 pre-existing type errors (dependency-type drift).** The app bundles fine (EAS/Metro use Babel, which strips types without checking them — that's why builds ship), but a straight `tsc` is red, so it can't be used as a CI gate as-is. All 6 look like SDK/type-version drift, not logic bugs: `usePushNotifications.ts` (`NotificationBehavior` now requires `shouldShowBanner`/`shouldShowList`; the `expo-notifications` types added fields), `appleAuth.ts` (`nonce` not in `AppleAuthenticationSignInOptions` type), `sessionStore.ts` + `FeedScreen.tsx` + two more in `usePushNotifications.ts` (Zustand `persist`/partialize return-type and `[string, never]` tuple inference). Fix by updating the call sites to the current type shapes (add the missing `NotificationBehavior` fields, adjust the Apple-auth options/`persist` typing) so `tsc` can become a lint gate. Low risk, no runtime change — purely satisfying the type-checker.
 
 - [ ] **Remove the person-plus icon from the top-right of "Your Circle."** It only focuses the search field and does not provide a distinct or useful action; friend search is already available on the page. Remove the redundant header control. Origin: `FriendsScreen.tsx`.
 - [ ] **Consolidate the "You" page's duplicate account/settings controls.** Keep the settings icon in the top-right, remove the duplicated Account actions from the bottom of the screen, and make the settings icon open a menu containing the account email, post settings, sign out, and delete account. Origin: `ProfileScreen.tsx`.
