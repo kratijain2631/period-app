@@ -6,6 +6,13 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## Unreleased
 
+### In progress
+- **Claimed active work (2026-07-29).** Marked the explicit/revocable consent-model fix (including removal of the 60-second sharing reset) and contact-based friend discovery as WIP so concurrent contributors do not duplicate them. _(Not in build 1.0.7 — still in progress.)_
+
+## 2026-07-30 — TestFlight build 1.0.7 (build 11)
+
+Build `1.0.7` — a feed performance + polish batch plus dev-health cleanup. The Home feed now loads its posts and cycle-events concurrently (faster on real networks) and no longer flashes "No updates yet" while it's still loading; and `tsc --noEmit` is green so it can gate CI. All client-side. _Uploaded to TestFlight; submit for Beta App Review in App Store Connect to make it `· public`._
+
 ### Fixed
 - **No more "No updates yet" flash while the feed is loading.** On a cold open the Home feed briefly showed the empty-state message ("No updates yet") before your posts finished loading. It now shows a small loading spinner ("Loading your circle feed…") during the initial load and only shows the empty message once loading is actually done. (`HomeScreen.tsx`.)
 - **Feed loads faster.** The Home feed used to fetch everything in a long serial chain (posts, then reactions, then boops, then events, then their reactions/boops, then profiles — one after another). It now loads the posts and cycle-events sides at the same time, and fetches each side's reactions and boops in parallel, so the feed appears in roughly the time of the slowest single request instead of the sum of all of them. Behavior is unchanged. (`HomeScreen.tsx`.)
@@ -13,7 +20,8 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 ### Developer
 - **`npx tsc --noEmit` is green again (0 errors).** Fixed 6 pre-existing type errors from SDK type-version drift — all runtime-neutral (added the new `NotificationBehavior` fields, fixed untyped-`navigate` casts, preserved the Apple-auth `nonce` past a lagging type, cast the persisted session subset). `tsc` can now be used as a CI/lint gate. (`usePushNotifications.ts`, `FeedScreen.tsx`, `appleAuth.ts`, `sessionStore.ts`.)
 - **Corrected the "slow test suite" diagnosis (2026-07-30).** The `services/supabase/*` tests don't hit the network — they all `jest.mock('../client')`. The real cost is the `jest-expo` transform recompiling cold for every file; the only true integration test is the (already-skipped-locally) LLM eval. BUGS.md now records the corrected root cause and a verified-elsewhere plan (a lightweight `jest-expo`-free config for the RN-free suites behind `npm run test:unit`).
-- **Claimed active work (2026-07-29).** Marked the explicit/revocable consent-model fix (including removal of the 60-second sharing reset) and contact-based friend discovery as WIP so concurrent contributors do not duplicate them.
+
+### Docs / process
 - **Backlog updated from tester feedback (2026-07-29).** Removed the resolved data-only "unknown phase" report; added post editing with an Edited label, removal of the redundant Circle person-plus control, consolidated profile settings/account actions, avatar UX scoping, and contact-based friend discovery; marked the stale rebuild/resubmit TODOs complete because TestFlight build 1.0.3 (build 7) superseded them.
 - **Atomic, rollback-able builds via git tags.** Every build is now tagged `v<version>-build<n>` (e.g. `v1.0.6-build10`) on its version-cut commit, so each build maps to one immutable commit you can roll back to (`git checkout v1.0.5-build9`). Tagged builds 6–10 retroactively; codified in INSTRUCTIONS §2 & §9.
 - **INSTRUCTIONS.md §11 — multi-person collaboration.** Added a workflow for more than one person (and their Claude) on the repo: `git pull --rebase` before starting and before every push, claim an item by marking it `- [~] 🚧 (WIP — name)` and pushing before you work, coordinate lanes to avoid the big shared screens, and treat RELEASE_NOTES `## Unreleased` as the shared record.
