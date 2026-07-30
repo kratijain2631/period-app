@@ -6,6 +6,9 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## Unreleased
 
+### Fixed
+- **Feed loads faster.** The Home feed used to fetch everything in a long serial chain (posts, then reactions, then boops, then events, then their reactions/boops, then profiles — one after another). It now loads the posts and cycle-events sides at the same time, and fetches each side's reactions and boops in parallel, so the feed appears in roughly the time of the slowest single request instead of the sum of all of them. Behavior is unchanged. (`HomeScreen.tsx`.)
+
 ### Docs / process
 - **Claimed active work (2026-07-29).** Marked the explicit/revocable consent-model fix (including removal of the 60-second sharing reset) and contact-based friend discovery as WIP so concurrent contributors do not duplicate them.
 - **Backlog updated from tester feedback (2026-07-29).** Removed the resolved data-only "unknown phase" report; added post editing with an Edited label, removal of the redundant Circle person-plus control, consolidated profile settings/account actions, avatar UX scoping, and contact-based friend discovery; marked the stale rebuild/resubmit TODOs complete because TestFlight build 1.0.3 (build 7) superseded them.

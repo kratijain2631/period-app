@@ -277,163 +277,186 @@ const HomeScreen = () => {
 
   const loadFeed = useCallback(async () => {
     setLoading(true);
-    let postRows: PostRow[] = [];
-    let eventRows: CycleEventRow[] = [];
-    try {
-      const data = await fetchPosts();
-      postRows = data;
-      setPosts(data);
-      const ids = data.map((post) => post.id);
-      try {
-        const reactions = await fetchPostReactions(ids);
-        const nextReactions: ReactionMap = {};
-        const nextSelections: ReactionSelectionMap = {};
-        reactions.forEach((reaction) => {
-          if (!reaction.post_id) {
-            return;
-          }
-          if (!nextReactions[reaction.post_id]) {
-            nextReactions[reaction.post_id] = {};
-          }
-          const counts = nextReactions[reaction.post_id];
-          counts[reaction.emoji] = (counts[reaction.emoji] ?? 0) + 1;
-          if (reaction.user_id && reaction.user_id === session?.userId) {
-            if (!nextSelections[reaction.post_id]) {
-              nextSelections[reaction.post_id] = {};
-            }
-            nextSelections[reaction.post_id][reaction.emoji] = true;
-          }
-        });
-        setReactionCounts(nextReactions);
-        setReactionSelections(nextSelections);
-      } catch (error) {
-        console.warn('[home] Failed to load reactions', error);
-        setReactionCounts({});
-        setReactionSelections({});
-      }
 
+    // The posts branch and the cycle-events branch are independent, and within
+    // each branch the reactions and boops reads only depend on the row ids —
+    // so they all run concurrently instead of as a serial await-waterfall.
+    const loadPostsBranch = async (): Promise<PostRow[]> => {
       try {
-        const boops = await fetchPostBoops(ids);
-        const nextBoopCounts: Record<string, number> = {};
-        boops.forEach((row) => {
-          if (!row.post_id) {
-            return;
-          }
-          nextBoopCounts[row.post_id] = (nextBoopCounts[row.post_id] ?? 0) + 1;
-        });
-        setBoopCounts(nextBoopCounts);
-        if (session?.userId) {
-          try {
-            const userBoops = await fetchPostBoopsByUser(ids, session.userId);
-            setBoopStatusByPost((prev) => {
-              const next = { ...prev };
-              userBoops.forEach((row) => {
+        const data = await fetchPosts();
+        setPosts(data);
+        const ids = data.map((post) => post.id);
+        await Promise.all([
+          (async () => {
+            try {
+              const reactions = await fetchPostReactions(ids);
+              const nextReactions: ReactionMap = {};
+              const nextSelections: ReactionSelectionMap = {};
+              reactions.forEach((reaction) => {
+                if (!reaction.post_id) {
+                  return;
+                }
+                if (!nextReactions[reaction.post_id]) {
+                  nextReactions[reaction.post_id] = {};
+                }
+                const counts = nextReactions[reaction.post_id];
+                counts[reaction.emoji] = (counts[reaction.emoji] ?? 0) + 1;
+                if (reaction.user_id && reaction.user_id === session?.userId) {
+                  if (!nextSelections[reaction.post_id]) {
+                    nextSelections[reaction.post_id] = {};
+                  }
+                  nextSelections[reaction.post_id][reaction.emoji] = true;
+                }
+              });
+              setReactionCounts(nextReactions);
+              setReactionSelections(nextSelections);
+            } catch (error) {
+              console.warn('[home] Failed to load reactions', error);
+              setReactionCounts({});
+              setReactionSelections({});
+            }
+          })(),
+          (async () => {
+            try {
+              const boops = await fetchPostBoops(ids);
+              const nextBoopCounts: Record<string, number> = {};
+              boops.forEach((row) => {
                 if (!row.post_id) {
                   return;
                 }
-                if (next[row.post_id] === 'queued' || next[row.post_id] === 'sending') {
-                  return;
-                }
-                next[row.post_id] = 'sent';
+                nextBoopCounts[row.post_id] = (nextBoopCounts[row.post_id] ?? 0) + 1;
               });
-              return next;
-            });
-          } catch (error) {
-            console.warn('[home] Failed to load post boops by user', error);
-          }
-        }
-      } catch (error) {
-        console.warn('[home] Failed to load boops', error);
-        setBoopCounts({});
-      }
-    } catch (error) {
-      console.warn('[home] Failed to load posts', error);
-      setPosts([]);
-      setReactionCounts({});
-      setReactionSelections({});
-      setBoopCounts({});
-    }
-    try {
-      const events = await fetchCycleEvents();
-      eventRows = events;
-      setCycleEvents(events);
-      const eventIds = events.map((event) => event.id);
-      if (eventIds.length) {
-        try {
-          const reactions = await fetchEventReactions(eventIds);
-          const nextReactions: ReactionMap = {};
-          const nextSelections: ReactionSelectionMap = {};
-          reactions.forEach((reaction) => {
-            if (!reaction.event_id) {
-              return;
-            }
-            if (!nextReactions[reaction.event_id]) {
-              nextReactions[reaction.event_id] = {};
-            }
-            const counts = nextReactions[reaction.event_id];
-            counts[reaction.emoji] = (counts[reaction.emoji] ?? 0) + 1;
-            if (reaction.user_id && reaction.user_id === session?.userId) {
-              if (!nextSelections[reaction.event_id]) {
-                nextSelections[reaction.event_id] = {};
+              setBoopCounts(nextBoopCounts);
+              if (session?.userId) {
+                try {
+                  const userBoops = await fetchPostBoopsByUser(ids, session.userId);
+                  setBoopStatusByPost((prev) => {
+                    const next = { ...prev };
+                    userBoops.forEach((row) => {
+                      if (!row.post_id) {
+                        return;
+                      }
+                      if (next[row.post_id] === 'queued' || next[row.post_id] === 'sending') {
+                        return;
+                      }
+                      next[row.post_id] = 'sent';
+                    });
+                    return next;
+                  });
+                } catch (error) {
+                  console.warn('[home] Failed to load post boops by user', error);
+                }
               }
-              nextSelections[reaction.event_id][reaction.emoji] = true;
+            } catch (error) {
+              console.warn('[home] Failed to load boops', error);
+              setBoopCounts({});
             }
-          });
-          setEventReactionCounts(nextReactions);
-          setEventReactionSelections(nextSelections);
-        } catch (error) {
-          console.warn('[home] Failed to load event reactions', error);
-          setEventReactionCounts({});
-          setEventReactionSelections({});
-        }
-        try {
-          const boops = await fetchEventBoops(eventIds);
-          const nextCounts: Record<string, number> = {};
-          boops.forEach((row) => {
-            if (!row.event_id) {
-              return;
-            }
-            nextCounts[row.event_id] = (nextCounts[row.event_id] ?? 0) + 1;
-          });
-          setBoopCountsByEvent(nextCounts);
-          if (session?.userId) {
-            try {
-              const userBoops = await fetchEventBoopsByUser(eventIds, session.userId);
-              setBoopStatusByEvent((prev) => {
-                const next = { ...prev };
-                userBoops.forEach((row) => {
+          })(),
+        ]);
+        return data;
+      } catch (error) {
+        console.warn('[home] Failed to load posts', error);
+        setPosts([]);
+        setReactionCounts({});
+        setReactionSelections({});
+        setBoopCounts({});
+        return [];
+      }
+    };
+
+    const loadEventsBranch = async (): Promise<CycleEventRow[]> => {
+      try {
+        const events = await fetchCycleEvents();
+        setCycleEvents(events);
+        const eventIds = events.map((event) => event.id);
+        if (eventIds.length) {
+          await Promise.all([
+            (async () => {
+              try {
+                const reactions = await fetchEventReactions(eventIds);
+                const nextReactions: ReactionMap = {};
+                const nextSelections: ReactionSelectionMap = {};
+                reactions.forEach((reaction) => {
+                  if (!reaction.event_id) {
+                    return;
+                  }
+                  if (!nextReactions[reaction.event_id]) {
+                    nextReactions[reaction.event_id] = {};
+                  }
+                  const counts = nextReactions[reaction.event_id];
+                  counts[reaction.emoji] = (counts[reaction.emoji] ?? 0) + 1;
+                  if (reaction.user_id && reaction.user_id === session?.userId) {
+                    if (!nextSelections[reaction.event_id]) {
+                      nextSelections[reaction.event_id] = {};
+                    }
+                    nextSelections[reaction.event_id][reaction.emoji] = true;
+                  }
+                });
+                setEventReactionCounts(nextReactions);
+                setEventReactionSelections(nextSelections);
+              } catch (error) {
+                console.warn('[home] Failed to load event reactions', error);
+                setEventReactionCounts({});
+                setEventReactionSelections({});
+              }
+            })(),
+            (async () => {
+              try {
+                const boops = await fetchEventBoops(eventIds);
+                const nextCounts: Record<string, number> = {};
+                boops.forEach((row) => {
                   if (!row.event_id) {
                     return;
                   }
-                  if (next[row.event_id] === 'queued') {
-                    return;
-                  }
-                  next[row.event_id] = 'sent';
+                  nextCounts[row.event_id] = (nextCounts[row.event_id] ?? 0) + 1;
                 });
-                return next;
-              });
-            } catch (error) {
-              console.warn('[home] Failed to load event boops by user', error);
-            }
-          }
-        } catch (error) {
-          console.warn('[home] Failed to load event boops', error);
+                setBoopCountsByEvent(nextCounts);
+                if (session?.userId) {
+                  try {
+                    const userBoops = await fetchEventBoopsByUser(eventIds, session.userId);
+                    setBoopStatusByEvent((prev) => {
+                      const next = { ...prev };
+                      userBoops.forEach((row) => {
+                        if (!row.event_id) {
+                          return;
+                        }
+                        if (next[row.event_id] === 'queued') {
+                          return;
+                        }
+                        next[row.event_id] = 'sent';
+                      });
+                      return next;
+                    });
+                  } catch (error) {
+                    console.warn('[home] Failed to load event boops by user', error);
+                  }
+                }
+              } catch (error) {
+                console.warn('[home] Failed to load event boops', error);
+                setBoopCountsByEvent({});
+              }
+            })(),
+          ]);
+        } else {
+          setEventReactionCounts({});
+          setEventReactionSelections({});
           setBoopCountsByEvent({});
         }
-      } else {
+        return events;
+      } catch (error) {
+        console.warn('[home] Failed to load cycle events', error);
+        setCycleEvents([]);
+        setCycleNameMap({});
         setEventReactionCounts({});
         setEventReactionSelections({});
         setBoopCountsByEvent({});
+        return [];
       }
-    } catch (error) {
-      console.warn('[home] Failed to load cycle events', error);
-      setCycleEvents([]);
-      setCycleNameMap({});
-      setEventReactionCounts({});
-      setEventReactionSelections({});
-      setBoopCountsByEvent({});
-    } finally {
-      const profileIds = Array.from(
+    };
+
+    const [postRows, eventRows] = await Promise.all([loadPostsBranch(), loadEventsBranch()]);
+
+    const profileIds = Array.from(
         new Set(
           [...postRows.map((row) => row.user_id), ...eventRows.map((row) => row.user_id), session?.userId]
             .filter((id): id is string => Boolean(id)),
@@ -467,8 +490,7 @@ const HomeScreen = () => {
         setUserProfileMap({});
         setCycleNameMap({});
       }
-      setLoading(false);
-    }
+    setLoading(false);
   }, [session?.userId]);
 
   // Refetch the feed + notifications whenever the tab regains focus, and
