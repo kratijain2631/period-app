@@ -25,6 +25,9 @@ Larger asks that need their own design + PRs (not part of the composer/reaction 
 - [ ] **Sign in without Apple.** Add an alternative auth path so people can use the app without an Apple ID (e.g. email/OTP via Supabase Auth). Touches `AuthScreen`, `appleAuth`/auth services, Supabase Auth config, and onboarding. See FEATURES.md → "other auth methods" (Level 2).
 - [ ] **Manual cycle entry (no Apple Health).** Let users enter/log cycle data by hand instead of requiring HealthKit — needed for non-iOS-Health users and Android later. Requires new logging UI + data model. See FEATURES.md → "In-app logging" / Level 2 "in-app tracking (vs. read-only)".
 
+## Product research (2026-07-30)
+- [ ] **Study Flighty, Beli, and Strava and copy what works.** Go through each app's feature set and mechanics and pull the ones that map onto this app's social-cycle loop, then feed them into [FEATURES.md](FEATURES.md). Starting threads (already noted in FEATURES → "The retention loop"): Strava/Flighty's *"it logs itself"* auto-content (lean on Apple Health auto-ingest so the feed is never empty); Beli's *relative* ranking/leaderboard (→ the sync-score leaderboard); Flighty's Passport / Spotify-Wrapped-style shareable recap ("Your cycle year"); Flighty live activity + Strava clubs/kudos (home-screen widget, groups, boops-as-kudos); Duolingo/Strava streaks (gentle, opt-in check-ins). Deliverable: a short comparison note + concrete features triaged into FEATURES.md "The plan."
+
 ## Ship the beta (external TestFlight)
 - [x] Production build (`eas build --profile production --platform ios`)
 - [x] Submit to App Store Connect (`eas submit --profile production --platform ios --latest`)

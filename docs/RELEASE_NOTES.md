@@ -9,6 +9,9 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 ### In progress
 - **Claimed active work (2026-07-29).** Marked the explicit/revocable consent-model fix (including removal of the 60-second sharing reset) and contact-based friend discovery as WIP so concurrent contributors do not duplicate them. _(Not in build 1.0.7 — still in progress.)_
 
+### Docs / process
+- **Logged owner backlog items (2026-07-30).** Captured four new items with diagnoses: cycle-ring "looks off" (idealized fixed 28-day segments vs real cycle length; dot color/segment mismatch) → BUGS.md; phase-change auto-post only fires on app-open and is timestamped at open-time → BUGS.md; a dedicated notifications page with a real new/read distinction → FEATURES.md; and a competitor-study task (Flighty/Beli/Strava) → TODO.md.
+
 ## 2026-07-30 — TestFlight build 1.0.7 (build 11)
 
 Build `1.0.7` — a feed performance + polish batch plus dev-health cleanup. The Home feed now loads its posts and cycle-events concurrently (faster on real networks) and no longer flashes "No updates yet" while it's still loading; and `tsc --noEmit` is green so it can gate CI. All client-side. _Uploaded to TestFlight; submit for Beta App Review in App Store Connect to make it `· public`._
