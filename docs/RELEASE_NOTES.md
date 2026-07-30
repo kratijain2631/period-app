@@ -6,6 +6,9 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## Unreleased
 
+### Added
+- **Dedicated notifications page with a new/read distinction.** Tapping the bell now opens a full-screen Notifications page instead of a bottom sheet. It groups **Friend requests**, **New** (unread), and **Earlier** (read); unread items are accented and read items dimmed; and opening the page **no longer wipes everything** — items stay visible, and the bell badge counts only what's unread. (New `NotificationsScreen`, `useNotifications`, `notifications` service, `AppNavigator`, `HomeScreen`.) _Needs the `notifications.read_at` migration applied to Supabase and on-device verification; the DB notifications table isn't populated yet (see BUGS/TODO), so today's content is friend requests + acceptances._
+
 ### Fixed
 - **Cycle ring: the day marker now sits on the phase it says you're in.** Previously the "you are here" dot was placed by raw day-count on an idealized 28-day ring while its color came from your real phase — so on a longer cycle it could show an "ovulation" dot sitting over the (longer) luteal arc. The dot is now anchored to the segment matching your current phase, so its color and position always agree. (`CycleRing.tsx`.) _(Deeper redesign to make the ring's proportions reflect your real cycle length is tracked as a follow-up in BUGS.md.)_
 

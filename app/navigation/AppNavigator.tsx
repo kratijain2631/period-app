@@ -10,6 +10,7 @@ import CompanionIntroScreen from '../features/companion/screens/CompanionIntroSc
 import FriendSyncScreen from '../features/friends/screens/FriendSyncScreen';
 import FriendsScreen from '../features/friends/screens/FriendsScreen';
 import HomeScreen from '../features/home/screens/HomeScreen';
+import NotificationsScreen from '../features/notifications/screens/NotificationsScreen';
 import ProfileScreen from '../features/profile/screens/ProfileScreen';
 import AutoPostSettingsScreen from '../features/profile/screens/AutoPostSettingsScreen';
 import AliasScreen from '../features/profile/screens/AliasScreen';
@@ -93,6 +94,7 @@ const HomeStackScreen = () => (
   // there instead of pushing a duplicate ProfileScreen (HomeProfile) here.
   <HomeStack.Navigator screenOptions={{ headerShown: false, gestureEnabled: true }}>
     <HomeStack.Screen name="HomeRoot" component={HomeScreen} />
+    <HomeStack.Screen name="Notifications" component={NotificationsScreen} />
   </HomeStack.Navigator>
 );
 

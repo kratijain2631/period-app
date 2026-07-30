@@ -13,6 +13,7 @@ We merged `main` (57 commits) onto our identity/docs. To make it actually run on
 ## Fix avatars + AI features (OpenAI key)
 - [x] Get an **OpenAI API key** and set it as an edge-function secret (`supabase secrets set OPENAI_API_KEY=…`), then deploy the AI edge functions (`avatar-generator`, `cycle-guidance`, `friend-recommendations`). This fixes the avatar feature and the AI guidance/recommendations. _(Done 2026-07-24: secret set + all three functions deployed ACTIVE via the Supabase CLI. Key kept out of the repo — **rotate it**, it was shared in a chat transcript.)_
 - [ ] Deploy `notifications-handler` (needs an Expo push access token) and then run the 3 `schedule-*` cron migrations.
+- [ ] **Apply migration `20260730120000_notifications-read-at.sql` to Supabase** (SQL editor) — adds `notifications.read_at` + a `notifications_update_own` UPDATE policy, powering the dedicated notifications page's new/read state. Until applied, `markNotificationsRead` no-ops gracefully (the table is empty today anyway).
 
 ## Deploy / data follow-ups (2026-07-24)
 - [x] **Redeploy the `delete-account` edge function** — now also hard-deletes the auth user and clears `posts` / `post_reactions` / `event_reactions` / `boops`. _(Done — deployed v4, 2026-07-26.)_

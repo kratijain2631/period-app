@@ -8,6 +8,7 @@ export type NotificationRow = {
   event_id?: string | null;
   payload?: Record<string, unknown> | null;
   created_at: string;
+  read_at?: string | null;
 };
 
 export const fetchNotifications = async (): Promise<NotificationRow[]> => {
@@ -22,6 +23,22 @@ export const fetchNotifications = async (): Promise<NotificationRow[]> => {
     throw error;
   }
   return (data as NotificationRow[]) ?? [];
+};
+
+// Mark the given notifications read (sets read_at = now). RLS scopes the update
+// to the caller's own rows. No-op when Supabase isn't configured or ids is empty.
+export const markNotificationsRead = async (ids: string[]): Promise<void> => {
+  if (!isSupabaseConfigured || ids.length === 0) {
+    return;
+  }
+  const { error } = await supabase
+    .from('notifications')
+    .update({ read_at: new Date().toISOString() })
+    .in('id', ids)
+    .is('read_at', null);
+  if (error) {
+    throw error;
+  }
 };
 
 export const subscribeToNotifications = (

@@ -21,7 +21,6 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import NotificationsSheet from '../../notifications/components/NotificationsSheet';
 import { useNotifications } from '../../notifications/hooks/useNotifications';
 import { createPost, deletePost, fetchPosts, type PostRow } from '../../../services/supabase/posts';
 import { fetchCycleEvents, type CycleEventRow } from '../../../services/supabase/cycleEvents';
@@ -148,13 +147,7 @@ const EXPANDED_HEADER_HEIGHT = 28;
 const HomeScreen = () => {
   const navigation = useNavigation();
   const {
-    notifications,
     unreadCount,
-    friendRequests,
-    requestProfileMap,
-    acceptances,
-    markAcceptancesSeen,
-    respondToFriendRequest,
     reload: reloadNotifications,
   } = useNotifications();
   const session = useSessionStore(selectSession);
@@ -168,7 +161,6 @@ const HomeScreen = () => {
   const [userProfileMap, setUserProfileMap] = useState<Record<string, FeedUserProfile>>({});
   const [isLoading, setLoading] = useState(false);
   const [isRefreshing, setRefreshing] = useState(false);
-  const [isSheetVisible, setSheetVisible] = useState(false);
   const [isComposerOpen, setComposerOpen] = useState(false);
   const [composerText, setComposerText] = useState('');
   const [isPosting, setPosting] = useState(false);
@@ -1417,7 +1409,7 @@ const HomeScreen = () => {
                 </View>
                 <TouchableOpacity
                   style={styles.bellButton}
-                  onPress={() => setSheetVisible(true)}
+                  onPress={() => (navigation as any).navigate('Notifications')}
                   accessibilityLabel="Open notifications"
                 >
                   <Ionicons name="notifications-outline" size={18} color={palette.secondaryText} />
@@ -1553,18 +1545,6 @@ const HomeScreen = () => {
         }
       />
 
-      <NotificationsSheet
-        visible={isSheetVisible}
-        notifications={notifications}
-        friendRequests={friendRequests}
-        requestProfileMap={requestProfileMap}
-        acceptances={acceptances}
-        onRespondRequest={respondToFriendRequest}
-        onClose={() => {
-          markAcceptancesSeen();
-          setSheetVisible(false);
-        }}
-      />
 
       <Modal
         visible={Boolean(reactionTarget)}

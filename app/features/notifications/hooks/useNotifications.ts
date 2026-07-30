@@ -3,6 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { NotificationRow } from '../../../services/supabase/notifications';
 import {
   fetchNotifications,
+  markNotificationsRead,
   subscribeToNotifications,
 } from '../../../services/supabase/notifications';
 import {
@@ -43,6 +44,9 @@ export const useNotifications = () => {
     Record<string, { alias?: string | null }>
   >({});
   const [acceptances, setAcceptances] = useState<AcceptanceNotification[]>([]);
+  // Acceptances that have been viewed on the notifications page this session —
+  // kept visible (styled as read) rather than cleared, so the page shows history.
+  const [readAcceptanceIds, setReadAcceptanceIds] = useState<string[]>([]);
 
   // Detect "your friend request was accepted" client-side, on refresh — no
   // realtime/edge function needed. We diff your accepted *outbound* requests
@@ -176,9 +180,41 @@ export const useNotifications = () => {
     };
   }, [loadAcceptances, loadFriendRequests, loadNotifications, session]);
 
+  // Mark everything currently shown as read: set read_at on unread DB
+  // notifications (server + optimistic), and persist acceptances as seen so they
+  // don't re-alert — but keep them in the list, flagged read, so the dedicated
+  // page keeps showing them instead of wiping the moment you open it.
+  const markAllRead = useCallback(async () => {
+    const unreadIds = notifications.filter((row) => !row.read_at).map((row) => row.id);
+    if (unreadIds.length > 0) {
+      const nowIso = new Date().toISOString();
+      setNotifications((prev) => prev.map((row) => (row.read_at ? row : { ...row, read_at: nowIso })));
+      try {
+        await markNotificationsRead(unreadIds);
+      } catch (error) {
+        console.warn('[notifications] Failed to mark notifications read', error);
+      }
+    }
+    if (session?.userId && acceptances.length > 0) {
+      const key = seenAcceptedKey(session.userId);
+      try {
+        const raw = await AsyncStorage.getItem(key);
+        const seen = raw ? (JSON.parse(raw) as string[]) : [];
+        const next = Array.from(new Set([...seen, ...acceptances.map((item) => item.requestId)]));
+        await AsyncStorage.setItem(key, JSON.stringify(next));
+      } catch (error) {
+        console.warn('[notifications] Failed to persist seen acceptances', error);
+      }
+      setReadAcceptanceIds((prev) => Array.from(new Set([...prev, ...acceptances.map((item) => item.id)])));
+    }
+  }, [acceptances, notifications, session?.userId]);
+
   const unreadCount = useMemo(
-    () => notifications.length + friendRequests.length + acceptances.length,
-    [acceptances.length, friendRequests.length, notifications.length],
+    () =>
+      notifications.filter((row) => !row.read_at).length +
+      friendRequests.length +
+      acceptances.filter((item) => !readAcceptanceIds.includes(item.id)).length,
+    [acceptances, friendRequests.length, notifications, readAcceptanceIds],
   );
 
   const handleRespond = useCallback(
@@ -199,7 +235,9 @@ export const useNotifications = () => {
     friendRequests,
     requestProfileMap,
     acceptances,
+    readAcceptanceIds,
     markAcceptancesSeen,
+    markAllRead,
     respondToFriendRequest: handleRespond,
     reload,
   };
