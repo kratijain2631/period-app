@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
+  ActivityIndicator,
   Animated,
   Dimensions,
   FlatList,
@@ -1538,10 +1539,17 @@ const HomeScreen = () => {
           return renderCycleEvent({ item: item.event });
         }}
         ListEmptyComponent={
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyTitle}>No updates yet</Text>
-            <Text style={styles.emptySubtitle}>Share how you feel to start your circle feed.</Text>
-          </View>
+          isLoading ? (
+            <View style={styles.emptyState}>
+              <ActivityIndicator color={palette.accent} />
+              <Text style={styles.emptySubtitle}>Loading your circle feed…</Text>
+            </View>
+          ) : (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyTitle}>No updates yet</Text>
+              <Text style={styles.emptySubtitle}>Share how you feel to start your circle feed.</Text>
+            </View>
+          )
         }
       />
 

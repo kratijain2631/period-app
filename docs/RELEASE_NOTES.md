@@ -7,6 +7,7 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 ## Unreleased
 
 ### Fixed
+- **No more "No updates yet" flash while the feed is loading.** On a cold open the Home feed briefly showed the empty-state message ("No updates yet") before your posts finished loading. It now shows a small loading spinner ("Loading your circle feed…") during the initial load and only shows the empty message once loading is actually done. (`HomeScreen.tsx`.)
 - **Feed loads faster.** The Home feed used to fetch everything in a long serial chain (posts, then reactions, then boops, then events, then their reactions/boops, then profiles — one after another). It now loads the posts and cycle-events sides at the same time, and fetches each side's reactions and boops in parallel, so the feed appears in roughly the time of the slowest single request instead of the sum of all of them. Behavior is unchanged. (`HomeScreen.tsx`.)
 
 ### Docs / process
