@@ -765,7 +765,14 @@ const ProfileScreen = () => {
 
         <Animated.View style={entranceStyles[1]}>
           <View style={[styles.heroCard, { backgroundColor: getPhaseBg(cyclePhaseKey) }]}>
-            <CycleRing currentDay={cycleDayNumber ?? 1} currentPhase={cyclePhaseKey} size={180} />
+            <CycleRing
+              currentDay={cycleDayNumber ?? 1}
+              currentPhase={cyclePhaseKey}
+              cycleLengthDays={snapshot?.cycleLengthDays ?? null}
+              lutealLengthDays={snapshot?.lutealLengthDays ?? null}
+              periodLengthDays={snapshot?.periodLengthDays ?? null}
+              size={180}
+            />
             <View style={styles.heroPhaseWrap}>
               <PhaseIndicator phase={cyclePhaseKey} />
             </View>

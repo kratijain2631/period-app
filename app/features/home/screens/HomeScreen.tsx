@@ -1429,6 +1429,9 @@ const HomeScreen = () => {
                   <CycleRing
                     currentDay={cycleDayNumber ?? 1}
                     currentPhase={cyclePhaseKey}
+                    cycleLengthDays={snapshot?.cycleLengthDays ?? null}
+                    lutealLengthDays={snapshot?.lutealLengthDays ?? null}
+                    periodLengthDays={snapshot?.periodLengthDays ?? null}
                     size={72}
                     strokeWidth={6}
                     showCenter={false}

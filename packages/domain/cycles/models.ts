@@ -54,6 +54,9 @@ export type CycleSnapshot = {
   // signal-observed). Used to timestamp phase-transition posts at the real
   // transition, not at app-open time.
   currentPhaseStart?: string | null;
+  // Estimated length of the menstruation (period) phase, so the cycle ring can
+  // size its segments to the real cycle instead of an idealized 28-day split.
+  periodLengthDays?: number;
 };
 
 export type ResolvedCyclePhase = {
@@ -495,6 +498,7 @@ export const deriveSnapshot = (
     phaseSource: resolved.source,
     cycleLengthDays: resolved.cycleLengthDays,
     lutealLengthDays: resolved.lutealLengthDays,
+    periodLengthDays: resolved.periodLengthDays,
     latestSampleStart: latest?.startDate,
     currentPhaseStart: resolved.currentPhaseStart ?? null,
   };

@@ -26,22 +26,63 @@ const polarToCartesian = (cx: number, cy: number, radius: number, angleDeg: numb
   return { x: cx + radius * Math.cos(rad), y: cy + radius * Math.sin(rad) };
 };
 
+type RingPhase = { name: string; label: string; color: string; lightBg: string; days: number };
+
+const clampInt = (value: number, min: number, max: number) =>
+  Math.max(min, Math.min(max, Math.round(value)));
+
+// Build the ring's four phase segments. When a real cycle length is known, size
+// menstruation = period length, ovulation ≈ a short fertile window, luteal =
+// luteal length, and follicular = the remainder — so the ring reflects your
+// actual cycle instead of a fixed 28-day split. Falls back to the idealized
+// default ring (matching PHASES) when cycle data is absent.
+const buildPhases = (
+  cycleLengthDays?: number | null,
+  periodLengthDays?: number | null,
+  lutealLengthDays?: number | null,
+): { phases: RingPhase[]; totalDays: number } => {
+  if (cycleLengthDays == null || !Number.isFinite(cycleLengthDays)) {
+    return { phases: PHASES.map((phase) => ({ ...phase })), totalDays: TOTAL_DAYS };
+  }
+  const cycle = clampInt(cycleLengthDays, 16, 60);
+  const menstruation = clampInt(periodLengthDays ?? 5, 2, Math.max(2, Math.floor(cycle / 2)));
+  const ovulation = 3;
+  const luteal = clampInt(
+    lutealLengthDays ?? 14,
+    7,
+    Math.max(7, cycle - menstruation - ovulation - 1),
+  );
+  const follicular = Math.max(1, cycle - menstruation - ovulation - luteal);
+  const meta = (name: string) => PHASES.find((phase) => phase.name === name) ?? PHASES[0];
+  const phases: RingPhase[] = [
+    { ...meta('menstruation'), days: menstruation },
+    { ...meta('follicular'), days: follicular },
+    { ...meta('ovulation'), days: ovulation },
+    { ...meta('luteal'), days: luteal },
+  ];
+  return { phases, totalDays: menstruation + follicular + ovulation + luteal };
+};
+
 // Angle for the "you are here" dot: the center of the segment matching the
 // phase, so the dot's color always sits on the same-colored arc. Falls back to
-// day-fraction when the phase is unknown. (Positioning purely by day-fraction on
-// this idealized ring let a real, longer cycle put the dot on the wrong-colored
-// segment — see BUGS.md.)
-const phaseAngleForDot = (phase: string | null | undefined, fallbackDay: number): number => {
-  const index = PHASES.findIndex((item) => item.name === normalizePhase(phase));
+// day-fraction when the phase is unknown. (Positioning purely by day-fraction let
+// a real, longer cycle put the dot on the wrong-colored segment — see BUGS.md.)
+const phaseAngleForDot = (
+  phases: readonly RingPhase[],
+  totalDays: number,
+  phase: string | null | undefined,
+  fallbackDay: number,
+): number => {
+  const index = phases.findIndex((item) => item.name === normalizePhase(phase));
   if (index >= 0) {
     let arcStart = 0;
     for (let i = 0; i < index; i += 1) {
-      arcStart += (PHASES[i].days / TOTAL_DAYS) * 360;
+      arcStart += (phases[i].days / totalDays) * 360;
     }
-    const phaseSweep = (PHASES[index].days / TOTAL_DAYS) * 360;
+    const phaseSweep = (phases[index].days / totalDays) * 360;
     return arcStart + phaseSweep / 2;
   }
-  return ((fallbackDay - 1) / TOTAL_DAYS) * 360;
+  return ((fallbackDay - 1) / totalDays) * 360;
 };
 
 const describeArc = (
@@ -64,13 +105,25 @@ const describeArc = (
 type CycleRingProps = {
   currentDay?: number | null;
   currentPhase?: string | null;
+  cycleLengthDays?: number | null;
+  lutealLengthDays?: number | null;
+  periodLengthDays?: number | null;
   size?: number;
   strokeWidth?: number;
   showCenter?: boolean;
 };
 
 export const CycleRing = memo(
-  ({ currentDay = 1, currentPhase, size = 180, strokeWidth, showCenter = true }: CycleRingProps) => {
+  ({
+    currentDay = 1,
+    currentPhase,
+    cycleLengthDays,
+    lutealLengthDays,
+    periodLengthDays,
+    size = 180,
+    strokeWidth,
+    showCenter = true,
+  }: CycleRingProps) => {
     const isFocused = useIsFocused();
     const center = size / 2;
     const sw = strokeWidth ?? Math.max(8, size * 0.08);
@@ -81,21 +134,27 @@ export const CycleRing = memo(
     const centerOpacity = useRef(new Animated.Value(0)).current;
     const centerScale = useRef(new Animated.Value(0.85)).current;
 
+    // Segments sized to the real cycle when we have it (falls back to 28-day).
+    const { phases, totalDays } = useMemo(
+      () => buildPhases(cycleLengthDays, periodLengthDays, lutealLengthDays),
+      [cycleLengthDays, lutealLengthDays, periodLengthDays],
+    );
+
     const segments = useMemo(() => {
       let startAngle = 0;
-      return PHASES.map((phase) => {
-        const fullSweep = (phase.days / TOTAL_DAYS) * 360;
+      return phases.map((phase) => {
+        const fullSweep = (phase.days / totalDays) * 360;
         const sweep = fullSweep - gapDeg;
         const segment = { ...phase, start: startAngle + gapDeg / 2, sweep };
         startAngle += fullSweep;
         return segment;
       });
-    }, [gapDeg]);
+    }, [gapDeg, phases, totalDays]);
 
     const normalizedDay = Number.isFinite(currentDay)
-      ? Math.max(1, Math.min(TOTAL_DAYS, Math.round(currentDay ?? 1)))
+      ? Math.max(1, Math.min(totalDays, Math.round(currentDay ?? 1)))
       : 1;
-    const dayAngle = phaseAngleForDot(currentPhase, normalizedDay);
+    const dayAngle = phaseAngleForDot(phases, totalDays, currentPhase, normalizedDay);
     const dot = polarToCartesian(center, center, radius, dayAngle);
     const dotRadius = Math.max(4, sw * 0.55);
     const currentColor = getPhaseColor(currentPhase);
@@ -233,7 +292,7 @@ export const CycleRing = memo(
             ]}
           >
             <Text style={[styles.dayNumber, { fontSize: size * 0.22 }]}>{normalizedDay}</Text>
-            <Text style={styles.dayMeta}>of {TOTAL_DAYS} days</Text>
+            <Text style={styles.dayMeta}>of {totalDays} days</Text>
           </Animated.View>
         ) : null}
       </View>
@@ -303,13 +362,13 @@ export const SyncRings = memo(
       center,
       center,
       outerRadius,
-      phaseAngleForDot(yourPhase, safeYourDay),
+      phaseAngleForDot(PHASES, TOTAL_DAYS, yourPhase, safeYourDay),
     );
     const friendDot = polarToCartesian(
       center,
       center,
       innerRadius,
-      phaseAngleForDot(theirPhase, safeTheirDay),
+      phaseAngleForDot(PHASES, TOTAL_DAYS, theirPhase, safeTheirDay),
     );
     const yourColor = getPhaseColor(yourPhase);
     const friendColor = getPhaseColor(theirPhase);
