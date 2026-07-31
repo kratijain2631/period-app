@@ -42,12 +42,39 @@ const queryQuantitySamples = (
   HealthKit as unknown as { queryQuantitySamples?: QueryQuantitySamplesFn }
 ).queryQuantitySamples;
 
+// HealthKit background delivery + observer-query APIs. Accessed defensively off
+// the namespace (rather than named imports) so a library-version mismatch
+// degrades to "no background delivery" instead of a build break.
+export type HealthChangeArgs = { typeIdentifier: string; errorMessage?: string };
+type EnableBackgroundDeliveryFn = (
+  type: ObjectTypeIdentifier,
+  updateFrequency: number,
+) => Promise<boolean>;
+type DisableBackgroundDeliveryFn = (type: ObjectTypeIdentifier) => Promise<boolean>;
+type SubscribeToChangesFn = (
+  type: ObjectTypeIdentifier,
+  callback: (args: HealthChangeArgs) => void,
+) => unknown;
+
+const hk = HealthKit as unknown as {
+  enableBackgroundDelivery?: EnableBackgroundDeliveryFn;
+  disableBackgroundDelivery?: DisableBackgroundDeliveryFn;
+  subscribeToChanges?: SubscribeToChangesFn;
+  UpdateFrequency?: Record<string, number>;
+};
+
+// UpdateFrequency.Immediate (iOS clamps category-type delivery to ≥ hourly).
+export const HEALTH_UPDATE_FREQUENCY_IMMEDIATE = hk.UpdateFrequency?.Immediate ?? 1;
+
 export const healthkitClient = {
   isHealthDataAvailable,
   requestAuthorization,
   queryCategorySamples,
   queryQuantitySamples,
   authorizationStatusFor,
+  enableBackgroundDelivery: hk.enableBackgroundDelivery,
+  disableBackgroundDelivery: hk.disableBackgroundDelivery,
+  subscribeToChanges: hk.subscribeToChanges,
 };
 
 export { AuthorizationStatus, CategoryValueMenstrualFlow };

@@ -31,6 +31,7 @@ import {
   DEFAULT_AUTO_POST_SETTINGS,
   selectAutoPostedPeriodSamples,
 } from './autoPostSettings';
+import { schedulePhaseChangeNotification } from '../notifications/localCycleNotifications';
 
 const LOOKBACK_MS = 180 * 24 * 60 * 60 * 1000; // 180 days to personalize cycle-length estimates
 const QUERY_LIMIT = 400;
@@ -252,6 +253,12 @@ export const syncHealthData = async ({
           // (falls back to now when the boundary is unknown).
           starts_at: snapshot.currentPhaseStart ?? snapshot.syncedAt,
         });
+        // When the transition is detected in the background (iOS woke us via
+        // HealthKit background delivery), also nudge the user with a local
+        // notification — foreground syncs skip it since they're already looking.
+        if (trigger === 'background') {
+          schedulePhaseChangeNotification(snapshot.currentPhase).catch(() => {});
+        }
       }
       await upsertCycleEvents(events);
     } catch (error) {

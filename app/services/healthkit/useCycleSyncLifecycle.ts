@@ -1,6 +1,10 @@
 import { AppState, AppStateStatus } from 'react-native';
 import { useEffect } from 'react';
 import { registerCompanionBackgroundSync, unregisterCompanionBackgroundSync } from './backgroundSync';
+import {
+  registerHealthBackgroundDelivery,
+  unregisterHealthBackgroundDelivery,
+} from './backgroundDelivery';
 import { clearCycleSnapshot, syncHealthData } from './syncHealthData';
 import { useSessionStore } from '../../state/sessionStore';
 
@@ -16,6 +20,9 @@ export const useCycleSyncLifecycle = () => {
       unregisterCompanionBackgroundSync().catch((error) =>
         console.error('[cycle-sync] Failed to unregister background task', error),
       );
+      unregisterHealthBackgroundDelivery().catch((error) =>
+        console.error('[cycle-sync] Failed to unregister background delivery', error),
+      );
       return;
     }
 
@@ -24,6 +31,11 @@ export const useCycleSyncLifecycle = () => {
     syncHealthData({ trigger: 'manual' });
     registerCompanionBackgroundSync().catch((error) =>
       console.error('[cycle-sync] Failed to register background task', error),
+    );
+    // HealthKit background delivery — iOS relaunches the app on cycle-data
+    // changes, so phase transitions post (and notify) even while the app is closed.
+    registerHealthBackgroundDelivery().catch((error) =>
+      console.error('[cycle-sync] Failed to register background delivery', error),
     );
 
     const handleAppStateChange = (next: AppStateStatus) => {
