@@ -28,6 +28,39 @@ const formatAlias = (alias?: string | null) => {
   return alias.startsWith('@') ? alias : `@${alias}`;
 };
 
+const formatActor = (value: unknown) => {
+  if (typeof value === 'string' && value.trim()) {
+    return formatAlias(value.trim());
+  }
+  return 'Someone';
+};
+
+// Friendly one-liner for a DB notification row's payload.
+const describeNotification = (payload: Record<string, unknown>): string => {
+  const type =
+    typeof payload.type === 'string'
+      ? payload.type
+      : typeof payload.event_type === 'string'
+        ? payload.event_type
+        : 'update';
+  const actor = formatActor(payload.actor_alias);
+  const emoji = typeof payload.emoji === 'string' ? payload.emoji : '';
+  switch (type) {
+    case 'post_reaction':
+      return `${actor} reacted ${emoji} to your post`.replace(/\s+/g, ' ').trim();
+    case 'event_reaction':
+      return `${actor} reacted ${emoji} to your update`.replace(/\s+/g, ' ').trim();
+    case 'boop':
+      return `${actor} booped you 👉`;
+    case 'phase_transition':
+      return typeof payload.phase === 'string'
+        ? `You've entered your ${payload.phase} phase`
+        : 'Your cycle phase changed';
+    default:
+      return type.replace(/_/g, ' ');
+  }
+};
+
 type ActivityItem = {
   id: string;
   title: string;
@@ -65,13 +98,10 @@ const NotificationsScreen = () => {
       })),
       ...notifications.map((row) => {
         const payload = (row.payload ?? {}) as Record<string, unknown>;
-        const eventType =
-          typeof payload.event_type === 'string' ? payload.event_type : 'cycle_update';
-        const phase = typeof payload.phase === 'string' ? payload.phase : null;
         return {
           id: row.id,
-          title: eventType.replace(/_/g, ' '),
-          subtitle: phase ? `Phase: ${phase}` : null,
+          title: describeNotification(payload),
+          subtitle: null,
           timestamp: row.created_at,
           unread: !row.read_at,
         };

@@ -7,6 +7,7 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 ## Unreleased
 
 ### Added
+- **You now get notified when friends react to or boop your posts.** New DB triggers create an in-app notification when someone reacts to your post or cycle update, or boops you — so the notifications page shows real activity (arriving live), not just friend requests. Written so a notification failure can never block the reaction/boop itself. (Lock-screen push while the app is closed still needs the push handler + token — see BUGS/TODO.) (migration `20260730130000_notification-triggers-engagement.sql`, `NotificationsScreen.tsx` friendly text.)
 - **Dedicated notifications page with a new/read distinction.** Tapping the bell now opens a full-screen Notifications page instead of a bottom sheet. It groups **Friend requests**, **New** (unread), and **Earlier** (read); unread items are accented and read items dimmed; and opening the page **no longer wipes everything** — items stay visible, and the bell badge counts only what's unread. (New `NotificationsScreen`, `useNotifications`, `notifications` service, `AppNavigator`, `HomeScreen`.) _Needs the `notifications.read_at` migration applied to Supabase and on-device verification; the DB notifications table isn't populated yet (see BUGS/TODO), so today's content is friend requests + acceptances._
 
 ### Fixed
