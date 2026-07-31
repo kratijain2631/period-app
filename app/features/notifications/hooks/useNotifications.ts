@@ -11,6 +11,7 @@ import {
   fetchInboundFriendRequests,
   fetchFriendRequestProfiles,
   respondToFriendRequest,
+  subscribeToFriendRequests,
   type FriendRequestRow,
 } from '../../../services/supabase/friendRequests';
 import { useSessionStore } from '../../../state/sessionStore';
@@ -175,8 +176,16 @@ export const useNotifications = () => {
       });
     });
 
+    // Sub-second refresh on friend-request changes (new inbound request, or your
+    // outbound one accepted) instead of waiting for the 60s poll.
+    const requestsChannel = subscribeToFriendRequests(() => {
+      loadFriendRequests();
+      loadAcceptances();
+    });
+
     return () => {
       channel?.unsubscribe();
+      requestsChannel?.unsubscribe();
     };
   }, [loadAcceptances, loadFriendRequests, loadNotifications, session]);
 

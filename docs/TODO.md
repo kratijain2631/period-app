@@ -15,6 +15,7 @@ We merged `main` (57 commits) onto our identity/docs. To make it actually run on
 - [ ] Deploy `notifications-handler` (needs an Expo push access token) and then run the 3 `schedule-*` cron migrations.
 - [x] **Apply migration `20260730120000_notifications-read-at.sql` to Supabase** (SQL editor) — adds `notifications.read_at` + a `notifications_update_own` UPDATE policy, powering the dedicated notifications page's new/read state. _(Done 2026-07-30 by owner via SQL editor.)_
 - [ ] **Apply migration `20260730130000_notification-triggers-engagement.sql` to Supabase** (SQL editor) — adds AFTER INSERT triggers on `post_reactions` / `event_reactions` / `boops` that create a `notifications` row for the content owner (in-app reaction/boop notifications). Defensive (exception-safe, self-action skipped). Until applied, no engagement notifications are created (but reactions/boops work unchanged).
+- [ ] **Apply migration `20260730140000_friend-requests-realtime.sql` to Supabase** (SQL editor) — adds `friend_requests` to the `supabase_realtime` publication so friend-request changes push sub-second to the app. Idempotent. Until applied, the app falls back to the existing 60s poll.
 
 ## Deploy / data follow-ups (2026-07-24)
 - [x] **Redeploy the `delete-account` edge function** — now also hard-deletes the auth user and clears `posts` / `post_reactions` / `event_reactions` / `boops`. _(Done — deployed v4, 2026-07-26.)_

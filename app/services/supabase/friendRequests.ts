@@ -1,4 +1,28 @@
+import type { RealtimeChannel } from '@supabase/supabase-js';
 import { isSupabaseConfigured, supabase } from './client';
+
+// Fire onChange whenever a friend_requests row the user can see changes (a new
+// inbound request, or your outbound request being accepted/declined), so the
+// notifications bell/page can refresh sub-second instead of waiting for the 60s
+// poll. RLS scopes delivered events to rows the user participates in. No-ops
+// (and just leaves the poll as the fallback) when Supabase isn't configured.
+export const subscribeToFriendRequests = (
+  onChange: () => void,
+): RealtimeChannel | null => {
+  if (!isSupabaseConfigured) {
+    return null;
+  }
+  return supabase
+    .channel('friend_requests')
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'friend_requests' },
+      () => {
+        onChange();
+      },
+    )
+    .subscribe();
+};
 
 export type FriendRequestRow = {
   id: string;
