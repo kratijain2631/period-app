@@ -6,6 +6,13 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## Unreleased
 
+### In progress
+- **Claimed active work (2026-07-29).** Marked the explicit/revocable consent-model fix (including removal of the 60-second sharing reset) and contact-based friend discovery as WIP so concurrent contributors do not duplicate them. _(Not in build 1.0.8 — still in progress.)_
+
+## 2026-07-30 — TestFlight build 1.0.8 (build 12)
+
+Build `1.0.8` — a notifications + cycle batch. Tapping the bell now opens a **dedicated notifications page** with a real new/read distinction (no more "clears the moment you open it"), and you get **in-app notifications when friends react to or boop your content**. Plus cycle fixes: the ring's day marker (and friends' avatars) now sit on the phase they claim, and **phase-change posts are dated at the real transition**, not app-open time. All client-side except two additive SQL migrations. _Uploaded to TestFlight; submit for Beta App Review to make it `· public`._ **Requires two migrations applied in Supabase: `20260730120000_notifications-read-at` (done) and `20260730130000_notification-triggers-engagement`.**
+
 ### Added
 - **You now get notified when friends react to or boop your posts.** New DB triggers create an in-app notification when someone reacts to your post or cycle update, or boops you — so the notifications page shows real activity (arriving live), not just friend requests. Written so a notification failure can never block the reaction/boop itself. (Lock-screen push while the app is closed still needs the push handler + token — see BUGS/TODO.) (migration `20260730130000_notification-triggers-engagement.sql`, `NotificationsScreen.tsx` friendly text.)
 - **Dedicated notifications page with a new/read distinction.** Tapping the bell now opens a full-screen Notifications page instead of a bottom sheet. It groups **Friend requests**, **New** (unread), and **Earlier** (read); unread items are accented and read items dimmed; and opening the page **no longer wipes everything** — items stay visible, and the bell badge counts only what's unread. (New `NotificationsScreen`, `useNotifications`, `notifications` service, `AppNavigator`, `HomeScreen`.) _Needs the `notifications.read_at` migration applied to Supabase and on-device verification; the DB notifications table isn't populated yet (see BUGS/TODO), so today's content is friend requests + acceptances._
@@ -13,9 +20,6 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 ### Fixed
 - **Phase-change posts are dated at the real transition, not when you opened the app.** A phase-change ("you've entered ovulation") auto-post used to be stamped with the moment the app synced (i.e. when you opened it). It's now dated at the estimated day the phase actually began, so it lands correctly in the feed timeline. (Still only *fires* on app open until background posting ships — see BUGS.md.) (`packages/domain/cycles/models.ts`, `syncHealthData.ts`.)
 - **Cycle ring: the day marker now sits on the phase it says you're in.** Previously the "you are here" dot was placed by raw day-count on an idealized 28-day ring while its color came from your real phase — so on a longer cycle it could show an "ovulation" dot sitting over the (longer) luteal arc. The dot is now anchored to the segment matching your current phase, so its color and position always agree. The same fix applies to the **friend sync rings** (both avatars). (`CycleRing.tsx`.) _(Deeper redesign to make the ring's proportions reflect your real cycle length is tracked as a follow-up in BUGS.md.)_
-
-### In progress
-- **Claimed active work (2026-07-29).** Marked the explicit/revocable consent-model fix (including removal of the 60-second sharing reset) and contact-based friend discovery as WIP so concurrent contributors do not duplicate them. _(Not in build 1.0.7 — still in progress.)_
 
 ### Docs / process
 - **Logged owner backlog items (2026-07-30).** Captured four new items with diagnoses: cycle-ring "looks off" (idealized fixed 28-day segments vs real cycle length; dot color/segment mismatch) → BUGS.md; phase-change auto-post only fires on app-open and is timestamped at open-time → BUGS.md; a dedicated notifications page with a real new/read distinction → FEATURES.md; and a competitor-study task (Flighty/Beli/Strava) → TODO.md.
