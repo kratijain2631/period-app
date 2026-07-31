@@ -248,7 +248,9 @@ export const syncHealthData = async ({
           event_type: 'phase_transition',
           phase: snapshot.currentPhase,
           symptoms: phaseMetadata,
-          starts_at: snapshot.syncedAt,
+          // Date the post at the estimated real transition, not app-open time
+          // (falls back to now when the boundary is unknown).
+          starts_at: snapshot.currentPhaseStart ?? snapshot.syncedAt,
         });
       }
       await upsertCycleEvents(events);

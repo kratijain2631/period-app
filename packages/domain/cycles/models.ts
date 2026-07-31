@@ -50,6 +50,10 @@ export type CycleSnapshot = {
   lutealLengthDays?: number;
   latestSampleStart?: string;
   signalSamples?: CycleSignalSample[];
+  // ISO date the current phase is estimated to have begun (null when unknown /
+  // signal-observed). Used to timestamp phase-transition posts at the real
+  // transition, not at app-open time.
+  currentPhaseStart?: string | null;
 };
 
 export type ResolvedCyclePhase = {
@@ -58,6 +62,7 @@ export type ResolvedCyclePhase = {
   cycleLengthDays: number;
   lutealLengthDays: number;
   periodLengthDays: number;
+  currentPhaseStart?: string | null;
 };
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -312,12 +317,15 @@ const resolveObservedPhase = (
   return null;
 };
 
-const estimatePhaseFromCycleDay = (
+// Resolve the phase for a cycle day *and* the cycle day that phase began on, so
+// callers can date the transition. The phase result is identical to the previous
+// estimatePhaseFromCycleDay logic.
+const resolvePhaseWindow = (
   cycleDay: number,
   cycleLengthDays: number,
   periodLengthDays: number,
   lutealLengthDays: number,
-): CyclePhase => {
+): { phase: CyclePhase; phaseStartDay: number } => {
   const menstruationEnd = clamp(periodLengthDays, 1, Math.max(1, cycleLengthDays - 1));
   const ovulationCenter = clamp(
     cycleLengthDays - lutealLengthDays,
@@ -330,19 +338,27 @@ const estimatePhaseFromCycleDay = (
   const pmsStart = clamp(cycleLengthDays - 4, lutealStart, cycleLengthDays);
 
   if (cycleDay <= menstruationEnd) {
-    return 'menstruation';
+    return { phase: 'menstruation', phaseStartDay: 1 };
   }
   if (cycleDay < ovulationStart) {
-    return 'follicular';
+    return { phase: 'follicular', phaseStartDay: menstruationEnd + 1 };
   }
   if (cycleDay <= ovulationEnd) {
-    return 'ovulation';
+    return { phase: 'ovulation', phaseStartDay: ovulationStart };
   }
   if (cycleDay >= pmsStart) {
-    return 'pms';
+    return { phase: 'pms', phaseStartDay: pmsStart };
   }
-  return 'luteal';
+  return { phase: 'luteal', phaseStartDay: ovulationEnd + 1 };
 };
+
+const estimatePhaseFromCycleDay = (
+  cycleDay: number,
+  cycleLengthDays: number,
+  periodLengthDays: number,
+  lutealLengthDays: number,
+): CyclePhase =>
+  resolvePhaseWindow(cycleDay, cycleLengthDays, periodLengthDays, lutealLengthDays).phase;
 
 export const resolveCyclePhase = ({
   samples,
@@ -402,12 +418,20 @@ export const resolveCyclePhase = ({
   }
 
   const cycleDay = (daysSinceStart % cycleLengthDays) + 1;
+  const window = resolvePhaseWindow(cycleDay, cycleLengthDays, periodLengthDays, lutealLengthDays);
+  // Days elapsed since the current phase began → back-date the transition from
+  // the reference (sync) time, so a phase-change post reads at the real transition.
+  const daysIntoPhase = Math.max(0, cycleDay - window.phaseStartDay);
+  const currentPhaseStart = new Date(
+    referenceDate.getTime() - daysIntoPhase * DAY_MS,
+  ).toISOString();
   return {
-    phase: estimatePhaseFromCycleDay(cycleDay, cycleLengthDays, periodLengthDays, lutealLengthDays),
+    phase: window.phase,
     source: 'estimated',
     cycleLengthDays,
     lutealLengthDays,
     periodLengthDays,
+    currentPhaseStart,
   };
 };
 
@@ -472,5 +496,6 @@ export const deriveSnapshot = (
     cycleLengthDays: resolved.cycleLengthDays,
     lutealLengthDays: resolved.lutealLengthDays,
     latestSampleStart: latest?.startDate,
+    currentPhaseStart: resolved.currentPhaseStart ?? null,
   };
 };
