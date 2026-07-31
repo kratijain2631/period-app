@@ -31,7 +31,6 @@ const IOS_BUNDLE_ID = 'com.syncsisters.cycle';
 const ANDROID_PACKAGE: string | undefined = undefined;
 
 const healthShareDescription = `${APP_NAME} reads menstrual health data from Apple Health to create social insights for you and your friends.`;
-const healthUpdateDescription = `${APP_NAME} does not write any data back to Apple Health.`;
 
 const config: ExpoConfig = {
   name: APP_NAME,
@@ -55,7 +54,9 @@ const config: ExpoConfig = {
       '@kingstinct/react-native-healthkit',
       {
         NSHealthShareUsageDescription: healthShareDescription,
-        NSHealthUpdateUsageDescription: healthUpdateDescription,
+        // No NSHealthUpdateUsageDescription: this app is read-only. The plugin
+        // still force-writes a default, so it's stripped by
+        // ./plugins/withoutHealthUpdateUsage (added last, below).
         background: true,
       },
     ],
@@ -73,7 +74,6 @@ const config: ExpoConfig = {
     },
     infoPlist: {
       NSHealthShareUsageDescription: healthShareDescription,
-      NSHealthUpdateUsageDescription: healthUpdateDescription,
       NSFaceIDUsageDescription: 'Face ID is used to secure your account if enabled in device settings.',
       ITSAppUsesNonExemptEncryption: false,
     },
