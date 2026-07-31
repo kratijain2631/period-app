@@ -19,6 +19,7 @@ import {
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNotifications } from '../../notifications/hooks/useNotifications';
@@ -49,6 +50,12 @@ import { getDoubleTapResult } from '../utils/reactionDoubleTap';
 import { brand, brandType } from '../../../theme/brand';
 import { CycleRing, PhaseAvatar, PhaseIndicator, getPhaseColor } from '../../../components/brand/CycleRing';
 import { useStaggeredEntrance } from '../../../components/brand/useStaggeredEntrance';
+
+// Fire-and-forget tactile feedback for boops/reactions (no-op / harmless where
+// haptics aren't supported).
+const triggerHaptic = (style: Haptics.ImpactFeedbackStyle) => {
+  Haptics.impactAsync(style).catch(() => {});
+};
 
 const palette = {
   background: brand.colors.background,
@@ -622,6 +629,7 @@ const HomeScreen = () => {
       if (currentStatus === 'sent' || currentStatus === 'queued' || currentStatus === 'sending') {
         return;
       }
+      triggerHaptic(Haptics.ImpactFeedbackStyle.Medium);
       setBoopStatusByPost((prev) => ({ ...prev, [post.id]: 'sending' }));
       try {
         const result = await sendBoop({ toUserId: post.user_id, postId: post.id });
@@ -649,6 +657,7 @@ const HomeScreen = () => {
       if (boopLoadingByEvent[event.id]) {
         return;
       }
+      triggerHaptic(Haptics.ImpactFeedbackStyle.Medium);
       setBoopLoadingByEvent((prev) => ({ ...prev, [event.id]: true }));
       try {
         const result = await sendBoop({ toUserId: event.user_id, eventId: event.id });
@@ -709,6 +718,7 @@ const HomeScreen = () => {
               return next;
             });
           } else {
+            triggerHaptic(Haptics.ImpactFeedbackStyle.Light);
             const inserted = await addPostReaction(target.id, emoji);
             if (!inserted) {
               return;
@@ -762,6 +772,7 @@ const HomeScreen = () => {
               return next;
             });
           } else {
+            triggerHaptic(Haptics.ImpactFeedbackStyle.Light);
             const inserted = await addEventReaction(target.id, emoji);
             if (!inserted) {
               return;

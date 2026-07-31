@@ -84,7 +84,7 @@ The app works but looks utilitarian. A cohesive visual identity is the single bi
 - **App icon & splash** — branded, using the red-drop motif from the "Sisters by Blood" origin story (see PITCH.md).
 - [x] **Branded launch/intro screen (requested 2026-07-27).** _(Done 2026-07-28.)_ On every app open, a short (~2.4s) animated intro shows the name + tagline (**"Cadence — where your cycle meets your circle"**) with a red-drop mark, then fades into the app. It's an overlay rendered on top of `AppInner`, so the real UI hydrates behind it and it never adds a loading wall. `app/components/brand/BrandSplash.tsx`, `App.tsx`, tagline in `app/config/branding.ts`. _Future polish: a matching native/OS splash so there's no seam before JS boots._
 - **Cycle visualization** — a cycle wheel or calendar as the home-screen centerpiece.
-- **Empty & loading states**, **micro-interactions + haptics** on boops/reactions, **dark mode**.
+- **Empty & loading states**, **micro-interactions + haptics** on boops/reactions, **dark mode**. _(Haptics done 2026-07-30 for the Home feed: a medium tap when you boop, a light tap when you add a reaction — `expo-haptics`, `HomeScreen.tsx`. Still to do: haptics on the friend sync page's boop, and broader micro-interactions/dark mode.)_
 - **Icon polish** — the boop "hand/wave" icon doesn't read as a wave; try a "poke" or a clearer gesture icon.
 
 ## Onboarding
