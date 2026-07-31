@@ -26,6 +26,24 @@ const polarToCartesian = (cx: number, cy: number, radius: number, angleDeg: numb
   return { x: cx + radius * Math.cos(rad), y: cy + radius * Math.sin(rad) };
 };
 
+// Angle for the "you are here" dot: the center of the segment matching the
+// phase, so the dot's color always sits on the same-colored arc. Falls back to
+// day-fraction when the phase is unknown. (Positioning purely by day-fraction on
+// this idealized ring let a real, longer cycle put the dot on the wrong-colored
+// segment — see BUGS.md.)
+const phaseAngleForDot = (phase: string | null | undefined, fallbackDay: number): number => {
+  const index = PHASES.findIndex((item) => item.name === normalizePhase(phase));
+  if (index >= 0) {
+    let arcStart = 0;
+    for (let i = 0; i < index; i += 1) {
+      arcStart += (PHASES[i].days / TOTAL_DAYS) * 360;
+    }
+    const phaseSweep = (PHASES[index].days / TOTAL_DAYS) * 360;
+    return arcStart + phaseSweep / 2;
+  }
+  return ((fallbackDay - 1) / TOTAL_DAYS) * 360;
+};
+
 const describeArc = (
   cx: number,
   cy: number,
@@ -77,25 +95,7 @@ export const CycleRing = memo(
     const normalizedDay = Number.isFinite(currentDay)
       ? Math.max(1, Math.min(TOTAL_DAYS, Math.round(currentDay ?? 1)))
       : 1;
-    // Position the "you are here" dot inside the segment matching the current
-    // phase, so its color always sits on the same-colored arc. (Positioning it by
-    // raw day-fraction on this idealized 28-day ring let a real, longer cycle put
-    // an "ovulation"-colored dot over the luteal arc — see BUGS.md.) Falls back to
-    // day-fraction only when the phase is unknown/unrecognized.
-    const matchedPhaseIndex = PHASES.findIndex(
-      (item) => item.name === normalizePhase(currentPhase),
-    );
-    let dayAngle: number;
-    if (matchedPhaseIndex >= 0) {
-      let arcStart = 0;
-      for (let i = 0; i < matchedPhaseIndex; i += 1) {
-        arcStart += (PHASES[i].days / TOTAL_DAYS) * 360;
-      }
-      const phaseSweep = (PHASES[matchedPhaseIndex].days / TOTAL_DAYS) * 360;
-      dayAngle = arcStart + phaseSweep / 2;
-    } else {
-      dayAngle = ((normalizedDay - 1) / TOTAL_DAYS) * 360;
-    }
+    const dayAngle = phaseAngleForDot(currentPhase, normalizedDay);
     const dot = polarToCartesian(center, center, radius, dayAngle);
     const dotRadius = Math.max(4, sw * 0.55);
     const currentColor = getPhaseColor(currentPhase);
@@ -299,12 +299,17 @@ export const SyncRings = memo(
     const safeYourDay = Math.max(1, Math.min(TOTAL_DAYS, Math.round(yourDay ?? 1)));
     const safeTheirDay = Math.max(1, Math.min(TOTAL_DAYS, Math.round(theirDay ?? 1)));
 
-    const yourDot = polarToCartesian(center, center, outerRadius, ((safeYourDay - 1) / TOTAL_DAYS) * 360);
+    const yourDot = polarToCartesian(
+      center,
+      center,
+      outerRadius,
+      phaseAngleForDot(yourPhase, safeYourDay),
+    );
     const friendDot = polarToCartesian(
       center,
       center,
       innerRadius,
-      ((safeTheirDay - 1) / TOTAL_DAYS) * 360,
+      phaseAngleForDot(theirPhase, safeTheirDay),
     );
     const yourColor = getPhaseColor(yourPhase);
     const friendColor = getPhaseColor(theirPhase);
