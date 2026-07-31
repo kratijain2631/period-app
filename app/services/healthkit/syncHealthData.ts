@@ -31,7 +31,10 @@ import {
   DEFAULT_AUTO_POST_SETTINGS,
   selectAutoPostedPeriodSamples,
 } from './autoPostSettings';
-import { schedulePhaseChangeNotification } from '../notifications/localCycleNotifications';
+import {
+  schedulePhaseChangeNotification,
+  scheduleUpcomingPhaseReminder,
+} from '../notifications/localCycleNotifications';
 
 const LOOKBACK_MS = 180 * 24 * 60 * 60 * 1000; // 180 days to personalize cycle-length estimates
 const QUERY_LIMIT = 400;
@@ -265,6 +268,8 @@ export const syncHealthData = async ({
       console.warn('[cycle-sync] Supabase sync failed', error);
     }
     notify(snapshot);
+    // Keep the predicted "your phase is changing, open to share" reminder current.
+    scheduleUpcomingPhaseReminder(snapshot.nextPhaseStart, snapshot.nextPhase).catch(() => {});
     console.log(
       `[cycle-sync] Completed (${trigger}) with ${samples.length} flow samples and ${signalSamples.length} signal samples from ${startDate.toISOString()} to ${now.toISOString()}`,
     );

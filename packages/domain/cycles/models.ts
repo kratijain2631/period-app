@@ -57,6 +57,10 @@ export type CycleSnapshot = {
   // Estimated length of the menstruation (period) phase, so the cycle ring can
   // size its segments to the real cycle instead of an idealized 28-day split.
   periodLengthDays?: number;
+  // Predicted date the next phase begins + which phase, so the app can schedule a
+  // reliable local reminder to open + share around the transition.
+  nextPhaseStart?: string | null;
+  nextPhase?: CyclePhase | null;
 };
 
 export type ResolvedCyclePhase = {
@@ -66,6 +70,8 @@ export type ResolvedCyclePhase = {
   lutealLengthDays: number;
   periodLengthDays: number;
   currentPhaseStart?: string | null;
+  nextPhaseStart?: string | null;
+  nextPhase?: CyclePhase | null;
 };
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -328,7 +334,7 @@ const resolvePhaseWindow = (
   cycleLengthDays: number,
   periodLengthDays: number,
   lutealLengthDays: number,
-): { phase: CyclePhase; phaseStartDay: number } => {
+): { phase: CyclePhase; phaseStartDay: number; phaseEndDay: number } => {
   const menstruationEnd = clamp(periodLengthDays, 1, Math.max(1, cycleLengthDays - 1));
   const ovulationCenter = clamp(
     cycleLengthDays - lutealLengthDays,
@@ -341,18 +347,18 @@ const resolvePhaseWindow = (
   const pmsStart = clamp(cycleLengthDays - 4, lutealStart, cycleLengthDays);
 
   if (cycleDay <= menstruationEnd) {
-    return { phase: 'menstruation', phaseStartDay: 1 };
+    return { phase: 'menstruation', phaseStartDay: 1, phaseEndDay: menstruationEnd };
   }
   if (cycleDay < ovulationStart) {
-    return { phase: 'follicular', phaseStartDay: menstruationEnd + 1 };
+    return { phase: 'follicular', phaseStartDay: menstruationEnd + 1, phaseEndDay: ovulationStart - 1 };
   }
   if (cycleDay <= ovulationEnd) {
-    return { phase: 'ovulation', phaseStartDay: ovulationStart };
+    return { phase: 'ovulation', phaseStartDay: ovulationStart, phaseEndDay: ovulationEnd };
   }
   if (cycleDay >= pmsStart) {
-    return { phase: 'pms', phaseStartDay: pmsStart };
+    return { phase: 'pms', phaseStartDay: pmsStart, phaseEndDay: cycleLengthDays };
   }
-  return { phase: 'luteal', phaseStartDay: ovulationEnd + 1 };
+  return { phase: 'luteal', phaseStartDay: ovulationEnd + 1, phaseEndDay: pmsStart - 1 };
 };
 
 const estimatePhaseFromCycleDay = (
@@ -428,6 +434,20 @@ export const resolveCyclePhase = ({
   const currentPhaseStart = new Date(
     referenceDate.getTime() - daysIntoPhase * DAY_MS,
   ).toISOString();
+  // Predict the next transition: the current phase ends on phaseEndDay, so the
+  // next phase begins that-many days ahead. Used to schedule a "your phase is
+  // changing, open to share" reminder while the app is open.
+  const daysUntilNextPhase = Math.max(1, window.phaseEndDay - cycleDay + 1);
+  const nextPhaseStart = new Date(
+    referenceDate.getTime() + daysUntilNextPhase * DAY_MS,
+  ).toISOString();
+  const nextCycleDay = window.phaseEndDay >= cycleLengthDays ? 1 : window.phaseEndDay + 1;
+  const nextPhase = resolvePhaseWindow(
+    nextCycleDay,
+    cycleLengthDays,
+    periodLengthDays,
+    lutealLengthDays,
+  ).phase;
   return {
     phase: window.phase,
     source: 'estimated',
@@ -435,6 +455,8 @@ export const resolveCyclePhase = ({
     lutealLengthDays,
     periodLengthDays,
     currentPhaseStart,
+    nextPhaseStart,
+    nextPhase,
   };
 };
 
@@ -501,5 +523,7 @@ export const deriveSnapshot = (
     periodLengthDays: resolved.periodLengthDays,
     latestSampleStart: latest?.startDate,
     currentPhaseStart: resolved.currentPhaseStart ?? null,
+    nextPhaseStart: resolved.nextPhaseStart ?? null,
+    nextPhase: resolved.nextPhase ?? null,
   };
 };
