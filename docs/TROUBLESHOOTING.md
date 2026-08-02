@@ -16,6 +16,14 @@ Everything learned bringing this app up: the issues we hit and fixed, what's con
 
 The original collaborator's (Lukas's) accounts are **no longer needed** — we migrated everything to the accounts above. Note: this Apple ID is still a *member* of Lukas's Apple team, so at build time EAS shows two "providers" — always pick **Krati Jain (129196348)**, not Lukas.
 
+## Migrations: hand-applied — do NOT `supabase db push` blindly
+
+Migrations are applied **by hand in the Supabase SQL editor** (paste the file, Run), *not* via `supabase db push`. Consequence: Supabase's migration-tracking table (`supabase_migrations.schema_migrations`) does **not** record them, so the CLI thinks nothing is applied.
+
+- **The schema is correct** — every migration file has been run. This is only a *CLI-tracking* gap, not a schema gap.
+- **⚠️ Do not run `supabase db push` without reconciling first.** It would try to re-run **all** migrations. Most are idempotent and survive, but **`seed-posts.sql` would re-insert demo data** and cron/seed statements could duplicate or error.
+- **To adopt `db push` going forward** (recommended eventually, so you stop pasting SQL): first reconcile the tracking table so it lists all applied migrations. Diagnose with `select version from supabase_migrations.schema_migrations order by version;`, then either `supabase migration repair --status applied <version>` per file, or insert the version rows directly. After that, `db push` is a no-op and new migrations flow through it cleanly. Also required for crons: the vault secrets `project_url` + `publishable_key` must exist (`select vault.create_secret(...)`), or every scheduled `net.http_post` fails with a null-url error.
+
 ## Build & submission gotchas
 
 - **`NSHealthUpdateUsageDescription` is mandatory — never remove it (learned 2026-08-02).** With the HealthKit entitlement present, App Store Connect **rejects the upload** without this key, even though the app is read-only: *"Missing purpose string in Info.plist … While your app might not use these APIs, a purpose string is still required."* (altool validation 409, `STATE_ERROR.VALIDATION_ERROR`). We tried removing it (to fix the misleading "…would like to update your health data" permission wording) — the build **compiled** but the TestFlight submission **failed validation**. Reverted: the key stays in `app.config.ts` with an honest string (`"<name> does not write any data back to Apple Health."`). The "update" framing only actually shows to users if the app *requests* write authorization, which it doesn't (`requestAuthorization([], cycleReadTypes)`), so read-only users see only the read section. See [BUGS.md](BUGS.md).
