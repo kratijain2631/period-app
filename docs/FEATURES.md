@@ -70,7 +70,34 @@ The single biggest strategic point from studying the comparables: **the sticky o
 
 ### The two things that will make or break the loop
 - **Cold-start / network effects.** Like early Strava, the app is boring until *your* friends are on it. → invite-only + referral-gated growth (PITCH → Go-to-market), and a genuinely useful *solo* mode (cycle wheel + insights) so a lone user still gets value on day one.
-- **Consent as a feature, not a blocker.** Unlike runs or restaurants, cycle data is intimate. The engagement mechanics above (auto-broadcast, leaderboards, status) are only acceptable if sharing is **explicit, granular, and revocable** — which today it isn't (BUGS.md). Fixing the consent model is a *prerequisite* for the social loop, not a side quest. Oura Circles / Whoop Teams prove sensitive data *does* get shared — but only inside a trusted, consent-gated circle.
+- **Consent as a feature, not a blocker.** Unlike runs or restaurants, cycle data is intimate. The engagement mechanics above (auto-broadcast, leaderboards, status) are only acceptable if sharing is **explicit, granular, and revocable**. _(Update 2026-08-02: the owner decided `friend = sharing data` is the intended model for now — see [BUGS.md](BUGS.md) consent item. Granular per-friend sharing is a later enhancement, not a blocker.)_ Oura Circles / Whoop Teams prove sensitive data *does* get shared — but only inside a trusted, consent-gated circle.
+
+---
+
+## "Usable vs. likeable" — competitor teardown & priority (2026-08-02)
+
+Studying what actually makes **Flighty, Strava, and Beli** *loved* (not just used), and honestly mapping it to where this app is. **Usable** (the core loop works) is basically done — this is the **likeable/loved** roadmap.
+
+| What makes it loved | Flighty / Strava / Beli | This app today |
+|---|---|---|
+| **It logs itself** (zero-effort content) | Flighty auto-imports flights; Strava records GPS | ✅ **Have it** — Apple Health auto-posts. Biggest latent superpower. |
+| **Premium, delightful design** | Flighty's polish is *the* reason people love it | ⚠️ **Biggest gap.** Currently "utilitarian." |
+| **Relative/competitive hook** | Beli ranks restaurants; Strava segments/leaderboards | ❌ **Sync-score leaderboard** — score is computed per friend but never surfaced as "who am I most in sync with." Signature feature, not built. |
+| **Shareable recap** | Flighty Passport, Spotify Wrapped, Strava Year-in-Sport | ❌ **"Your cycle year"** — screenshot-ready recap. Highest viral/word-of-mouth driver. Not built. |
+| **Emotional layer** | (the thing fitness/dining apps *lack*) | ❌ **Care actions** ("send a heat pad / some love"). Our actual differentiator over Strava/Beli. |
+| **Warm micro-reward** | kudos, reactions | ✅ boops + reactions + haptics. |
+| **Groups** | Strava clubs | ❌ friend groups ("the group chat, in-app"). |
+
+**Priority order for "likeable" (highest leverage first):**
+1. **Design pass / visual identity** — a real design system + polished home screen. The single biggest multiplier on "likeable"; makes everything else look intentional. Flighty's whole reputation is design.
+2. **Sync-score leaderboard** ("most in sync with") — the Beli relative hook. Already computed per friend in `FriendsScreen`; just needs surfacing. Cheapest high-impact win. (Outside Codex's consent lane.)
+3. **"Your cycle year" shareable recap** — the Wrapped moment. What makes people screenshot + share = how you actually grow.
+
+Then: **care actions** (unique emotional edge) and **groups**.
+
+**Strategic caveat — cold-start is the real make-or-break, not any single feature.** Like early Strava, it's boring until *your* friends are on it. Sequencing that matters: ship the usable version to a tight friend group **now**; make the **solo** experience genuinely good (cycle ring + a real insight, so a lone user gets value on day one); then build the leaderboard + recap that reward the social graph as it fills in.
+
+**Bottom line:** usable now → send to close friends. Likeable roadmap: **design polish → leaderboard → shareable recap → care actions.**
 
 ---
 
