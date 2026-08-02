@@ -6,8 +6,22 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## Unreleased
 
+### Added
+- **"Most in sync" leaderboard on your Circle.** The Circle screen now shows a top-5 ranked list of the friends you're most in sync with — medal badges for the top three, each friend's phase avatar + sync %, tappable to their sync page (appears once you have 2+ scored friends). The Beli-style relative hook. (`FriendsScreen.tsx`.)
+
+### Changed
+- **Cleaner Circle header.** Removed the redundant person-plus button (it only focused the search box, which is already on the page). (`FriendsScreen.tsx`.)
+- **One settings menu on the "You" page.** The settings icon (top-right) now opens a single menu — your account email, Post Settings, Sign out, Delete account — and the duplicate Account section at the bottom of the screen is gone. (`ProfileScreen.tsx`.)
+
+### Docs / process
+- **New [CYCLE_SYNC.md](CYCLE_SYNC.md)** — the full phase-derivation / sync-trigger / posting / notification / background system, as one source of truth (linked from CLAUDE.md, INSTRUCTIONS, SCHEMA).
+- **"Usable vs. likeable" competitor teardown** (Flighty/Strava/Beli) + prioritized roadmap added to FEATURES.md.
+- **Reconciled duplicate migrations** (33 → 25 files; removed 8 byte-identical re-creations, zero schema change).
+- **Corrected the "slow tests" misdiagnosis** and documented the migration-tracking gap (DB is hand-applied; never `db push`) with a foot-gun warning + a post-beta "adopt db push" TODO.
+- **Closed the consent items** per owner decision (`friend = sharing` is the intended model; remove-friend is the mutual revoke). Granular per-friend sharing is a later enhancement.
+
 ### In progress
-- **Contact-based friend discovery (WIP — Codex, 2026-07-29).** Claimed so concurrent contributors don't duplicate it. _(Not in build 1.0.8 — still in progress. The consent-model fix that was claimed alongside it was **closed 2026-08-02 by owner decision** — `friend = sharing` — see BUGS.md.)_
+- **Contact-based friend discovery (WIP — Codex, 2026-07-29).** Claimed so concurrent contributors don't duplicate it. _(Still in progress.)_
 
 ## 2026-08-02 — TestFlight build 1.0.8 (build 15)
 

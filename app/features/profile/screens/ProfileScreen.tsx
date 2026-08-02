@@ -5,6 +5,7 @@ import {
   Animated,
   Easing,
   Image,
+  Modal,
   Platform,
   Pressable,
   SafeAreaView,
@@ -158,6 +159,7 @@ const ProfileScreen = () => {
   const [cycleGuidanceStatus, setCycleGuidanceStatus] = useState<
     'idle' | 'loading' | 'error'
   >('idle');
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [accountAction, setAccountAction] = useState<'idle' | 'signingOut' | 'deleting'>('idle');
   const [accountError, setAccountError] = useState<string | null>(null);
 
@@ -754,9 +756,9 @@ const ProfileScreen = () => {
 
           <TouchableOpacity
             style={styles.settingsButton}
-            onPress={navigateToAutoPostSettings}
+            onPress={() => setSettingsOpen(true)}
             accessibilityRole="button"
-            accessibilityLabel="Open auto-post settings"
+            accessibilityLabel="Open settings"
           >
             <Ionicons name="settings-outline" size={19} color="#8A857E" />
           </TouchableOpacity>
@@ -900,46 +902,72 @@ const ProfileScreen = () => {
           )}
         </View>
 
-        <Text style={styles.sectionTitle}>Account</Text>
-        <View style={styles.accountCard}>
-          {profileEmail ? (
-            <View style={[styles.accountRow, styles.accountRowDivider]}>
-              <Ionicons name="mail-outline" size={18} color="#8A857E" />
-              <Text style={styles.accountRowText}>{profileEmail}</Text>
-            </View>
-          ) : null}
-
-          <TouchableOpacity style={[styles.accountRow, styles.accountRowDivider]} onPress={navigateToAutoPostSettings}>
-            <Ionicons name="settings-outline" size={18} color="#8A857E" />
-            <Text style={styles.accountRowText}>Post Settings</Text>
-            <Ionicons name="chevron-forward" size={16} color="#DDD9D3" />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.accountRow, styles.accountRowDivider, accountAction !== 'idle' ? styles.buttonDisabled : null]}
-            onPress={handleSignOut}
-            disabled={accountAction !== 'idle'}
-          >
-            <Ionicons name="log-out-outline" size={18} color="#C4654A" />
-            <Text style={styles.accountSignOutText}>
-              {accountAction === 'signingOut' ? 'Signing out...' : 'Sign out'}
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.accountRow, accountAction !== 'idle' ? styles.buttonDisabled : null]}
-            onPress={confirmDeleteAccount}
-            disabled={accountAction !== 'idle'}
-          >
-            <Ionicons name="trash-outline" size={18} color="#D4A252" />
-            <Text style={styles.accountDeleteText}>
-              {accountAction === 'deleting' ? 'Deleting...' : 'Delete account'}
-            </Text>
-          </TouchableOpacity>
-
-          {accountError ? <Text style={styles.inlineError}>{accountError}</Text> : null}
-        </View>
       </ScrollView>
+
+      <Modal
+        visible={settingsOpen}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setSettingsOpen(false)}
+      >
+        <Pressable style={styles.settingsOverlay} onPress={() => setSettingsOpen(false)}>
+          <Pressable style={styles.settingsSheet} onPress={() => {}}>
+            <View style={styles.settingsHeader}>
+              <Text style={styles.settingsTitle}>Settings</Text>
+              <TouchableOpacity onPress={() => setSettingsOpen(false)} accessibilityLabel="Close settings">
+                <Text style={styles.settingsClose}>Done</Text>
+              </TouchableOpacity>
+            </View>
+
+            {profileEmail ? (
+              <View style={[styles.accountRow, styles.accountRowDivider]}>
+                <Ionicons name="mail-outline" size={18} color="#8A857E" />
+                <Text style={styles.accountRowText}>{profileEmail}</Text>
+              </View>
+            ) : null}
+
+            <TouchableOpacity
+              style={[styles.accountRow, styles.accountRowDivider]}
+              onPress={() => {
+                setSettingsOpen(false);
+                navigateToAutoPostSettings();
+              }}
+            >
+              <Ionicons name="settings-outline" size={18} color="#8A857E" />
+              <Text style={styles.accountRowText}>Post Settings</Text>
+              <Ionicons name="chevron-forward" size={16} color="#DDD9D3" />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.accountRow,
+                styles.accountRowDivider,
+                accountAction !== 'idle' ? styles.buttonDisabled : null,
+              ]}
+              onPress={handleSignOut}
+              disabled={accountAction !== 'idle'}
+            >
+              <Ionicons name="log-out-outline" size={18} color="#C4654A" />
+              <Text style={styles.accountSignOutText}>
+                {accountAction === 'signingOut' ? 'Signing out...' : 'Sign out'}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.accountRow, accountAction !== 'idle' ? styles.buttonDisabled : null]}
+              onPress={confirmDeleteAccount}
+              disabled={accountAction !== 'idle'}
+            >
+              <Ionicons name="trash-outline" size={18} color="#D4A252" />
+              <Text style={styles.accountDeleteText}>
+                {accountAction === 'deleting' ? 'Deleting...' : 'Delete account'}
+              </Text>
+            </TouchableOpacity>
+
+            {accountError ? <Text style={styles.inlineError}>{accountError}</Text> : null}
+          </Pressable>
+        </Pressable>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -995,6 +1023,37 @@ const styles = StyleSheet.create({
     marginTop: 0.5,
     letterSpacing: 0.2,
     ...brandType.body,
+  },
+  settingsOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0,0,0,0.35)',
+  },
+  settingsSheet: {
+    backgroundColor: palette.white,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 32,
+    borderTopWidth: 1,
+    borderColor: palette.separator,
+  },
+  settingsHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingBottom: 8,
+  },
+  settingsTitle: {
+    fontSize: 18,
+    color: palette.primaryText,
+    ...brandType.heading,
+  },
+  settingsClose: {
+    fontSize: 14,
+    color: palette.accent,
+    ...brandType.semibold,
   },
   settingsButton: {
     width: 44,

@@ -289,6 +289,28 @@ const FriendsScreen = () => {
     [friendProfileMap, formatAlias, shortId],
   );
 
+  // Rank friends by sync score for the "most in sync" leaderboard (top 5).
+  const leaderboard = useMemo(() => {
+    return friendSnapshots
+      .map((row) => {
+        const raw = friendScores[row.user_id];
+        const score =
+          typeof raw === 'number' ? (raw <= 1 ? Math.round(raw * 100) : Math.round(raw)) : null;
+        return {
+          userId: row.user_id,
+          score,
+          phase: (row.snapshot?.currentPhase ?? null) as string | null,
+          username: friendUsername(row.user_id),
+        };
+      })
+      .filter(
+        (entry): entry is { userId: string; score: number; phase: string | null; username: string } =>
+          typeof entry.score === 'number',
+      )
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 5);
+  }, [friendSnapshots, friendScores, friendUsername]);
+
   const formatPhaseLabel = useCallback((value?: string | null) => {
     if (!value) {
       return 'Unknown';
@@ -470,16 +492,6 @@ const FriendsScreen = () => {
         <Animated.View style={entranceStyles[0]}>
           <View style={styles.headerRow}>
             <Text style={styles.title}>Your Circle</Text>
-            <TouchableOpacity
-              style={styles.headerAction}
-              onPress={() => {
-                setSearchNotice(null);
-                searchInputRef.current?.focus();
-              }}
-              accessibilityLabel="Add a friend"
-            >
-              <Ionicons name="person-add-outline" size={18} color={palette.secondaryText} />
-            </TouchableOpacity>
           </View>
         </Animated.View>
 
@@ -604,6 +616,36 @@ const FriendsScreen = () => {
             ) : null}
           </View>
         </Animated.View>
+
+        {leaderboard.length >= 2 ? (
+          <View style={styles.leaderboardCard}>
+            <Text style={styles.leaderboardTitle}>Most in sync 🔴</Text>
+            {leaderboard.map((entry, i) => {
+              const initial =
+                entry.username.replace('@', '').trim().slice(0, 1).toUpperCase() || '?';
+              const badge = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}`;
+              return (
+                <TouchableOpacity
+                  key={entry.userId}
+                  style={styles.leaderboardRow}
+                  onPress={() => navigateToFriendSync(entry.userId)}
+                  activeOpacity={0.9}
+                >
+                  <Text style={styles.leaderboardRank}>{badge}</Text>
+                  <PhaseAvatar initial={initial} phase={entry.phase} size={34} />
+                  <Text style={styles.leaderboardName} numberOfLines={1}>
+                    {entry.username}
+                  </Text>
+                  <Text
+                    style={[styles.leaderboardScore, { color: scoreToneFor(entry.score).color }]}
+                  >
+                    {entry.score}%
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        ) : null}
 
         <Animated.View style={entranceStyles[2]}>
           {friendSnapshots.length === 0 ? (
@@ -891,6 +933,43 @@ const styles = StyleSheet.create({
   },
   buttonDisabled: {
     opacity: 0.6,
+  },
+  leaderboardCard: {
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: palette.separator,
+    backgroundColor: palette.white,
+    padding: 16,
+    marginBottom: 16,
+    gap: 2,
+    ...brand.shadow.soft,
+  },
+  leaderboardTitle: {
+    fontSize: 15,
+    color: palette.primaryText,
+    marginBottom: 4,
+    ...brandType.semibold,
+  },
+  leaderboardRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 6,
+  },
+  leaderboardRank: {
+    width: 26,
+    textAlign: 'center',
+    fontSize: 16,
+  },
+  leaderboardName: {
+    flex: 1,
+    fontSize: 14,
+    color: palette.primaryText,
+    ...brandType.semibold,
+  },
+  leaderboardScore: {
+    fontSize: 15,
+    ...brandType.semibold,
   },
   friendsList: {
     borderRadius: 24,
