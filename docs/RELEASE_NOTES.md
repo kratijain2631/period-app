@@ -7,7 +7,7 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 ## Unreleased
 
 ### In progress
-- **Claimed active work (2026-07-29).** Marked the explicit/revocable consent-model fix (including removal of the 60-second sharing reset) and contact-based friend discovery as WIP so concurrent contributors do not duplicate them. _(Not in build 1.0.8 — still in progress.)_
+- **Contact-based friend discovery (WIP — Codex, 2026-07-29).** Claimed so concurrent contributors don't duplicate it. _(Not in build 1.0.8 — still in progress. The consent-model fix that was claimed alongside it was **closed 2026-08-02 by owner decision** — `friend = sharing` — see BUGS.md.)_
 
 ## 2026-08-02 — TestFlight build 1.0.8 (build 15)
 
