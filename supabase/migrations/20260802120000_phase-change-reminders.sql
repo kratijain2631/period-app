@@ -49,6 +49,13 @@ as $$
   where user_id = target_user;
 $$;
 
+-- These SECURITY DEFINER helpers expose user ids / write reminder state, so they
+-- must only be callable by the edge function (service_role), never anon/users.
+revoke all on function public.due_phase_reminders() from public;
+revoke all on function public.mark_phase_reminded(uuid, timestamptz) from public;
+grant execute on function public.due_phase_reminders() to service_role;
+grant execute on function public.mark_phase_reminded(uuid, timestamptz) to service_role;
+
 -- Daily at 15:00 UTC (mid-morning across the US), nudge users whose predicted
 -- phase transition is today. Mirrors the existing schedule-* cron pattern.
 create extension if not exists pg_cron;
