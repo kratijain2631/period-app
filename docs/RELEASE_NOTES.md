@@ -6,6 +6,13 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## Unreleased
 
+### In progress
+- **Contact-based friend discovery (WIP — Codex, 2026-07-29).** Claimed so concurrent contributors don't duplicate it. _(Still in progress.)_
+
+## 2026-08-02 — TestFlight build 1.0.9 (build 16)
+
+Build `1.0.9` — a social + polish batch on top of 1.0.8: the **"Most in sync" leaderboard** on your Circle (the Beli-style relative hook), a **cleaner Circle header** (removed the redundant + button), and the **"You" page settings consolidated** into one menu. Plus the docs cleanup below (CYCLE_SYNC.md, migration reconciliation, consent decision). _Built + auto-submitted to TestFlight._
+
 ### Added
 - **"Most in sync" leaderboard on your Circle.** The Circle screen now shows a top-5 ranked list of the friends you're most in sync with — medal badges for the top three, each friend's phase avatar + sync %, tappable to their sync page (appears once you have 2+ scored friends). The Beli-style relative hook. (`FriendsScreen.tsx`.)
 
@@ -19,9 +26,6 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 - **Reconciled duplicate migrations** (33 → 25 files; removed 8 byte-identical re-creations, zero schema change).
 - **Corrected the "slow tests" misdiagnosis** and documented the migration-tracking gap (DB is hand-applied; never `db push`) with a foot-gun warning + a post-beta "adopt db push" TODO.
 - **Closed the consent items** per owner decision (`friend = sharing` is the intended model; remove-friend is the mutual revoke). Granular per-friend sharing is a later enhancement.
-
-### In progress
-- **Contact-based friend discovery (WIP — Codex, 2026-07-29).** Claimed so concurrent contributors don't duplicate it. _(Still in progress.)_
 
 ## 2026-08-02 — TestFlight build 1.0.8 (build 15)
 
