@@ -12,6 +12,7 @@ Before working on this project, read the docs linked from the [README](../README
 - **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** — issues we hit and fixed, accounts/access, env vars, and things that expire.
 - **[IDENTIFIERS.md](IDENTIFIERS.md)** — every name/identifier, where it lives, and how costly it is to change.
 - **[SCHEMA.md](SCHEMA.md)** — the Supabase database (tables, functions, how it works).
+- **[CYCLE_SYNC.md](CYCLE_SYNC.md)** — how cycle phases are derived, when sync runs, and every posting/notification/background mechanism (the phase-update system end to end).
 - **[FEATURES.md](FEATURES.md)** — the product/feature backlog.
 - **[BUGS.md](BUGS.md)** — known open bugs.
 - **[RELEASE_NOTES.md](RELEASE_NOTES.md)** — what shipped in each build.
