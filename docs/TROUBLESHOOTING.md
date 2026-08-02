@@ -16,6 +16,10 @@ Everything learned bringing this app up: the issues we hit and fixed, what's con
 
 The original collaborator's (Lukas's) accounts are **no longer needed** — we migrated everything to the accounts above. Note: this Apple ID is still a *member* of Lukas's Apple team, so at build time EAS shows two "providers" — always pick **Krati Jain (129196348)**, not Lukas.
 
+## Build & submission gotchas
+
+- **`NSHealthUpdateUsageDescription` is mandatory — never remove it (learned 2026-08-02).** With the HealthKit entitlement present, App Store Connect **rejects the upload** without this key, even though the app is read-only: *"Missing purpose string in Info.plist … While your app might not use these APIs, a purpose string is still required."* (altool validation 409, `STATE_ERROR.VALIDATION_ERROR`). We tried removing it (to fix the misleading "…would like to update your health data" permission wording) — the build **compiled** but the TestFlight submission **failed validation**. Reverted: the key stays in `app.config.ts` with an honest string (`"<name> does not write any data back to Apple Health."`). The "update" framing only actually shows to users if the app *requests* write authorization, which it doesn't (`requestAuthorization([], cycleReadTypes)`), so read-only users see only the read section. See [BUGS.md](BUGS.md).
+
 ## Environment variables & config (where each lives)
 
 | Value | Where it lives | Notes |

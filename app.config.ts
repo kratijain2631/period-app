@@ -31,6 +31,10 @@ const IOS_BUNDLE_ID = 'com.syncsisters.cycle';
 const ANDROID_PACKAGE: string | undefined = undefined;
 
 const healthShareDescription = `${APP_NAME} reads menstrual health data from Apple Health to create social insights for you and your friends.`;
+// Apple REQUIRES this key whenever the HealthKit entitlement is present, even for
+// a read-only app (App Store validation rejects the build without it — learned
+// 2026-08-02). We never write to Apple Health, so the string says exactly that.
+const healthUpdateDescription = `${APP_NAME} does not write any data back to Apple Health.`;
 
 const config: ExpoConfig = {
   name: APP_NAME,
@@ -54,9 +58,9 @@ const config: ExpoConfig = {
       '@kingstinct/react-native-healthkit',
       {
         NSHealthShareUsageDescription: healthShareDescription,
-        // No NSHealthUpdateUsageDescription: this app is read-only. The plugin
-        // still force-writes a default, so it's stripped by
-        // ./plugins/withoutHealthUpdateUsage (added last, below).
+        // Required by Apple for the HealthKit entitlement even though we're
+        // read-only — see the const's note. Do NOT remove (fails App Store review).
+        NSHealthUpdateUsageDescription: healthUpdateDescription,
         background: true,
       },
     ],
@@ -74,6 +78,7 @@ const config: ExpoConfig = {
     },
     infoPlist: {
       NSHealthShareUsageDescription: healthShareDescription,
+      NSHealthUpdateUsageDescription: healthUpdateDescription,
       NSFaceIDUsageDescription: 'Face ID is used to secure your account if enabled in device settings.',
       ITSAppUsesNonExemptEncryption: false,
     },
