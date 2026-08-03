@@ -6,6 +6,9 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## Unreleased
 
+### Docs / process
+- **Codified stability guardrails (INSTRUCTIONS §12).** Made "additive-only migrations" a hard rule (never drop/rename a column/table a shipped build reads), "keep `tsc --noEmit` green" the regression gate, and filed a fast-smoke-test task (TODO) — the goal being updates that stay backward-compatible and don't gut the app.
+
 ### In progress
 - **Contact-based friend discovery (WIP — Codex, 2026-07-29).** Claimed so concurrent contributors don't duplicate it. _(Still in progress.)_
 

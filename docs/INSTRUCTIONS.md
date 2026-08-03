@@ -126,3 +126,12 @@ More than one person may work on this repo at once, each pushing to `main`. To s
 6. **RELEASE_NOTES is the shared source of truth** for what shipped — always add your line under `## Unreleased` in the same commit, so the other person sees what changed. Whoever cuts a build blocks `## Unreleased` into a version (§2) and pushes the build; the other syncs before continuing.
 
 _(If a conflict does happen, it'll almost always be in the append-only docs — resolve by keeping both entries.)_
+
+## 12. Backward-compatibility & stability guardrails
+
+The goal: friends can rely on the app, and we can keep shipping updates that **don't gut it**. There's no OTA — every update is a full TestFlight build, so JS and native always ship together (no runtime mismatch). On top of that, hold these rules:
+
+1. **Additive-only database migrations — a hard rule.** **Never drop or rename a column or table that a shipped build reads.** Older app builds keep running against the evolved schema *only* if the schema stays a superset of what they expect. Add new columns/tables/triggers (`add column if not exists`, new objects) — never remove or rename existing ones that a released build depends on. If a field truly must go, deprecate it (stop writing it, leave it readable) across at least one shipped build first. Same for data shapes: new fields in the `cycle_snapshots` jsonb etc. must be *additive* — old builds ignore what they don't know, and new builds must tolerate old rows missing new fields.
+2. **Keep `tsc --noEmit` green.** It's the regression gate — a clean typecheck is the cheapest guard against a change quietly breaking a call site. It's green now; don't merge red. (EAS/Metro bundle via Babel and won't catch type breaks, so `tsc` is our only static net.)
+3. **A fast smoke test must stay runnable** (see [TODO.md](TODO.md)) — a tiny, fast test that boots the core domain (cycle model, `syncScore`, reactions) so a "gutting" regression is caught before a build. The full `jest-expo` suite is too slow to run every change; the fast smoke set is the practical safety net.
+4. **Every build is a tagged rollback point** (§2). If a build regresses, `git checkout v<prev>-build<n>` and rebuild — atomic rollback.
