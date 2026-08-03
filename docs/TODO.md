@@ -77,8 +77,15 @@ Larger asks that need their own design + PRs (not part of the composer/reaction 
   - _Descriptive:_ Cycle Companion, Cycle Connection, Period, Period App, Social Menstruation App
 - [ ] Make naming consistent, or change the name. The display name is "Cadence" but the internal identifiers are mixed — iOS bundle id `com.syncsisters.cycle`, and slug / npm name / repo all `period-app`. Decide whether to align them to one namespace (e.g. cadence) or rename the app entirely. Best done **pre-launch**. Weigh the change-costs in [IDENTIFIERS.md](IDENTIFIERS.md): the bundle id is costly to change and invisible to users; the slug must match the EAS server; scheme / npm name / repo are cheap.
 
+## Design / branding — top "likeable" priority
+- [ ] **Premium design + branding pass.** Make the app polished, premium, delightful (design system, branding, avatars, cycle-wheel hero, micro-interactions). Full vision + the AI-mockup → pixel-for-pixel replication approach lives in **[DESIGN.md](DESIGN.md)**. Highest-leverage work on "likeable" per the [FEATURES.md](FEATURES.md) teardown.
+
+## Rollout blockers (before the friends beta / wider rollout)
+- [ ] **Find friends from contacts — owner flagged this a rollout blocker (2026-08-03).** Surfacing which contacts already use the app (and inviting the rest) is needed for the social loop to work at rollout; without it, a new user lands in an empty app. Already tracked as a feature ([FEATURES.md](FEATURES.md) → "Find friends from contacts", WIP/Codex 2026-07-29) — this promotes it to a **blocker**, not just a nice-to-have. Needs Contacts permission + privacy-conscious matching.
+
 ## Improve the app
 - [ ] Improve the app — see [FEATURES.md](FEATURES.md) for the feature/design roadmap and [BUGS.md](BUGS.md) for known bugs.
+- [ ] **App-level (OS/push) notifications** — already tracked: see [FEATURES.md](FEATURES.md) → "Engagement & notifications" ("User notifications") and the push-token / `notifications-handler` items above. Cross-listed here so the owner's "app level notifications" ask is unambiguously captured.
 
 ## Code health / tech debt (from the 2026-07-27 codebase review)
 Structural cleanups — not user-facing, but they make everything after them cheaper and safer. Details/rationale in [BUGS.md](BUGS.md).

@@ -9,6 +9,7 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 ### Docs / process
 - **Codified stability guardrails (INSTRUCTIONS §12).** Overriding rule: **every change must be backward-compatible and atomic — no big-bang rehauls** (even the design rehaul lands incrementally, screen by screen). Plus: additive-only migrations (never drop/rename a column/table a shipped build reads), keep `tsc --noEmit` green as the regression gate, and a fast smoke test (TODO). Goal: updates that don't gut the app.
 - **TODO close-out sweep (2026-08-02).** Marked already-done items done (parallelize `loadFeed`, reconcile duplicate migrations, `npm test` green); added an **on-device verification checklist** for the beta; and flagged the **vault-secrets gap** that silently breaks all scheduled crons.
+- **Backlog triage (2026-08-03).** Logged two new bugs (cycle **double-counting** / a phase listed twice after adding an adjacent-before flow day; the "You" page do's/don'ts stuck on **"No guidance yet"** because the `cycle-guidance` cron never fires); promoted **contacts-based friend discovery** to a rollout blocker in TODO; cross-listed **app-level notifications**; and created **[DESIGN.md](DESIGN.md)** capturing the premium-design vision + the AI-mockup → pixel-for-pixel approach (linked from FEATURES/TODO/CLAUDE index).
 
 ### In progress
 - **Contact-based friend discovery (WIP — Codex, 2026-07-29).** Claimed so concurrent contributors don't duplicate it. _(Still in progress.)_

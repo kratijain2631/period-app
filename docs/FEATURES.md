@@ -105,6 +105,8 @@ Then: **care actions** (unique emotional edge) and **groups**.
 
 ## Design & aesthetics — highest leverage
 
+> **See [DESIGN.md](DESIGN.md)** for the full design/branding vision and the concrete approach (AI-generated mockups → pixel-for-pixel replication loop). This section is the roadmap summary; DESIGN.md is the how.
+
 The app works but looks utilitarian. A cohesive visual identity is the single biggest thing that will make it *feel* real. Ethos: **serious, not pink/girly/fluffy** — clean, considered, trustworthy; and **fast, low-friction period entry**.
 
 - **Design system** — a **foundation already exists** (`app/theme/brand.ts` colors/type + `app/config/branding.ts`, imported by ~8 screens), but it's only a palette/type layer: screens still each define their own `StyleSheet.create` and there are **no shared UI components** yet. Next: extract shared components (buttons, cards, chips, empty/loading states) so the look is consistent and screens stop re-declaring styles. Ethos: a considered palette (not stereotypically "girly"), type scale, spacing.
