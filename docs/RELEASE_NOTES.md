@@ -7,7 +7,8 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 ## Unreleased
 
 ### Docs / process
-- **Codified stability guardrails (INSTRUCTIONS §12).** Made "additive-only migrations" a hard rule (never drop/rename a column/table a shipped build reads), "keep `tsc --noEmit` green" the regression gate, and filed a fast-smoke-test task (TODO) — the goal being updates that stay backward-compatible and don't gut the app.
+- **Codified stability guardrails (INSTRUCTIONS §12).** Overriding rule: **every change must be backward-compatible and atomic — no big-bang rehauls** (even the design rehaul lands incrementally, screen by screen). Plus: additive-only migrations (never drop/rename a column/table a shipped build reads), keep `tsc --noEmit` green as the regression gate, and a fast smoke test (TODO). Goal: updates that don't gut the app.
+- **TODO close-out sweep (2026-08-02).** Marked already-done items done (parallelize `loadFeed`, reconcile duplicate migrations, `npm test` green); added an **on-device verification checklist** for the beta; and flagged the **vault-secrets gap** that silently breaks all scheduled crons.
 
 ### In progress
 - **Contact-based friend discovery (WIP — Codex, 2026-07-29).** Claimed so concurrent contributors don't duplicate it. _(Still in progress.)_

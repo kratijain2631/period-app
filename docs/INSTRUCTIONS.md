@@ -129,7 +129,11 @@ _(If a conflict does happen, it'll almost always be in the append-only docs — 
 
 ## 12. Backward-compatibility & stability guardrails
 
-The goal: friends can rely on the app, and we can keep shipping updates that **don't gut it**. There's no OTA — every update is a full TestFlight build, so JS and native always ship together (no runtime mismatch). On top of that, hold these rules:
+The goal: friends can rely on the app, and we can keep shipping updates that **don't gut it**. There's no OTA — every update is a full TestFlight build, so JS and native always ship together (no runtime mismatch).
+
+**The overriding rule: every change must be backward-compatible and atomic — no big-bang rehauls.** Land work in small, self-contained, independently-shippable pieces (§6), each one safe to roll back and safe for a friend still on an older build. This applies even to large efforts like the **design rehaul**: do it **incrementally — screen by screen / component by component**, never as one sweeping rewrite that guts the app mid-flight. If something feels like it needs a big rewrite, break it into a sequence of small backward-compatible steps instead.
+
+On top of that, hold these rules:
 
 1. **Additive-only database migrations — a hard rule.** **Never drop or rename a column or table that a shipped build reads.** Older app builds keep running against the evolved schema *only* if the schema stays a superset of what they expect. Add new columns/tables/triggers (`add column if not exists`, new objects) — never remove or rename existing ones that a released build depends on. If a field truly must go, deprecate it (stop writing it, leave it readable) across at least one shipped build first. Same for data shapes: new fields in the `cycle_snapshots` jsonb etc. must be *additive* — old builds ignore what they don't know, and new builds must tolerate old rows missing new fields.
 2. **Keep `tsc --noEmit` green.** It's the regression gate — a clean typecheck is the cheapest guard against a change quietly breaking a call site. It's green now; don't merge red. (EAS/Metro bundle via Babel and won't catch type breaks, so `tsc` is our only static net.)
