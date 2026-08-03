@@ -6,13 +6,20 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## Unreleased
 
+### In progress
+- **Contact-based friend discovery (WIP — Codex, 2026-07-29).** Claimed so concurrent contributors don't duplicate it. _(Still in progress.)_
+
+## 2026-08-03 — TestFlight build 1.0.10 (build auto)
+
+Build `1.0.10` — a correctness fix for the **cycle "double-counting" / duplicate-phase** bug plus the docs batch below.
+
+### Fixed
+- **Period posts no longer mislabel the phase or duplicate it in the feed.** Two bugs behind the owner-reported "it says Follicular twice" / "double-counting this cycle": (1) a `menstrual_flow` (period-day) post was tagged with the *current* derived phase (e.g. Follicular) instead of `'menstruation'`, so period posts read "Follicular phase" — and logging two adjacent days made it appear twice; now period-flow posts are always labeled `'menstruation'`. (2) `phase_transition` posts didn't reliably de-dupe because their `starts_at` (`currentPhaseStart`) carried the sync's time-of-day, so re-syncs of the same transition slipped past the `(user_id, starts_at, event_type)` upsert key; `currentPhaseStart` is now snapped to a stable **local day boundary**, so repeat syncs collapse to one post. Regression tests added (`models.test.ts`, `syncHealthData.test.ts`). `syncHealthData.ts`, `packages/domain/cycles/models.ts`. See [BUGS.md](BUGS.md). _(Existing duplicate rows already in `cycle_events` aren't retro-cleaned — delete the stray post, or run a one-time dedupe if needed.)_
+
 ### Docs / process
 - **Codified stability guardrails (INSTRUCTIONS §12).** Overriding rule: **every change must be backward-compatible and atomic — no big-bang rehauls** (even the design rehaul lands incrementally, screen by screen). Plus: additive-only migrations (never drop/rename a column/table a shipped build reads), keep `tsc --noEmit` green as the regression gate, and a fast smoke test (TODO). Goal: updates that don't gut the app.
 - **TODO close-out sweep (2026-08-02).** Marked already-done items done (parallelize `loadFeed`, reconcile duplicate migrations, `npm test` green); added an **on-device verification checklist** for the beta; and flagged the **vault-secrets gap** that silently breaks all scheduled crons.
-- **Backlog triage (2026-08-03).** Logged two new bugs (cycle **double-counting** / a phase listed twice after adding an adjacent-before flow day; the "You" page do's/don'ts stuck on **"No guidance yet"** because the `cycle-guidance` cron never fires); promoted **contacts-based friend discovery** to a rollout blocker in TODO; cross-listed **app-level notifications**; and created **[DESIGN.md](DESIGN.md)** capturing the premium-design vision + the AI-mockup → pixel-for-pixel approach (linked from FEATURES/TODO/CLAUDE index).
-
-### In progress
-- **Contact-based friend discovery (WIP — Codex, 2026-07-29).** Claimed so concurrent contributors don't duplicate it. _(Still in progress.)_
+- **Backlog triage (2026-08-03).** Logged the double-counting bug (now fixed above) and the "You" page do's/don'ts stuck on **"No guidance yet"** (the `cycle-guidance` cron never fires); promoted **contacts-based friend discovery** to a rollout blocker in TODO; cross-listed **app-level notifications**; and created **[DESIGN.md](DESIGN.md)** capturing the premium-design vision + the AI-mockup → pixel-for-pixel approach (linked from FEATURES/TODO/CLAUDE index).
 
 ## 2026-08-02 — TestFlight build 1.0.9 (build 16)
 

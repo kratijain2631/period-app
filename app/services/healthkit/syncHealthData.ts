@@ -239,7 +239,12 @@ export const syncHealthData = async ({
       const events = autoPostedSamples.map((sample) => ({
         user_id: session.userId,
         event_type: 'menstrual_flow',
-        phase: snapshot.currentPhase,
+        // A flow sample *is* menstruation by definition — always label it
+        // 'menstruation', not the current derived phase. Tagging it with
+        // snapshot.currentPhase (e.g. 'follicular', when today is past the flow
+        // days) mislabeled period posts as "Follicular phase" in the feed and,
+        // with multiple logged days, showed the same phase repeated. See BUGS.md.
+        phase: 'menstruation',
         symptoms: {
           ...(asRecord(sample.metadata) ?? {}),
           ...phaseMetadata,

@@ -300,5 +300,12 @@ describe('syncHealthData signal integration', () => {
 
     expect(flowEvent?.symptoms?.phase_source).toBe(snapshot?.phaseSource ?? 'unknown');
     expect(transitionEvent?.symptoms?.phase_source).toBe(snapshot?.phaseSource ?? 'unknown');
+
+    // A period-flow event is always labeled 'menstruation' — never the current
+    // derived phase (which mislabeled period posts as e.g. "Follicular phase"
+    // and duplicated the label across multiple logged days). See BUGS.md.
+    expect(flowEvent?.phase).toBe('menstruation');
+    // The phase-transition post still carries the real current phase.
+    expect(transitionEvent?.phase).toBe(snapshot?.currentPhase);
   });
 });

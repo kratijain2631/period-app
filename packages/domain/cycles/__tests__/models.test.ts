@@ -219,4 +219,28 @@ describe('deriveSnapshot', () => {
     expect(snapshot.lutealLengthDays).toBeGreaterThanOrEqual(11);
     expect(snapshot.signalSamples).toEqual([]);
   });
+
+  it('anchors currentPhaseStart to a stable day boundary regardless of sync time-of-day', () => {
+    const samples = [
+      flowSample('p1d1', '2026-01-01T08:00:00.000Z'),
+      flowSample('p1d2', '2026-01-02T08:00:00.000Z'),
+      flowSample('p2d1', '2026-01-30T08:00:00.000Z'),
+      flowSample('p2d2', '2026-01-31T08:00:00.000Z'),
+      flowSample('p3d1', '2026-02-27T08:00:00.000Z'),
+      flowSample('p3d2', '2026-02-28T08:00:00.000Z'),
+    ];
+
+    // Two syncs on the same calendar day, hours apart, must produce the *same*
+    // currentPhaseStart so the phase-transition post de-dupes instead of
+    // double-posting (regression guard for the "Entered <phase>" duplicate bug).
+    const morning = deriveSnapshot(samples, '2026-03-10T09:15:00.000Z');
+    const evening = deriveSnapshot(samples, '2026-03-10T21:45:00.000Z');
+
+    expect(morning.currentPhaseStart).toBe(evening.currentPhaseStart);
+    // And it is a midnight boundary (no carried time-of-day).
+    const anchored = new Date(morning.currentPhaseStart as string);
+    expect(anchored.getHours()).toBe(0);
+    expect(anchored.getMinutes()).toBe(0);
+    expect(anchored.getSeconds()).toBe(0);
+  });
 });

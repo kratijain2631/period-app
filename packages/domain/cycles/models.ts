@@ -431,8 +431,14 @@ export const resolveCyclePhase = ({
   // Days elapsed since the current phase began → back-date the transition from
   // the reference (sync) time, so a phase-change post reads at the real transition.
   const daysIntoPhase = Math.max(0, cycleDay - window.phaseStartDay);
-  const currentPhaseStart = new Date(
-    referenceDate.getTime() - daysIntoPhase * DAY_MS,
+  // Snap to the *day boundary* of the phase-start date. The phase-transition
+  // post is dated at this value (`starts_at`) and de-duped on
+  // (user_id, starts_at, event_type). If we kept the sync's time-of-day, two
+  // syncs of the same transition would produce different timestamps → the
+  // upsert couldn't collapse them → duplicate "Entered <phase>" posts. Anchoring
+  // to local midnight makes the key stable across syncs of the same phase-day.
+  const currentPhaseStart = toDayStart(
+    new Date(referenceDate.getTime() - daysIntoPhase * DAY_MS),
   ).toISOString();
   // Predict the next transition: the current phase ends on phaseEndDay, so the
   // next phase begins that-many days ahead. Used to schedule a "your phase is

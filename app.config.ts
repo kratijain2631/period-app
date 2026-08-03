@@ -39,7 +39,7 @@ const healthUpdateDescription = `${APP_NAME} does not write any data back to App
 const config: ExpoConfig = {
   name: APP_NAME,
   slug: SLUG,
-  version: '1.0.9',
+  version: '1.0.10',
   orientation: 'portrait',
   userInterfaceStyle: 'light',
   scheme: SCHEME,
