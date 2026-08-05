@@ -26,6 +26,35 @@ Scope of this track:
 
 This turns "I can't design" into a tractable generate → pick → replicate pipeline.
 
+## Image-generation prompt (for step 2)
+
+Paste into an image model (GPT Image / Midjourney / Nano Banana / etc.) to generate sample mockups for the key screens. Generate several variations, pick the ones we love, then feed the winners into the pixel-for-pixel loop (step 3). The **master prompt** carries the brand; append **one screen block** per generation. Tweak freely — this is for inspiration, not a spec.
+
+### Master prompt (prepend to every generation)
+
+> A high-fidelity iOS app UI mockup, rendered as a single iPhone screen (portrait, modern iPhone with rounded corners, status bar, home indicator). This is **Cadence**, a premium social menstrual-cycle app — *"where your cycle meets your circle."* Design ethos: **serious, warm, considered, trustworthy, and delightful — NOT stereotypically pink, girly, or fluffy.** Think the polish of Flighty, Oura, and Co-Star applied to women's health.
+>
+> **Palette:** warm off-white / bone backgrounds (#FFFFFF, #F7F5F2), soft warm-neutral fills (#EDE9E3), deep warm charcoal text (#2D2A26) with muted taupe secondary text (#8A857E). Signature accent is a **terracotta / clay red (#C4654A)** — the brand's "red drop" motif — used sparingly for emphasis. Cycle phases each have a calm, sophisticated tone: **menstruation = terracotta (#C4654A), follicular = sage green (#7BA68F), ovulation = warm gold (#D4A252), luteal = dusty blue (#6B8DB5), PMS = muted mauve (#B56E9D)** — desaturated, earthy, never neon.
+>
+> **Typography:** a warm rounded sans for headings/display (Nunito-like, friendly but grown-up), a clean neutral sans for body (Inter-like). Generous spacing, clear hierarchy.
+>
+> **Form language:** soft rounded cards (18–28px radius), very soft low-contrast shadows, pill-shaped chips and buttons, roomy padding, calm negative space. Subtle, refined micro-detail. A small **red teardrop mark** appears as the brand icon. Cohesive, editorial, premium. No lorem-ipsum clutter, no stock-photo faces, no rainbow gradients, no cutesy clip-art.
+
+### Screen blocks (append one at a time)
+
+- **Home (hero / centerpiece):** The home screen centered on a beautiful **cycle wheel** — a circular ring visualization of the ~28-day cycle, current day marked, the ring segmented/gradated by phase color, with the current phase named in the center ("Follicular · Day 9"). Below: a card or two of phase-based insights ("energy is rising — good week for planning") and a subtle CTA. Warm, calm, hero-worthy.
+- **Circle / sync leaderboard (signature hook):** A "Circle" screen with a **"Most in sync 🔴" top-5 leaderboard** — ranked rows of friends, each with a circular avatar tinted by their current phase color, their name, and a sync-score percentage; medal/badge accents on the top 3. Below the leaderboard, the rest of the friends list. Social, relative, screenshot-worthy — the delightful competitive moment.
+- **Feed:** A social feed of cycle "moments" from friends — clean cards, each with a small phase-tinted avatar, a friendly auto-generated update ("Maya just started her follicular phase"), and lightweight reactions (a boop / red-drop react). Warm, low-friction, never clinical.
+- **"Your cycle year" recap (Wrapped-style, shareable):** A gorgeous full-bleed **shareable recap card** — Spotify-Wrapped energy but calm and editorial. Big friendly stats (total cycle days, average cycle length, most-in-sync friend), phase-colored data viz, the Cadence red-drop mark. Designed to be screenshotted and shared.
+- **Avatar system:** A set of branded profile **avatars** — soft, warm, abstract/illustrative (not photoreal, not cartoonish), each tintable by cycle-phase color, cohesive as a family. Show ~6 on a bone background.
+- **App icon + splash:** An **app icon** exploration built on the red-teardrop motif — minimal, premium, recognizable at small size on warm/neutral and dark grounds; plus a matching launch/splash treatment with the wordmark "Cadence" and tagline.
+
+### Tips
+
+- Vary one axis at a time (layout, warmth of the neutrals, how boldly the terracotta is used, wheel vs. calendar for Home) so comparisons stay honest.
+- Ask for **light and dark** variants of the winners — dark mode is on the roadmap.
+- Keep real copy short and plausible so the mock reads like the real product, not filler.
+
 ## Status
 
 - ✅ Palette/type foundation (`app/theme/brand.ts`, `app/config/branding.ts`), imported by ~8 screens.

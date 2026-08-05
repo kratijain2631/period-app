@@ -9,6 +9,9 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 ### In progress
 - **Contact-based friend discovery (WIP — Codex, 2026-07-29).** Claimed so concurrent contributors don't duplicate it. _(Still in progress.)_
 
+### Docs / process
+- **DESIGN.md — image-generation prompt for step 2 of the design pipeline.** Added a reusable master prompt (grounded in the real brand tokens: terracotta accent, phase palette, Nunito/Inter, warm neutrals, red-drop motif, "serious not girly" ethos) plus per-screen blocks (Home cycle wheel, sync leaderboard, feed, "cycle year" recap, avatars, icon/splash) to generate sample mockups for design inspiration.
+
 ## 2026-08-03 — TestFlight build 1.0.10 (build auto)
 
 Build `1.0.10` — a correctness fix for the **cycle "double-counting" / duplicate-phase** bug plus the docs batch below.
