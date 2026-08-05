@@ -2,6 +2,14 @@
 
 Open items, roughly in priority order. Done work isn't listed here.
 
+## ⚠️ Ship build 1.0.10 (fix is pushed, build never landed)
+- [ ] **Cut the 1.0.10 TestFlight build.** The double-count fix is committed + pushed to `main` ([9a8e0acf], version already bumped to 1.0.10 in `app.config.ts`), but **the build never shipped** — `eas build` reproducibly **hangs at "Compressing project files / uploading"** in the agent sandbox (both attempts died, exit 144). Not a repo issue (git archive is 4 MB, EAS API responds in ~80 ms, node_modules is gitignored) — it's the CLI's local compress step stalling on sandbox I/O. **Run from a normal terminal** (outside the sandbox) to ship it:
+  ```
+  eas build --platform ios --profile production --non-interactive --auto-submit
+  ```
+  Then confirm it registers: `eas build:list --platform ios --limit 1` shows **1.0.10 / build 17**. (Latest on EAS is still 1.0.9 / build 16.)
+- [ ] **(Optional, low priority) One-time dedupe of pre-fix duplicate `cycle_events`.** The 1.0.10 fix stops *new* duplicate/mislabeled period + phase-transition posts, but rows already written before it aren't retro-cleaned. If a tester still sees a stray duplicate, they can delete the post; or run a one-time SQL dedupe (keep the earliest row per `user_id, event_type, date(starts_at)`). Not a blocker.
+
 ## ⭐ On-device verification checklist (once build 1.0.9 is on a phone) — do before/during the friends beta
 Most of build 1.0.8–1.0.9's newer features couldn't be verified in the dev env (no device, background execution untestable). Confirm on a real TestFlight install:
 - [ ] **Friend-accept → mutual friendship works end-to-end** (2 accounts). The one flagged social-core risk, never live-verified — see [BUGS.md](BUGS.md). If broken, the whole social layer fails for testers.
