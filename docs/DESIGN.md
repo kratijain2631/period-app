@@ -55,6 +55,21 @@ Paste into an image model (GPT Image / Midjourney / Nano Banana / etc.) to gener
 - Ask for **light and dark** variants of the winners — dark mode is on the roadmap.
 - Keep real copy short and plausible so the mock reads like the real product, not filler.
 
+### Which tool to generate with
+
+For **UI mockups with legible text**, the image models rank roughly:
+
+| Tool | Good for | Watch out |
+|---|---|---|
+| **ChatGPT (GPT Image)** ⭐ primary | Best all-rounder — follows long detailed prompts, renders legible text/labels, coherent screen layouts. Paste the prompt straight in. | Softens exact hex colors; treat the palette as a guide, not pixel-exact. |
+| **Google Gemini ("Nano Banana" image)** ⭐ | As strong for UI, and excellent at consistency/editing — great for "same style, now the Feed screen" and iterating on one image. | Same text-rendering caveats. |
+| **Midjourney** | Gorgeous aesthetic/mood, best pure look-and-feel. | Weakest at legible UI text and precise layout — better for vibe/color exploration than literal mockups. |
+| **Claude** | ❌ Can't generate images. Claude's role is **step 3** — feed a chosen mock into code and replicate it pixel-for-pixel. |
+
+**Recommended flow:** start in **ChatGPT**, generate 3–4 of the Home prompt; when you like a look, switch that image into **Gemini** to spin tight variants.
+
+**Alternative — skip the image step:** tools like **v0 (Vercel)** or **Lovable** generate real, editable UI *code* from the same prompt. Tradeoff: they're web/React-oriented, so output isn't native RN and leans more "generic web app" than our warm editorial mood. For *inspiration* (this track's goal), the image models give a stronger aesthetic to aim at; revisit these if we ever want a code-first starting point.
+
 ## Status
 
 - ✅ Palette/type foundation (`app/theme/brand.ts`, `app/config/branding.ts`), imported by ~8 screens.
