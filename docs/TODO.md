@@ -8,7 +8,7 @@ Open items, roughly in priority order. Done work isn't listed here.
   eas build --platform ios --profile production --non-interactive --auto-submit
   ```
   Then confirm it registers: `eas build:list --platform ios --limit 1` shows **1.0.10 / build 17**. (Latest on EAS is still 1.0.9 / build 16.)
-- [ ] **(Optional, low priority) One-time dedupe of pre-fix duplicate `cycle_events`.** The 1.0.10 fix stops *new* duplicate/mislabeled period + phase-transition posts, but rows already written before it aren't retro-cleaned. If a tester still sees a stray duplicate, they can delete the post; or run a one-time SQL dedupe (keep the earliest row per `user_id, event_type, date(starts_at)`). Not a blocker.
+- [x] **One-time dedupe of pre-fix duplicate `cycle_events` — DONE 2026-08-05 (Supabase SQL editor).** Removed the duplicate `phase_transition` rows the pre-1.0.10 bug wrote (kept the earliest per `user_id, event_type, phase, day`): 2 pairs for user `5faa6453…` — `follicular / 2026-08-03` and `menstruation / 2026-07-29` — plus a relabel of any `menstrual_flow` rows tagged with a non-`menstruation` phase. Preview re-run returned 0 duplicate groups. One-off cleanup (not a migration — the 1.0.10 fix prevents recurrence, per owner).
 
 ## ⭐ On-device verification checklist (once build 1.0.9 is on a phone) — do before/during the friends beta
 Most of build 1.0.8–1.0.9's newer features couldn't be verified in the dev env (no device, background execution untestable). Confirm on a real TestFlight install:
