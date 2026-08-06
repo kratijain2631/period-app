@@ -2,12 +2,8 @@
 
 Open items, roughly in priority order. Done work isn't listed here.
 
-## ⚠️ Ship build 1.0.10 (fix is pushed, build never landed)
-- [ ] **Cut the 1.0.10 TestFlight build.** The double-count fix is committed + pushed to `main` ([9a8e0acf], version already bumped to 1.0.10 in `app.config.ts`), but **the build never shipped** — `eas build` reproducibly **hangs at "Compressing project files / uploading"** in the agent sandbox (both attempts died, exit 144). Not a repo issue (git archive is 4 MB, EAS API responds in ~80 ms, node_modules is gitignored) — it's the CLI's local compress step stalling on sandbox I/O. **Run from a normal terminal** (outside the sandbox) to ship it:
-  ```
-  eas build --platform ios --profile production --non-interactive --auto-submit
-  ```
-  Then confirm it registers: `eas build:list --platform ios --limit 1` shows **1.0.10 / build 17**. (Latest on EAS is still 1.0.9 / build 16.)
+## ✅ Ship build 1.0.10 — DONE 2026-08-05 (build 30, auto-submitted)
+- [x] **Cut the 1.0.10 TestFlight build.** Built + auto-submitted to TestFlight — **1.0.10 / buildNumber 30**, build ID `23781dc7-f1ae-48df-b147-2d91aed25ef0` (submission `31526850-…`). The real reason it kept "hanging at Compressing project files" was **not** the sandbox — the repo (in `~/Documents`) had an **iCloud-evicted `dataless` file** (`reference/wireframes.jpeg`) plus ~13,871 in `node_modules`, and eas's archive/fingerprint blocked reading them. Fixed by materializing the file + `EAS_SKIP_AUTO_FINGERPRINT=1` on Node 20 — full writeup + the exact command in [TROUBLESHOOTING.md](TROUBLESHOOTING.md) "Build & submission gotchas". _(Verify the build finishes + shows in TestFlight; submit for Beta App Review to make it `· public`.)_
 - [x] **One-time dedupe of pre-fix duplicate `cycle_events` — DONE 2026-08-05 (Supabase SQL editor).** Removed the duplicate `phase_transition` rows the pre-1.0.10 bug wrote (kept the earliest per `user_id, event_type, phase, day`): 2 pairs for user `5faa6453…` — `follicular / 2026-08-03` and `menstruation / 2026-07-29` — plus a relabel of any `menstrual_flow` rows tagged with a non-`menstruation` phase. Preview re-run returned 0 duplicate groups. One-off cleanup (not a migration — the 1.0.10 fix prevents recurrence, per owner).
 
 ## ⭐ On-device verification checklist (once build 1.0.9 is on a phone) — do before/during the friends beta
