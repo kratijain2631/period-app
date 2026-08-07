@@ -13,9 +13,9 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 - **DESIGN.md — image-generation prompt for step 2 of the design pipeline.** Added a reusable master prompt (grounded in the real brand tokens: terracotta accent, phase palette, Nunito/Inter, warm neutrals, red-drop motif, "serious not girly" ethos) plus per-screen blocks (Home cycle wheel, sync leaderboard, feed, "cycle year" recap, avatars, icon/splash) to generate sample mockups for design inspiration. Also captured a **"which tool to generate with"** guide (ChatGPT GPT Image primary, Gemini for iteration, Midjourney for mood, Claude can't generate; v0/Lovable as a code-first alternative).
 
-## 2026-08-06 — TestFlight build 1.0.11 (build 31)
+## 2026-08-06 — TestFlight build 1.0.11 (build 32)
 
-Version `1.0.11` prepared for TestFlight. The build number will be confirmed when the EAS build starts.
+Version `1.0.11` — **built + auto-submitted to TestFlight** on 2026-08-06 (buildNumber **32**, build ID `f2165f16-9ba0-461d-ab39-025c23ccb4b2`). Carries only Neha's friend-cycle privacy-RPC work (PR #64) on top of 1.0.10. _(The earlier "build 31" placeholder was a pre-build guess; the remote auto-increment assigned 32.)_
 
 ### Fixed
 

@@ -127,6 +127,10 @@ More than one person may work on this repo at once, each pushing to `main`. To s
 5. **Coordinate lanes** — avoid two people editing the same file at once, *especially* the large screens (`HomeScreen.tsx`, `ProfileScreen.tsx`, `FriendsScreen.tsx`, `FriendSyncScreen.tsx`), which are the worst merge-conflict magnets. Split by feature area (e.g. one on friends, one on cycle) rather than both in one file.
 6. **RELEASE_NOTES is the shared source of truth** for what shipped — always add your line under `## Unreleased` in the same commit, so the other person sees what changed. Whoever cuts a build blocks `## Unreleased` into a version (§2) and pushes the build; the other syncs before continuing.
 
+**Review what you pull, and relay it (the mutual check — do this every time):**
+7. **Pull other people's changes often** — many times a day, not once. Frequent small syncs prevent conflicts *and* keep each **build scoped to one person's work**: sync, then cut the build right after, so a build carries a single author's changes rather than a tangle of several (easier to reason about, review, and roll back). Don't let `main` drift far ahead of what you've actually looked at.
+8. **Never rubber-stamp someone else's commits.** Whenever you pull in work from another person, **read the actual diff** (`git log <last-seen-sha>..origin/main`, then `git show <sha>` / `git diff --stat`), confirm it **matches our understanding** of what they said they were doing, and **describe the new changes back to the current user in plain terms** — what changed, why, any risk, and anything that needs action (e.g. a migration to apply, a min-version requirement). If the diff *doesn't* match the description, or looks wrong or unsafe, **flag it before building on top of it**. Everyone verifying everyone else's incoming work is how we keep each other in check and catch mistakes early — treat it as required, not optional.
+
 _(If a conflict does happen, it'll almost always be in the append-only docs — resolve by keeping both entries.)_
 
 ## 12. Backward-compatibility & stability guardrails
