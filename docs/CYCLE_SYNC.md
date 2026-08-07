@@ -55,7 +55,9 @@ In order (`syncHealthData`):
 
 ### What friends can read
 
-Accepting a friend enables the core sharing experience. Current clients fetch a reduced cycle snapshot (phase, phase timing/predictions, cycle/period lengths, and date-only period samples with unspecified intensity) plus deliberately published cycle events. The RPC projections exclude raw HealthKit metadata, personal symptoms, flow intensity, and ovulation/BBT/cervical-mucus/progesterone signals. Mood/personal posts remain visible when the user deliberately posts them to the friend feed.
+Accepting a friend enables the core sharing experience. Current clients fetch a reduced cycle snapshot (phase, phase source, cycle length, luteal length, latest sample date, and date-only period samples with unspecified intensity) plus deliberately published cycle events. The RPC projections exclude raw HealthKit metadata, personal symptoms, flow intensity, and ovulation/BBT/cervical-mucus/progesterone signals. Mood/personal posts remain visible when the user deliberately posts them to the friend feed. _(The projection intentionally omits `periodLengthDays` and `nextPhase*` — no friend view consumes them today; see [TODO.md](TODO.md) for when to add them.)_
+
+> **⚠️ Backward-compatibility (a deliberate break — read this before touching the friend read path).** This sanitized-RPC model is **not** backward-compatible with builds **≤1.0.10**, which read friends via direct `cycle_snapshots`/`cycle_events` SELECTs. The `20260729000000` migration locked those tables to **owner-only** (confirmed live 2026-08-07: `pg_policies` shows only `*_select_own`, no `*_select_own_or_friends`), so **pre-1.0.11 builds get empty friend data**. This is an intentional exception to [INSTRUCTIONS §12](INSTRUCTIONS.md), justified because closed-beta testers update together — **1.0.11 is the required minimum build.** If you ever need to un-break older builds temporarily, re-apply the `*_select_own_or_friends` read policy from `20260806000000_legacy-friend-cycle-read-compat.sql`, then re-lock with `20260806010000_remove-legacy-friend-cycle-read.sql` once everyone has upgraded.
 
 ---
 
