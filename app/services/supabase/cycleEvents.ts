@@ -23,11 +23,9 @@ export const fetchCycleEvents = async (limit = 40): Promise<CycleEventRow[]> => 
   if (!isSupabaseConfigured) {
     return [];
   }
-  const { data, error } = await supabase
-    .from('cycle_events')
-    .select('id, user_id, event_type, phase, symptoms, starts_at, created_at')
-    .order('starts_at', { ascending: false })
-    .limit(limit);
+  const { data, error } = await supabase.rpc('shared_cycle_events', {
+    max_rows: limit,
+  });
   if (error) {
     throw error;
   }

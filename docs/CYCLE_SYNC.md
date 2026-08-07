@@ -53,6 +53,10 @@ In order (`syncHealthData`):
 6. Reschedule the **predicted local reminder** for the *next* transition (`scheduleUpcomingPhaseReminder`).
 7. Emit `CYCLE_SNAPSHOT_UPDATED` so the UI (cycle ring, etc.) refreshes.
 
+### What friends can read
+
+Accepting a friend enables the core sharing experience. Current clients fetch a reduced cycle snapshot (phase, phase timing/predictions, cycle/period lengths, and date-only period samples with unspecified intensity) plus deliberately published cycle events. The RPC projections exclude raw HealthKit metadata, personal symptoms, flow intensity, and ovulation/BBT/cervical-mucus/progesterone signals. Mood/personal posts remain visible when the user deliberately posts them to the friend feed.
+
 ---
 
 ## 4. The notification mechanisms

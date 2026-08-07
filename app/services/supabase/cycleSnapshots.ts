@@ -11,10 +11,7 @@ export const fetchFriendCycleSnapshots = async (): Promise<CycleSnapshotRow[]> =
   if (!isSupabaseConfigured) {
     return [];
   }
-  const { data, error } = await supabase
-    .from('cycle_snapshots')
-    .select('user_id, last_synced_at, snapshot')
-    .order('last_synced_at', { ascending: false });
+  const { data, error } = await supabase.rpc('friend_cycle_summaries');
   if (error) {
     throw error;
   }
@@ -27,18 +24,8 @@ export const fetchCycleSnapshotByUserId = async (
   if (!isSupabaseConfigured) {
     return null;
   }
-  const { data, error } = await supabase
-    .from('cycle_snapshots')
-    .select('user_id, last_synced_at, snapshot')
-    .eq('user_id', userId)
-    .maybeSingle();
-  if (error) {
-    throw error;
-  }
-  if (!data) {
-    return null;
-  }
-  return data as CycleSnapshotRow;
+  const rows = await fetchFriendCycleSnapshots();
+  return rows.find((row) => row.user_id === userId) ?? null;
 };
 
 export const fetchFriendCycleSnapshot = async (

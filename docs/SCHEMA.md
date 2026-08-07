@@ -39,6 +39,12 @@ The full schema — tables, functions, RLS policies, indexes — is defined in `
 
 1. **Auth:** Sign in with Apple → Supabase Auth → the `handle_new_auth_user` trigger creates the `users` profile row.
 2. **Cycle data:** the app reads menstrual data from Apple Health (read-only), derives the phase/predictions, and writes to `cycle_events` (feed) / `cycle_snapshots` (state). Full detail — sync triggers, posting, and notifications — in [CYCLE_SYNC.md](CYCLE_SYNC.md).
+
+### Friend cycle reads
+
+Current clients read accepted friends through `friend_cycle_summaries()` and `shared_cycle_events(max_rows)`. These security-definer RPCs expose calendar/phase fields and deliberately published event fields while stripping raw HealthKit metadata, flow intensity, personal symptoms, and signal samples. Accepting a friend is the sharing boundary; removing the friend revokes access.
+
+Raw `cycle_snapshots` and `cycle_events` rows are owner-only. Friends must use the sanitized RPCs. A temporary compatibility policy was briefly applied during development, then removed by `20260806010000_remove-legacy-friend-cycle-read.sql` once the owner confirmed all testers can update together.
 3. **Friends:** send a request (`friend_requests`); on accept, `friend_sharing` tracks each side's `has_shared`. The RLS gate requires `has_shared = true` on **both** sides before either can see the other's cycle snapshot — but note the app currently **auto-sets both sides true on accept** (no explicit opt-in step, no revoke UI); see [BUGS.md](BUGS.md) → consent model.
 4. **Feed:** `posts`, `post_reactions`, and `boops` form the social layer.
 5. **Security:** row-level security on all tables scopes each user's data to themselves and approved friends. (The `notifications` table also has an owner-only UPDATE policy, added for read/unread state.)
