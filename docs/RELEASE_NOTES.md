@@ -14,7 +14,7 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 - **Circle refresh no longer rewrites sharing state every 60 seconds.** Sharing is created once on friend acceptance (with an existing-friend backfill) instead of being repeatedly upserted on focus, pull-to-refresh, and polling.
 
 ### Infrastructure & release setup
-- **Pending deployment:** apply `20260729000000_friend-cycle-summary-privacy.sql` to Supabase before testing this client change; it creates the safe friend-summary/event RPCs and makes raw cycle tables owner-only.
+- **Friend cycle-summary privacy migration applied to Supabase** through the SQL Editor on 2026-07-29 (`20260729000000_friend-cycle-summary-privacy.sql`; completed successfully with no rows returned). It creates the safe friend-summary/event RPCs and makes raw cycle tables owner-only. Two-account behavioral verification remains.
 
 ### Docs / process
 - **Claimed active work (2026-07-29).** Marked the explicit/revocable consent-model fix (including removal of the 60-second sharing reset) and contact-based friend discovery as WIP so concurrent contributors do not duplicate them.

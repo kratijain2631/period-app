@@ -60,6 +60,7 @@
     "jest-expo": "~54.0.2",
     "node-fetch": "^2.7.0",
     "patch-package": "^8.0.1",
+    "supabase": "^2.110.0",
     "typescript": "~5.9.2"
   }
 }
