@@ -7,6 +7,7 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 ## Unreleased
 
 ### In progress
+- **Safe friend-cycle RPC compatibility (WIP — Codex, 2026-08-06).** Porting the already-live privacy projection into `main` so current clients read friend summaries/events through the safe RPCs instead of owner-only raw tables, without regressing the Circle leaderboard or older-backend compatibility.
 - **Contact-based friend discovery (WIP — Codex, 2026-07-29).** Claimed so concurrent contributors don't duplicate it. _(Still in progress.)_
 
 ### Docs / process
