@@ -46,23 +46,7 @@ describe('cycle snapshot sharing', () => {
     expect(supabase.rpc).toHaveBeenCalledTimes(1);
   });
 
-  it('falls back to the legacy table only when the RPC is missing', async () => {
-    const order = jest.fn().mockResolvedValue({ data: [summaryRow], error: null });
-    const select = jest.fn().mockReturnValue({ order });
-    supabase.rpc.mockResolvedValue({
-      data: null,
-      error: {
-        code: 'PGRST202',
-        message: 'Could not find the function public.friend_cycle_summaries',
-      },
-    });
-    supabase.from.mockReturnValue({ select });
-
-    await expect(fetchFriendCycleSnapshots()).resolves.toEqual([summaryRow]);
-    expect(supabase.from).toHaveBeenCalledWith('cycle_snapshots');
-  });
-
-  it('does not hide real RPC failures behind the legacy fallback', async () => {
+  it('propagates RPC failures without reading the raw table', async () => {
     const error = { code: '42501', message: 'permission denied' };
     supabase.rpc.mockResolvedValue({ data: null, error });
 
@@ -70,4 +54,3 @@ describe('cycle snapshot sharing', () => {
     expect(supabase.from).not.toHaveBeenCalled();
   });
 });
-

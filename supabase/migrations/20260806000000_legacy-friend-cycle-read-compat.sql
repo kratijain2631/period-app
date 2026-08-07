@@ -1,6 +1,8 @@
 -- Keep shipped builds working while new clients migrate to the safe projection
 -- RPCs. Builds through 1.0.10 still select cycle_snapshots / cycle_events
 -- directly. Do not remove these legacy policies until those builds are retired.
+-- This was applied before the owner confirmed the app is still dev-only. The
+-- next migration removes these policies; retain this file as applied history.
 
 drop policy if exists cycle_snapshots_select_own on public.cycle_snapshots;
 drop policy if exists cycle_snapshots_select_own_or_friends on public.cycle_snapshots;
@@ -104,4 +106,3 @@ $$;
 
 revoke all on function public.friend_cycle_summaries() from public;
 grant execute on function public.friend_cycle_summaries() to authenticated;
-

@@ -33,25 +33,7 @@ describe('shared cycle events', () => {
     expect(supabase.from).not.toHaveBeenCalled();
   });
 
-  it('falls back to the legacy table only when the RPC is missing', async () => {
-    const limit = jest.fn().mockResolvedValue({ data: [eventRow], error: null });
-    const order = jest.fn().mockReturnValue({ limit });
-    const select = jest.fn().mockReturnValue({ order });
-    supabase.rpc.mockResolvedValue({
-      data: null,
-      error: {
-        code: 'PGRST202',
-        message: 'Could not find the function public.shared_cycle_events',
-      },
-    });
-    supabase.from.mockReturnValue({ select });
-
-    await expect(fetchCycleEvents(25)).resolves.toEqual([eventRow]);
-    expect(supabase.from).toHaveBeenCalledWith('cycle_events');
-    expect(limit).toHaveBeenCalledWith(25);
-  });
-
-  it('does not hide real RPC failures behind the legacy fallback', async () => {
+  it('propagates RPC failures without reading the raw table', async () => {
     const error = { code: '42501', message: 'permission denied' };
     supabase.rpc.mockResolvedValue({ data: null, error });
 
@@ -59,4 +41,3 @@ describe('shared cycle events', () => {
     expect(supabase.from).not.toHaveBeenCalled();
   });
 });
-

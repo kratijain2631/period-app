@@ -15,11 +15,11 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## 2026-08-06 — TestFlight build 1.0.11 (build 31)
 
-Version `1.0.11` prepared for TestFlight. The Supabase compatibility follow-up was applied manually; the build number will be confirmed when the EAS build starts.
+Version `1.0.11` prepared for TestFlight. The build number will be confirmed when the EAS build starts.
 
 ### Fixed
 
-- **Friend cycle summaries and auto-post feed rows work across the live migration mismatch.** Current clients now read friend cycle state/events through sanitized projection RPCs, with fallback only when an older backend explicitly reports the RPC missing. The friend-detail screen loads both snapshots in one request and its copy now matches the decision that accepting a friend starts sharing. Added RPC/fallback/error regression tests; preserved the newer Circle leaderboard and navigation. `20260806000000_legacy-friend-cycle-read-compat.sql` has been applied to keep builds through 1.0.10 working during the compatibility window.
+- **Friend cycle summaries and auto-post feed rows work through privacy-safe RPCs.** Clients now read friend cycle state/events only through sanitized projection RPCs; there is no raw-table fallback because this is a dev-only release and testers can update together. The friend-detail screen loads both snapshots in one request and its copy now matches the decision that accepting a friend starts sharing. Added RPC/error regression tests and preserved the newer Circle leaderboard/navigation. Apply `20260806010000_remove-legacy-friend-cycle-read.sql` to undo the briefly applied compatibility policy and restore owner-only raw-table access.
 
 ## 2026-08-05 — TestFlight build 1.0.10 (build 30)
 
