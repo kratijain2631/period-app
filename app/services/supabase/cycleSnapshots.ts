@@ -7,15 +7,35 @@ export type CycleSnapshotRow = {
   snapshot: CycleSnapshot;
 };
 
-export const fetchFriendCycleSnapshots = async (): Promise<CycleSnapshotRow[]> => {
-  if (!isSupabaseConfigured) {
-    return [];
+const isMissingSummaryRpcError = (error: unknown) => {
+  if (!error || typeof error !== 'object') {
+    return false;
   }
+  const maybeError = error as { code?: string; message?: string | null; details?: string | null };
+  const text = `${maybeError.message ?? ''} ${maybeError.details ?? ''}`.toLowerCase();
+  return maybeError.code === 'PGRST202' && text.includes('friend_cycle_summaries');
+};
+
+const fetchLegacyCycleSnapshots = async (): Promise<CycleSnapshotRow[]> => {
   const { data, error } = await supabase
     .from('cycle_snapshots')
     .select('user_id, last_synced_at, snapshot')
     .order('last_synced_at', { ascending: false });
   if (error) {
+    throw error;
+  }
+  return (data as CycleSnapshotRow[]) ?? [];
+};
+
+export const fetchFriendCycleSnapshots = async (): Promise<CycleSnapshotRow[]> => {
+  if (!isSupabaseConfigured) {
+    return [];
+  }
+  const { data, error } = await supabase.rpc('friend_cycle_summaries');
+  if (error) {
+    if (isMissingSummaryRpcError(error)) {
+      return fetchLegacyCycleSnapshots();
+    }
     throw error;
   }
   return (data as CycleSnapshotRow[]) ?? [];
@@ -27,18 +47,8 @@ export const fetchCycleSnapshotByUserId = async (
   if (!isSupabaseConfigured) {
     return null;
   }
-  const { data, error } = await supabase
-    .from('cycle_snapshots')
-    .select('user_id, last_synced_at, snapshot')
-    .eq('user_id', userId)
-    .maybeSingle();
-  if (error) {
-    throw error;
-  }
-  if (!data) {
-    return null;
-  }
-  return data as CycleSnapshotRow;
+  const rows = await fetchFriendCycleSnapshots();
+  return rows.find((row) => row.user_id === userId) ?? null;
 };
 
 export const fetchFriendCycleSnapshot = async (

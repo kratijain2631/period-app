@@ -7,10 +7,11 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 ## Unreleased
 
 ### In progress
-- **Safe friend-cycle RPC compatibility (WIP — Codex, 2026-08-06).** Porting the already-live privacy projection into `main` so current clients read friend summaries/events through the safe RPCs instead of owner-only raw tables, without regressing the Circle leaderboard or older-backend compatibility.
+- **Safe friend-cycle RPC deployment (WIP — Codex, 2026-08-06).** Client and migration-history work is complete; apply `20260806000000_legacy-friend-cycle-read-compat.sql` and run the two-account behavioral check before closing.
 - **Contact-based friend discovery (WIP — Codex, 2026-07-29).** Claimed so concurrent contributors don't duplicate it. _(Still in progress.)_
 
 ### Docs / process
+- **Friend cycle summaries and auto-post feed rows work across the live migration mismatch.** Current clients now read friend cycle state/events through sanitized projection RPCs, with fallback only when an older backend explicitly reports the RPC missing. The friend-detail screen loads both snapshots in one request and its copy now matches the decision that accepting a friend starts sharing. Added RPC/fallback/error regression tests; preserved the newer Circle leaderboard and navigation.
 - **DESIGN.md — image-generation prompt for step 2 of the design pipeline.** Added a reusable master prompt (grounded in the real brand tokens: terracotta accent, phase palette, Nunito/Inter, warm neutrals, red-drop motif, "serious not girly" ethos) plus per-screen blocks (Home cycle wheel, sync leaderboard, feed, "cycle year" recap, avatars, icon/splash) to generate sample mockups for design inspiration. Also captured a **"which tool to generate with"** guide (ChatGPT GPT Image primary, Gemini for iteration, Midjourney for mood, Claude can't generate; v0/Lovable as a code-first alternative).
 
 ## 2026-08-05 — TestFlight build 1.0.10 (build 30)

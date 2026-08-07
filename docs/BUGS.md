@@ -6,7 +6,7 @@ Known bugs to fix. This is for **open** bugs; problems we already diagnosed and 
 
 ### Backend/client compatibility (2026-08-06)
 
-- [~] **Friend cycle data and auto-updates use obsolete raw-table reads after the live privacy migration.** 🚧 (WIP — Codex, 2026-08-06) The already-applied `20260729000000_friend-cycle-summary-privacy.sql` migration made raw `cycle_snapshots` / `cycle_events` rows owner-only and added safe `friend_cycle_summaries()` / `shared_cycle_events()` projections, but that migration and its client RPC calls never reached `main`. Build 1.0.10 still reads the raw tables, so friend sync-score inputs and friend cycle-event feed rows can disappear. Port the additive migration into git, switch the two read services to the safe RPCs, preserve the newer Circle leaderboard/UI, add regression tests, and verify the legacy fallback for older backends/builds.
+- [~] **Friend cycle data and auto-updates used obsolete raw-table reads after the live privacy migration — CODE FIXED 2026-08-06; follow-up SQL pending.** 🚧 (WIP — Codex) The missing migration history is now in git, current clients prefer the sanitized `friend_cycle_summaries()` / `shared_cycle_events()` RPCs, and a narrowly scoped missing-function fallback supports older backends. Regression tests cover both paths and the current Circle leaderboard/UI is preserved. **Remaining:** apply `20260806000000_legacy-friend-cycle-read-compat.sql` in the Supabase SQL editor, then verify with two accepted-friend accounts. That follow-up temporarily restores mutual-friend raw-table reads for already-shipped builds through 1.0.10; remove those legacy policies after those builds are retired.
 
 ### Found in testing (2026-08-03, owner)
 

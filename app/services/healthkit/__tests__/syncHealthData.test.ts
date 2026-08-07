@@ -4,6 +4,13 @@ jest.mock('@kingstinct/react-native-healthkit', () => ({
   },
 }));
 
+jest.mock('expo-notifications', () => ({
+  SchedulableTriggerInputTypes: { DATE: 'date' },
+  cancelScheduledNotificationAsync: jest.fn().mockResolvedValue(undefined),
+  getPermissionsAsync: jest.fn().mockResolvedValue({ status: 'denied' }),
+  scheduleNotificationAsync: jest.fn().mockResolvedValue(undefined),
+}));
+
 jest.mock('react-native', () => {
   const emit = jest.fn();
   return {
