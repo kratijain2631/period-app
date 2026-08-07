@@ -20,6 +20,8 @@ Version `1.0.11` — **built + auto-submitted to TestFlight** on 2026-08-06 (bui
 ### Fixed
 
 - **Friend cycle summaries and auto-post feed rows work through privacy-safe RPCs.** Clients now read friend cycle state/events only through sanitized projection RPCs; there is no raw-table fallback because this is a dev-only release and testers can update together. The friend-detail screen loads both snapshots in one request and its copy now matches the decision that accepting a friend starts sharing. Added RPC/error regression tests and preserved the newer Circle leaderboard/navigation. Apply `20260806010000_remove-legacy-friend-cycle-read.sql` to undo the briefly applied compatibility policy and restore owner-only raw-table access.
+  - **The only user-visible change** is a reworded empty state on the friend-sync screen ("Consent Needed" → "Friend Sync Unavailable / Cycle sharing starts when a friend request is accepted"); everything else is backend/RLS plumbing.
+  - **Reviewed (post-merge):** the RPCs are correctly friendship-scoped (`security definer` + `revoke from public` + `grant to authenticated`; `WHERE` gates on accepted `friend_requests`), and the projection is intentionally **minimal** — it omits `periodLengthDays`/`nextPhase*` on purpose, because no friend-facing view consumes them (friend rings are the fixed-28-day `SyncRings`/`PhaseAvatar`; only your *own* ring uses `periodLengthDays`). Keeping the projection minimal is the better privacy posture, so this is by design, not a gap. See [TODO.md](TODO.md) for the one follow-up (extend the projection only *if* a real friend cycle-ring is ever added).
 
 ## 2026-08-05 — TestFlight build 1.0.10 (build 30)
 
