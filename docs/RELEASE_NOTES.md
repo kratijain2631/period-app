@@ -17,6 +17,8 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 Version `1.0.11` — **built + auto-submitted to TestFlight** on 2026-08-06 (buildNumber **32**, build ID `f2165f16-9ba0-461d-ab39-025c23ccb4b2`). Carries only Neha's friend-cycle privacy-RPC work (PR #64) on top of 1.0.10. _(The earlier "build 31" placeholder was a pre-build guess; the remote auto-increment assigned 32.)_
 
+> **⚠️ BREAKING / not backward-compatible.** Raw `cycle_snapshots`/`cycle_events` are now **owner-only** (confirmed live 2026-08-07); friends are read only via the sanitized RPCs. **What breaks:** friend-cycle sync on builds **≤1.0.10** (they read the raw tables directly → now empty). **Affected:** any tester not yet on 1.0.11. **Required minimum build: 1.0.11.** **Action:** get all testers onto 1.0.11; confirm `friend_cycle_summaries()` / `shared_cycle_events()` exist (1.0.11 has no fallback). Deliberate §12 exception, justified only because closed-beta testers update together — see [CYCLE_SYNC.md](CYCLE_SYNC.md) and the expand/contract lesson in [LEARNINGS.md](LEARNINGS.md).
+
 ### Fixed
 
 - **Friend cycle summaries and auto-post feed rows work through privacy-safe RPCs.** Clients now read friend cycle state/events only through sanitized projection RPCs; there is no raw-table fallback because this is a dev-only release and testers can update together. The friend-detail screen loads both snapshots in one request and its copy now matches the decision that accepting a friend starts sharing. Added RPC/error regression tests and preserved the newer Circle leaderboard/navigation. Apply `20260806010000_remove-legacy-friend-cycle-read.sql` to undo the briefly applied compatibility policy and restore owner-only raw-table access.

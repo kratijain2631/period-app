@@ -32,6 +32,7 @@ This includes **non-code changes that happen outside git** — e.g. Supabase con
 - Add your change in the right bucket: **Added**, **Changed**, **Fixed**, **Infrastructure & release setup** (non-code/operational), or **Known / not yet done**.
 - Plain language, one line per change.
 - For code changes, do it in the **same commit** so the notes never drift from the code.
+- **Any breaking / non-backward-compatible change must be flagged with a `⚠️ BREAKING / not backward-compatible` callout** — what breaks, who's affected, the required minimum build, and the action needed. See [§12](#12-backward-compatibility--stability-guardrails) for the full rule.
 
 ## 2. Cut a version on every published build
 
@@ -145,3 +146,4 @@ On top of that, hold these rules:
 2. **Keep `tsc --noEmit` green.** It's the regression gate — a clean typecheck is the cheapest guard against a change quietly breaking a call site. It's green now; don't merge red. (EAS/Metro bundle via Babel and won't catch type breaks, so `tsc` is our only static net.)
 3. **A fast smoke test must stay runnable** (see [TODO.md](TODO.md)) — a tiny, fast test that boots the core domain (cycle model, `syncScore`, reactions) so a "gutting" regression is caught before a build. The full `jest-expo` suite is too slow to run every change; the fast smoke set is the practical safety net.
 4. **Every build is a tagged rollback point** (§2). If a build regresses, `git checkout v<prev>-build<n>` and rebuild — atomic rollback.
+5. **Flag every breaking / non-backward-compatible change explicitly in the release notes — no exceptions.** The rules above mean breaking changes should be *rare and deliberate*; when one is genuinely justified (e.g. closing a security/privacy hole that can't wait), it must be **called out loudly in [RELEASE_NOTES.md](RELEASE_NOTES.md)**, never buried in prose. Start the line with a **`⚠️ BREAKING / not backward-compatible`** marker and state: **what breaks**, **who is affected** (which older builds / users), the **required minimum build** going forward, and the **action needed** (migration to apply, "all testers must update", etc.). Prefer expand/contract to avoid the break entirely (add the new path, ship the client, then remove the old path once adopted — see the friend-cycle RPC example in [LEARNINGS.md](LEARNINGS.md)); only break early for a security fix, and even then ship the fixed client *before* removing the old path. If in doubt whether a change is breaking, assume it is and flag it.
