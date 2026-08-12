@@ -6,12 +6,15 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## Unreleased
 
-### In progress
-- **Contact-based friend discovery (WIP — Codex, 2026-07-29).** Claimed so concurrent contributors don't duplicate it. _(Still in progress.)_
+### Added
+
+- **Privacy-first contact friend discovery in Your Circle.** People can explicitly allow full or limited iOS Contacts access, match contacts already using the app, and send requests from the results. Raw address-book emails stay on-device; only normalized SHA-256 hashes are sent for matching. A separate, default-off “Let contacts find me” control governs account discoverability. Email matching is supported now; verified phone matching remains future work. Requires additive migration `20260812090000_contact-friend-discovery.sql` and a new native build for `expo-contacts`.
 
 ### Docs / process
 
 - **DESIGN.md — image-generation prompt for step 2 of the design pipeline.** Added a reusable master prompt (grounded in the real brand tokens: terracotta accent, phase palette, Nunito/Inter, warm neutrals, red-drop motif, "serious not girly" ethos) plus per-screen blocks (Home cycle wheel, sync leaderboard, feed, "cycle year" recap, avatars, icon/splash) to generate sample mockups for design inspiration. Also captured a **"which tool to generate with"** guide (ChatGPT GPT Image primary, Gemini for iteration, Midjourney for mood, Claude can't generate; v0/Lovable as a code-first alternative).
+- **Phone-based friend discovery follow-up added to the roadmap.** Accounts will optionally support verified phone numbers, with country-aware normalization and hashed contact matching to close the Apple private-relay email gap; raw phone numbers stay private and discoverability remains separately opt-in.
+- **Contact-discovery rollout instructions documented.** TROUBLESHOOTING now records the required hand-applied migration, native rebuild, iOS limited/full/denied test matrix, and the distinction between device Contacts permission and account discoverability.
 
 ## 2026-08-06 — TestFlight build 1.0.11 (build 32)
 
