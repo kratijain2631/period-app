@@ -2,11 +2,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated,
   Easing,
+  Linking,
   RefreshControl,
   SafeAreaView,
   ScrollView,
   Share,
   StyleSheet,
+  Switch,
   Text,
   TextInput,
   TouchableOpacity,
@@ -38,6 +40,16 @@ import { brand, brandType } from '../../../theme/brand';
 import { DottieAndFriend } from '../../../components/brand/DottieMascot';
 import { PhaseAvatar, getPhaseColor } from '../../../components/brand/CycleRing';
 import { useStaggeredEntrance } from '../../../components/brand/useStaggeredEntrance';
+import {
+  fetchContactDiscoverability,
+  findDiscoverableContacts,
+  getContactDiscoveryPermission,
+  presentLimitedContactPicker,
+  requestContactDiscoveryPermission,
+  setContactDiscoverability,
+  type ContactDiscoveryPermission,
+  type ContactMatch,
+} from '../../../services/contacts/contactDiscovery';
 
 const palette = {
   background: brand.colors.background,
@@ -73,6 +85,12 @@ const FriendsScreen = () => {
   const [isLoading, setLoading] = useState(false);
   const [isRefreshing, setRefreshing] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [contactPermission, setContactPermission] = useState<ContactDiscoveryPermission>('undetermined');
+  const [contactMatches, setContactMatches] = useState<ContactMatch[]>([]);
+  const [contactNotice, setContactNotice] = useState<string | null>(null);
+  const [isFindingContacts, setFindingContacts] = useState(false);
+  const [isContactDiscoverable, setContactDiscoverable] = useState(false);
+  const [isUpdatingDiscoverability, setUpdatingDiscoverability] = useState(false);
   const searchInputRef = useRef<TextInput>(null);
 
   const loadFriends = useCallback(async () => {
@@ -182,10 +200,20 @@ const FriendsScreen = () => {
   useFocusEffect(
     useCallback(() => {
       loadFriends();
+      getContactDiscoveryPermission().then(setContactPermission).catch((error) => {
+        console.warn('[contacts] Failed to refresh permission', error);
+      });
       const intervalId = setInterval(() => loadFriends(), 60000);
       return () => clearInterval(intervalId);
     }, [loadFriends]),
   );
+
+  useEffect(() => {
+    fetchContactDiscoverability().then(setContactDiscoverable).catch((error) => {
+      // The additive migration may not have been applied yet; keep the control safely off.
+      console.warn('[contacts] Failed to load discoverability', error);
+    });
+  }, []);
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -410,6 +438,67 @@ const FriendsScreen = () => {
     }
   }, [isEmailQuery, trimmedQuery]);
 
+  const loadContactMatches = useCallback(async () => {
+    setFindingContacts(true);
+    setContactNotice(null);
+    try {
+      const matches = await findDiscoverableContacts();
+      setContactMatches(matches.filter((match) => match.id !== session?.userId));
+      setContactNotice(
+        matches.length === 0
+          ? 'No discoverable contacts are on the app yet. You can still invite them below.'
+          : null,
+      );
+    } catch (error) {
+      console.warn('[contacts] Failed to find contacts', error);
+      setContactNotice('Contact matching is unavailable right now.');
+    } finally {
+      setFindingContacts(false);
+    }
+  }, [session?.userId]);
+
+  const handleFindContacts = useCallback(async () => {
+    try {
+      let permission = await getContactDiscoveryPermission();
+      if (permission === 'undetermined') {
+        permission = await requestContactDiscoveryPermission();
+      }
+      setContactPermission(permission);
+      if (permission === 'denied') {
+        setContactNotice('Contacts access is off. You can enable it in iOS Settings.');
+        return;
+      }
+      await loadContactMatches();
+    } catch (error) {
+      console.warn('[contacts] Permission request failed', error);
+      setContactNotice('Could not open Contacts right now.');
+    }
+  }, [loadContactMatches]);
+
+  const handleChooseMoreContacts = useCallback(async () => {
+    try {
+      await presentLimitedContactPicker();
+      await loadContactMatches();
+    } catch (error) {
+      console.warn('[contacts] Limited-access picker failed', error);
+      setContactNotice('Manage contact access in iOS Settings.');
+    }
+  }, [loadContactMatches]);
+
+  const handleDiscoverabilityChange = useCallback(async (enabled: boolean) => {
+    setUpdatingDiscoverability(true);
+    setContactNotice(null);
+    try {
+      await setContactDiscoverability(enabled);
+      setContactDiscoverable(enabled);
+    } catch (error) {
+      console.warn('[contacts] Failed to update discoverability', error);
+      setContactNotice('Could not update contact discoverability right now.');
+    } finally {
+      setUpdatingDiscoverability(false);
+    }
+  }, []);
+
   const deriveCycleDay = useCallback((snapshot?: CycleSnapshotRow['snapshot']) => {
     const latest = snapshot?.latestSampleStart;
     if (!latest) {
@@ -616,6 +705,106 @@ const FriendsScreen = () => {
             ) : null}
           </View>
         </Animated.View>
+
+        <View style={styles.contactsCard}>
+          <View style={styles.contactsHeadingRow}>
+            <View style={styles.contactsIcon}>
+              <Ionicons name="people-outline" size={19} color={palette.accent} />
+            </View>
+            <View style={styles.contactsHeadingCopy}>
+              <Text style={styles.contactsTitle}>Find friends from contacts</Text>
+              <Text style={styles.contactsBody}>
+                Choose which contacts Cadence can check. Raw email addresses stay on this device.
+              </Text>
+            </View>
+          </View>
+
+          <TouchableOpacity
+            style={[styles.contactsButton, isFindingContacts ? styles.buttonDisabled : null]}
+            onPress={contactPermission === 'denied' ? () => Linking.openSettings() : handleFindContacts}
+            disabled={isFindingContacts}
+          >
+            <Ionicons name="person-add-outline" size={16} color={palette.white} />
+            <Text style={styles.contactsButtonText}>
+              {isFindingContacts
+                ? 'Checking contacts…'
+                : contactPermission === 'denied'
+                  ? 'Open Contacts Settings'
+                  : 'Find Contacts'}
+            </Text>
+          </TouchableOpacity>
+          {contactPermission === 'limited' ? (
+            <TouchableOpacity style={styles.settingsLink} onPress={handleChooseMoreContacts}>
+              <Text style={styles.settingsLinkText}>Choose more contacts</Text>
+            </TouchableOpacity>
+          ) : null}
+
+          {contactMatches.length > 0 ? (
+            <View style={styles.contactResults}>
+              {contactMatches.map((match, index) => {
+                const isInbound = inboundRequestMap.has(match.id);
+                const isOutbound = outboundRequestIds.has(match.id);
+                const isFriend = friendIds.has(match.id);
+                return (
+                  <View
+                    key={match.id}
+                    style={[styles.contactRow, index > 0 ? styles.rowDivider : null]}
+                  >
+                    <View style={styles.searchAvatar}>
+                      <Text style={styles.searchAvatarText}>
+                        {match.contactName.slice(0, 1).toUpperCase()}
+                      </Text>
+                    </View>
+                    <View style={styles.searchMeta}>
+                      <Text style={styles.searchName}>{match.contactName}</Text>
+                      <Text style={styles.contactAlias}>
+                        {match.alias ? formatAlias(match.alias) : 'On Cadence'}
+                      </Text>
+                    </View>
+                    {isFriend ? (
+                      <View style={styles.pendingChip}>
+                        <Text style={styles.pendingChipText}>Friends</Text>
+                      </View>
+                    ) : isInbound ? (
+                      <View style={styles.pendingChip}>
+                        <Text style={styles.pendingChipText}>Requested you</Text>
+                      </View>
+                    ) : isOutbound ? (
+                      <View style={styles.pendingChip}>
+                        <Text style={styles.pendingChipText}>Requested</Text>
+                      </View>
+                    ) : (
+                      <TouchableOpacity
+                        style={styles.primaryButton}
+                        onPress={() => handleSendRequest(match.id)}
+                      >
+                        <Text style={styles.primaryButtonText}>Add</Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                );
+              })}
+            </View>
+          ) : null}
+
+          <View style={styles.discoverabilityRow}>
+            <View style={styles.discoverabilityCopy}>
+              <Text style={styles.discoverabilityTitle}>Let contacts find me</Text>
+              <Text style={styles.contactsBody}>
+                People who already have your account email can see you here.
+              </Text>
+            </View>
+            <Switch
+              value={isContactDiscoverable}
+              onValueChange={handleDiscoverabilityChange}
+              disabled={isUpdatingDiscoverability}
+              trackColor={{ false: palette.fill, true: palette.accent }}
+              thumbColor={palette.white}
+              accessibilityLabel="Let contacts find me"
+            />
+          </View>
+          {contactNotice ? <Text style={styles.contactNotice}>{contactNotice}</Text> : null}
+        </View>
 
         {leaderboard.length >= 2 ? (
           <View style={styles.leaderboardCard}>
@@ -934,6 +1123,59 @@ const styles = StyleSheet.create({
   buttonDisabled: {
     opacity: 0.6,
   },
+  contactsCard: {
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: palette.separator,
+    backgroundColor: palette.white,
+    padding: 16,
+    marginBottom: 16,
+    ...brand.shadow.soft,
+  },
+  contactsHeadingRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 11,
+    marginBottom: 12,
+  },
+  contactsIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: brand.colors.accentSoft,
+  },
+  contactsHeadingCopy: { flex: 1 },
+  contactsTitle: { fontSize: 16, color: palette.primaryText, ...brandType.semibold },
+  contactsBody: { fontSize: 12, lineHeight: 17, color: palette.secondaryText, ...brandType.body },
+  contactsButton: {
+    minHeight: 42,
+    borderRadius: 15,
+    backgroundColor: palette.accent,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 7,
+  },
+  contactsButtonText: { fontSize: 13, color: palette.white, ...brandType.semibold },
+  settingsLink: { alignItems: 'center', paddingTop: 10 },
+  settingsLinkText: { fontSize: 12, color: palette.accent, ...brandType.semibold },
+  contactResults: { marginTop: 12, borderTopWidth: 1, borderTopColor: palette.separator },
+  contactRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 10 },
+  contactAlias: { marginTop: 2, fontSize: 11, color: palette.secondaryText, ...brandType.body },
+  discoverabilityRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginTop: 14,
+    paddingTop: 14,
+    borderTopWidth: 1,
+    borderTopColor: palette.separator,
+  },
+  discoverabilityCopy: { flex: 1 },
+  discoverabilityTitle: { fontSize: 13, color: palette.primaryText, marginBottom: 2, ...brandType.semibold },
+  contactNotice: { marginTop: 10, fontSize: 12, color: palette.secondaryText, ...brandType.body },
   leaderboardCard: {
     borderRadius: 24,
     borderWidth: 1,

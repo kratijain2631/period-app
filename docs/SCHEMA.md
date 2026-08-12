@@ -6,7 +6,7 @@ The full schema — tables, functions, RLS policies, indexes — is defined in `
 
 | Table | Purpose |
 |---|---|
-| `users` | User profile — email, Apple user id, name, alias. Created automatically on signup by the `handle_new_auth_user` trigger. |
+| `users` | User profile — email, Apple user id, name, alias, and the default-off `discoverable_by_contacts` preference. Created automatically on signup by the `handle_new_auth_user` trigger. |
 | `cycle_events` | Menstrual/cycle events synced from Apple Health (event type, phase, symptoms, start time). |
 | `cycle_snapshots` | A rolled-up snapshot of the user's current cycle state (whole snapshot as jsonb, incl. predicted `nextPhaseStart`/`nextPhase`). Also a `last_reminded_phase_start` column for the server-side phase reminder dedupe. |
 | `friend_requests` | Friend requests between users (from / to / status). In the `supabase_realtime` publication so the app gets instant updates. |
@@ -28,6 +28,7 @@ The full schema — tables, functions, RLS policies, indexes — is defined in `
 | `search_users` | Find users by alias or email (for friend requests). |
 | `friend_request_profiles` | Resolve profile info for a set of friend requests. |
 | `friend_profiles` | Resolve friend profiles (respects mutual sharing). |
+| `contact_friend_matches` | Privacy-minimized contact discovery: matches submitted normalized email hashes only against users who opted into contact discoverability. Raw address-book emails are never submitted. |
 | `ensure_friend_sharing` | Set up `friend_sharing` rows for accepted requests. |
 | `delete_account` | Account self-deletion — clears the user's data and removes their auth record (SECURITY DEFINER). |
 | `notify_post_reaction` / `notify_event_reaction` / `notify_boop` | AFTER INSERT triggers that create a `notifications` row for the content owner when a friend reacts/boops (SECURITY DEFINER, exception-safe, skip self). |

@@ -68,6 +68,12 @@ const config: ExpoConfig = {
     'expo-sqlite',
     'expo-notifications',
     'expo-image-picker',
+    [
+      'expo-contacts',
+      {
+        contactsPermission: `${APP_NAME} uses the contacts you choose to help you find friends already on the app.`,
+      },
+    ],
   ],
   ios: {
     supportsTablet: false,
