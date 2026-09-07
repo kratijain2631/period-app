@@ -6,6 +6,12 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## Unreleased
 
+_Nothing yet._
+
+## 2026-08-12 — TestFlight build 1.0.12 (build 33)
+
+Version `1.0.12` — **built + auto-submitted to TestFlight** on 2026-08-12. Adds **privacy-first contact friend discovery** (Neha, PR #65) on top of 1.0.11. **Backward-compatible / additive** — the migration only adds a column + a new RPC, so older builds are unaffected (no `⚠️ BREAKING` marker needed). _For the feature to work, apply the additive migration `20260812090000_contact-friend-discovery.sql` in the Supabase SQL editor first._
+
 ### Added
 
 - **Privacy-first contact friend discovery in Your Circle.** People can explicitly allow full or limited iOS Contacts access, match contacts already using the app, and send requests from the results. Raw address-book emails stay on-device; only normalized SHA-256 hashes are sent for matching. A separate, default-off “Let contacts find me” control governs account discoverability. Email matching is supported now; verified phone matching remains future work. Requires additive migration `20260812090000_contact-friend-discovery.sql` and a new native build for `expo-contacts`.
