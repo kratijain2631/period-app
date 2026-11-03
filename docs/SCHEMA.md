@@ -1,8 +1,8 @@
 # Database schema (Supabase)
 
-The full schema — tables, functions, RLS policies, indexes — is defined in `supabase/migrations/*.sql`, which is the source of truth. Running those migrations recreates the database from scratch (that's how the current project `mmomoyszozclfjdvjbeb` was built). Real user data lives only in the database, never in the repo; the only data in code is the demo feed seed in `seed-posts.sql`.
+The full schema — tables, functions, RLS policies, indexes — is defined in `supabase/migrations/*.sql`, which is the source of truth. The live project `mmomoyszozclfjdvjbeb` has evolved through hand-applied SQL; migration tracking is not reconciled, so do not blindly run `supabase db push` (see [TROUBLESHOOTING.md](TROUBLESHOOTING.md)). Real user data lives only in the database, never in the repo; the only data in code is the demo feed seed in `seed-posts.sql`.
 
-## Tables (12)
+## Tables (14 — live inventory verified 2026-11-03)
 
 | Table | Purpose |
 |---|---|
@@ -16,6 +16,8 @@ The full schema — tables, functions, RLS policies, indexes — is defined in `
 | `event_reactions` | Emoji reactions to cycle events. |
 | `boops` | Friend "boop" nudges (from / to / optional cycle event). |
 | `notifications` | In-app notifications, with a `read_at` column (null = unread) for the notifications page's new/read state. Populated by engagement triggers (reactions/boops) and, once deployed, the notifications-handler. |
+| `cycle_guidance` | Owner-readable AI dos/don’ts and friend suggestions, cached by phase plus nullable `phase_started_at`; caller-scoped completion RPC writes the new on-demand path. |
+| `friend_recommendations` | Pair recommendations/score cache used by the friend detail screen; separate from personal Phase Guide. |
 | `cycle_guidance_requests` | Applied 2026-11-03: caller-scoped two-minute generation leases; auth-user deletion cascades. No direct anon/authenticated table access. |
 | `device_tokens` | Push-notification (Expo) tokens per device. |
 
@@ -38,7 +40,7 @@ The on-demand guidance migration also adds nullable `cycle_guidance.phase_starte
 | `notify_post_reaction` / `notify_event_reaction` / `notify_boop` | AFTER INSERT triggers that create a `notifications` row for the content owner when a friend reacts/boops (SECURITY DEFINER, exception-safe, skip self). |
 | `due_phase_reminders` / `mark_phase_reminded` | Support the daily server-side phase-change reminder cron — find users whose predicted transition is today (and inactive), and dedupe. `service_role`-only. |
 
-**Scheduled jobs (pg_cron):** `daily-phase-change-reminder` (15:00 UTC → `phase-change-reminder` function) plus the `schedule-*` guidance/recommendation crons. See [CYCLE_SYNC.md](CYCLE_SYNC.md).
+**Scheduled jobs (live 2026-11-03):** active `daily-phase-change-reminder` and legacy `nightly-cycle-guidance`. No friend-recommendations cron is present. The new personal Phase Guide uses `request-cycle-guidance` and needs no cron. Job presence/dispatch does not prove successful delivery or AI generation; legacy batch authorization remains an open issue in [BUGS.md](BUGS.md). See [CYCLE_SYNC.md](CYCLE_SYNC.md).
 
 ## How it works
 

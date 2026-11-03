@@ -8,6 +8,8 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## 2026-11-03 — TestFlight build 1.0.13 (build 34)
 
+**Native build finished; automatic submission in progress.** [EAS build](https://expo.dev/accounts/kratijain26/projects/period-app/builds/b5517231-315b-48d7-adb1-9e98af8c8687), with auto-submission scheduled. Source: tag `v1.0.13-build34`. TestFlight availability is not yet confirmed.
+
 ### Fixed
 
 - **Phase Guide always has tips, including offline or before Health sync.** Local fallback guidance appears immediately, and cached advice from a different phase/cycle is never shown. Profile guidance refreshes only when the You page is focused and ignores late results after navigation/account changes.
@@ -19,6 +21,7 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 ### Infrastructure & release setup
 
 - **On-demand guidance backend deployed (2026-11-03).** Applied the additive cache/lease migration, configured the current publishable client key and deployed `request-cycle-guidance`. PostgreSQL regression checks, Deno typecheck and live unauthenticated denial/permission checks pass; no cron or service-role key is needed for this path.
+- **Live authenticated verification and status-doc audit.** An approved synthetic account verified AI generation, cache reuse, 200/202 overlapping requests and account isolation, then was removed. FEATURES/TODO/BUGS, schema, cycle-sync, design and troubleshooting now distinguish completed implementation/backend work from pending native checks. Live inventory confirms 14 public tables and two active legacy/reminder cron jobs; friend-recommendations scheduling remains absent.
 
 ### Added
 
@@ -26,7 +29,7 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ### Known / not yet done
 
-- **Device verification remains required.** Backend migration/function are live; successful authenticated AI generation, cache reuse, offline/account switching and native accessibility still need testing on a phone. The pre-existing batch handler's missing in-function authorization is logged in BUGS; do not re-enable that optional cron without reviewing it.
+- **Device verification remains required.** Backend migration/function are live, and authenticated AI generation/cache reuse passed an isolated live test. Offline/account switching, HealthKit and native accessibility still need testing on a phone. The pre-existing batch handler's missing in-function authorization is logged in BUGS; do not re-enable that optional cron without reviewing it.
 
 ## 2026-08-12 — TestFlight build 1.0.12 (build 33)
 
