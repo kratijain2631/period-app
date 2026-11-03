@@ -104,7 +104,7 @@ Larger asks that need their own design + PRs (not part of the composer/reaction 
 - [ ] **Premium design + branding pass.** Make the app polished, premium, delightful (design system, branding, avatars, cycle-wheel hero, micro-interactions). Full vision + the AI-mockup → pixel-for-pixel replication approach lives in **[DESIGN.md](DESIGN.md)**. Highest-leverage work on "likeable" per the [FEATURES.md](FEATURES.md) teardown.
 
 ## Rollout blockers (before the friends beta / wider rollout)
-- [~] **Find friends from contacts — code complete 2026-08-12; rollout steps pending.** Privacy-first email-hash matching, explicit iOS limited/full Contacts permission, and a separate default-off discoverability toggle now live in Your Circle. Apply migration `20260812090000_contact-friend-discovery.sql`, make a native build, and verify on-device before marking done. Follow-up: add verified phone-number matching so Apple private-relay accounts can still be found.
+- [~] **Find friends from contacts — code complete 2026-08-12; rollout steps pending.** 🚧 (WIP — Codex, 2026-11-03: verifying live schema, permissions and discoverability; physical-device checks pending). Privacy-first email-hash matching, explicit iOS limited/full Contacts permission, and a separate default-off discoverability toggle now live in Your Circle. Apply migration `20260812090000_contact-friend-discovery.sql`, make a native build, and verify on-device before marking done. Follow-up: add verified phone-number matching so Apple private-relay accounts can still be found.
 
 ## Improve the app
 - [ ] Improve the app — see [FEATURES.md](FEATURES.md) for the feature/design roadmap and [BUGS.md](BUGS.md) for known bugs.
