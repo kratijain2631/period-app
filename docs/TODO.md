@@ -10,7 +10,7 @@ Open items, roughly in priority order, with completed items retained as a decisi
   - [x] Validate/apply additive SQL and deploy authenticated generation with the current publishable key.
   - [x] Verify real AI generation, cache reuse, account mismatch denial and overlapping requests with an approved synthetic account; remove test data.
   - [x] Commit/push implementation and release tag; build 1.0.13 (34) on EAS.
-  - [~] Confirm App Store Connect/TestFlight submission (auto-submission in progress).
+  - [~] Confirm App Store Connect/TestFlight submission (EAS submission `a644dafb-6b2c-4ffc-a8b0-f8169b294049` is `IN_QUEUE`; native build finished).
   - [ ] Verify offline/account switching, real HealthKit sync, VoiceOver/Dynamic Type and two physical devices.
   - **Historical rationale for the original cron (retained for context):** it's a **precompute-and-cache** pattern — the AI call is slow (seconds) and costs money per call, and do's/don'ts only change **per phase**, so a nightly job generates one `cycle_guidance` row and the app reads it instantly + pays once, instead of calling the model on every page open.
   - **Historical failure (the reason for the redesign):** the cron is a **single point of failure** — *not scheduled → empty forever* (its schedule migration was never applied), and even once scheduled the function currently **500s** (`permission denied for table cycle_snapshots` — its service-role key isn't in effect; see the separate blocker in [BUGS.md](BUGS.md) / "Fix avatars + AI" below). Both failures are invisible because `net.http_post` only reports the request was *dispatched*, never the function's status.
