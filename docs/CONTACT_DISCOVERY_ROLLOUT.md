@@ -21,7 +21,7 @@ Do not use `supabase db push`; migration tracking is incomplete (see [TROUBLESHO
 
 ## Recovery build
 
-**1.0.14 (35)** is registered/building on EAS: [EAS build](https://expo.dev/accounts/kratijain26/projects/period-app/builds/bf9a1168-1a04-430f-b342-bc6128d92fd8); [automatic submission](https://expo.dev/accounts/kratijain26/projects/period-app/submissions/dbea0ad5-7488-4cef-a16d-cb238d5050a6) awaits the build. Source tag `v1.0.14-build35`, commit `a67b00dd`. TestFlight availability and new-build device checks are not yet confirmed.
+**1.0.14 (35)** native build finished successfully: [EAS build](https://expo.dev/accounts/kratijain26/projects/period-app/builds/bf9a1168-1a04-430f-b342-bc6128d92fd8); [automatic submission](https://expo.dev/accounts/kratijain26/projects/period-app/submissions/dbea0ad5-7488-4cef-a16d-cb238d5050a6) is queued (`IN_QUEUE`, no upload logs yet). Source tag `v1.0.14-build35`, commit `a67b00dd`. TestFlight availability and new-build device checks are not yet confirmed.
 
 ## Physical iPhone test setup
 

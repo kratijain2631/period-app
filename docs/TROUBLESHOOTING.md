@@ -56,7 +56,7 @@ Owner testing: build 1.0.12, iOS 26.6.2, Limited Access with two contacts → bo
 
 Apple acknowledges a [system contact-access-picker bug](https://developer.apple.com/forums/thread/814292); [Expo maintainers](https://github.com/expo/expo/issues/46977) classify it as upstream. This is consistent with the picker symptom, **not proof of the separate limited-read failure's root cause**. The recovery change routes selected-contact management to iOS Settings, refreshes permission on foreground, clears cached/in-flight results after background/access changes, bounds waits and shows progress/empty/error notices beside the action. Permission reads and Contacts requests never change account discoverability. Device verification on the new build remains required.
 
-Recovery build **1.0.14 (35)** is registered/building on EAS ([EAS build](https://expo.dev/accounts/kratijain26/projects/period-app/builds/bf9a1168-1a04-430f-b342-bc6128d92fd8)); [automatic submission](https://expo.dev/accounts/kratijain26/projects/period-app/submissions/dbea0ad5-7488-4cef-a16d-cb238d5050a6) awaits the build. Tag `v1.0.14-build35`, source `a67b00dd`. TestFlight availability is not yet confirmed.
+Recovery build **1.0.14 (35)** finished successfully on EAS ([EAS build](https://expo.dev/accounts/kratijain26/projects/period-app/builds/bf9a1168-1a04-430f-b342-bc6128d92fd8)); [automatic submission](https://expo.dev/accounts/kratijain26/projects/period-app/submissions/dbea0ad5-7488-4cef-a16d-cb238d5050a6) is queued (`IN_QUEUE`, no upload logs yet). Tag `v1.0.14-build35`, source `a67b00dd`. TestFlight availability is not yet confirmed.
 
 ## Build & submission gotchas
 
