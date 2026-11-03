@@ -34,7 +34,7 @@ The on-demand guidance migration also adds nullable `cycle_guidance.phase_starte
 | `search_users` | Find users by alias or email (for friend requests). |
 | `friend_request_profiles` | Resolve profile info for a set of friend requests. |
 | `friend_profiles` | Resolve friend profiles (respects mutual sharing). |
-| `contact_friend_matches` | Privacy-minimized contact discovery: matches submitted normalized email hashes only against users who opted into contact discoverability. Raw address-book emails are never submitted. |
+| `contact_friend_matches` | Live definition/grants and transactional opt-in/out/RLS checks verified 2026-11-03; see [rollout evidence](CONTACT_DISCOVERY_ROLLOUT.md). Privacy-minimized contact discovery: matches submitted normalized email hashes only against users who opted into contact discoverability. Raw address-book emails are never submitted. |
 | `ensure_friend_sharing` | Set up `friend_sharing` rows for accepted requests. |
 | `delete_account` | Account self-deletion — clears the user's data and removes their auth record (SECURITY DEFINER). |
 | `notify_post_reaction` / `notify_event_reaction` / `notify_boop` | AFTER INSERT triggers that create a `notifications` row for the content owner when a friend reacts/boops (SECURITY DEFINER, exception-safe, skip self). |

@@ -6,6 +6,18 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## Unreleased
 
+### Fixed
+
+- **Contacts discovery recovery and feedback.** Manage selected contacts through iOS Settings to avoid the broken native access picker; refresh permission on return, clear stale results after access/account changes, show progress immediately and put actionable empty/error messages beside Find Contacts. Late lookups cannot restore invalid results; discoverability writes verify the intended account.
+
+### Infrastructure & release setup
+
+- **Contacts migration confirmed live; privacy checks passed.** Verified default-off preference, exact matching RPC and grants, then tested owner-only access, opt-in/out, caller independence and self exclusion in a transaction with all synthetic data rolled back. Added reproducible SQL and permission/toggle/lifecycle regression tests; 98 Jest tests and TypeScript pass.
+
+### Known / not yet done
+
+- **Contacts rollout remains open.** Owner testing on 1.0.12 / iOS 26.6.2 found flashing/no result with Limited Access; Full Access reaches the empty-match state. Recovery changes still need testing on a new native build, including denied/limited/full access and two-account discoverability. See [verification matrix](CONTACT_DISCOVERY_ROLLOUT.md).
+
 ## 2026-11-03 — TestFlight build 1.0.13 (build 34)
 
 **Native build finished; automatic submission queued on EAS.** [EAS build](https://expo.dev/accounts/kratijain26/projects/period-app/builds/b5517231-315b-48d7-adb1-9e98af8c8687), with [auto-submission queued](https://expo.dev/accounts/kratijain26/projects/period-app/submissions/a644dafb-6b2c-4ffc-a8b0-f8169b294049) (`IN_QUEUE`, rechecked 2026-11-03 at 4:28 p.m. ET; no upload logs yet). Source: tag `v1.0.13-build34`. TestFlight availability is not yet confirmed.

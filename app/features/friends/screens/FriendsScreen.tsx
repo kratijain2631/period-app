@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated,
   Easing,
-  Linking,
   RefreshControl,
   SafeAreaView,
   ScrollView,
@@ -16,7 +15,7 @@ import {
 } from 'react-native';
 import { APP_NAME, APP_INVITE_URL } from '../../../config/branding';
 import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useIsFocused, useNavigation } from '@react-navigation/native';
 import { selectSession, useSessionStore } from '../../../state/sessionStore';
 import {
   fetchInboundFriendRequests,
@@ -40,16 +39,7 @@ import { brand, brandType } from '../../../theme/brand';
 import { DottieAndFriend } from '../../../components/brand/DottieMascot';
 import { PhaseAvatar, getPhaseColor } from '../../../components/brand/CycleRing';
 import { useStaggeredEntrance } from '../../../components/brand/useStaggeredEntrance';
-import {
-  fetchContactDiscoverability,
-  findDiscoverableContacts,
-  getContactDiscoveryPermission,
-  presentLimitedContactPicker,
-  requestContactDiscoveryPermission,
-  setContactDiscoverability,
-  type ContactDiscoveryPermission,
-  type ContactMatch,
-} from '../../../services/contacts/contactDiscovery';
+import { useContactDiscovery } from '../hooks/useContactDiscovery';
 
 const palette = {
   background: brand.colors.background,
@@ -85,12 +75,12 @@ const FriendsScreen = () => {
   const [isLoading, setLoading] = useState(false);
   const [isRefreshing, setRefreshing] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [contactPermission, setContactPermission] = useState<ContactDiscoveryPermission>('undetermined');
-  const [contactMatches, setContactMatches] = useState<ContactMatch[]>([]);
-  const [contactNotice, setContactNotice] = useState<string | null>(null);
-  const [isFindingContacts, setFindingContacts] = useState(false);
-  const [isContactDiscoverable, setContactDiscoverable] = useState(false);
-  const [isUpdatingDiscoverability, setUpdatingDiscoverability] = useState(false);
+  const isFocused = useIsFocused();
+  const {
+    contactPermission, contactMatches, contactNotice, isFindingContacts,
+    isContactDiscoverable, isUpdatingDiscoverability,
+    handleFindContacts, handleContactSettings, handleDiscoverabilityChange,
+  } = useContactDiscovery(session?.userId, isFocused);
   const searchInputRef = useRef<TextInput>(null);
 
   const loadFriends = useCallback(async () => {
@@ -200,20 +190,10 @@ const FriendsScreen = () => {
   useFocusEffect(
     useCallback(() => {
       loadFriends();
-      getContactDiscoveryPermission().then(setContactPermission).catch((error) => {
-        console.warn('[contacts] Failed to refresh permission', error);
-      });
       const intervalId = setInterval(() => loadFriends(), 60000);
       return () => clearInterval(intervalId);
     }, [loadFriends]),
   );
-
-  useEffect(() => {
-    fetchContactDiscoverability().then(setContactDiscoverable).catch((error) => {
-      // The additive migration may not have been applied yet; keep the control safely off.
-      console.warn('[contacts] Failed to load discoverability', error);
-    });
-  }, []);
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -438,67 +418,6 @@ const FriendsScreen = () => {
     }
   }, [isEmailQuery, trimmedQuery]);
 
-  const loadContactMatches = useCallback(async () => {
-    setFindingContacts(true);
-    setContactNotice(null);
-    try {
-      const matches = await findDiscoverableContacts();
-      setContactMatches(matches.filter((match) => match.id !== session?.userId));
-      setContactNotice(
-        matches.length === 0
-          ? 'No discoverable contacts are on the app yet. You can still invite them below.'
-          : null,
-      );
-    } catch (error) {
-      console.warn('[contacts] Failed to find contacts', error);
-      setContactNotice('Contact matching is unavailable right now.');
-    } finally {
-      setFindingContacts(false);
-    }
-  }, [session?.userId]);
-
-  const handleFindContacts = useCallback(async () => {
-    try {
-      let permission = await getContactDiscoveryPermission();
-      if (permission === 'undetermined') {
-        permission = await requestContactDiscoveryPermission();
-      }
-      setContactPermission(permission);
-      if (permission === 'denied') {
-        setContactNotice('Contacts access is off. You can enable it in iOS Settings.');
-        return;
-      }
-      await loadContactMatches();
-    } catch (error) {
-      console.warn('[contacts] Permission request failed', error);
-      setContactNotice('Could not open Contacts right now.');
-    }
-  }, [loadContactMatches]);
-
-  const handleChooseMoreContacts = useCallback(async () => {
-    try {
-      await presentLimitedContactPicker();
-      await loadContactMatches();
-    } catch (error) {
-      console.warn('[contacts] Limited-access picker failed', error);
-      setContactNotice('Manage contact access in iOS Settings.');
-    }
-  }, [loadContactMatches]);
-
-  const handleDiscoverabilityChange = useCallback(async (enabled: boolean) => {
-    setUpdatingDiscoverability(true);
-    setContactNotice(null);
-    try {
-      await setContactDiscoverability(enabled);
-      setContactDiscoverable(enabled);
-    } catch (error) {
-      console.warn('[contacts] Failed to update discoverability', error);
-      setContactNotice('Could not update contact discoverability right now.');
-    } finally {
-      setUpdatingDiscoverability(false);
-    }
-  }, []);
-
   const deriveCycleDay = useCallback((snapshot?: CycleSnapshotRow['snapshot']) => {
     const latest = snapshot?.latestSampleStart;
     if (!latest) {
@@ -721,7 +640,7 @@ const FriendsScreen = () => {
 
           <TouchableOpacity
             style={[styles.contactsButton, isFindingContacts ? styles.buttonDisabled : null]}
-            onPress={contactPermission === 'denied' ? () => Linking.openSettings() : handleFindContacts}
+            onPress={contactPermission === 'denied' ? handleContactSettings : handleFindContacts}
             disabled={isFindingContacts}
           >
             <Ionicons name="person-add-outline" size={16} color={palette.white} />
@@ -734,9 +653,13 @@ const FriendsScreen = () => {
             </Text>
           </TouchableOpacity>
           {contactPermission === 'limited' ? (
-            <TouchableOpacity style={styles.settingsLink} onPress={handleChooseMoreContacts}>
-              <Text style={styles.settingsLinkText}>Choose more contacts</Text>
+            <TouchableOpacity style={styles.settingsLink} onPress={handleContactSettings}>
+              <Text style={styles.settingsLinkText}>Choose more contacts in Settings</Text>
             </TouchableOpacity>
+          ) : null}
+
+          {contactNotice ? (
+            <Text style={styles.contactNotice} accessibilityLiveRegion="polite">{contactNotice}</Text>
           ) : null}
 
           {contactMatches.length > 0 ? (
@@ -803,7 +726,6 @@ const FriendsScreen = () => {
               accessibilityLabel="Let contacts find me"
             />
           </View>
-          {contactNotice ? <Text style={styles.contactNotice}>{contactNotice}</Text> : null}
         </View>
 
         {leaderboard.length >= 2 ? (

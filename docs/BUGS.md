@@ -4,6 +4,12 @@ Known bugs to fix. This is for **open** bugs; problems we already diagnosed and 
 
 ## Open
 
+### Contacts rollout (owner testing and source review, 2026-11-03)
+
+- [~] **Limited Contacts access flashes without a visible result on 1.0.12 / iOS 26.6.2.** 🚧 (WIP — Codex). Owner has two selected contacts; Find Contacts and Choose more contacts fail visibly, including after restarting and using Find Contacts alone. Full Access reaches the empty-match state. Apple/Expo acknowledge a native access-picker problem, but the limited-read root cause is not established. Implemented Settings-based selection management and visible progress/timeout/empty feedback; a new build and limited/full/denied on-device retest are still required. Do not mark fixed from mocked permission tests. Evidence and remaining toggle/positive-match checks: [CONTACT_DISCOVERY_ROLLOUT.md](CONTACT_DISCOVERY_ROLLOUT.md).
+- [~] **Settings recovery and cached contact results did not follow permission/account changes.** 🚧 (WIP — Codex). Source review found focus-only permission refresh, no result invalidation after denied/reduced access, and no protection against late results after background/account changes. Implemented a scoped `useContactDiscovery` controller with foreground permission refresh, result invalidation, stale-response guards and account-checked toggle writes. Automated lifecycle tests pass; new-build physical verification remains open.
+
+
 ### Backend/client compatibility (2026-08-06)
 
 - [~] **Friend cycle data and auto-updates used obsolete raw-table reads after the live privacy migration — FIXED 2026-08-06; behavioral check pending.** 🚧 (WIP — Codex) The missing migration history is now in git and clients now use only the sanitized `friend_cycle_summaries()` / `shared_cycle_events()` RPCs; raw-table fallback was removed because every dev tester can update together. Regression tests cover RPC reads and error propagation, and the current Circle leaderboard/UI is preserved. The temporary compatibility SQL was applied before that decision, so **remaining:** apply `20260806010000_remove-legacy-friend-cycle-read.sql` to restore owner-only raw-table access, then verify with two accepted-friend accounts on build 1.0.11.
