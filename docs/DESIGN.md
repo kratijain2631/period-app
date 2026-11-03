@@ -75,7 +75,8 @@ For **UI mockups with legible text**, the image models rank roughly:
 - ✅ Palette/type foundation (`app/theme/brand.ts`, `app/config/branding.ts`), imported by ~8 screens.
 - ✅ Branded animated launch/intro overlay (`BrandSplash.tsx`, tagline "Cadence — where your cycle meets your circle").
 - ✅ Haptics on Home-feed boops/reactions.
-- ⬜ Everything else above — this is the open work. **This is the top "likeable" priority** per the [FEATURES.md](FEATURES.md) teardown.
+- ✅ Phase Guide advice cards implemented for 1.0.13 (34): visible title/detail, full-width layout, no truncation or flip requirement; actual component checked at 320px browser width. Native accessibility verification remains open. See [GUIDANCE.md](GUIDANCE.md).
+- ⬜ Remaining visual-identity, Home, avatar and broader design-system work above is open. **This is the top "likeable" priority** per the [FEATURES.md](FEATURES.md) teardown.
 
 ## Related
 

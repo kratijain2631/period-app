@@ -96,9 +96,23 @@ The bell / [`NotificationsScreen`](../app/features/notifications/screens/Notific
 
 ---
 
-## 6. Status — built vs. needs deploy/verify
+## 6. Phase Guide — a separate consumer of the snapshot
+
+Implemented for build 1.0.13 (34); backend deployed and authenticated integration-tested 2026-11-03. The You page shows local dos/don’ts immediately, then requests AI guidance on focus through `ensureCycleGuidance` → `request-cycle-guidance`. This does not read HealthKit or trigger another cycle sync itself.
+
+Cache identity is account + `currentPhase` + `currentPhaseStart`, so a new occurrence of the same phase cannot reuse a previous cycle's advice. The handler verifies the user's JWT; caller-scoped claim/complete RPCs compare the stored snapshot before generation and again before saving. A two-minute lease prevents duplicate generation across requests/devices. Late client results are ignored after account/navigation changes; generation errors leave the local tips visible. Missing/stale server snapshots must sync through the normal lifecycle before generation can succeed.
+
+AI input contains only the phase and up to three same-phase accepted friends' IDs/display names from sanitized RPCs; no raw HealthKit samples, personal symptoms or email addresses. Content/presentation rules: [GUIDANCE.md](GUIDANCE.md). Native device checks remain in [TODO.md](TODO.md).
+
+The new path needs **no cron or service-role key**. Live metadata still shows the old `nightly-cycle-guidance` job active alongside `daily-phase-change-reminder`; the friend-recommendations job is absent. The old batch function is unchanged and has a scheduler-authorization gap tracked in [BUGS.md](BUGS.md). Do not confuse job dispatch success with successful AI results or notification delivery.
+
+---
+
+## 7. Status — built vs. needs deploy/verify
 
 - ✅ **Built & shipping in build 1.0.8:** the phase model + predictions, real-transition dating, all four sync triggers, HealthKit background delivery, on-device scheduled reminder, background-detected local notification, in-app notifications page + reaction/boop triggers + realtime friend requests.
 - ⏳ **Needs on-device verification** (background behavior can't be tested off-device): that iOS actually wakes the app on data writes, that the predicted reminder fires, and that `device_tokens` register.
-- ⏳ **Needs deploy:** the server-side `phase-change-reminder` (apply migration + deploy function), and the older `notifications-handler` (for friend-facing pushes).
+- ✅ **Server phase reminder deployed:** migration/function deployed in August; active `daily-phase-change-reminder` job confirmed again 2026-11-03. Token registration and actual push delivery still need device verification.
+- ⏳ **Needs deploy:** `notifications-handler` for friend-facing pushes (requires an Expo access token).
+- ✅ **Phase Guide implementation/backend:** authenticated AI generation, cache reuse, duplicate-request handling and auth isolation verified live 2026-11-03; 1.0.13 (34) built. Submission and native/offline/accessibility checks remain open.
 - 🚫 **Deliberately not built:** silent server-side auto-posting of predictions (see §5).

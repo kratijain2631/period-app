@@ -6,7 +6,46 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## Unreleased
 
-_Nothing yet._
+## 2026-11-03 — TestFlight build 1.0.14 (build 35)
+
+**Native build finished; automatic submission queued on EAS.** [EAS build](https://expo.dev/accounts/kratijain26/projects/period-app/builds/bf9a1168-1a04-430f-b342-bc6128d92fd8), with [automatic submission](https://expo.dev/accounts/kratijain26/projects/period-app/submissions/dbea0ad5-7488-4cef-a16d-cb238d5050a6) queued (`IN_QUEUE`; no upload logs yet). Source tag: `v1.0.14-build35` (`a67b00dd`). TestFlight availability is not yet confirmed.
+
+### Fixed
+
+- **Contacts discovery recovery and feedback.** Manage selected contacts through iOS Settings to avoid the broken native access picker; refresh permission on return, clear stale results after access/account changes, show progress immediately and put actionable empty/error messages beside Find Contacts. Late lookups cannot restore invalid results; discoverability writes verify the intended account.
+
+### Infrastructure & release setup
+
+- **Contacts migration confirmed live; privacy checks passed.** Verified default-off preference, exact matching RPC and grants, then tested owner-only access, opt-in/out, caller independence and self exclusion in a transaction with all synthetic data rolled back. Added reproducible SQL and permission/toggle/lifecycle regression tests; 98 Jest tests and TypeScript pass.
+
+### Known / not yet done
+
+- **Contacts rollout remains open.** Owner testing on 1.0.12 / iOS 26.6.2 found flashing/no result with Limited Access; Full Access reaches the empty-match state. Recovery changes still need testing on a new native build, including denied/limited/full access and two-account discoverability. See [verification matrix](CONTACT_DISCOVERY_ROLLOUT.md).
+
+## 2026-11-03 — TestFlight build 1.0.13 (build 34)
+
+**Native build finished; automatic submission queued on EAS.** [EAS build](https://expo.dev/accounts/kratijain26/projects/period-app/builds/b5517231-315b-48d7-adb1-9e98af8c8687), with [auto-submission queued](https://expo.dev/accounts/kratijain26/projects/period-app/submissions/a644dafb-6b2c-4ffc-a8b0-f8169b294049) (`IN_QUEUE`, rechecked 2026-11-03 at 4:28 p.m. ET; no upload logs yet). Source: tag `v1.0.13-build34`. TestFlight availability is not yet confirmed.
+
+### Fixed
+
+- **Phase Guide always has tips, including offline or before Health sync.** Local fallback guidance appears immediately, and cached advice from a different phase/cycle is never shown. Profile guidance refreshes only when the You page is focused and ignores late results after navigation/account changes.
+
+### Changed
+
+- **More useful dos and don’ts, readable at a glance.** Concrete phase-aware suggestions pair a short heading with practical detail. Full-width cards show the complete advice, wrap with larger text and replace the hidden flip interaction. AI follows the same optional, nonjudgmental content rules; NHS sources and editorial limits are documented in GUIDANCE.md.
+
+### Infrastructure & release setup
+
+- **On-demand guidance backend deployed (2026-11-03).** Applied the additive cache/lease migration, configured the current publishable client key and deployed `request-cycle-guidance`. PostgreSQL regression checks, Deno typecheck and live unauthenticated denial/permission checks pass; no cron or service-role key is needed for this path.
+- **Live authenticated verification and status-doc audit.** An approved synthetic account verified AI generation, cache reuse, 200/202 overlapping requests and account isolation, then was removed. FEATURES/TODO/BUGS, schema, cycle-sync, design and troubleshooting now distinguish completed implementation/backend work from pending native checks. Live inventory confirms 14 public tables and two active legacy/reminder cron jobs; friend-recommendations scheduling remains absent.
+
+### Added
+
+- **On-demand AI guidance, cached per phase occurrence.** A new authenticated `request-cycle-guidance` function uses caller-scoped database RPCs and sanitized friend summaries; no service-role key or cron is needed. Concurrent requests share a two-minute database lease, malformed/failed AI responses are not cached, and results are discarded if the phase changes during generation. Regression coverage added for fallback selection, cache invalidation, auth/account isolation, duplicate requests and AI failures.
+
+### Known / not yet done
+
+- **Device verification remains required.** Backend migration/function are live, and authenticated AI generation/cache reuse passed an isolated live test. Offline/account switching, HealthKit and native accessibility still need testing on a phone. The pre-existing batch handler's missing scheduler-only authorization is logged in BUGS; its legacy cron is already active and is not used by the new client.
 
 ## 2026-08-12 — TestFlight build 1.0.12 (build 33)
 

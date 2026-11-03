@@ -26,15 +26,17 @@ import {
   updateCurrentUserProfile,
 } from '../../../services/supabase/users';
 import {
-  fetchCycleGuidance,
+  ensureCycleGuidance,
   type CycleGuidanceRow,
 } from '../../../services/supabase/cycleGuidance';
+import { guidanceMatchesPhase, resolvePhaseGuidance } from '../../../../packages/domain/cycles/guidance';
 import { useCycleSnapshot } from '../../feed/hooks/useCycleSnapshot';
 import { generateAvatarImage, uploadAvatarBlob } from '../../../services/supabase/avatars';
 import { deleteCurrentAccount, signOut } from '../../../services/supabase/auth';
 import { brand, brandType } from '../../../theme/brand';
 import { CycleRing, PhaseAvatar, PhaseIndicator, getPhaseBg, getPhaseColor } from '../../../components/brand/CycleRing';
-import { DottieMascot, DottieTheme, DottieThemed } from '../../../components/brand/DottieMascot';
+import { DottieMascot } from '../../../components/brand/DottieMascot';
+import { PhaseGuide } from '../components/PhaseGuide';
 import { useStaggeredEntrance } from '../../../components/brand/useStaggeredEntrance';
 
 const palette = {
@@ -66,84 +68,13 @@ const AVATAR_GLAM_PROMPT = [
 const AVATAR_GLAM_STYLE_LABEL = 'Maximum Glam';
 const AVATAR_GENERATION_TIMEOUT_MS = 90000;
 
-type FlipGuideCardProps = {
-  title: string;
-  body: string;
-  bg: string;
-  color: string;
-  theme: DottieTheme;
-  accessibilityLabel: string;
-};
-
-const FlipGuideCard = ({ title, body, bg, color, theme, accessibilityLabel }: FlipGuideCardProps) => {
-  const [isFlipped, setFlipped] = useState(false);
-  const rotate = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    Animated.timing(rotate, {
-      toValue: isFlipped ? 1 : 0,
-      duration: 450,
-      easing: Easing.bezier(0.4, 0, 0.2, 1),
-      useNativeDriver: true,
-    }).start();
-  }, [isFlipped, rotate]);
-
-  const frontRotate = rotate.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0deg', '180deg'],
-  });
-  const backRotate = rotate.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['180deg', '360deg'],
-  });
-
-  return (
-    <Pressable
-      onPress={() => setFlipped((value) => !value)}
-      style={styles.flipCardWrap}
-      accessibilityRole="button"
-      accessibilityLabel={accessibilityLabel}
-    >
-      <View style={styles.flipCardPerspective}>
-        <Animated.View
-          style={[
-            styles.flipCardFace,
-            styles.flipCardFront,
-            {
-              backgroundColor: bg,
-              transform: [{ perspective: 900 }, { rotateY: frontRotate }],
-            },
-          ]}
-        >
-          <DottieThemed theme={theme} color={color} size={52} />
-          <Text style={[styles.flipCardTitle, { color }]}>{title}</Text>
-          <Text style={styles.flipCardHint}>tap to flip</Text>
-        </Animated.View>
-
-        <Animated.View
-          style={[
-            styles.flipCardFace,
-            styles.flipCardBack,
-            {
-              backgroundColor: bg,
-              transform: [{ perspective: 900 }, { rotateY: backRotate }],
-            },
-          ]}
-        >
-          <Text style={styles.flipCardBody} numberOfLines={5}>
-            {body}
-          </Text>
-        </Animated.View>
-      </View>
-    </Pressable>
-  );
-};
-
 const ProfileScreen = () => {
   const session = useSessionStore(selectSession);
   const alias = useSessionStore(selectAlias);
   const navigation = useNavigation();
   const { snapshot, isStale, lastSyncedAt } = useCycleSnapshot();
+  const cyclePhaseKey = snapshot?.currentPhase ?? 'unknown';
+  const cyclePhaseStart = snapshot?.currentPhaseStart ?? null;
   const [profileName, setProfileName] = useState('');
   const [profileEmail, setProfileEmail] = useState('');
   const [profileBio, setProfileBio] = useState('');
@@ -155,7 +86,11 @@ const ProfileScreen = () => {
   const [isAvatarBusy, setAvatarBusy] = useState(false);
   const [avatarError, setAvatarError] = useState<string | null>(null);
   const avatarPulse = useRef(new Animated.Value(0)).current;
-  const [cycleGuidance, setCycleGuidance] = useState<CycleGuidanceRow | null>(null);
+  const [guidanceState, setGuidanceState] = useState<{
+    userId: string; guidance: CycleGuidanceRow | null;
+  } | null>(null);
+  const cycleGuidance = guidanceState?.userId === session?.userId
+    ? guidanceState?.guidance ?? null : null;
   const [cycleGuidanceStatus, setCycleGuidanceStatus] = useState<
     'idle' | 'loading' | 'error'
   >('idle');
@@ -180,24 +115,6 @@ const ProfileScreen = () => {
       console.warn('[profile] Failed to load user profile', error);
     }
   }, []);
-
-  const loadCycleGuidance = useCallback(async () => {
-    if (!session?.userId) {
-      setCycleGuidance(null);
-      setCycleGuidanceStatus('idle');
-      return;
-    }
-    try {
-      setCycleGuidanceStatus('loading');
-      const guidance = await fetchCycleGuidance();
-      setCycleGuidance(guidance);
-      setCycleGuidanceStatus('idle');
-    } catch (error) {
-      console.warn('[profile] Failed to load cycle guidance', error);
-      setCycleGuidance(null);
-      setCycleGuidanceStatus('error');
-    }
-  }, [session?.userId]);
 
   const handleSaveBio = useCallback(async () => {
     const trimmed = bioDraft.trim();
@@ -416,6 +333,7 @@ const ProfileScreen = () => {
     if (!value) {
       return null;
     }
+    if (value === 'pms') return 'PMS';
     const normalized = value.replace(/_/g, ' ');
     return normalized.charAt(0).toUpperCase() + normalized.slice(1);
   };
@@ -449,13 +367,30 @@ const ProfileScreen = () => {
 
   useEffect(() => {
     loadProfile();
-    loadCycleGuidance();
-  }, [loadCycleGuidance, loadProfile]);
+  }, [loadProfile]);
 
   useFocusEffect(
     useCallback(() => {
-      loadCycleGuidance();
-    }, [loadCycleGuidance]),
+      let active = true;
+      if (!session?.userId || cyclePhaseKey === 'unknown') {
+        setGuidanceState(null);
+        setCycleGuidanceStatus('idle');
+        return;
+      }
+      const userId = session.userId;
+      setCycleGuidanceStatus('loading');
+      ensureCycleGuidance(userId, cyclePhaseKey, cyclePhaseStart)
+        .then((guidance) => {
+          if (!active) return;
+          setGuidanceState({ userId, guidance });
+          setCycleGuidanceStatus('idle');
+        })
+        .catch((error) => {
+          console.warn('[profile] Failed to load cycle guidance', error);
+          if (active) setCycleGuidanceStatus('error');
+        });
+      return () => { active = false; };
+    }, [session?.userId, cyclePhaseKey, cyclePhaseStart]),
   );
 
   // Your @handle — used for display instead of the email.
@@ -556,7 +491,6 @@ const ProfileScreen = () => {
     );
   }, [accountAction]);
 
-  const cyclePhaseKey = snapshot?.currentPhase ?? 'unknown';
   const cyclePhaseLabel = useMemo(
     () => formatPhaseLabel(snapshot?.currentPhase) ?? 'Unknown phase',
     [snapshot?.currentPhase],
@@ -603,31 +537,11 @@ const ProfileScreen = () => {
     background: phasePillPalette[cyclePhaseKey] ?? palette.mutedFill,
     text: phasePillPaletteText[cyclePhaseKey] ?? palette.secondaryText,
   };
-  const isGuidanceStale = Boolean(cycleGuidance?.phase && cycleGuidance.phase !== cyclePhaseKey);
-  const guidanceUpdatedLabel = useMemo(() => {
-    if (isGuidanceStale) {
-      return 'Refreshing tips';
-    }
-    if (cycleGuidance?.generated_at) {
-      const date = new Date(cycleGuidance.generated_at);
-      return Number.isNaN(date.getTime())
-        ? 'Updated recently'
-        : `Updated ${date.toLocaleDateString()}`;
-    }
-    return cycleGuidanceStatus === 'loading' ? 'Refreshing tips' : 'No guidance yet';
-  }, [cycleGuidance?.generated_at, cycleGuidanceStatus, isGuidanceStale]);
-  const phaseDos = cycleGuidance?.dos ?? [];
-  const phaseDonts = cycleGuidance?.donts ?? [];
-  const friendSuggestions = cycleGuidance?.friend_suggestions ?? [];
-  const guidanceEmptyLabel = useMemo(() => {
-    if (cycleGuidanceStatus === 'loading') {
-      return 'Refreshing your phase guidance.';
-    }
-    if (!snapshot) {
-      return 'Sync Health data to unlock phase guidance.';
-    }
-    return 'No guidance yet.';
-  }, [cycleGuidanceStatus, snapshot]);
+  const currentGuidance = guidanceMatchesPhase(cycleGuidance, cyclePhaseKey, cyclePhaseStart);
+  const { dos: phaseDos, donts: phaseDonts } = resolvePhaseGuidance(
+    cycleGuidance, cyclePhaseKey, cyclePhaseStart,
+  );
+  const friendSuggestions = currentGuidance ? cycleGuidance?.friend_suggestions ?? [] : [];
   const friendsEmptyLabel = useMemo(() => {
     if (cycleGuidanceStatus === 'loading') {
       return 'Finding friends in similar phases...';
@@ -665,53 +579,6 @@ const ProfileScreen = () => {
     Math.min(12, Math.round((snapshot?.samples.length ?? 0) / 5) || 6),
   );
 
-  const parseGuideText = (value: string) => {
-    const trimmed = value.trim();
-    if (!trimmed) {
-      return { title: 'Tip', body: '' };
-    }
-    const parts = trimmed.split(':');
-    if (parts.length > 1) {
-      return {
-        title: parts[0].trim(),
-        body: parts.slice(1).join(':').trim(),
-      };
-    }
-    const words = trimmed.split(/\s+/);
-    const title = words.slice(0, Math.min(3, words.length)).join(' ');
-    return { title, body: trimmed };
-  };
-
-  const doThemes: DottieTheme[] = ['hydrate', 'movement', 'nourish'];
-  const dontThemes: DottieTheme[] = ['caffeine', 'overcommit', 'workouts'];
-  const doPalette = [
-    { bg: '#EEF3F8', color: '#6B8DB5' },
-    { bg: '#EDF5F0', color: '#7BA68F' },
-    { bg: '#FFF8ED', color: '#D4A252' },
-  ];
-  const dontPalette = [
-    { bg: '#FFF0EB', color: '#C4654A' },
-    { bg: '#EEF3F8', color: '#6B8DB5' },
-    { bg: '#EDF5F0', color: '#7BA68F' },
-  ];
-
-  const doCards = phaseDos.map((item, index) => {
-    const parsed = parseGuideText(item);
-    return {
-      ...parsed,
-      ...doPalette[index % doPalette.length],
-      theme: doThemes[index % doThemes.length],
-    };
-  });
-
-  const dontCards = phaseDonts.map((item, index) => {
-    const parsed = parseGuideText(item);
-    return {
-      ...parsed,
-      ...dontPalette[index % dontPalette.length],
-      theme: dontThemes[index % dontThemes.length],
-    };
-  });
   const entranceStyles = useStaggeredEntrance(5, {
     initialDelay: 40,
     stagger: 80,
@@ -817,53 +684,12 @@ const ProfileScreen = () => {
           </View>
         </Animated.View>
 
-        <Text style={styles.sectionTitle}>Phase Guide</Text>
-
-        <Text style={styles.doLabel}>Do&apos;s</Text>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.guideRow}
-        >
-          {doCards.length ? (
-            doCards.map((card, index) => (
-              <FlipGuideCard
-                key={`do-${index}`}
-                title={card.title}
-                body={card.body}
-                bg={card.bg}
-                color={card.color}
-                theme={card.theme}
-                accessibilityLabel={`Flip do card ${card.title}`}
-              />
-            ))
-          ) : (
-            <Text style={styles.emptyInlineText}>{guidanceEmptyLabel}</Text>
-          )}
-        </ScrollView>
-
-        <Text style={styles.dontLabel}>Don&apos;ts</Text>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.guideRow}
-        >
-          {dontCards.length ? (
-            dontCards.map((card, index) => (
-              <FlipGuideCard
-                key={`dont-${index}`}
-                title={card.title}
-                body={card.body}
-                bg={card.bg}
-                color={card.color}
-                theme={card.theme}
-                accessibilityLabel={`Flip don't card ${card.title}`}
-              />
-            ))
-          ) : (
-            <Text style={styles.emptyInlineText}>{guidanceEmptyLabel}</Text>
-          )}
-        </ScrollView>
+        <PhaseGuide
+          dos={phaseDos}
+          donts={phaseDonts}
+          personalized={currentGuidance}
+          phaseLabel={cyclePhaseKey === 'unknown' ? null : formatPhaseLabel(cyclePhaseKey)}
+        />
 
         <Text style={styles.sectionTitle}>Friends In Sync</Text>
         <View style={styles.friendsCard}>
@@ -1179,74 +1005,6 @@ const styles = StyleSheet.create({
     color: '#2D2A26',
     marginBottom: 8,
     ...brandType.display,
-  },
-  doLabel: {
-    fontSize: 12,
-    color: '#7BA68F',
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
-    marginBottom: 8,
-    ...brandType.semibold,
-  },
-  dontLabel: {
-    fontSize: 12,
-    color: '#C4654A',
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
-    marginTop: 8,
-    marginBottom: 8,
-    ...brandType.semibold,
-  },
-  guideRow: {
-    gap: 10,
-    paddingBottom: 10,
-    paddingRight: 2,
-  },
-  flipCardWrap: {
-    width: 150,
-    height: 158,
-  },
-  flipCardPerspective: {
-    flex: 1,
-    position: 'relative',
-  },
-  flipCardFace: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    borderRadius: 22,
-    paddingHorizontal: 10,
-    paddingVertical: 10,
-    backfaceVisibility: 'hidden',
-  },
-  flipCardFront: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  flipCardBack: {
-    justifyContent: 'center',
-  },
-  flipCardTitle: {
-    marginTop: 6,
-    fontSize: 13,
-    textAlign: 'center',
-    ...brandType.semibold,
-  },
-  flipCardHint: {
-    position: 'absolute',
-    bottom: 8,
-    fontSize: 9,
-    color: '#B5AFA7',
-    ...brandType.body,
-  },
-  flipCardBody: {
-    fontSize: 11,
-    color: '#5A564F',
-    lineHeight: 16,
-    textAlign: 'center',
-    ...brandType.body,
   },
   emptyInlineText: {
     fontSize: 13,
