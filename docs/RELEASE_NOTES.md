@@ -6,6 +6,10 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## Unreleased
 
+## 2026-11-03 — TestFlight build 1.0.14 (build 35)
+
+**Prepared for EAS; build/upload not yet confirmed.** Source tag: `v1.0.14-build35`.
+
 ### Fixed
 
 - **Contacts discovery recovery and feedback.** Manage selected contacts through iOS Settings to avoid the broken native access picker; refresh permission on return, clear stale results after access/account changes, show progress immediately and put actionable empty/error messages beside Find Contacts. Late lookups cannot restore invalid results; discoverability writes verify the intended account.
