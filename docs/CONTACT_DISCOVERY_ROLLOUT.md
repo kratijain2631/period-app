@@ -19,6 +19,10 @@ npx tsc --noEmit
 
 Do not use `supabase db push`; migration tracking is incomplete (see [TROUBLESHOOTING](TROUBLESHOOTING.md)).
 
+## Recovery build
+
+**1.0.14 (35)** is registered/building on EAS: [EAS build](https://expo.dev/accounts/kratijain26/projects/period-app/builds/bf9a1168-1a04-430f-b342-bc6128d92fd8); [automatic submission](https://expo.dev/accounts/kratijain26/projects/period-app/submissions/dbea0ad5-7488-4cef-a16d-cb238d5050a6) awaits the build. Source tag `v1.0.14-build35`, commit `a67b00dd`. TestFlight availability and new-build device checks are not yet confirmed.
+
 ## Physical iPhone test setup
 
 Use iOS 18+ for Limited Access and an installed TestFlight build ≥1.0.12. Record the exact app version/build and iOS version. Two tester accounts, A and B, are needed for visible match/opt-out checks. On A's phone, save B's **actual account email** in a contact. Sign in with Apple “Hide My Email” can make this different from B's usual email; phone-number matching is not implemented. Avoid changing real contacts unnecessarily: use a dedicated test contact and remove it afterward.
@@ -39,7 +43,7 @@ B controls their own “Let contacts find me” switch. A's Contacts permission 
 | Opt-out/persistence | B switches off: A's next Find Contacts excludes B. Relaunch B's app: switch stays off. Repeat on → relaunch → match. | Pending; backend opt-in/out passed |
 | Friendship | From an eligible result, send a request and accept on the other tester; verify Friends/Requested state and no duplicate request. | Pending |
 
-Owner reported installed app version **1.0.12**, **iOS 26.6.2**, with **two selected contacts** under Limited Access on 2026-11-03. Both buttons flash without a visible outcome. Restarting and using only Find Contacts still flashes. Changing to Full Access hides Choose more contacts and produces the empty-match message. Native build number is not independently confirmed. A second tester is available; positive matching and toggle checks are pending.
+Owner reported installed app version **1.0.12**, **iOS 26.6.2**, with **two selected contacts** under Limited Access on 2026-11-03. Both buttons flash without a visible outcome. Restarting and using only Find Contacts still flashes. Changing to Full Access hides Choose more contacts and produces the empty-match message. Native build number is not independently confirmed. A second tester is available. Owner also tried Full Access with that tester saved in Contacts and saw no match; their actual account-email match and discoverability opt-in are not yet confirmed, so this is inconclusive. Positive matching and toggle checks remain pending.
 
 ## Recovery implementation; physical verification still required
 
