@@ -8,7 +8,7 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## 2026-11-03 — TestFlight build 1.0.13 (build 34)
 
-**Native build finished; automatic submission queued on EAS.** [EAS build](https://expo.dev/accounts/kratijain26/projects/period-app/builds/b5517231-315b-48d7-adb1-9e98af8c8687), with [auto-submission queued](https://expo.dev/accounts/kratijain26/projects/period-app/submissions/a644dafb-6b2c-4ffc-a8b0-f8169b294049) (`IN_QUEUE`, verified 2026-11-03). Source: tag `v1.0.13-build34`. TestFlight availability is not yet confirmed.
+**Native build finished; automatic submission queued on EAS.** [EAS build](https://expo.dev/accounts/kratijain26/projects/period-app/builds/b5517231-315b-48d7-adb1-9e98af8c8687), with [auto-submission queued](https://expo.dev/accounts/kratijain26/projects/period-app/submissions/a644dafb-6b2c-4ffc-a8b0-f8169b294049) (`IN_QUEUE`, rechecked 2026-11-03 at 4:28 p.m. ET; no upload logs yet). Source: tag `v1.0.13-build34`. TestFlight availability is not yet confirmed.
 
 ### Fixed
 

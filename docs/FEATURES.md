@@ -28,7 +28,7 @@ The sequencing below **is** the plan; the category sections after it are a refer
 
 ### Next — the moat
 - **Richer cycle/calendar view** on Apple's data + predictions (§ Cycle)
-- **Phase-based recommendations** (§ Cycle) — Phase Guide implemented; backend deployed and live-tested 2026-11-03; 1.0.13 (34) built, submission/device verification pending.
+- **Phase-based recommendations** (§ Cycle) — Phase Guide implemented; backend deployed and live-tested 2026-11-03; 1.0.13 (34) built; EAS submission still queued as of 2026-11-03, 4:28 p.m. ET, with TestFlight availability and device verification pending.
 - **Friends overview + calendar-of-friends + a real sync score** (§ Social)
 - **Groups** of friends (§ Social)
 - **Privacy & data-controls dashboard** (§ Privacy)
