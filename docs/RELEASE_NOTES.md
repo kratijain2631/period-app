@@ -6,7 +6,25 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## Unreleased
 
-_Nothing yet._
+### Fixed
+
+- **Phase Guide always has tips, including offline or before Health sync.** Local fallback guidance appears immediately, and cached advice from a different phase/cycle is never shown. Profile guidance refreshes only when the You page is focused and ignores late results after navigation/account changes.
+
+### Changed
+
+- **More useful dos and don’ts, readable at a glance.** Concrete phase-aware suggestions pair a short heading with practical detail. Full-width cards show the complete advice, wrap with larger text and replace the hidden flip interaction. AI follows the same optional, nonjudgmental content rules; NHS sources and editorial limits are documented in GUIDANCE.md.
+
+### Infrastructure & release setup
+
+- **On-demand guidance backend deployed (2026-11-03).** Applied the additive cache/lease migration, configured the current publishable client key and deployed `request-cycle-guidance`. PostgreSQL regression checks, Deno typecheck and live unauthenticated denial/permission checks pass; no cron or service-role key is needed for this path.
+
+### Added
+
+- **On-demand AI guidance, cached per phase occurrence.** A new authenticated `request-cycle-guidance` function uses caller-scoped database RPCs and sanitized friend summaries; no service-role key or cron is needed. Concurrent requests share a two-minute database lease, malformed/failed AI responses are not cached, and results are discarded if the phase changes during generation. Regression coverage added for fallback selection, cache invalidation, auth/account isolation, duplicate requests and AI failures.
+
+### Known / not yet done
+
+- **Device verification remains required.** Backend migration/function are live; successful authenticated AI generation, cache reuse, offline/account switching and native accessibility still need testing on a phone. The pre-existing batch handler's missing in-function authorization is logged in BUGS; do not re-enable that optional cron without reviewing it.
 
 ## 2026-08-12 — TestFlight build 1.0.12 (build 33)
 

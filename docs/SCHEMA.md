@@ -2,7 +2,7 @@
 
 The full schema — tables, functions, RLS policies, indexes — is defined in `supabase/migrations/*.sql`, which is the source of truth. Running those migrations recreates the database from scratch (that's how the current project `mmomoyszozclfjdvjbeb` was built). Real user data lives only in the database, never in the repo; the only data in code is the demo feed seed in `seed-posts.sql`.
 
-## Tables (11)
+## Tables (12)
 
 | Table | Purpose |
 |---|---|
@@ -16,12 +16,16 @@ The full schema — tables, functions, RLS policies, indexes — is defined in `
 | `event_reactions` | Emoji reactions to cycle events. |
 | `boops` | Friend "boop" nudges (from / to / optional cycle event). |
 | `notifications` | In-app notifications, with a `read_at` column (null = unread) for the notifications page's new/read state. Populated by engagement triggers (reactions/boops) and, once deployed, the notifications-handler. |
+| `cycle_guidance_requests` | Applied 2026-11-03: caller-scoped two-minute generation leases; auth-user deletion cascades. No direct anon/authenticated table access. |
 | `device_tokens` | Push-notification (Expo) tokens per device. |
+
+The on-demand guidance migration also adds nullable `cycle_guidance.phase_started_at`; old clients and the legacy batch worker remain compatible. These additions were applied and their permissions verified on **2026-11-03**.
 
 ## Functions
 
 | Function | Purpose |
 |---|---|
+| `claim_cycle_guidance` / `complete_cycle_guidance` | Applied 2026-11-03: authenticate with `auth.uid()`, validate the current server snapshot, serialize generation claims and save only the matching claim/phase result. Authenticated callers can affect only their own guidance. |
 | `handle_new_auth_user` | Trigger: creates a `users` row when a new auth user signs up. |
 | `handle_updated_at` | Trigger: maintains `updated_at` timestamps. |
 | `populate_post_alias` | Trigger: fills a post's alias from the user's profile. |
