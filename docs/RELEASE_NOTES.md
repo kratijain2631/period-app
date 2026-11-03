@@ -6,6 +6,8 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## Unreleased
 
+## 2026-11-03 — TestFlight build 1.0.13 (build 34)
+
 ### Fixed
 
 - **Phase Guide always has tips, including offline or before Health sync.** Local fallback guidance appears immediately, and cached advice from a different phase/cycle is never shown. Profile guidance refreshes only when the You page is focused and ignores late results after navigation/account changes.
