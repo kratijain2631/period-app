@@ -5,6 +5,7 @@
  *   node scripts/test-accounts/run.js seed               # create/reset all personas on staging
  *   node scripts/test-accounts/run.js actors <command>   # act as personas (post, react, boop, …)
  *   node scripts/test-accounts/run.js start              # start Metro against staging
+ *   node scripts/test-accounts/run.js rls                # check friend requests can't be forged
  *
  * Loads the TypeScript sources directly (via sucrase) so the scripts reuse the
  * app's own cycle model in packages/domain.
@@ -30,11 +31,12 @@ const [command, ...args] = process.argv.slice(2);
 const commands = {
   seed: () => require('./seed.ts').main(args),
   actors: () => require('./actors.ts').main(args),
+  rls: () => require('./rlsChecks.ts').main(),
   start: () => require('./startStaging.ts').main(args),
 };
 
 if (!command || !commands[command]) {
-  console.log('Usage: node scripts/test-accounts/run.js <seed|actors|start> [args]');
+  console.log('Usage: node scripts/test-accounts/run.js <seed|actors|start|rls> [args]');
   process.exit(command ? 1 : 0);
 }
 

@@ -51,6 +51,7 @@ npm run test-accounts:actors -- request fay cleo
 npm run test-accounts:actors -- accept cleo
 
 npm run test-accounts:seed                # reset everything to the known state
+npm run test-accounts:rls                 # check friend requests can't be forged (run after RLS changes)
 ```
 
 **Two phones side by side:** boot a second simulator (`xcrun simctl boot "iPhone 17"`), install the same dev build, and sign in as a different persona.
