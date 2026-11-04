@@ -111,6 +111,8 @@ To install a build directly from an `.ipa` file (outside TestFlight or the EAS i
 - **First external TestFlight build** needs Beta App Review (~1 day); later builds to the same group usually don't.
 - **Health-app review** scrutinizes HealthKit + data sharing — keep the "read-only, never written back, shared only with approved friends" framing in review notes and the privacy policy.
 
+- **Setting `EXPO_PUBLIC_*` in the shell doesn't beat `.env` in dev bundles.** Expo's dev-only `expo/virtual/env` module merges `.env`, `.env.development`, `.env.local` and `.env.development.local` over `process.env`, so `.env` values win and keys missing from `.env` still come through. This made an early `start:staging` talk to production while showing the STAGING pill. `start:staging` now writes the public staging values to a gitignored `.env.local` while Metro runs. `EXPO_NO_DOTENV` doesn't affect this module. To check a bundle, look for the Supabase URL under its `.env*` modules, not just the env header.
+
 ## State that lives OUTSIDE git (not versioned — back up / remember separately)
 
 - **`.env`** (gitignored): Supabase URL + publishable key + `EXPO_PUBLIC_DEV_AUTH`.

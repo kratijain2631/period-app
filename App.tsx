@@ -13,6 +13,7 @@ import { Nunito_700Bold, Nunito_800ExtraBold } from '@expo-google-fonts/nunito';
 import AppNavigator from './app/navigation/AppNavigator';
 import ErrorBoundary from './app/components/ErrorBoundary';
 import BrandSplash from './app/components/brand/BrandSplash';
+import DevEnvironmentBadge from './app/components/DevEnvironmentBadge';
 import { useCycleSyncLifecycle } from './app/services/healthkit/useCycleSyncLifecycle';
 import { useSupabaseAuth } from './app/services/supabase/useSupabaseAuth';
 import { useProfileGate } from './app/services/supabase/useProfileGate';
@@ -60,6 +61,7 @@ export default function App() {
     <ErrorBoundary>
       <AppInner />
       {showSplash ? <BrandSplash onDone={() => setShowSplash(false)} /> : null}
+      <DevEnvironmentBadge />
     </ErrorBoundary>
   );
 }
