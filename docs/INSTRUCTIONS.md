@@ -63,6 +63,7 @@ When you hit and resolve a problem — or learn something that could bite a futu
 After every code change, **explicitly review it for bugs before committing**:
 - Re-read the diff for logic errors, missing error handling, edge cases, and race conditions.
 - Run the tests (`npm test`) and confirm the app still bundles/runs where relevant.
+- For user-visible changes, test in the simulator on staging with the test personas. The rules are in [AGENTS.md](../AGENTS.md) and the procedure is in [TEST_ACCOUNTS.md](TEST_ACCOUNTS.md#testing-as-an-ai-agent).
 - Log any bug you find but don't fix in [BUGS.md](BUGS.md) so it isn't lost.
 
 ## 5. Before changing any name or identifier
