@@ -4,7 +4,7 @@ jest.mock('@kingstinct/react-native-healthkit', () => ({
   },
 }));
 
-import { deriveSnapshot, normalizeFlowSamples, normalizeSignalSamples } from '../../cycles/models';
+import { deriveSnapshot, getCycleDay, normalizeFlowSamples, normalizeSignalSamples } from '../../cycles/models';
 import type { CycleSignalKind } from '../../cycles/models';
 import {
   PERSONAS,
@@ -35,6 +35,13 @@ describe('test personas', () => {
     expect(new Set(keys).size).toBe(keys.length);
     expect(new Set(PERSONAS.map((p) => p.email)).size).toBe(keys.length);
     expect(new Set(PERSONAS.map((p) => p.alias)).size).toBe(keys.length);
+  });
+
+  it('shows each persona the cycle day their history implies', () => {
+    expect(getCycleDay(snapshotFor('ava').snapshot, NOW)).toBe(10);
+    expect(getCycleDay(snapshotFor('eli').snapshot, NOW)).toBe(26);
+    expect(getCycleDay(snapshotFor('cleo').snapshot, NOW)).toBe(3);
+    expect(getCycleDay(snapshotFor('dev').snapshot, NOW)).toBeNull();
   });
 
   it('only references known personas and posts in the social seed', () => {

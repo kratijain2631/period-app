@@ -14,6 +14,7 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ### Fixed
 
+- **Cycle day now counts from the first day of your period.** Home, You and Circle were counting from the last day, so the day number ran several days low. Sync scores now compare period start dates too, so they may shift slightly.
 - **`start:staging` now really uses staging.** Expo's dev env module let `.env` override the staging values, so the app talked to production while showing the STAGING pill. The script now writes the public staging values to a temporary, gitignored `.env.local`.
 
 ## 2026-08-12 — TestFlight build 1.0.12 (build 33)

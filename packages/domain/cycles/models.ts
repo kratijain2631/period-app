@@ -505,6 +505,38 @@ export const normalizeSignalSamples = (
 export const getLatestSample = (samples: readonly CycleSample[]): CycleSample | undefined =>
   [...samples].sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime())[0];
 
+type CycleDaySnapshot = Partial<
+  Pick<CycleSnapshot, 'samples' | 'latestSampleStart' | 'cycleLengthDays'>
+>;
+
+// First flow day of the most recent period. `latestSampleStart` is the *last* flow
+// sample, so it's only a fallback for snapshots that carry no samples.
+export const getLatestPeriodStart = (snapshot?: CycleDaySnapshot | null): Date | null => {
+  const runs = buildFlowRuns(snapshot?.samples ?? []);
+  if (runs.length) {
+    return runs[runs.length - 1].start;
+  }
+  const latest = snapshot?.latestSampleStart ? parseIsoDate(snapshot.latestSampleStart) : null;
+  return latest && isFiniteDate(latest) ? latest : null;
+};
+
+// Day of the current cycle, where day 1 is the first flow day of the latest period.
+// Wraps at the cycle length like the phase estimate in resolveCyclePhase.
+export const getCycleDay = (
+  snapshot?: CycleDaySnapshot | null,
+  referenceDate: Date = new Date(),
+): number | null => {
+  const periodStart = getLatestPeriodStart(snapshot);
+  if (!periodStart) {
+    return null;
+  }
+  const daysSinceStart = dayDiff(referenceDate, periodStart);
+  if (daysSinceStart < 0) {
+    return null;
+  }
+  return (daysSinceStart % (snapshot?.cycleLengthDays ?? DEFAULT_CYCLE_LENGTH)) + 1;
+};
+
 export const deriveSnapshot = (
   samples: readonly CycleSample[],
   syncedAt: string,
