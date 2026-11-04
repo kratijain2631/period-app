@@ -24,3 +24,7 @@ supabase/.temp/
 # Native build outputs (if generated later)
 ios/build/
 android/app/build/
+
+# Local test screenshots (can contain personal data) and per-machine Claude settings
+screenshots/
+.claude/settings.local.json

@@ -8,6 +8,7 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ### Added
 
+- **Staging testing guide for agents.** `AGENTS.md` is now the single source of agent instructions for any tool or model, including how to test changes on staging with personas, with hard safety rules. `CLAUDE.md` imports it. The step-by-step procedure is in `docs/TEST_ACCOUNTS.md`.
 - **Staging test accounts ("personas").** Six code-defined test users (`packages/domain/testing/personas.ts`) with deterministic, generated Apple Health cycle history, friendships, posts, reactions and boops. `npm run test-accounts:seed` creates/resets them on a **separate staging Supabase project** (refuses to touch production); `npm run test-accounts:actors` makes personas post, react, boop and send friend requests through the normal API + RLS; `npm run start:staging` runs Metro against staging. See [TEST_ACCOUNTS.md](TEST_ACCOUNTS.md). Dev tooling only; no change to TestFlight builds.
 - **Dev-only fake Health source.** With `EXPO_PUBLIC_FAKE_HEALTH=true` in a `__DEV__` build, `healthkitClient` serves the signed-in persona's generated samples instead of HealthKit, so the simulator runs the real sync path with realistic data. Release builds can't enable it (tested).
 - **Dev environment badge.** Dev builds show a small "STAGING · FAKE HEALTH" pill when pointed at staging or using fake Health. Hidden in release builds.
