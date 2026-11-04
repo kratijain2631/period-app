@@ -30,6 +30,7 @@ import {
   type CycleGuidanceRow,
 } from '../../../services/supabase/cycleGuidance';
 import { useCycleSnapshot } from '../../feed/hooks/useCycleSnapshot';
+import { getCycleDay } from '../../../../packages/domain/cycles/models';
 import { generateAvatarImage, uploadAvatarBlob } from '../../../services/supabase/avatars';
 import { deleteCurrentAccount, signOut } from '../../../services/supabase/auth';
 import { brand, brandType } from '../../../theme/brand';
@@ -635,29 +636,10 @@ const ProfileScreen = () => {
     return 'No similar-phase friends yet.';
   }, [cycleGuidanceStatus]);
 
-  const cycleDayNumber = useMemo(() => {
-    const latest = snapshot?.latestSampleStart;
-    if (!latest) {
-      return null;
-    }
-    const latestDate = new Date(latest);
-    if (Number.isNaN(latestDate.getTime())) {
-      return null;
-    }
-    const now = new Date();
-    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-    const startOfLatest = new Date(
-      latestDate.getFullYear(),
-      latestDate.getMonth(),
-      latestDate.getDate(),
-    ).getTime();
-    const elapsedDays = Math.max(
-      0,
-      Math.floor((startOfToday - startOfLatest) / (24 * 60 * 60 * 1000)),
-    );
-    const cycleLength = snapshot?.cycleLengthDays ?? 28;
-    return (elapsedDays % cycleLength) + 1;
-  }, [snapshot?.cycleLengthDays, snapshot?.latestSampleStart]);
+  const cycleDayNumber = useMemo(
+    () => getCycleDay(snapshot),
+    [snapshot],
+  );
 
   const cycleLengthDays = snapshot?.cycleLengthDays ?? 28;
   const monthlyTracked = Math.max(

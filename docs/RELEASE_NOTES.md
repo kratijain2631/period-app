@@ -6,7 +6,16 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## Unreleased
 
-_Nothing yet._
+### Added
+
+- **Staging test accounts ("personas").** Six code-defined test users (`packages/domain/testing/personas.ts`) with deterministic, generated Apple Health cycle history, friendships, posts, reactions and boops. `npm run test-accounts:seed` creates/resets them on a **separate staging Supabase project** (refuses to touch production); `npm run test-accounts:actors` makes personas post, react, boop and send friend requests through the normal API + RLS; `npm run start:staging` runs Metro against staging. See [TEST_ACCOUNTS.md](TEST_ACCOUNTS.md). Dev tooling only; no change to TestFlight builds.
+- **Dev-only fake Health source.** With `EXPO_PUBLIC_FAKE_HEALTH=true` in a `__DEV__` build, `healthkitClient` serves the signed-in persona's generated samples instead of HealthKit, so the simulator runs the real sync path with realistic data. Release builds can't enable it (tested).
+- **Dev environment badge.** Dev builds show a small "STAGING · FAKE HEALTH" pill when pointed at staging or using fake Health. Hidden in release builds.
+
+### Fixed
+
+- **Cycle day now counts from the first day of your period.** Home, You and Circle were counting from the last day, so the day number ran several days low. Sync scores now compare period start dates too, so they may shift slightly.
+- **`start:staging` now really uses staging.** Expo's dev env module let `.env` override the staging values, so the app talked to production while showing the STAGING pill. The script now writes the public staging values to a temporary, gitignored `.env.local`.
 
 ## 2026-08-12 — TestFlight build 1.0.12 (build 33)
 

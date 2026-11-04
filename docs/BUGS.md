@@ -4,6 +4,23 @@ Known bugs to fix. This is for **open** bugs; problems we already diagnosed and 
 
 ## Open
 
+### Found in testing (2026-11-03, simulator walkthrough)
+
+- [ ] **A sync with zero Health samples still uploads an empty snapshot.** `syncHealthData.ts` calls `upsertCycleSnapshotRemote` even when HealthKit returns nothing (new phone, Health access off, simulator), replacing a real `cycle_snapshots` row that friends see with an "Unknown" one until a device with data syncs again. Seen on the simulator (3 syncs, 0 samples each). Suggested fix: skip the remote upsert when a sync finds no samples and a non-empty remote snapshot already exists, while still writing a first snapshot for new users. The dev-only fake Health source (TEST_ACCOUNTS.md) avoids this for non-persona accounts by failing the query instead of returning nothing.
+- [ ] **No-data users see made-up numbers.** With no cycle data, the profile shows "1 of 28", "Right on track! 28 days" and "Tracked 6 months", and Friend Sync shows a 38% "Diverging" score, all from defaults rather than data. Needs a proper no-data state on Profile and Friend Sync. Reproduce with the `dev` test persona.
+
+### Found in testing (2026-11-03, staging walkthrough as Ava)
+
+- [x] **Cycle day counted from the last day of the period, not the first — FIXED 2026-11-03.** Home, You, Circle and the sync score used `latestSampleStart`, the most recent flow sample, so Ava showed Day 6 instead of 10, Eli 23 instead of 26 and Cleo 1 instead of 3. All four now use `getCycleDay` / `getLatestPeriodStart` in `packages/domain/cycles/models.ts`. Sync scores can shift slightly because flow timing now compares period starts.
+- [ ] **`friend-recommendations` edge function still dates cycles from `latestSampleStart`.** Its `latestSampleDate` has the same last-flow-day issue. Not changed because it needs its own deploy.
+- [ ] **The STAGING pill doesn't prove which backend the app is using.** `DevEnvironmentBadge` reads `EXPO_PUBLIC_APP_ENV` and the fake-Health flag, not the Supabase URL, so it showed STAGING on a bundle that was talking to production (see TROUBLESHOOTING.md → Gotchas). Derive the label from `supabaseUrl`, and warn loudly when the flags and URL disagree.
+- [ ] **Launching the dev build reopens the last Metro server and syncs straight away.** A real account's session plus a production Metro server means a zero-sample sync on launch, which triggers the empty-snapshot bug above. Happened 2026-11-03 at 8:59 PM on the owner's account.
+- [ ] **Some cycle-event posts show a fallback name.** Period posts appear as "Friend b1b6...fbae" while the same feed shows text posts under real names.
+- [ ] **Outgoing friend requests only appear in search.** The Circle screen has no pending section; the request to Fay only shows as "Requested" after searching for her.
+- [ ] **New posts and the notification dot didn't appear until pull-to-refresh.** After `scenario cramps-thread`, neither had updated about 10 seconds later. `notifications.ts` has a realtime subscription, so the dot should be checked; Home has none.
+- [ ] **Blue "Refreshing..." banner lingers across tabs.** It stayed up for over a minute after scrolling and covered the top of each screen. Cause not determined; it may be dev-only.
+- [ ] **Small display issues.** Friends rows show "Follicular vs Pms" (should be "PMS"), and the STAGING pill covers the Circle tab icon.
+
 ### Backend/client compatibility (2026-08-06)
 
 - [~] **Friend cycle data and auto-updates used obsolete raw-table reads after the live privacy migration — FIXED 2026-08-06; behavioral check pending.** 🚧 (WIP — Codex) The missing migration history is now in git and clients now use only the sanitized `friend_cycle_summaries()` / `shared_cycle_events()` RPCs; raw-table fallback was removed because every dev tester can update together. Regression tests cover RPC reads and error propagation, and the current Circle leaderboard/UI is preserved. The temporary compatibility SQL was applied before that decision, so **remaining:** apply `20260806010000_remove-legacy-friend-cycle-read.sql` to restore owner-only raw-table access, then verify with two accepted-friend accounts on build 1.0.11.

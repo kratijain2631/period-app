@@ -35,7 +35,7 @@ import {
 import { searchUsersByAliasOrEmail, type UserSearchResult } from '../../../services/supabase/users';
 import { fetchFriendCycleSnapshots, type CycleSnapshotRow } from '../../../services/supabase/cycleSnapshots';
 import { computeSyncScore } from '../utils/syncScore';
-import type { CyclePhase } from '../../../../packages/domain/cycles/models';
+import { getCycleDay, type CyclePhase } from '../../../../packages/domain/cycles/models';
 import { brand, brandType } from '../../../theme/brand';
 import { DottieAndFriend } from '../../../components/brand/DottieMascot';
 import { PhaseAvatar, getPhaseColor } from '../../../components/brand/CycleRing';
@@ -499,29 +499,6 @@ const FriendsScreen = () => {
     }
   }, []);
 
-  const deriveCycleDay = useCallback((snapshot?: CycleSnapshotRow['snapshot']) => {
-    const latest = snapshot?.latestSampleStart;
-    if (!latest) {
-      return null;
-    }
-    const latestDate = new Date(latest);
-    if (Number.isNaN(latestDate.getTime())) {
-      return null;
-    }
-    const now = new Date();
-    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-    const startOfLatest = new Date(
-      latestDate.getFullYear(),
-      latestDate.getMonth(),
-      latestDate.getDate(),
-    ).getTime();
-    const elapsedDays = Math.max(
-      0,
-      Math.floor((startOfToday - startOfLatest) / (24 * 60 * 60 * 1000)),
-    );
-    const cycleLength = snapshot?.cycleLengthDays ?? 28;
-    return (elapsedDays % cycleLength) + 1;
-  }, []);
   const entranceStyles = useStaggeredEntrance(4, {
     initialDelay: 40,
     stagger: 85,
@@ -863,7 +840,7 @@ const FriendsScreen = () => {
                       : Math.round(normalizedScoreRaw)
                     : 0;
                 const friendPhaseColor = getPhaseColor(row.snapshot?.currentPhase);
-                const friendCycleDay = deriveCycleDay(row.snapshot);
+                const friendCycleDay = getCycleDay(row.snapshot);
                 const trendLabel = normalizedScore >= 50 ? 'Converging' : 'Diverging';
 
                 return (
