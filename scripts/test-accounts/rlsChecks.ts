@@ -182,6 +182,46 @@ const checkProfileEmail = async (
   }
 };
 
+const checkAliases = async (
+  signIn: (key: string) => Promise<Persona>,
+  admin: SupabaseClient,
+  record: Record,
+) => {
+  const [bea, eli] = await Promise.all(['bea', 'eli'].map(signIn));
+  const { alias } = (await admin.from('users').select('alias').eq('id', eli.id).single()).data as { alias: string };
+  const { alias: beaAlias } = (await admin.from('users').select('alias').eq('id', bea.id).single()).data as {
+    alias: string;
+  };
+  const rename = (value: string) => eli.client.from('users').update({ alias: value }).eq('id', eli.id);
+  let postId: string | null = null;
+
+  try {
+    record("a user cannot take someone else's alias", (await rename(beaAlias)).error?.code === '23505');
+    record('alias uniqueness ignores case', (await rename(beaAlias.toUpperCase())).error?.code === '23505');
+    record('alias uniqueness ignores surrounding spaces', (await rename(` ${beaAlias} `)).error?.code === '23505');
+    const same = await rename(alias);
+    record('saving your own alias again works', !same.error, same.error?.message);
+
+    const posted = await eli.client
+      .from('posts')
+      .insert({ user_id: eli.id, alias: beaAlias, body: 'RLS alias check' })
+      .select('id, alias')
+      .single();
+    const row = posted.data as { id: string; alias: string } | null;
+    postId = row?.id ?? null;
+    record("a post can't carry someone else's name", !posted.error && row?.alias === alias, posted.error?.message);
+    await eli.client.from('posts').update({ alias: beaAlias }).eq('id', postId as string);
+    const after = (await admin.from('posts').select('alias').eq('id', postId as string).single()).data as {
+      alias: string;
+    };
+    record("a post's name can't be changed to someone else's", after.alias === alias);
+  } finally {
+    if (postId) await admin.from('posts').delete().eq('id', postId);
+    await admin.from('users').update({ alias }).eq('id', eli.id);
+    await Promise.all([bea, eli].map(({ client }) => client.auth.signOut()));
+  }
+};
+
 export const main = async () => {
   const env = loadStagingEnv();
   const password = requirePersonaPassword(env);
@@ -271,6 +311,7 @@ export const main = async () => {
   await checkReactionsAndBoops(signIn, createAnonClient(env), admin, record);
   await checkWhoCanReactAndBoop(signIn, admin, record);
   await checkProfileEmail(signIn, admin, record);
+  await checkAliases(signIn, admin, record);
 
   const failed = results.filter((result) => !result.pass);
   console.log(`\n${results.length - failed.length} passed, ${failed.length} failed.`);
