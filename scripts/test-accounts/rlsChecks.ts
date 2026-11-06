@@ -4,8 +4,10 @@
  *
  *   npm run test-accounts:rls
  *
- * Uses only the cleo/fay/dev pairs, which have no seeded requests between them
- * (dev is seeded with no request to fay or cleo), and removes what it creates.
+ * The request checks use only the cleo/fay/dev pairs, which have no seeded requests
+ * between them. The visibility checks rely on the seeded friendships: ava is friends
+ * with bea, cleo and eli, bea is friends with eli, and fay has only a pending request.
+ * Everything created here is removed afterwards.
  */
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { getPersona } from '../../packages/domain/testing/personas';
@@ -13,12 +15,95 @@ import { createAnonClient, createServiceClient, loadStagingEnv, requirePersonaPa
 
 type RequestRow = { id: string; from_user_id: string; to_user_id: string; status: string };
 
+type Persona = { client: SupabaseClient; id: string };
+type Record = (name: string, pass: boolean, detail?: string) => void;
+
+const checkSearch = async (signIn: (key: string) => Promise<Persona>, anon: SupabaseClient, record: Record) => {
+  const fay = await signIn('fay');
+  const search = async (client: SupabaseClient, term: string, maxResults?: number | null) => {
+    const { data, error } = await client.rpc('search_users', {
+      search: term,
+      ...(maxResults === undefined ? {} : { max_results: maxResults }),
+    });
+    return { rows: (data ?? []) as Array<{ id: string; alias: string }>, error };
+  };
+
+  record('search with no login is rejected', Boolean((await search(anon, 'Bea')).error));
+  const normal = await search(fay.client, 'Be');
+  record('friend search finds people by alias prefix', normal.rows.some((row) => row.alias === 'Bea'), normal.error?.message);
+  record('friend search ignores case', (await search(fay.client, 'bea')).rows.some((row) => row.alias === 'Bea'));
+  record('search leaves out the caller', (await search(fay.client, 'Fa')).rows.every((row) => row.id !== fay.id));
+  record('a one-letter search returns nothing', (await search(fay.client, 'B')).rows.length === 0);
+  record('"%" as a search term lists nobody', (await search(fay.client, '%%', null)).rows.length === 0);
+  record('"_" as a wildcard matches nobody', (await search(fay.client, '__', null)).rows.length === 0);
+  record('a wildcard inside the term matches nobody', (await search(fay.client, 'B%', null)).rows.length === 0);
+  record('a search with no limit still works', (await search(fay.client, 'Be', null)).rows.length > 0);
+  await fay.client.auth.signOut();
+};
+
+const checkReactionsAndBoops = async (
+  signIn: (key: string) => Promise<Persona>,
+  anon: SupabaseClient,
+  admin: SupabaseClient,
+  record: Record,
+) => {
+  const [ava, bea, cleo, eli, fay] = await Promise.all(['ava', 'bea', 'cleo', 'eli', 'fay'].map(signIn));
+  const startedAt = new Date().toISOString();
+  const posted = await ava.client.from('posts').insert({ user_id: ava.id, body: 'RLS check' }).select('id').single();
+  if (posted.error) throw new Error(`RLS check post failed: ${posted.error.message}`);
+  const postId = (posted.data as { id: string }).id;
+
+  const reactionUsers = async (client: SupabaseClient) => {
+    const { data } = await client.from('post_reactions').select('user_id').eq('post_id', postId);
+    return ((data ?? []) as Array<{ user_id: string }>).map((row) => row.user_id);
+  };
+  const boopSenders = async (client: SupabaseClient) => {
+    const { data } = await client.from('boops').select('from_user_id').eq('post_id', postId);
+    return ((data ?? []) as Array<{ from_user_id: string }>).map((row) => row.from_user_id);
+  };
+
+  try {
+    const made = await Promise.all([
+      bea.client.from('post_reactions').insert({ post_id: postId, user_id: bea.id, emoji: '🔒' }),
+      bea.client.from('boops').insert({ from_user_id: bea.id, to_user_id: ava.id, post_id: postId }),
+      cleo.client.from('boops').insert({ from_user_id: cleo.id, to_user_id: eli.id, post_id: postId }),
+    ]);
+    const madeError = made.find((result) => result.error)?.error;
+    if (madeError) throw new Error(`RLS check setup failed: ${madeError.message}`);
+
+    record('the person who reacted sees their reaction', (await reactionUsers(bea.client)).includes(bea.id));
+    record('the post author sees reactions on their post', (await reactionUsers(ava.client)).includes(bea.id));
+    record("a reactor's friend sees the reaction", (await reactionUsers(eli.client)).includes(bea.id));
+    record('a friend of a friend does not see the reaction', !(await reactionUsers(cleo.client)).includes(bea.id));
+    record('a stranger with only a pending request sees no reactions', (await reactionUsers(fay.client)).length === 0);
+    record('no login sees no reactions', (await reactionUsers(anon)).length === 0);
+
+    record('the booper sees their boop', (await boopSenders(bea.client)).includes(bea.id));
+    record('the post author sees boops on their post', (await boopSenders(ava.client)).includes(cleo.id));
+    record('the boop recipient sees the boop', (await boopSenders(eli.client)).includes(cleo.id));
+    record("a booper's friend sees the boop", (await boopSenders(eli.client)).includes(bea.id));
+    record('a friend of a friend does not see the boop', !(await boopSenders(bea.client)).includes(cleo.id));
+    record('a stranger with only a pending request sees no boops', (await boopSenders(fay.client)).length === 0);
+    record('no login sees no boops', (await boopSenders(anon)).length === 0);
+  } finally {
+    await admin.from('post_reactions').delete().eq('post_id', postId);
+    await admin.from('boops').delete().eq('post_id', postId);
+    await admin.from('posts').delete().eq('id', postId);
+    await admin
+      .from('notifications')
+      .delete()
+      .in('user_id', [ava.id, eli.id])
+      .gte('created_at', startedAt);
+    await Promise.all([ava, bea, cleo, eli, fay].map(({ client }) => client.auth.signOut()));
+  }
+};
+
 export const main = async () => {
   const env = loadStagingEnv();
   const password = requirePersonaPassword(env);
   const admin = createServiceClient(env);
 
-  const signIn = async (key: string) => {
+  const signIn = async (key: string): Promise<Persona> => {
     const client = createAnonClient(env);
     const { data, error } = await client.auth.signInWithPassword({ email: getPersona(key)!.email, password });
     if (error || !data.user) throw new Error(`Sign-in failed for ${key}: ${error?.message ?? 'no user'}`);
@@ -32,7 +117,7 @@ export const main = async () => {
     await admin.from('friend_sharing').delete().in('user_id', ids).in('friend_id', ids);
   };
   const results: Array<{ name: string; pass: boolean; detail?: string }> = [];
-  const record = (name: string, pass: boolean, detail?: string) => {
+  const record: Record = (name, pass, detail) => {
     results.push({ name, pass, detail });
     console.log(`${pass ? '✅' : '❌'} ${name}${detail ? ` (${detail})` : ''}`);
   };
@@ -97,6 +182,9 @@ export const main = async () => {
     await cleanUp();
     await Promise.all([cleo, fay, dev].map(({ client }) => client.auth.signOut()));
   }
+
+  await checkSearch(signIn, createAnonClient(env), record);
+  await checkReactionsAndBoops(signIn, createAnonClient(env), admin, record);
 
   const failed = results.filter((result) => !result.pass);
   console.log(`\n${results.length - failed.length} passed, ${failed.length} failed.`);
