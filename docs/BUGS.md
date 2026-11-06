@@ -21,6 +21,17 @@ Known bugs to fix. This is for **open** bugs; problems we already diagnosed and 
 - [ ] **Blue "Refreshing..." banner lingers across tabs.** It stayed up for over a minute after scrolling and covered the top of each screen. Cause not determined; it may be dev-only.
 - [ ] **Small display issues.** Friends rows show "Follicular vs Pms" (should be "PMS"), and the STAGING pill covers the Circle tab icon.
 
+### Found in testing (2026-11-04, friend-request flow on staging)
+
+- [x] **Friendships could be forged without consent — FIXED 2026-11-04, applied to staging and production.** Any signed-in user could insert a request with `status = 'accepted'`, or as a recipient change `from_user_id` and accept, then read the other person's phase and period dates. Reproduced both on staging. Fix: `20261104043000_friend-requests-lockdown.sql`. Production's verify query matched staging, a real request and accept in the TestFlight app worked, and the audit returned no rows. That isn't proof no forgery happened, because a rewritten sender looks like a normal accept.
+- [ ] **Deleting an accepted request directly leaves sharing on.** The delete policy lets either person delete the row, without the `friend_sharing` cleanup `remove_friend` does. Found by reading the policies; the app itself always uses `remove_friend`.
+- [ ] **Two-way pending requests leave a stale row.** If both people request each other (a race, or the API), accepting one leaves the opposite row pending, so the other person can still be offered Accept for someone who's already a friend.
+- [ ] **New requests take up to a minute to reach the bell.** A request sent at 04:16:58Z showed no dot after 18 seconds and a dot by 78 seconds, though `useNotifications` expects sub-second updates. `friend_requests` is in the realtime publication on staging, and `notifications` is not. Cause not determined.
+- [ ] **Circle doesn't update when a request is accepted.** Fay's Circle kept showing "Requested" 20 seconds after Bea accepted, until the tab was reopened.
+- [ ] **"Check Incoming Requests" points to nothing.** That screen doesn't exist; requests are under the bell. The error also stays after clearing the search, and the button still says Add. The "Requested you" chip in search can't be tapped to accept.
+- [ ] **Sending a request by email shows no confirmation.** `FriendsScreen` renders `searchNotice` only when `!isEmailQuery`, so "If they have an account, your request was sent" never appears.
+- [ ] **Friend Sync "Cycle History" looks like it treats days as cycles.** Fay and Bea's "Most recent", "Previous cycle" and "Two cycles ago" were Oct 20, 19, 18 and Oct 23, 22, 21: consecutive days, not cycles. Seen in the UI; not traced in code.
+
 ### Backend/client compatibility (2026-08-06)
 
 - [~] **Friend cycle data and auto-updates used obsolete raw-table reads after the live privacy migration — FIXED 2026-08-06; behavioral check pending.** 🚧 (WIP — Codex) The missing migration history is now in git and clients now use only the sanitized `friend_cycle_summaries()` / `shared_cycle_events()` RPCs; raw-table fallback was removed because every dev tester can update together. Regression tests cover RPC reads and error propagation, and the current Circle leaderboard/UI is preserved. The temporary compatibility SQL was applied before that decision, so **remaining:** apply `20260806010000_remove-legacy-friend-cycle-read.sql` to restore owner-only raw-table access, then verify with two accepted-friend accounts on build 1.0.11.
