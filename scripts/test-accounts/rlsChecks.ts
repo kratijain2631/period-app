@@ -66,7 +66,7 @@ const checkReactionsAndBoops = async (
     const made = await Promise.all([
       bea.client.from('post_reactions').insert({ post_id: postId, user_id: bea.id, emoji: '🔒' }),
       bea.client.from('boops').insert({ from_user_id: bea.id, to_user_id: ava.id, post_id: postId }),
-      cleo.client.from('boops').insert({ from_user_id: cleo.id, to_user_id: eli.id, post_id: postId }),
+      cleo.client.from('boops').insert({ from_user_id: cleo.id, to_user_id: ava.id, post_id: postId }),
     ]);
     const madeError = made.find((result) => result.error)?.error;
     if (madeError) throw new Error(`RLS check setup failed: ${madeError.message}`);
@@ -80,7 +80,6 @@ const checkReactionsAndBoops = async (
 
     record('the booper sees their boop', (await boopSenders(bea.client)).includes(bea.id));
     record('the post author sees boops on their post', (await boopSenders(ava.client)).includes(cleo.id));
-    record('the boop recipient sees the boop', (await boopSenders(eli.client)).includes(cleo.id));
     record("a booper's friend sees the boop", (await boopSenders(eli.client)).includes(bea.id));
     record('a friend of a friend does not see the boop', !(await boopSenders(bea.client)).includes(cleo.id));
     record('a stranger with only a pending request sees no boops', (await boopSenders(fay.client)).length === 0);
@@ -92,9 +91,94 @@ const checkReactionsAndBoops = async (
     await admin
       .from('notifications')
       .delete()
-      .in('user_id', [ava.id, eli.id])
+      .eq('user_id', ava.id)
       .gte('created_at', startedAt);
     await Promise.all([ava, bea, cleo, eli, fay].map(({ client }) => client.auth.signOut()));
+  }
+};
+
+const checkWhoCanReactAndBoop = async (
+  signIn: (key: string) => Promise<Persona>,
+  admin: SupabaseClient,
+  record: Record,
+) => {
+  const [bea, eli, fay] = await Promise.all(['bea', 'eli', 'fay'].map(signIn));
+  const startedAt = new Date().toISOString();
+  const { data: posts } = await admin.from('posts').select('id').eq('user_id', bea.id).limit(1);
+  const { data: events } = await admin.from('cycle_events').select('id').eq('user_id', bea.id).limit(1);
+  const { data: otherPosts } = await admin.from('posts').select('id').eq('user_id', eli.id).limit(1);
+  const postId = (posts as Array<{ id: string }>)[0].id;
+  const eventId = (events as Array<{ id: string }>)[0].id;
+  const otherPostId = (otherPosts as Array<{ id: string }>)[0].id;
+  const made: { reactions: string[]; boops: string[] } = { reactions: [], boops: [] };
+
+  const react = async (who: Persona) => {
+    const result = await who.client
+      .from('post_reactions')
+      .insert({ post_id: postId, user_id: who.id, emoji: '🧪' })
+      .select('id');
+    made.reactions.push(...((result.data ?? []) as Array<{ id: string }>).map((row) => row.id));
+    return result;
+  };
+  const boop = async (who: Persona, target: { post_id?: string; event_id?: string }) => {
+    const result = await who.client
+      .from('boops')
+      .insert({ from_user_id: who.id, to_user_id: bea.id, ...target })
+      .select('id');
+    made.boops.push(...((result.data ?? []) as Array<{ id: string }>).map((row) => row.id));
+    return result;
+  };
+
+  try {
+    record('a stranger cannot react to a post', Boolean((await react(fay)).error));
+    record('a stranger cannot boop with no target', Boolean((await boop(fay, {})).error));
+    record('a stranger cannot boop a post', Boolean((await boop(fay, { post_id: postId })).error));
+    record('a stranger cannot boop a cycle event', Boolean((await boop(fay, { event_id: eventId })).error));
+
+    const reacted = await react(eli);
+    record('a friend can react to a post', !reacted.error, reacted.error?.message);
+    const plain = await boop(eli, {});
+    record('a friend can boop with no target', !plain.error, plain.error?.message);
+    const onPost = await boop(eli, { post_id: postId });
+    record('a friend can boop their post', !onPost.error, onPost.error?.message);
+    const onEvent = await boop(eli, { event_id: eventId });
+    record('a friend can boop their cycle event', !onEvent.error, onEvent.error?.message);
+    record("a boop can't be aimed at someone else's post", Boolean((await boop(eli, { post_id: otherPostId })).error));
+  } finally {
+    if (made.reactions.length) await admin.from('post_reactions').delete().in('id', made.reactions);
+    if (made.boops.length) await admin.from('boops').delete().in('id', made.boops);
+    await admin.from('notifications').delete().eq('user_id', bea.id).gte('created_at', startedAt);
+    await Promise.all([bea, eli, fay].map(({ client }) => client.auth.signOut()));
+  }
+};
+
+const checkProfileEmail = async (
+  signIn: (key: string) => Promise<Persona>,
+  admin: SupabaseClient,
+  record: Record,
+) => {
+  const eli = await signIn('eli');
+  const realEmail = getPersona('eli')!.email;
+  const storedEmail = async () =>
+    ((await admin.from('users').select('email').eq('id', eli.id).single()).data as { email: string }).email;
+  const storedAlias = async () =>
+    ((await admin.from('users').select('alias').eq('id', eli.id).single()).data as { alias: string }).alias;
+  const alias = await storedAlias();
+
+  try {
+    await eli.client.from('users').update({ email: getPersona('fay')!.email }).eq('id', eli.id);
+    record('a user cannot put someone else\'s email on their profile', (await storedEmail()) === realEmail);
+    await eli.client
+      .from('users')
+      .upsert({ id: eli.id, email: getPersona('fay')!.email }, { onConflict: 'id' });
+    record('the app-style upsert cannot change the email either', (await storedEmail()) === realEmail);
+    const renamed = await eli.client.from('users').update({ alias: `${alias}-rls` }).eq('id', eli.id);
+    record('normal profile updates still work', !renamed.error && (await storedAlias()) === `${alias}-rls`, renamed.error?.message);
+    await admin.from('users').update({ email: 'rls-check@personas.example.com' }).eq('id', eli.id);
+    record('the service role can still write the email', (await storedEmail()) === 'rls-check@personas.example.com');
+  } finally {
+    await admin.from('users').update({ email: realEmail, alias }).eq('id', eli.id);
+    await eli.client.auth.signOut();
   }
 };
 
@@ -185,6 +269,8 @@ export const main = async () => {
 
   await checkSearch(signIn, createAnonClient(env), record);
   await checkReactionsAndBoops(signIn, createAnonClient(env), admin, record);
+  await checkWhoCanReactAndBoop(signIn, admin, record);
+  await checkProfileEmail(signIn, admin, record);
 
   const failed = results.filter((result) => !result.pass);
   console.log(`\n${results.length - failed.length} passed, ${failed.length} failed.`);
