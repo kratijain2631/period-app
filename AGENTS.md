@@ -34,4 +34,4 @@ Verify UI and behavior changes on the **staging** backend with test personas, ne
 
 ## Docs index
 
-[Pitch](docs/PITCH.md) · [Learnings](docs/LEARNINGS.md) · [Schema](docs/SCHEMA.md) · [Cycle sync & notifications](docs/CYCLE_SYNC.md) · [Features](docs/FEATURES.md) · [Design](docs/DESIGN.md) · [Bugs](docs/BUGS.md) · [Release notes](docs/RELEASE_NOTES.md) · [Identifiers](docs/IDENTIFIERS.md) · [Todo](docs/TODO.md) · [Troubleshooting](docs/TROUBLESHOOTING.md) · [Test accounts](docs/TEST_ACCOUNTS.md) · [Instructions](docs/INSTRUCTIONS.md)
+[Pitch](docs/PITCH.md) · [Learnings](docs/LEARNINGS.md) · [Schema](docs/SCHEMA.md) · [Cycle sync & notifications](docs/CYCLE_SYNC.md) · [Features](docs/FEATURES.md) · [Design](docs/DESIGN.md) · [Bugs](docs/BUGS.md) · [Release notes](docs/RELEASE_NOTES.md) · [Identifiers](docs/IDENTIFIERS.md) · [Todo](docs/TODO.md) · [Troubleshooting](docs/TROUBLESHOOTING.md) · [Test accounts](docs/TEST_ACCOUNTS.md) · [Security test suite design](docs/design/security-test-suite.md) · [Instructions](docs/INSTRUCTIONS.md)
