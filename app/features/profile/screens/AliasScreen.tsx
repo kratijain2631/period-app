@@ -22,7 +22,11 @@ const AliasScreen = () => {
       setAliasInStore(trimmed);
     } catch (err) {
       console.warn('[alias] Failed to save alias', err);
-      setError('Unable to save alias. Try again.');
+      setError(
+        (err as { code?: string } | null)?.code === '23505'
+          ? 'That alias is taken. Try another.'
+          : 'Unable to save alias. Try again.',
+      );
     } finally {
       setSaving(false);
     }
