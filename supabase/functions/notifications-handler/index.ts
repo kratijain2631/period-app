@@ -1,5 +1,6 @@
 // deno-lint-ignore-file no-explicit-any
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.56.1';
+import { rejectUnlessScheduled } from '../_shared/cronAuth.ts';
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
 const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
@@ -125,6 +126,10 @@ const sendPushNotifications = async (
 
 Deno.serve(async (req) => {
   try {
+    const rejected = await rejectUnlessScheduled(req, supabase);
+    if (rejected) {
+      return rejected;
+    }
     const payload = (await req.json()) as { record?: CycleEventPayload };
     const event = payload.record;
     if (!event) {
