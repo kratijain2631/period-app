@@ -1,0 +1,35 @@
+name: Set up migration tracking (one time)
+
+# Records production's hand-applied migrations as applied, so the Database deploy workflow
+# can take over. Refuses unless production has no history yet and matches staging. Run it
+# once from the Actions tab. See docs/DB_PUSH.md.
+on:
+  workflow_dispatch:
+    inputs:
+      expected_pending:
+        description: Migration versions production doesn't have yet (space-separated)
+        required: true
+        default: '20261108180000'
+
+concurrency:
+  group: database-deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  production:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: supabase/setup-cli@689adcfb80d947100a1eab127289b97d1fb07b13 # v3.2.0
+        with:
+          version: 2.67.1
+      - name: Set up production's migration history
+        env:
+          DB_URL: ${{ secrets.PRODUCTION_DB_URL }}
+          REFERENCE_DB_URL: ${{ secrets.STAGING_DB_URL }}
+          EXPECTED_PENDING: ${{ inputs.expected_pending }}
+        run: scripts/db/setup-tracking.sh production
