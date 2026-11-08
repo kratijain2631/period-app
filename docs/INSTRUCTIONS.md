@@ -26,7 +26,7 @@ AI models especially: don't re-derive this context or repeat past mistakes — i
 
 Record every notable change in [RELEASE_NOTES.md](RELEASE_NOTES.md) under `## Unreleased`.
 
-This includes **non-code changes that happen outside git** — e.g. Supabase config (Apple provider, schema/migrations run in the dashboard), account/project creation, EAS environment variables, the privacy-policy URL, App Store Connect setup, and other dashboard/credential changes. These don't produce a commit on their own, so capture them in the next commit's release-notes update (and put the operational detail in [TROUBLESHOOTING.md](TROUBLESHOOTING.md)).
+This includes **non-code changes that happen outside git** — e.g. Supabase config (Apple provider, migrations pushed or pasted, see [DB_PUSH.md](DB_PUSH.md)), account/project creation, EAS environment variables, the privacy-policy URL, App Store Connect setup, and other dashboard/credential changes. These don't produce a commit on their own, so capture them in the next commit's release-notes update (and put the operational detail in [TROUBLESHOOTING.md](TROUBLESHOOTING.md)).
 
 - Keep an **`## Unreleased`** section at the very top.
 - Add your change in the right bucket: **Added**, **Changed**, **Fixed**, **Infrastructure & release setup** (non-code/operational), or **Known / not yet done**.

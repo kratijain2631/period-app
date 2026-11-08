@@ -222,6 +222,39 @@ const checkAliases = async (
   }
 };
 
+// Only calls that change nothing, with empty or unknown arguments, so a database without
+// the lockdown can't be harmed. delete_account and send_friend_request_by_email are left
+// out for that reason; the migration covers every function the same way.
+const checkNoLoginFunctions = async (
+  signIn: (key: string) => Promise<Persona>,
+  anon: SupabaseClient,
+  record: Record,
+) => {
+  const nobody = '00000000-0000-0000-0000-000000000000';
+  const calls: Array<[string, object]> = [
+    ['friend_cycle_summaries', {}],
+    ['friend_profiles', { friend_ids: [] }],
+    ['friend_request_profiles', { request_ids: [] }],
+    ['shared_cycle_events', { max_rows: 1 }],
+    ['contact_friend_matches', { email_hashes: [], max_results: 1 }],
+    ['sync-score', { friend_id: nobody }],
+    ['ensure_friend_sharing', { request_ids: [] }],
+    ['remove_friend', { target_friend_id: nobody }],
+  ];
+  const dev = await signIn('dev');
+  for (const [fn, args] of calls) {
+    const { error } = await anon.rpc(fn, args);
+    record(`${fn} can't be called without a login`, error?.code === '42501', error?.code ?? 'it ran');
+  }
+  for (const [fn, args] of calls.slice(0, 5)) {
+    const { error } = await dev.client.rpc(fn, args);
+    record(`a logged-in user can still call ${fn}`, !error, error?.message);
+  }
+  const { error } = await dev.client.rpc('due_phase_reminders');
+  record('a logged-in user cannot call server-only functions', error?.code === '42501', error?.code ?? 'it ran');
+  await dev.client.auth.signOut();
+};
+
 export const main = async () => {
   const env = loadStagingEnv();
   const password = requirePersonaPassword(env);
@@ -312,6 +345,7 @@ export const main = async () => {
   await checkWhoCanReactAndBoop(signIn, admin, record);
   await checkProfileEmail(signIn, admin, record);
   await checkAliases(signIn, admin, record);
+  await checkNoLoginFunctions(signIn, createAnonClient(env), record);
 
   const failed = results.filter((result) => !result.pass);
   console.log(`\n${results.length - failed.length} passed, ${failed.length} failed.`);
