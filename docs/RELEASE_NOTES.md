@@ -17,6 +17,7 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ### Fixed
 
+- **No database function can be called without a login (`20261108180000_no-login-function-access.sql`).** Several could be called with only the public key, and staging and production disagreed on which. Logged-in users keep access to everything the app uses, server-only functions stay server-only, and new functions no longer default to no-login access. `npm run test-accounts:rls` checks it. Not breaking for any app build, because the app calls no database function before login.
 - **Scheduled edge functions only run for the cron jobs (`supabase/functions/_shared/cronAuth.ts`, `20261107013000_scheduled-function-secret.sql`).** `cycle-guidance`, `friend-recommendations` and `phase-change-reminder` reject callers without a secret that lives in the vault and is sent by the cron jobs. Applied and deployed to staging and production on 2026-11-07. `notifications-handler` has the same check but isn't deployed anywhere.
 - **The service role has its full access again (`20261107015000_service-role-grants.sql`).** Production's service role had lost most of its table and function access, which broke the nightly guidance job. Applied by hand to production on 2026-11-07. This also widens the service role's access to `cycle_guidance_requests`.
 - **The nightly friend-recommendations job stays off (`20261107014000_unschedule-friend-recommendations.sql`).** Neither project runs it, and a database built from the repo now matches.
