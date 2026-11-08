@@ -12,6 +12,7 @@ Guidance for all AI agents (whatever the tool or model) and humans working in th
 - **Never delete todos** from [docs/TODO.md](docs/TODO.md) without explicit approval — mark them done instead.
 - In docs and prose, prefer **"this app"** over the current (non-final) name; only use the real name where a specific value is needed (see [docs/IDENTIFIERS.md](docs/IDENTIFIERS.md)).
 - **Never commit secrets** — they live in `.env` (gitignored) and EAS env vars.
+- **Database changes are migration files only**, applied with `supabase db push`, never pasted into the SQL editor except in an emergency. Only the owner changes production. See [docs/DB_PUSH.md](docs/DB_PUSH.md).
 
 ## Testing changes
 
@@ -34,4 +35,4 @@ Verify UI and behavior changes on the **staging** backend with test personas, ne
 
 ## Docs index
 
-[Pitch](docs/PITCH.md) · [Learnings](docs/LEARNINGS.md) · [Schema](docs/SCHEMA.md) · [Cycle sync & notifications](docs/CYCLE_SYNC.md) · [Features](docs/FEATURES.md) · [Design](docs/DESIGN.md) · [Bugs](docs/BUGS.md) · [Release notes](docs/RELEASE_NOTES.md) · [Identifiers](docs/IDENTIFIERS.md) · [Todo](docs/TODO.md) · [Troubleshooting](docs/TROUBLESHOOTING.md) · [Test accounts](docs/TEST_ACCOUNTS.md) · [Security test suite design](docs/design/security-test-suite.md) · [Instructions](docs/INSTRUCTIONS.md)
+[Pitch](docs/PITCH.md) · [Learnings](docs/LEARNINGS.md) · [Schema](docs/SCHEMA.md) · [Cycle sync & notifications](docs/CYCLE_SYNC.md) · [Features](docs/FEATURES.md) · [Design](docs/DESIGN.md) · [Bugs](docs/BUGS.md) · [Release notes](docs/RELEASE_NOTES.md) · [Identifiers](docs/IDENTIFIERS.md) · [Todo](docs/TODO.md) · [Troubleshooting](docs/TROUBLESHOOTING.md) · [Test accounts](docs/TEST_ACCOUNTS.md) · [Database changes](docs/DB_PUSH.md) · [Security test suite design](docs/design/security-test-suite.md) · [Instructions](docs/INSTRUCTIONS.md)

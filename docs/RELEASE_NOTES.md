@@ -8,6 +8,7 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ### Added
 
+- **Staging takes database changes through `supabase db push` (2026-11-08).** Its tracking table was created and filled, and the service role grants migration was the first change pushed. [docs/DB_PUSH.md](DB_PUSH.md) has the steps, how the password is handled, the emergency rule and the one-time production switch. `scripts/db/fingerprint.sql` compares two databases. Production is still pasted by the owner until it's switched over.
 - **Preparation for `supabase db push`.** Adds `supabase/config.toml` and a migration capturing guidance objects that were applied by hand, and retires the `seed-posts.sql` demo data. Nothing changes on existing databases yet: the capture migration is marked as applied there, not run. Hand-applied SQL continues until the tracking table is reconciled.
 - **Security test suite design.** [docs/design/security-test-suite.md](design/security-test-suite.md) sets out the planned rules lint, attack tests, coverage guard and drift check, with the decisions made.
 - **Staging testing guide for agents.** `AGENTS.md` is now the single source of agent instructions for any tool or model, including how to test changes on staging with personas, with hard safety rules. `CLAUDE.md` imports it. The step-by-step procedure is in `docs/TEST_ACCOUNTS.md`.
