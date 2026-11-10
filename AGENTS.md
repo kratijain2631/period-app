@@ -12,7 +12,7 @@ Guidance for all AI agents (whatever the tool or model) and humans working in th
 - **Never delete todos** from [docs/TODO.md](docs/TODO.md) without explicit approval — mark them done instead.
 - In docs and prose, prefer **"this app"** over the current (non-final) name; only use the real name where a specific value is needed (see [docs/IDENTIFIERS.md](docs/IDENTIFIERS.md)).
 - **Never commit secrets** — they live in `.env` (gitignored) and EAS env vars.
-- **Database changes are migration files only**, applied with `supabase db push`, never pasted into the SQL editor except in an emergency. Only the owner changes production. See [docs/DB_PUSH.md](docs/DB_PUSH.md).
+- **Database changes are migration files only.** Merging one to `main` applies it to staging, runs the security checks, then applies it to production (the Database deploy workflow). Never paste SQL into the SQL editor except in an emergency, and never push to production by hand. See [docs/DB_PUSH.md](docs/DB_PUSH.md).
 
 ## Testing changes
 
