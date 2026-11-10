@@ -18,9 +18,12 @@ expected="$(echo "${EXPECTED_PENDING:-}" | tr ' ,' '\n\n' | grep -E '^[0-9]{14}$
 here="$(cd "$(dirname "$0")" && pwd)"
 migrations="$here/../../supabase/migrations"
 
-tracked="$(psql "$DB_URL" -Atq -v ON_ERROR_STOP=1 -c \
-  "select case when to_regclass('supabase_migrations.schema_migrations') is null then 0
-               else (select count(*) from supabase_migrations.schema_migrations) end")"
+# Postgres checks every table a query names before running it, so the count has to be a
+# separate query that only runs once the history table is known to exist.
+tracked=0
+if [ "$(psql "$DB_URL" -Atq -v ON_ERROR_STOP=1 -c "select to_regclass('supabase_migrations.schema_migrations') is not null")" = "t" ]; then
+  tracked="$(psql "$DB_URL" -Atq -v ON_ERROR_STOP=1 -c "select count(*) from supabase_migrations.schema_migrations")"
+fi
 if [ "$tracked" -ne 0 ]; then
   echo "::error::$name already has $tracked migrations recorded. This setup only runs once."
   exit 1
