@@ -5,7 +5,7 @@ Every database change is a migration file in `supabase/migrations/`. Merging it 
 | Project | Ref | Applied by |
 |---|---|---|
 | Staging | `rntqwmptuavqnbjovnae` | The Database deploy workflow (tracking set up 2026-11-08) |
-| Production | `mmomoyszozclfjdvjbeb` | The Database deploy workflow, once its [one-time setup](#production-one-time-setup) has run |
+| Production | `mmomoyszozclfjdvjbeb` | The Database deploy workflow (tracking set up 2026-11-11, see [below](#production-one-time-setup)) |
 
 ## Making a change
 
@@ -24,11 +24,13 @@ On every push to `main` that changes `supabase/migrations/` (or when started by 
 2. **Security checks.** Runs `npm run test-accounts:rls` against staging. A failure stops the run here.
 3. **Production.** Same as staging, inside the GitHub Environment `production`. To make production wait for an approval click, add required reviewers to that environment under **Settings → Environments → production**. No code change is needed.
 
+The workflow applies migrations only. Edge functions are still deployed by hand: deploy a changed function to staging, test it, then deploy it to production.
+
 Only one database run happens at a time. The Supabase CLI and every action are pinned to fixed versions. Database addresses and keys come from repository secrets, which GitHub hides in logs, and the scripts print only migration names.
 
 ## Secrets
 
-These live under **Settings → Secrets and variables → Actions** on GitHub. GitHub never shows a secret again after it's saved, so the values come from Supabase or your password manager.
+These live under **Settings → Secrets and variables → Actions** on GitHub. All six were added between 2026-11-08 and 2026-11-11. Use the **Session pooler** URI for both databases: GitHub's runners can't reach the direct database host, which is IPv6-only, so a direct URI fails with a connection error. GitHub never shows a secret again after it's saved, so the values come from Supabase or your password manager.
 
 | Secret | Contents |
 |---|---|
@@ -58,7 +60,9 @@ pbcopy < /dev/null
 
 ## Production one-time setup
 
-Production's migrations were pasted by hand, so it has no migration history yet, and the Database deploy workflow refuses to touch it until it does. **Check with Claude (or whoever is maintaining this) before running the setup.**
+**Done on 2026-11-11.** The setup run marked 39 migrations as applied after production's fingerprint matched staging's in everything except function access. The first Database deploy run then applied `20261108180000` to production, and staging passed all 66 access checks. Three earlier attempts failed safely before changing anything: the direct host was unreachable (use the Session pooler), the history check broke on a database without history (fixed in #77), and the staging secret was malformed (#78 now names the bad secret). The steps are kept for the record, and the workflow refuses to run again on a database that already has history.
+
+Production's migrations had been pasted by hand, so it had no migration history, and the Database deploy workflow refuses to touch a database without one.
 
 1. Add all six secrets.
 2. On GitHub, go to **Actions → Set up migration tracking (one time) → Run workflow**. Leave the pending version as `20261108180000`, the one migration production doesn't have yet.
