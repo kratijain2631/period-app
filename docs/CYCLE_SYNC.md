@@ -72,7 +72,9 @@ There are **four** ways you can be nudged about a phase change. They overlap on 
 When a `background` sync (HealthKit delivery) detects an actual phase change, it fires an immediate local notification (step 5 above). This is the accurate, real-data path — but only fires for **data-write** transitions (mainly period start) and only when iOS actually wakes us.
 
 ### (c) Server-side scheduled push — *reaches inactive users*
-[`phase-change-reminder`](../supabase/functions/phase-change-reminder/index.ts) edge function + a daily pg_cron ([`20260802120000_phase-change-reminders.sql`](../supabase/migrations/20260802120000_phase-change-reminders.sql)). Each day it finds users whose uploaded `nextPhaseStart` is **today** and who **haven't synced in 2+ days** (i.e. the on-device reminder won't help them), and sends an Expo push. Targets **inactive users** specifically, so it doesn't double up with (a). Needs deploy + registered `device_tokens` (see [TODO.md](TODO.md)).
+[`phase-change-reminder`](../supabase/functions/phase-change-reminder/index.ts) edge function + a daily pg_cron ([`20260802120000_phase-change-reminders.sql`](../supabase/migrations/20260802120000_phase-change-reminders.sql)). Each day it finds users whose uploaded `nextPhaseStart` is **today** and who **haven't synced in 2+ days** (i.e. the on-device reminder won't help them), and sends an Expo push. Targets **inactive users** specifically, so it doesn't double up with (a). Deployed, and the cron job has run daily since 2026-08-19; pushes still need registered `device_tokens` (see [TODO.md](TODO.md)).
+
+**Who can run the scheduled functions (since 2026-11-07).** `phase-change-reminder`, `cycle-guidance` and `friend-recommendations` reject any caller without the `x-cron-secret` header. The cron jobs read the secret from Vault (`cron_secret`) and send it; it's never stored anywhere else ([`_shared/cronAuth.ts`](../supabase/functions/_shared/cronAuth.ts), `20261107013000_scheduled-function-secret.sql`). The jobs: `daily-phase-change-reminder` at 15:00 UTC and `nightly-cycle-guidance` at 03:00 UTC; `nightly-friend-recommendations` is deliberately off.
 
 ### (d) In-app notifications (a separate system) — friends' activity
 The bell / [`NotificationsScreen`](../app/features/notifications/screens/NotificationsScreen.tsx) with a new/read distinction (`notifications.read_at`). Populated by:
@@ -100,5 +102,6 @@ The bell / [`NotificationsScreen`](../app/features/notifications/screens/Notific
 
 - ✅ **Built & shipping in build 1.0.8:** the phase model + predictions, real-transition dating, all four sync triggers, HealthKit background delivery, on-device scheduled reminder, background-detected local notification, in-app notifications page + reaction/boop triggers + realtime friend requests.
 - ⏳ **Needs on-device verification** (background behavior can't be tested off-device): that iOS actually wakes the app on data writes, that the predicted reminder fires, and that `device_tokens` register.
-- ⏳ **Needs deploy:** the server-side `phase-change-reminder` (apply migration + deploy function), and the older `notifications-handler` (for friend-facing pushes).
+- ✅ **Deployed:** the server-side `phase-change-reminder` (cron running daily, locked to the cron secret since 2026-11-07).
+- ⏳ **Needs deploy:** the older `notifications-handler` (for friend-facing pushes).
 - 🚫 **Deliberately not built:** silent server-side auto-posting of predictions (see §5).

@@ -23,6 +23,8 @@ Verify UI and behavior changes on the **staging** backend with test personas, ne
 - **Logic changes:** still need `npx tsc --noEmit` and `npm test`. `packages/domain/testing` has persona data for fixtures.
 - **Setup:** `.env.staging` is local-only. If it's missing, copy `scripts/test-accounts/staging.env.example` and ask the owner for the values.
 - **Procedure:** follow ["Testing as an AI agent" in docs/TEST_ACCOUNTS.md](docs/TEST_ACCOUNTS.md#testing-as-an-ai-agent). It isn't tied to any agent or model.
+- **Overview:** [docs/TESTING.md](docs/TESTING.md) covers which backend each run mode uses (TestFlight and `npm run start` are production; `npm run start:staging` is staging), simulator builds, database changes and what staging can't test.
+- **Notes live in the repo:** record decisions, setup steps and results in these docs, not only in an agent's memory, so any person or agent can pick up from GitHub.
 
 **Hard rules:**
 - Never sign in with a real account on the simulator, because empty Health syncs overwrite real snapshots.

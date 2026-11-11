@@ -9,8 +9,9 @@ Everything learned bringing this app up: the issues we hit and fixed, what's con
 | Apple Developer Program | `kratij@gmail.com` — team "Krati Jain" (`8AMCNWFZ39`), Individual | App IDs, signing, capabilities | $99/year, renews annually |
 | App Store Connect | same Apple ID | TestFlight, App Store, review | EAS authenticates via an App Store Connect API key (App Manager role) |
 | Expo / EAS | `kratijain26` (a second account `kratijain2631` also exists) | Cloud builds, credentials, env vars | Project: `@kratijain26/period-app` |
-| Supabase | account owning project `mmomoyszozclfjdvjbeb` | Auth + Postgres database | Free tier pauses on inactivity |
-| GitHub | `kratijain2631/period-app` (private) | Source | — |
+| Supabase | account owning project `mmomoyszozclfjdvjbeb` | Auth + Postgres database (production) | Free tier pauses on inactivity |
+| Supabase (staging) | project `period-app-staging` (`rntqwmptuavqnbjovnae`) in the owner's org, free plan | Test personas, and the first stop for every migration | The free plan allows 2 active projects per org; a spare project was paused to make room. See [TESTING.md](TESTING.md). |
+| GitHub | `kratijain2631/period-app` (**public**) | Source, CI, the Database deploy workflow and its secrets | Anyone can read the repo, so never commit secrets, database URLs or details of an unfixed security hole. Making the deploy check required on `main` needs a repo admin. |
 
 > **The paid Apple Developer Program ($99/year) is required for TestFlight.** A free Apple ID cannot distribute builds at all — no TestFlight, no App Store, and no installing signed builds on physical devices via EAS. The membership must be active (it renews annually); if it lapses, builds can't be signed or distributed until it's renewed.
 
@@ -20,11 +21,12 @@ The original collaborator's (Lukas's) accounts are **no longer needed** — we m
 
 Merging a migration to `main` applies it: the **Database deploy** GitHub Actions workflow pushes it to staging, runs `test-accounts:rls`, then pushes it to production. The steps, secrets and the emergency rule are in [DB_PUSH.md](DB_PUSH.md).
 
-- **Staging has migration history (2026-11-08).** Production doesn't until its one-time setup workflow runs, and the deploy workflow refuses to touch a database without history. Without it, `db push` would try to re-run every migration.
+- **Both projects have migration history:** staging since 2026-11-08, production since 2026-11-11. The deploy workflow refuses a database without history, because `db push` would otherwise re-run every migration.
+- **The database secrets must be Session pooler URIs.** GitHub's runners can't reach the direct database host (IPv6 only), so a Direct connection URI fails to connect. A value that isn't a database URL at all now fails with the secret's name (#78).
 - **A failed run stops before production.** Read the failing step in the Actions tab, fix it with a new migration, and merge again. Don't paste a fix unless production is broken (see the emergency rule).
 - **`supabase link` gets a 403** from the management API on both projects, so the scripts name the database with `--db-url` instead. Edge function deploys go through the Supabase connector or the dashboard.
 - **Before 2026-11-08 every migration was pasted by hand,** and nothing recorded what had run. If a database ever seems out of step with the repo, compare [`scripts/db/fingerprint.sql`](../scripts/db/fingerprint.sql) results with staging's.
-- **Friend-cycle migration mismatch (2026-08-06):** `20260729000000_friend-cycle-summary-privacy.sql` was applied live but never committed to `main`, while the client still selected raw cycle tables. The source/client port is now restored and uses only sanitized RPCs. `20260806000000_legacy-friend-cycle-read-compat.sql` was briefly applied, but the owner confirmed this is dev-only and all testers can update; run `20260806010000_remove-legacy-friend-cycle-read.sql` in the SQL editor to restore owner-only raw-table policies. Do not rerun earlier migrations or use `db push`.
+- **Friend-cycle migration mismatch (2026-08-06):** `20260729000000_friend-cycle-summary-privacy.sql` was applied live but never committed to `main`, while the client still selected raw cycle tables. The source/client port is now restored and uses only sanitized RPCs. `20260806000000_legacy-friend-cycle-read-compat.sql` was briefly applied, but the owner confirmed this is dev-only and all testers can update; run `20260806010000_remove-legacy-friend-cycle-read.sql` in the SQL editor to restore owner-only raw-table policies. Do not rerun earlier migrations or use `db push`. _(Historical note from 2026-08. Since 2026-11-11 the Database deploy workflow's `db push` is the normal path, and it only applies migrations a project hasn't recorded.)_
 
 ## Build & submission gotchas
 
@@ -48,6 +50,8 @@ Merging a migration to `main` applies it: the **Database deploy** GitHub Actions
 | `EXPO_PUBLIC_SUPABASE_URL` | `.env` (local, gitignored) **and** EAS env vars (production) | `https://mmomoyszozclfjdvjbeb.supabase.co` |
 | `EXPO_PUBLIC_SUPABASE_ANON_KEY` | `.env` **and** EAS env vars (production) | `sb_publishable_…` (client-safe publishable key) |
 | Database deploy secrets | GitHub → Settings → Secrets and variables → Actions | six secrets, listed in [DB_PUSH.md](DB_PUSH.md) |
+| Staging values (`EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `TEST_PERSONA_PASSWORD`, `EXPO_PUBLIC_FAKE_HEALTH`) | `.env.staging` (local, gitignored); template in `scripts/test-accounts/staging.env.example` | `npm run start:staging` copies the public ones into a temporary `.env.local`. The service-role key must never be in an `EXPO_PUBLIC_` variable. See [TESTING.md](TESTING.md). |
+| `cron_secret` | Supabase Vault on each project | Generated by `20261107013000_scheduled-function-secret.sql`; the cron jobs send it and the scheduled edge functions check it. Never copied anywhere else. |
 | `EXPO_PUBLIC_DEV_AUTH` | `.env` only | `true` — enables the dev email/password login, which only renders in `__DEV__` builds |
 | Supabase Apple provider Client IDs | Supabase dashboard → Authentication → Providers → Apple | **must** include `com.syncsisters.cycle` |
 | DB schema / migrations | `supabase/migrations/`, applied by the Database deploy workflow on merge | see [DB_PUSH.md](DB_PUSH.md) |
@@ -83,6 +87,8 @@ To install a build directly from an `.ipa` file (outside TestFlight or the EAS i
 | Sign in with Apple **web** OAuth secret | every ~6 months | **web** sign-in breaks | Regenerate the Apple secret key. **Not applicable right now** — this app uses the *native* Sign in with Apple flow (the Supabase Apple provider needs only Client IDs, no secret key). Only matters if you ever add the web OAuth flow. |
 | App Store Connect API key (App Manager) | if revoked/expired | `eas submit` fails | Regenerate via `eas` on next submit |
 | Supabase project (free tier) | pauses after ~1 week of inactivity | App can't reach backend | Un-pause in the Supabase dashboard |
+| Staging Supabase project (free tier) | pauses after ~1 week of inactivity | Seeding, staging Metro and the Database deploy workflow fail (the workflow stops before production) | Un-pause it in the dashboard, then re-run the workflow |
+| Production database password | if reset | `PRODUCTION_DB_URL` stops working and the deploy fails | Rebuild the Session pooler URI and update the secret ([DB_PUSH.md](DB_PUSH.md)) |
 | EAS build quota (free tier) | monthly | Builds queue or block | Wait for reset or upgrade the Expo plan |
 | Metro tunnel URL (`…exp.direct`) | changes when Metro restarts | Dev client can't connect | Re-enter the new URL in the dev client |
 | Supabase publishable key | if rotated | Auth/API calls fail | Update `.env` **and** the EAS env var |
@@ -112,11 +118,16 @@ To install a build directly from an `.ipa` file (outside TestFlight or the EAS i
 - **First external TestFlight build** needs Beta App Review (~1 day); later builds to the same group usually don't.
 - **Health-app review** scrutinizes HealthKit + data sharing — keep the "read-only, never written back, shared only with approved friends" framing in review notes and the privacy policy.
 
+- **Never sign in with a real account on the simulator.** It has no Health data, and a zero-sample sync uploads an empty snapshot over the real one friends see. Use the staging personas ([TESTING.md](TESTING.md)).
+- **Supabase agent tools may refuse write SQL** with a confirmation prompt that never appears. Database changes go through migrations anyway; for read-only checks the tools work.
 - **Setting `EXPO_PUBLIC_*` in the shell doesn't beat `.env` in dev bundles.** Expo's dev-only `expo/virtual/env` module merges `.env`, `.env.development`, `.env.local` and `.env.development.local` over `process.env`, so `.env` values win and keys missing from `.env` still come through. This made an early `start:staging` talk to production while showing the STAGING pill. `start:staging` now writes the public staging values to a gitignored `.env.local` while Metro runs. `EXPO_NO_DOTENV` doesn't affect this module. To check a bundle, look for the Supabase URL under its `.env*` modules, not just the env header.
 
 ## State that lives OUTSIDE git (not versioned — back up / remember separately)
 
 - **`.env`** (gitignored): Supabase URL + publishable key + `EXPO_PUBLIC_DEV_AUTH`.
+- **`.env.staging`** (gitignored): staging URL, keys and the persona password, on the owner's Mac.
+- **GitHub Actions secrets:** the six Database deploy secrets ([DB_PUSH.md](DB_PUSH.md)). Both database passwords are in the owner's password manager; Supabase only shows a password when it's reset.
+- **Staging project setup:** Vault secrets, deployed edge functions and the seeded personas (re-create the personas any time with `npm run test-accounts:seed`).
 - **EAS environment variables** (on Expo's servers): the two `EXPO_PUBLIC_SUPABASE_*` values for `production`.
 - **Supabase project config:** the Apple provider Client IDs, the applied database schema/migrations, and all app data.
 - **Apple signing credentials** (certificate + provisioning profiles): stored by EAS / macOS Keychain.

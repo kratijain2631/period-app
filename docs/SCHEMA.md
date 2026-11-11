@@ -1,8 +1,8 @@
 # Database schema (Supabase)
 
-The full schema — tables, functions, RLS policies, indexes — is defined in `supabase/migrations/*.sql`, which is the source of truth. Running those migrations recreates the database from scratch (that's how the current project `mmomoyszozclfjdvjbeb` was built). Real user data lives only in the database, never in the repo; the only data in code is the demo feed seed in `seed-posts.sql`.
+The full schema — tables, functions, RLS policies, indexes — is defined in `supabase/migrations/*.sql`, which is the source of truth. Running those migrations recreates the database from scratch; staging (`rntqwmptuavqnbjovnae`) was built that way, and production (`mmomoyszozclfjdvjbeb`) matches it. Merging a migration applies it to staging, then production ([DB_PUSH.md](DB_PUSH.md)). Real user data lives only in the database, never in the repo. The old `seed-posts.sql` demo data was retired on 2026-11-06; test data now comes from the staging personas ([TESTING.md](TESTING.md)).
 
-## Tables (11)
+## Tables (14)
 
 | Table | Purpose |
 |---|---|
@@ -17,6 +17,9 @@ The full schema — tables, functions, RLS policies, indexes — is defined in `
 | `boops` | Friend "boop" nudges (from / to / optional cycle event). |
 | `notifications` | In-app notifications, with a `read_at` column (null = unread) for the notifications page's new/read state. Populated by engagement triggers (reactions/boops) and, once deployed, the notifications-handler. |
 | `device_tokens` | Push-notification (Expo) tokens per device. |
+| `cycle_guidance` | One row per user: the AI do's/don'ts for their current phase, with `phase_started_at` so it's regenerated when the phase changes. Written by the `cycle-guidance` edge function. |
+| `cycle_guidance_requests` | Server-only bookkeeping for on-demand guidance requests (`claim_cycle_guidance` / `complete_cycle_guidance`). Clients have no access. |
+| `friend_recommendations` | Per friend pair: suggestions and a score from the `friend-recommendations` edge function. |
 
 ## Functions
 
@@ -24,8 +27,16 @@ The full schema — tables, functions, RLS policies, indexes — is defined in `
 |---|---|
 | `handle_new_auth_user` | Trigger: creates a `users` row when a new auth user signs up. |
 | `handle_updated_at` | Trigger: maintains `updated_at` timestamps. |
-| `populate_post_alias` | Trigger: fills a post's alias from the user's profile. |
-| `search_users` | Find users by alias or email (for friend requests). |
+| `populate_post_alias` | Trigger: always sets a post's alias from its author's profile, so a post can't carry someone else's name (since 2026-11-06). |
+| `enforce_users_email` | Trigger: keeps the profile email equal to the login email. |
+| `search_users` | Find users by alias or email (for friend requests). Logged-in only; at least 2 characters, `%` and `_` treated as plain text, excludes the searcher, at most 20 results. |
+| `send_friend_request_by_email` | Send a request to an email without revealing whether that email has an account. |
+| `remove_friend` | Remove a friendship, for both people. |
+| `friend_cycle_summaries` / `shared_cycle_events` | Sanitized friend cycle reads (see below). |
+| `sync-score` | The sync score between you and a friend. |
+| `cycle_event_belongs_to` | Helper for the reaction rules: checks a cycle event's owner. |
+| `claim_cycle_guidance` / `complete_cycle_guidance` | On-demand guidance bookkeeping, used by `request-cycle-guidance`. |
+| `cron_secret_matches` | Checks the `x-cron-secret` header the scheduled edge functions require against the `cron_secret` in Vault. `service_role` only. |
 | `friend_request_profiles` | Resolve profile info for a set of friend requests. |
 | `friend_profiles` | Resolve friend profiles (respects mutual sharing). |
 | `contact_friend_matches` | Privacy-minimized contact discovery: matches submitted normalized email hashes only against users who opted into contact discoverability. Raw address-book emails are never submitted. |
@@ -34,7 +45,11 @@ The full schema — tables, functions, RLS policies, indexes — is defined in `
 | `notify_post_reaction` / `notify_event_reaction` / `notify_boop` | AFTER INSERT triggers that create a `notifications` row for the content owner when a friend reacts/boops (SECURITY DEFINER, exception-safe, skip self). |
 | `due_phase_reminders` / `mark_phase_reminded` | Support the daily server-side phase-change reminder cron — find users whose predicted transition is today (and inactive), and dedupe. `service_role`-only. |
 
-**Scheduled jobs (pg_cron):** `daily-phase-change-reminder` (15:00 UTC → `phase-change-reminder` function) plus the `schedule-*` guidance/recommendation crons. See [CYCLE_SYNC.md](CYCLE_SYNC.md).
+**Function access:** no function can be called without a login (`20261108180000_no-login-function-access.sql`). New functions are callable only by logged-in users and the service role, and server-only ones are revoked from `authenticated` too. `npm run test-accounts:rls` checks this.
+
+**Other rules added 2026-11-04 to 2026-11-08:** friend requests must start as pending and clients can change only `status`; aliases are unique ignoring case and surrounding spaces; you can react only to posts you can see and boop only friends; a post reaction or boop is visible only to whoever made it, received it or wrote the post, and to friends of whoever made it.
+
+**Scheduled jobs (pg_cron):** `daily-phase-change-reminder` (15:00 UTC → `phase-change-reminder`) and `nightly-cycle-guidance` (03:00 UTC → `cycle-guidance`). Both send the Vault `cron_secret` in an `x-cron-secret` header, and the functions reject calls without it. The `nightly-friend-recommendations` job is deliberately off (`20261107014000`). See [CYCLE_SYNC.md](CYCLE_SYNC.md).
 
 ## How it works
 
@@ -53,6 +68,6 @@ Raw `cycle_snapshots` and `cycle_events` rows are owner-only. Friends must use t
 ## Data & schema notes
 
 - **RLS everywhere** — each user only sees their own rows plus what approved friends shared with them (sharing is auto-granted on accept today — see the consent-model caveat in step 3 and [BUGS.md](BUGS.md)).
-- **Schema is in code** (`supabase/migrations/`); **real data is not** (database only); **demo seed data is in code** (`seed-posts.sql`).
+- **Schema is in code** (`supabase/migrations/`); **real data is not** (database only); **test data is generated** by the staging persona scripts, never stored in production.
 - Applying the migrations to a fresh Supabase project reproduces the schema exactly.
 - Whether another project (e.g. the original collaborator's) matches is only guaranteed if it was built from these same migrations with no out-of-band dashboard changes — see [LEARNINGS.md](LEARNINGS.md).

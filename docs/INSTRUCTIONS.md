@@ -25,6 +25,9 @@ Before working on this project, read the docs linked from the [README](../README
 - **[BUGS.md](BUGS.md)** — known open bugs.
 - **[RELEASE_NOTES.md](RELEASE_NOTES.md)** — what shipped in each build.
 - **[TODO.md](TODO.md)** — operational/shipping tasks.
+- **[TESTING.md](TESTING.md)** — how to test a change: which backend each run mode uses, staging, the test personas and the simulator.
+- **[TEST_ACCOUNTS.md](TEST_ACCOUNTS.md)** — the staging personas, seed and actor scripts in detail.
+- **[DB_PUSH.md](DB_PUSH.md)** — how database changes reach staging and production (migrations only, applied on merge).
 
 AI models especially: don't re-derive this context or repeat past mistakes — it's written down.
 
