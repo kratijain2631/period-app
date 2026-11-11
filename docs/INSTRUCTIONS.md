@@ -1,5 +1,13 @@
 # Working instructions
 
+## Keep project instructions and change history in GitHub
+
+Read this file and [TESTING.md](TESTING.md) before starting work. Keep shared instructions, decisions, and handoff notes in this repository so any contributor can pick up the work from GitHub.
+
+Before finishing, record what changed in [RELEASE_NOTES.md](RELEASE_NOTES.md) under `Unreleased` and update the relevant docs in the same commit. This includes work done outside the codebase. For example, record a database migration in [SCHEMA.md](SCHEMA.md) and say where it was applied. Update [FEATURES.md](FEATURES.md) when feature status changes and [TODO.md](TODO.md) when follow-up work opens or closes.
+
+Keep [TESTING.md](TESTING.md) and the runbooks it links current whenever staging setup, test accounts, or verification steps change. Record which environment and accounts were used, what passed or failed, and what still needs checking. Keep passwords, tokens, and private user data out of these records.
+
 Conventions for anyone — human or AI agent — working in this repo.
 
 ## Start here — read the docs first
