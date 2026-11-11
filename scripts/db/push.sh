@@ -11,9 +11,12 @@ name="${1:?usage: push.sh <name>}"
 : "${DB_URL:?DB_URL is not set}"
 max_pending="${MAX_PENDING:-10}"
 
-tracked="$(psql "$DB_URL" -Atq -v ON_ERROR_STOP=1 -c \
-  "select case when to_regclass('supabase_migrations.schema_migrations') is null then 0
-               else (select count(*) from supabase_migrations.schema_migrations) end")"
+# Postgres checks every table a query names before running it, so the count has to be a
+# separate query that only runs once the history table is known to exist.
+tracked=0
+if [ "$(psql "$DB_URL" -Atq -v ON_ERROR_STOP=1 -c "select to_regclass('supabase_migrations.schema_migrations') is not null")" = "t" ]; then
+  tracked="$(psql "$DB_URL" -Atq -v ON_ERROR_STOP=1 -c "select count(*) from supabase_migrations.schema_migrations")"
+fi
 if [ "$tracked" -eq 0 ]; then
   echo "::error::$name has no migration history. Run the 'Set up migration tracking' workflow first (docs/DB_PUSH.md)."
   exit 1
