@@ -1,0 +1,73 @@
+name: Database deploy
+
+# Applies new migrations when they reach main: staging first, then the security checks,
+# then production. See docs/DB_PUSH.md.
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'supabase/migrations/**'
+  workflow_dispatch: {}
+
+# One deploy at a time, and never cancel one halfway.
+concurrency:
+  group: database-deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  SUPABASE_CLI_VERSION: 2.67.1
+
+jobs:
+  staging:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: supabase/setup-cli@689adcfb80d947100a1eab127289b97d1fb07b13 # v3.2.0
+        with:
+          version: ${{ env.SUPABASE_CLI_VERSION }}
+      - name: Push to staging
+        env:
+          DB_URL: ${{ secrets.STAGING_DB_URL }}
+        run: scripts/db/push.sh staging
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 20
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Security checks against staging
+        env:
+          STAGING_SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL }}
+          STAGING_SUPABASE_ANON_KEY: ${{ secrets.STAGING_SUPABASE_ANON_KEY }}
+          STAGING_SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.STAGING_SUPABASE_SERVICE_ROLE_KEY }}
+          TEST_PERSONA_PASSWORD: ${{ secrets.TEST_PERSONA_PASSWORD }}
+        run: |
+          umask 077
+          {
+            printf 'EXPO_PUBLIC_SUPABASE_URL=%s\n' "$STAGING_SUPABASE_URL"
+            printf 'EXPO_PUBLIC_SUPABASE_ANON_KEY=%s\n' "$STAGING_SUPABASE_ANON_KEY"
+            printf 'SUPABASE_SERVICE_ROLE_KEY=%s\n' "$STAGING_SUPABASE_SERVICE_ROLE_KEY"
+            printf 'TEST_PERSONA_PASSWORD=%s\n' "$TEST_PERSONA_PASSWORD"
+          } > .env.staging
+          npm run test-accounts:rls
+          rm -f .env.staging
+
+  production:
+    needs: staging
+    runs-on: ubuntu-latest
+    # Add required reviewers to this environment in the repo settings to make production
+    # wait for an approval click. No code change needed.
+    environment: production
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: supabase/setup-cli@689adcfb80d947100a1eab127289b97d1fb07b13 # v3.2.0
+        with:
+          version: ${{ env.SUPABASE_CLI_VERSION }}
+      - name: Push to production
+        env:
+          DB_URL: ${{ secrets.PRODUCTION_DB_URL }}
+        run: scripts/db/push.sh production

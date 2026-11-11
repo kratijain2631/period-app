@@ -6,6 +6,7 @@ jest.mock('@kingstinct/react-native-healthkit', () => ({
 
 import {
   deriveSnapshot,
+  getCycleDay,
   resolveCyclePhase,
   type CycleSample,
   type CycleSignalSample,
@@ -242,5 +243,63 @@ describe('deriveSnapshot', () => {
     expect(anchored.getHours()).toBe(0);
     expect(anchored.getMinutes()).toBe(0);
     expect(anchored.getSeconds()).toBe(0);
+  });
+});
+
+describe('getCycleDay', () => {
+  // Local-time ISO strings so the day boundaries hold in any timezone.
+  const day = (date: string) => new Date(`${date}T12:00:00`).toISOString();
+  const period = (start: string, lengthDays: number): CycleSample[] =>
+    Array.from({ length: lengthDays }, (_, index) => {
+      const date = new Date(`${start}T12:00:00`);
+      date.setDate(date.getDate() + index);
+      return flowSample(`${start}-${index}`, date.toISOString());
+    });
+
+  it('counts from the first day of the latest period, not the last', () => {
+    const snapshot = deriveSnapshot(period('2026-10-25', 5), day('2026-11-03'));
+    expect(getCycleDay(snapshot, new Date(day('2026-11-03')))).toBe(10);
+  });
+
+  it('is day 1 on the first day of a period and counts up during it', () => {
+    const samples = period('2026-11-01', 3);
+    const snapshot = deriveSnapshot(samples, day('2026-11-03'));
+    expect(getCycleDay(snapshot, new Date(day('2026-11-01')))).toBe(1);
+    expect(getCycleDay(snapshot, new Date(day('2026-11-03')))).toBe(3);
+  });
+
+  it('uses the most recent period when there is history', () => {
+    const samples = [...period('2026-09-27', 5), ...period('2026-10-25', 5)];
+    const snapshot = deriveSnapshot(samples, day('2026-11-03'));
+    expect(getCycleDay(snapshot, new Date(day('2026-11-03')))).toBe(10);
+  });
+
+  it('treats one multi-day sample as a single period', () => {
+    const samples = [flowSample('range', day('2026-10-25'), day('2026-10-29'))];
+    const snapshot = deriveSnapshot(samples, day('2026-11-03'));
+    expect(getCycleDay(snapshot, new Date(day('2026-11-03')))).toBe(10);
+  });
+
+  it('wraps when the next period is overdue, matching the phase estimate', () => {
+    const snapshot = deriveSnapshot(period('2026-10-01', 5), day('2026-11-03'));
+    // 33 days elapsed in a 28-day cycle.
+    expect(getCycleDay(snapshot, new Date(day('2026-11-03')))).toBe(6);
+  });
+
+  it('ignores samples with no flow', () => {
+    const none = { ...flowSample('none', day('2026-11-02')), flowValue: 5 as CycleSample['flowValue'] };
+    const snapshot = deriveSnapshot([...period('2026-10-25', 5), none], day('2026-11-03'));
+    expect(getCycleDay(snapshot, new Date(day('2026-11-03')))).toBe(10);
+  });
+
+  it('falls back to latestSampleStart when a snapshot has no samples', () => {
+    const snapshot = { samples: [], latestSampleStart: day('2026-10-29'), cycleLengthDays: 28 };
+    expect(getCycleDay(snapshot, new Date(day('2026-11-03')))).toBe(6);
+  });
+
+  it('returns null with no data or only future data', () => {
+    expect(getCycleDay({ samples: [] }, new Date(day('2026-11-03')))).toBeNull();
+    expect(getCycleDay(undefined, new Date(day('2026-11-03')))).toBeNull();
+    expect(getCycleDay({ samples: period('2026-11-10', 2) }, new Date(day('2026-11-03')))).toBeNull();
   });
 });

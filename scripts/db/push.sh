@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+# Applies pending migrations to one database. Used by .github/workflows/database.yml.
+#
+#   DB_URL=<session pooler URI> scripts/db/push.sh <name>
+#
+# Refuses a database whose migration history was never set up, because db push would then
+# try to re-run every migration. Prints only migration versions, never the address.
+set -euo pipefail
+
+name="${1:?usage: push.sh <name>}"
+: "${DB_URL:?DB_URL is not set}"
+# A value psql can't read as an address makes it fall back to a local socket, which hides
+# which secret is wrong. Check the shape first and name the variable, without printing it.
+check_url() {
+  if ! [[ "$2" =~ ^postgres(ql)?://[^@[:space:]]+@[^/:[:space:]]+(:[0-9]+)?/[^[:space:]]+$ ]]; then
+    echo "::error::$1 isn't a database address. It should be the Session pooler URI, postgresql://user:password@host:5432/postgres, with nothing before or after it."
+    exit 1
+  fi
+}
+check_url DB_URL "$DB_URL"
+max_pending="${MAX_PENDING:-10}"
+
+# Postgres checks every table a query names before running it, so the count has to be a
+# separate query that only runs once the history table is known to exist.
+tracked=0
+if [ "$(psql "$DB_URL" -Atq -v ON_ERROR_STOP=1 -c "select to_regclass('supabase_migrations.schema_migrations') is not null")" = "t" ]; then
+  tracked="$(psql "$DB_URL" -Atq -v ON_ERROR_STOP=1 -c "select count(*) from supabase_migrations.schema_migrations")"
+fi
+if [ "$tracked" -eq 0 ]; then
+  echo "::error::$name has no migration history. Run the 'Set up migration tracking' workflow first (docs/DB_PUSH.md)."
+  exit 1
+fi
+echo "$name: $tracked migrations already applied."
+
+dry_run="$(supabase db push --db-url "$DB_URL" --dry-run 2>&1)" || { echo "$dry_run" | sed "/postgres/d"; exit 1; }
+pending="$(echo "$dry_run" | grep -oE '[0-9]{14}_[^ ]+\.sql' || true)"
+count="$(echo -n "$pending" | grep -c . || true)"
+
+if [ "$count" -eq 0 ]; then
+  echo "$name: nothing to apply."
+  exit 0
+fi
+echo "$name: will apply $count migration(s):"
+echo "$pending" | sed 's/^/  /'
+if [ "$count" -gt "$max_pending" ]; then
+  echo "::error::$name has $count pending migrations, more than the limit of $max_pending. Check its history before pushing."
+  exit 1
+fi
+
+supabase db push --db-url "$DB_URL" --yes 2>&1 | sed "/postgres/d"
+echo "$name: done."

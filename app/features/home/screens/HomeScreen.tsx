@@ -46,6 +46,7 @@ import { fetchUserProfilesByIds } from '../../../services/supabase/users';
 import { selectIsOnline, useConnectionStore } from '../../../state/connectionStore';
 import { selectAlias, selectSession, useSessionStore } from '../../../state/sessionStore';
 import { useCycleSnapshot } from '../../feed/hooks/useCycleSnapshot';
+import { getCycleDay } from '../../../../packages/domain/cycles/models';
 import { getDoubleTapResult } from '../utils/reactionDoubleTap';
 import { brand, brandType } from '../../../theme/brand';
 import { CycleRing, PhaseAvatar, PhaseIndicator, getPhaseColor } from '../../../components/brand/CycleRing';
@@ -1073,26 +1074,10 @@ const HomeScreen = () => {
     return merged.sort((a, b) => b.sortKey - a.sortKey);
   }, [posts, cycleEvents]);
 
-  const cycleDayNumber = useMemo(() => {
-    const latest = snapshot?.latestSampleStart;
-    if (!latest) {
-      return null;
-    }
-    const latestDate = new Date(latest);
-    if (Number.isNaN(latestDate.getTime())) {
-      return null;
-    }
-    const now = new Date();
-    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-    const startOfLatest = new Date(
-      latestDate.getFullYear(),
-      latestDate.getMonth(),
-      latestDate.getDate(),
-    ).getTime();
-    const elapsedDays = Math.max(0, Math.floor((startOfToday - startOfLatest) / (24 * 60 * 60 * 1000)));
-    const cycleLength = snapshot?.cycleLengthDays ?? 28;
-    return ((elapsedDays % cycleLength) + 1);
-  }, [snapshot?.cycleLengthDays, snapshot?.latestSampleStart]);
+  const cycleDayNumber = useMemo(
+    () => getCycleDay(snapshot),
+    [snapshot],
+  );
   const entranceStyles = useStaggeredEntrance(4, {
     initialDelay: 40,
     stagger: 80,

@@ -16,14 +16,14 @@ Everything learned bringing this app up: the issues we hit and fixed, what's con
 
 The original collaborator's (Lukas's) accounts are **no longer needed** — we migrated everything to the accounts above. Note: this Apple ID is still a *member* of Lukas's Apple team, so at build time EAS shows two "providers" — always pick **Krati Jain (129196348)**, not Lukas.
 
-## Migrations: hand-applied — do NOT `supabase db push` blindly
+## Migrations: applied by the Database deploy workflow, see [DB_PUSH.md](DB_PUSH.md)
 
-Migrations are applied **by hand in the Supabase SQL editor** (paste the file, Run), *not* via `supabase db push`. Consequence: Supabase's migration-tracking table (`supabase_migrations.schema_migrations`) does **not** record them, so the CLI thinks nothing is applied.
+Merging a migration to `main` applies it: the **Database deploy** GitHub Actions workflow pushes it to staging, runs `test-accounts:rls`, then pushes it to production. The steps, secrets and the emergency rule are in [DB_PUSH.md](DB_PUSH.md).
 
-- **The schema is correct** — every migration file has been run. This is only a *CLI-tracking* gap, not a schema gap.
-- **⚠️ Do not run `supabase db push` without reconciling first.** It would try to re-run **all** migrations. Most are idempotent and survive, but **`seed-posts.sql` would re-insert demo data** and cron/seed statements could duplicate or error.
-- **Confirmed 2026-08-02:** `supabase_migrations.schema_migrations` **does not exist** on the project (querying it errors `42P01: relation does not exist`) — proof the DB was *never* built via `db push`, only hand-applied. So there's no partial tracking state to untangle.
-- **To adopt `db push` going forward** (optional, post-beta — tracked in [TODO.md](TODO.md)): the reconciliation is to **create** the tracking table and **populate** it with all 25 current migration versions so the CLI sees them as applied. Simplest: `supabase link` the project, then `supabase migration repair --status applied <version>` for each file (that creates + fills the table); or create `supabase_migrations.schema_migrations` and insert the version rows by hand. After that, `db push` is a no-op and new migrations flow through it cleanly. Also required for crons: the vault secrets `project_url` + `publishable_key` must exist (`select vault.create_secret(...)`), or every scheduled `net.http_post` fails with a null-url error.
+- **Staging has migration history (2026-11-08).** Production doesn't until its one-time setup workflow runs, and the deploy workflow refuses to touch a database without history. Without it, `db push` would try to re-run every migration.
+- **A failed run stops before production.** Read the failing step in the Actions tab, fix it with a new migration, and merge again. Don't paste a fix unless production is broken (see the emergency rule).
+- **`supabase link` gets a 403** from the management API on both projects, so the scripts name the database with `--db-url` instead. Edge function deploys go through the Supabase connector or the dashboard.
+- **Before 2026-11-08 every migration was pasted by hand,** and nothing recorded what had run. If a database ever seems out of step with the repo, compare [`scripts/db/fingerprint.sql`](../scripts/db/fingerprint.sql) results with staging's.
 - **Friend-cycle migration mismatch (2026-08-06):** `20260729000000_friend-cycle-summary-privacy.sql` was applied live but never committed to `main`, while the client still selected raw cycle tables. The source/client port is now restored and uses only sanitized RPCs. `20260806000000_legacy-friend-cycle-read-compat.sql` was briefly applied, but the owner confirmed this is dev-only and all testers can update; run `20260806010000_remove-legacy-friend-cycle-read.sql` in the SQL editor to restore owner-only raw-table policies. Do not rerun earlier migrations or use `db push`.
 
 ## On-demand cycle guidance (backend deployed 2026-11-03; device verification pending)
@@ -79,9 +79,10 @@ Recovery build **1.0.14 (35)** finished successfully on EAS ([EAS build](https:/
 |---|---|---|
 | `EXPO_PUBLIC_SUPABASE_URL` | `.env` (local, gitignored) **and** EAS env vars (production) | `https://mmomoyszozclfjdvjbeb.supabase.co` |
 | `EXPO_PUBLIC_SUPABASE_ANON_KEY` | `.env` **and** EAS env vars (production) | `sb_publishable_…` (client-safe publishable key) |
+| Database deploy secrets | GitHub → Settings → Secrets and variables → Actions | six secrets, listed in [DB_PUSH.md](DB_PUSH.md) |
 | `EXPO_PUBLIC_DEV_AUTH` | `.env` only | `true` — enables the dev email/password login, which only renders in `__DEV__` builds |
 | Supabase Apple provider Client IDs | Supabase dashboard → Authentication → Providers → Apple | **must** include `com.syncsisters.cycle` |
-| DB schema / migrations | Supabase (applied via the SQL editor) | includes `delete_account()` + table grants |
+| DB schema / migrations | `supabase/migrations/`, applied by the Database deploy workflow on merge | see [DB_PUSH.md](DB_PUSH.md) |
 
 > **Critical gotcha:** `.env` is gitignored, so **cloud (EAS) builds do not see it**. Any `EXPO_PUBLIC_*` value the app needs at runtime must *also* be set as an EAS environment variable, or the production/TestFlight build ships without it. This bit us once — the first production build would have had no Supabase config. Fixed by adding both Supabase vars to EAS (`eas env:create --environment production …`).
 >
@@ -142,6 +143,8 @@ To install a build directly from an `.ipa` file (outside TestFlight or the EAS i
 - **`EXPO_PUBLIC_*` vars** must be kept in sync between `.env` and EAS env vars.
 - **First external TestFlight build** needs Beta App Review (~1 day); later builds to the same group usually don't.
 - **Health-app review** scrutinizes HealthKit + data sharing — keep the "read-only, never written back, shared only with approved friends" framing in review notes and the privacy policy.
+
+- **Setting `EXPO_PUBLIC_*` in the shell doesn't beat `.env` in dev bundles.** Expo's dev-only `expo/virtual/env` module merges `.env`, `.env.development`, `.env.local` and `.env.development.local` over `process.env`, so `.env` values win and keys missing from `.env` still come through. This made an early `start:staging` talk to production while showing the STAGING pill. `start:staging` now writes the public staging values to a gitignored `.env.local` while Metro runs. `EXPO_NO_DOTENV` doesn't affect this module. To check a bundle, look for the Supabase URL under its `.env*` modules, not just the env header.
 
 ## State that lives OUTSIDE git (not versioned — back up / remember separately)
 

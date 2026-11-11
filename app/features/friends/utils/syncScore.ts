@@ -1,5 +1,10 @@
 import { CategoryValueMenstrualFlow } from '@kingstinct/react-native-healthkit';
-import type { CyclePhase, CycleSample, CycleSnapshot } from '../../../../packages/domain/cycles/models';
+import {
+  getLatestPeriodStart,
+  type CyclePhase,
+  type CycleSample,
+  type CycleSnapshot,
+} from '../../../../packages/domain/cycles/models';
 
 type SyncScoreMetrics = {
   phaseAlignment: number;
@@ -74,16 +79,6 @@ const scorePhaseAlignment = (a: CyclePhase, b: CyclePhase) => {
   }
   const maxDistance = Math.floor(PHASE_ORDER.length / 2);
   return clamp(1 - distance / maxDistance, 0, 1);
-};
-
-const getLatestDate = (snapshot: CycleSnapshot) => {
-  if (snapshot.latestSampleStart) {
-    return new Date(snapshot.latestSampleStart);
-  }
-  const latest = [...snapshot.samples].sort(
-    (left, right) => new Date(right.startDate).getTime() - new Date(left.startDate).getTime(),
-  )[0];
-  return latest ? new Date(latest.startDate) : null;
 };
 
 const sortFlowSamples = (samples: CycleSample[]) =>
@@ -261,8 +256,8 @@ export const computeSyncScore = ({
   const friendPhase = friendSnapshot.currentPhase ?? 'unknown';
   const phaseAlignment = scorePhaseAlignment(selfPhase, friendPhase);
 
-  const selfLatest = getLatestDate(selfSnapshot);
-  const friendLatest = getLatestDate(friendSnapshot);
+  const selfLatest = getLatestPeriodStart(selfSnapshot);
+  const friendLatest = getLatestPeriodStart(friendSnapshot);
   const daysApart =
     selfLatest && friendLatest
       ? Math.abs(Math.round((selfLatest.getTime() - friendLatest.getTime()) / DAY_MS))

@@ -9,6 +9,10 @@
     "ios": "expo run:ios",
     "web": "expo start --web",
     "test": "jest",
+    "start:staging": "node scripts/test-accounts/run.js start",
+    "test-accounts:seed": "node scripts/test-accounts/run.js seed",
+    "test-accounts:actors": "node scripts/test-accounts/run.js actors",
+    "test-accounts:rls": "node scripts/test-accounts/run.js rls",
     "postinstall": "patch-package"
   },
   "dependencies": {

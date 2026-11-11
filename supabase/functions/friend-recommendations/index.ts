@@ -1,5 +1,6 @@
 // deno-lint-ignore-file no-explicit-any
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.56.1';
+import { rejectUnlessScheduled } from '../_shared/cronAuth.ts';
 
 type CycleSample = {
   startDate: string;
@@ -248,8 +249,12 @@ const collectMutualPairs = async (): Promise<Pair[]> => {
   return pairs;
 };
 
-Deno.serve(async () => {
+Deno.serve(async (req) => {
   try {
+    const rejected = await rejectUnlessScheduled(req, supabase);
+    if (rejected) {
+      return rejected;
+    }
     if (!supabaseUrl || !serviceRoleKey) {
       return new Response(JSON.stringify({ error: 'Missing Supabase credentials' }), { status: 500 });
     }

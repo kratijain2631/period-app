@@ -26,7 +26,7 @@ AI models especially: don't re-derive this context or repeat past mistakes — i
 
 Record every notable change in [RELEASE_NOTES.md](RELEASE_NOTES.md) under `## Unreleased`.
 
-This includes **non-code changes that happen outside git** — e.g. Supabase config (Apple provider, schema/migrations run in the dashboard), account/project creation, EAS environment variables, the privacy-policy URL, App Store Connect setup, and other dashboard/credential changes. These don't produce a commit on their own, so capture them in the next commit's release-notes update (and put the operational detail in [TROUBLESHOOTING.md](TROUBLESHOOTING.md)).
+This includes **non-code changes that happen outside git** — e.g. Supabase config (Apple provider, migrations pushed or pasted, see [DB_PUSH.md](DB_PUSH.md)), account/project creation, EAS environment variables, the privacy-policy URL, App Store Connect setup, and other dashboard/credential changes. These don't produce a commit on their own, so capture them in the next commit's release-notes update (and put the operational detail in [TROUBLESHOOTING.md](TROUBLESHOOTING.md)).
 
 - Keep an **`## Unreleased`** section at the very top.
 - Add your change in the right bucket: **Added**, **Changed**, **Fixed**, **Infrastructure & release setup** (non-code/operational), or **Known / not yet done**.
@@ -63,6 +63,7 @@ When you hit and resolve a problem — or learn something that could bite a futu
 After every code change, **explicitly review it for bugs before committing**:
 - Re-read the diff for logic errors, missing error handling, edge cases, and race conditions.
 - Run the tests (`npm test`) and confirm the app still bundles/runs where relevant.
+- For user-visible changes, test in the simulator on staging with the test personas. The rules are in [AGENTS.md](../AGENTS.md) and the procedure is in [TEST_ACCOUNTS.md](TEST_ACCOUNTS.md#testing-as-an-ai-agent).
 - Log any bug you find but don't fix in [BUGS.md](BUGS.md) so it isn't lost.
 
 ## 5. Before changing any name or identifier

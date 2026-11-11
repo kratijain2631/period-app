@@ -10,6 +10,7 @@ import {
   type ObjectTypeIdentifier,
   type CategorySampleTyped,
 } from '@kingstinct/react-native-healthkit';
+import { createFakeHealthClient, isFakeHealthEnabled } from './fakeHealthClient';
 
 export const MENSTRUAL_FLOW_IDENTIFIER: CategoryTypeIdentifier = 'HKCategoryTypeIdentifierMenstrualFlow';
 export const OVULATION_TEST_IDENTIFIER: CategoryTypeIdentifier = 'HKCategoryTypeIdentifierOvulationTestResult';
@@ -66,7 +67,7 @@ const hk = HealthKit as unknown as {
 // UpdateFrequency.Immediate (iOS clamps category-type delivery to ≥ hourly).
 export const HEALTH_UPDATE_FREQUENCY_IMMEDIATE = hk.UpdateFrequency?.Immediate ?? 1;
 
-export const healthkitClient = {
+const realHealthkitClient = {
   isHealthDataAvailable,
   requestAuthorization,
   queryCategorySamples,
@@ -76,5 +77,24 @@ export const healthkitClient = {
   disableBackgroundDelivery: hk.disableBackgroundDelivery,
   subscribeToChanges: hk.subscribeToChanges,
 };
+
+// Dev-only: with EXPO_PUBLIC_FAKE_HEALTH=true in a __DEV__ build, serve the signed-in
+// test persona's generated cycle history instead of HealthKit (see
+// docs/TEST_ACCOUNTS.md). Release builds always use the real client.
+const createDevFakeClient = () => {
+  console.log('[fake-health] Using generated test-persona Health data (dev only).');
+  return createFakeHealthClient({
+    personaOverride: process.env.EXPO_PUBLIC_FAKE_HEALTH_PERSONA || undefined,
+    getSignedInEmail: async () => {
+      const { supabase } = require('../supabase/client') as typeof import('../supabase/client');
+      const { data } = await supabase.auth.getSession();
+      return data.session?.user?.email ?? null;
+    },
+  }) as unknown as typeof realHealthkitClient;
+};
+
+export const healthkitClient: typeof realHealthkitClient = isFakeHealthEnabled()
+  ? createDevFakeClient()
+  : realHealthkitClient;
 
 export { AuthorizationStatus, CategoryValueMenstrualFlow };

@@ -4,6 +4,7 @@
 // recently, so we don't double up with the on-device local reminder). This is a
 // NUDGE, not a silent post — opening the app is what actually posts.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.56.1';
+import { rejectUnlessScheduled } from '../_shared/cronAuth.ts';
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
 const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
@@ -67,8 +68,12 @@ const sendPush = async (tokens: string[], phase: string): Promise<number> => {
   return sent;
 };
 
-Deno.serve(async () => {
+Deno.serve(async (req) => {
   try {
+    const rejected = await rejectUnlessScheduled(req, supabase);
+    if (rejected) {
+      return rejected;
+    }
     const { data: due, error } = await supabase.rpc('due_phase_reminders');
     if (error) {
       throw error;
