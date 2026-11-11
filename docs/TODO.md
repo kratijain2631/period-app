@@ -2,6 +2,8 @@
 
 Open items, roughly in priority order, with completed items retained as a decision and delivery record.
 
+- [~] **Manual refresh for Phase Guide** — 🚧 (WIP — Codex, 2026-11-11). Add an explicit Refresh tips action that regenerates advice with caller-scoped cooldown/concurrency protection, preserves visible tips on failure and ignores stale account/phase responses. Existing nightly guidance scheduling remains unchanged.
+
 ## 🎯 Phase Guide — implementation/backend complete; finish native rollout
 - [~] **Redesign how the "You" page do's/don'ts (cycle guidance) get generated.** 🚧 (WIP — Codex, 2026-11-03; content/cards complete; SQL + function deployed, 1.0.13 (34) built; submission/device verification pending). Fixes the "No guidance yet" bug ([BUGS.md](BUGS.md)) at the design level, not just by babysitting a cron.
   - **2026-11-03 implementation:** immediate local fallback for every phase (including no Health data); authenticated `request-cycle-guidance` generates on page focus, caches against phase + `currentPhaseStart`, and uses caller-scoped claim/complete RPCs with a two-minute lease. Old-phase/old-cycle guidance is hidden, overlapping client calls coalesce, and account changes/late responses cannot replace the current user's tips. AI failures leave fallback visible and are not cached as AI results.
