@@ -43,6 +43,7 @@ import {
   sendBoop,
 } from '../../../services/supabase/boops';
 import { fetchUserProfilesByIds } from '../../../services/supabase/users';
+import { fetchFriendProfiles } from '../../../services/supabase/friendSharing';
 import { selectIsOnline, useConnectionStore } from '../../../state/connectionStore';
 import { selectAlias, selectSession, useSessionStore } from '../../../state/sessionStore';
 import { useCycleSnapshot } from '../../feed/hooks/useCycleSnapshot';
@@ -465,9 +466,24 @@ const HomeScreen = () => {
       );
       if (profileIds.length) {
         try {
-          const profiles = await fetchUserProfilesByIds(profileIds);
+          // users only returns your own row; friends' names come from friend_profiles.
+          const friendIds = profileIds.filter((id) => id !== session?.userId);
+          const [profiles, friendProfiles] = await Promise.all([
+            fetchUserProfilesByIds(profileIds),
+            fetchFriendProfiles(friendIds).catch((error) => {
+              console.warn('[home] Failed to load friend names', error);
+              return [];
+            }),
+          ]);
           const nextProfiles: Record<string, FeedUserProfile> = {};
           const nextNames: Record<string, string> = {};
+          friendProfiles.forEach((friend) => {
+            const name = friend.full_name?.trim() || friend.alias?.trim();
+            if (name) {
+              nextProfiles[friend.friend_id] = { name, avatarUrl: null };
+              nextNames[friend.friend_id] = name;
+            }
+          });
           profiles.forEach((profile) => {
             const name =
               profile.full_name?.trim() ||
