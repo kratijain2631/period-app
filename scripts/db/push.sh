@@ -9,6 +9,15 @@ set -euo pipefail
 
 name="${1:?usage: push.sh <name>}"
 : "${DB_URL:?DB_URL is not set}"
+# A value psql can't read as an address makes it fall back to a local socket, which hides
+# which secret is wrong. Check the shape first and name the variable, without printing it.
+check_url() {
+  if ! [[ "$2" =~ ^postgres(ql)?://[^@[:space:]]+@[^/:[:space:]]+(:[0-9]+)?/[^[:space:]]+$ ]]; then
+    echo "::error::$1 isn't a database address. It should be the Session pooler URI, postgresql://user:password@host:5432/postgres, with nothing before or after it."
+    exit 1
+  fi
+}
+check_url DB_URL "$DB_URL"
 max_pending="${MAX_PENDING:-10}"
 
 # Postgres checks every table a query names before running it, so the count has to be a
