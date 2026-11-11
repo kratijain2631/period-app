@@ -19,6 +19,7 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ### Fixed
 
+- **The database workflows name a malformed database secret.** A value that isn't a database address used to fail with a confusing local-socket error. The scripts now check each address's shape before connecting, and say which secret is wrong without printing it.
 - **The database workflows now work on a database with no migration history.** The history check named the history table in the same query that checked whether it existed, which Postgres rejects when it doesn't. That stopped production's one-time setup before it changed anything.
 - **No database function can be called without a login (`20261108180000_no-login-function-access.sql`).** Several could be called with only the public key, and staging and production disagreed on which. Logged-in users keep access to everything the app uses, server-only functions stay server-only, and new functions no longer default to no-login access. `npm run test-accounts:rls` checks it. Not breaking for any app build, because the app calls no database function before login.
 - **Scheduled edge functions only run for the cron jobs (`supabase/functions/_shared/cronAuth.ts`, `20261107013000_scheduled-function-secret.sql`).** `cycle-guidance`, `friend-recommendations` and `phase-change-reminder` reject callers without a secret that lives in the vault and is sent by the cron jobs. Applied and deployed to staging and production on 2026-11-07. `notifications-handler` has the same check but isn't deployed anywhere.

@@ -14,6 +14,16 @@ set -euo pipefail
 name="${1:?usage: setup-tracking.sh <name>}"
 : "${DB_URL:?DB_URL is not set}"
 : "${REFERENCE_DB_URL:?REFERENCE_DB_URL is not set}"
+# A value psql can't read as an address makes it fall back to a local socket, which hides
+# which secret is wrong. Check the shape first and name the variable, without printing it.
+check_url() {
+  if ! [[ "$2" =~ ^postgres(ql)?://[^@[:space:]]+@[^/:[:space:]]+(:[0-9]+)?/[^[:space:]]+$ ]]; then
+    echo "::error::$1 isn't a database address. It should be the Session pooler URI, postgresql://user:password@host:5432/postgres, with nothing before or after it."
+    exit 1
+  fi
+}
+check_url "DB_URL (PRODUCTION_DB_URL)" "$DB_URL"
+check_url "REFERENCE_DB_URL (STAGING_DB_URL)" "$REFERENCE_DB_URL"
 expected="$(echo "${EXPECTED_PENDING:-}" | tr ' ,' '\n\n' | grep -E '^[0-9]{14}$' | sort -u || true)"
 here="$(cd "$(dirname "$0")" && pwd)"
 migrations="$here/../../supabase/migrations"
