@@ -29,7 +29,6 @@ import {
 } from '../../../services/supabase/friendRequests';
 import {
   fetchFriendProfiles,
-  fetchFriendSharing,
   type FriendProfileRow,
 } from '../../../services/supabase/friendSharing';
 import { searchUsersByAliasOrEmail, type UserSearchResult } from '../../../services/supabase/users';
@@ -105,10 +104,9 @@ const FriendsScreen = () => {
           console.warn('[friends] Failed to ensure friend sharing', error);
         }
       }
-      const [inbound, outbound, sharingRows, snapshots] = await Promise.all([
+      const [inbound, outbound, snapshots] = await Promise.all([
         fetchInboundFriendRequests(),
         fetchOutboundFriendRequests(),
-        fetchFriendSharing(),
         fetchFriendCycleSnapshots(),
       ]);
       setInboundRequests(inbound);
@@ -122,21 +120,15 @@ const FriendsScreen = () => {
       const filteredSnapshots = session?.userId
         ? snapshots.filter((row) => row.user_id !== session.userId)
         : snapshots;
-      const incomingSet = new Set(
-        sharingRows
-          .filter((row) => row.friend_id === session?.userId && row.has_shared)
-          .map((row) => row.user_id),
+      // An accepted request is what makes someone a friend; it's the same rule the database
+      // uses for what they can see.
+      const mutualFriendIds = Array.from(
+        new Set(
+          acceptedRequests
+            .map((request) => (request.from_user_id === session?.userId ? request.to_user_id : request.from_user_id))
+            .filter((id) => id && id !== session?.userId),
+        ),
       );
-      const mutualFriendIds: string[] = [];
-      sharingRows.forEach((row) => {
-        if (
-          row.user_id === session?.userId &&
-          row.has_shared &&
-          incomingSet.has(row.friend_id)
-        ) {
-          mutualFriendIds.push(row.friend_id);
-        }
-      });
       const snapshotMap = new Map(filteredSnapshots.map((row) => [row.user_id, row]));
       const friendList = mutualFriendIds.map((friendUserId) => {
         const snapshotRow = snapshotMap.get(friendUserId);
