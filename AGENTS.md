@@ -2,7 +2,7 @@
 
 Guidance for all AI agents (whatever the tool or model) and humans working in this repo. This is the single source of agent instructions: tool-specific files such as `CLAUDE.md` only point here, so make changes in this file.
 
-**Before doing anything, read [docs/INSTRUCTIONS.md](docs/INSTRUCTIONS.md) and the docs it links** for full context: vision, architecture, database schema, identifiers, known issues, and conventions. Don't re-derive context that's already written down, and don't repeat mistakes already recorded in [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).
+**Before doing anything, read [docs/INSTRUCTIONS.md](docs/INSTRUCTIONS.md) and the docs it links** for full context: vision, architecture, database schema, identifiers, known issues, and conventions. Use [architecture.md](architecture.md) to find your way around the code; a test keeps its folder tree in step with the repo. Don't re-derive context that's already written down, and don't repeat mistakes already recorded in [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).
 
 ## Key conventions (full detail in docs/INSTRUCTIONS.md)
 
@@ -37,4 +37,4 @@ Verify UI and behavior changes on the **staging** backend with test personas, ne
 
 ## Docs index
 
-[Pitch](docs/PITCH.md) · [Learnings](docs/LEARNINGS.md) · [Schema](docs/SCHEMA.md) · [Cycle sync & notifications](docs/CYCLE_SYNC.md) · [Features](docs/FEATURES.md) · [Design](docs/DESIGN.md) · [Bugs](docs/BUGS.md) · [Release notes](docs/RELEASE_NOTES.md) · [Identifiers](docs/IDENTIFIERS.md) · [Todo](docs/TODO.md) · [Troubleshooting](docs/TROUBLESHOOTING.md) · [Test accounts](docs/TEST_ACCOUNTS.md) · [Database changes](docs/DB_PUSH.md) · [Security test suite design](docs/design/security-test-suite.md) · [Instructions](docs/INSTRUCTIONS.md)
+[Architecture](architecture.md) · [Pitch](docs/PITCH.md) · [Learnings](docs/LEARNINGS.md) · [Schema](docs/SCHEMA.md) · [Cycle sync & notifications](docs/CYCLE_SYNC.md) · [Features](docs/FEATURES.md) · [Design](docs/DESIGN.md) · [Bugs](docs/BUGS.md) · [Release notes](docs/RELEASE_NOTES.md) · [Identifiers](docs/IDENTIFIERS.md) · [Todo](docs/TODO.md) · [Troubleshooting](docs/TROUBLESHOOTING.md) · [Test accounts](docs/TEST_ACCOUNTS.md) · [Database changes](docs/DB_PUSH.md) · [Security test suite design](docs/design/security-test-suite.md) · [Instructions](docs/INSTRUCTIONS.md)

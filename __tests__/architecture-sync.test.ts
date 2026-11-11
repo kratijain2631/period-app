@@ -2,9 +2,10 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 /**
- * Keeps architecture.md honest without calling an AI: every path it names must exist, and
- * every technology it lists must be in package.json at the version it states. Placeholder
- * paths like `app/features/{feature-name}/screens/` are skipped.
+ * Keeps architecture.md honest without calling an AI: every path it names must exist, every
+ * folder at the levels it describes must be in it, and every technology it lists must be in
+ * package.json at the version it states. Placeholder paths like
+ * `app/features/{feature-name}/screens/` are skipped.
  */
 const ROOT = path.join(__dirname, '..');
 const doc = fs.readFileSync(path.join(ROOT, 'architecture.md'), 'utf-8');
@@ -55,6 +56,14 @@ const findUnder = (dir: string, name: string): boolean =>
     return entry.isDirectory() ? findUnder(full, name) : entry.name === name;
   });
 
+// Levels the doc describes folder by folder. A new folder here must be added to its tree.
+const DOCUMENTED_LEVELS = ['app', 'app/features', 'app/services', 'supabase/functions'];
+
+const foldersAt = (level: string): string[] =>
+  fs.readdirSync(path.join(ROOT, level), { withFileTypes: true })
+    .filter((entry) => entry.isDirectory() && !entry.name.startsWith('.') && entry.name !== '__tests__')
+    .map((entry) => `${level}/${entry.name}/`);
+
 // How the doc names each technology, mapped to its package.
 const TECHNOLOGY_PACKAGES: Record<string, string> = {
   'React Native': 'react-native',
@@ -86,6 +95,12 @@ describe('architecture.md matches the codebase', () => {
 
   it('names only paths that exist', () => {
     const missing = [...new Set([...treePaths(), ...inlinePaths()])].filter((value) => !exists(value));
+    expect(missing).toEqual([]);
+  });
+
+  it('includes every folder at the levels it describes', () => {
+    const named = new Set(treePaths());
+    const missing = DOCUMENTED_LEVELS.flatMap(foldersAt).filter((folder) => !named.has(folder));
     expect(missing).toEqual([]);
   });
 
