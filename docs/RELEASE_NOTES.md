@@ -8,6 +8,7 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ### Added
 
+- **PRs must update the release notes (`.github/workflows/docs-check.yml`, `scripts/ci/check-docs.sh`).** A PR that changes anything other than docs fails the Docs check unless it adds a line to this file; the `no-release-notes` label skips it. It also warns when a migration doesn't touch `SCHEMA.md` or test tooling doesn't touch `TESTING.md`. A new PR template lists the docs to check, including changes made outside git.
 - Added a shared testing guide and instructions for recording code, database, staging, and test-account changes in GitHub.
 - **[TESTING.md](TESTING.md) covers every way to test.** Which backend each way of running the app uses (TestFlight and `npm run start` hit production, `npm run start:staging` hits staging), the hard rules, the checks, the personas, simulator build steps, testing database changes, and what staging can't test.
 - **Merged migrations apply themselves (`.github/workflows/database.yml`).** On a merge to `main` that changes `supabase/migrations/`, GitHub Actions pushes to staging, runs `test-accounts:rls` there, then pushes to production. It refuses a database with no migration history, and stops before production if anything fails. `database-setup.yml` does production's one-time history setup, checked against staging's fingerprint. Needs six repository secrets, listed in [DB_PUSH.md](DB_PUSH.md). Live on both projects since 2026-11-11 (see Infrastructure below).

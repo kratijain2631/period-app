@@ -43,6 +43,7 @@ This includes **non-code changes that happen outside git** — e.g. Supabase con
 - Add your change in the right bucket: **Added**, **Changed**, **Fixed**, **Infrastructure & release setup** (non-code/operational), or **Known / not yet done**.
 - Plain language, one line per change.
 - For code changes, do it in the **same commit** so the notes never drift from the code.
+- **CI enforces it.** The **Docs check** workflow fails any PR that changes code, migrations, scripts or workflows without touching `docs/RELEASE_NOTES.md`, and warns when a migration skips `SCHEMA.md` or test tooling skips `TESTING.md`. Add the `no-release-notes` label only when a change truly needs no line. The PR template's checklist covers what CI can't see, such as dashboard changes.
 - **Any breaking / non-backward-compatible change must be flagged with a `⚠️ BREAKING / not backward-compatible` callout** — what breaks, who's affected, the required minimum build, and the action needed. See [§12](#12-backward-compatibility--stability-guardrails) for the full rule.
 
 ## 2. Cut a version on every published build

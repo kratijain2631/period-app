@@ -1,0 +1,21 @@
+name: Docs check
+
+# Every PR that changes code, migrations or tooling must add a line to docs/RELEASE_NOTES.md.
+# Add the 'no-release-notes' label to skip it. See docs/INSTRUCTIONS.md §1.
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+
+permissions:
+  contents: read
+
+jobs:
+  release-notes:
+    if: ${{ !contains(github.event.pull_request.labels.*.name, 'no-release-notes') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Check release notes and related docs
+        run: scripts/ci/check-docs.sh "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}"
