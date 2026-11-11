@@ -244,41 +244,34 @@ const generateGuidance = async (phase: string, friends: FriendContext[]) => {
   };
 };
 
+// Friends are people with an accepted friend request in either direction, the same rule
+// the database uses for what friends can see.
 const collectMutualFriendMap = async (): Promise<Map<string, Set<string>>> => {
   const { data, error } = await supabase
-    .from('friend_sharing')
-    .select('user_id, friend_id')
-    .eq('has_shared', true);
+    .from('friend_requests')
+    .select('from_user_id, to_user_id')
+    .eq('status', 'accepted');
 
   if (error) {
     throw error;
   }
 
-  const rows = data ?? [];
-  const forward = new Map<string, Set<string>>();
-  rows.forEach((row) => {
-    if (!forward.has(row.user_id)) {
-      forward.set(row.user_id, new Set());
+  const friends = new Map<string, Set<string>>();
+  const link = (from: string, to: string) => {
+    if (!friends.has(from)) {
+      friends.set(from, new Set());
     }
-    forward.get(row.user_id)?.add(row.friend_id);
+    friends.get(from)?.add(to);
+  };
+  (data ?? []).forEach((row) => {
+    if (row.from_user_id === row.to_user_id) {
+      return;
+    }
+    link(row.from_user_id, row.to_user_id);
+    link(row.to_user_id, row.from_user_id);
   });
 
-  const mutual = new Map<string, Set<string>>();
-  rows.forEach((row) => {
-    const reciprocal = forward.get(row.friend_id);
-    if (reciprocal?.has(row.user_id)) {
-      if (!mutual.has(row.user_id)) {
-        mutual.set(row.user_id, new Set());
-      }
-      if (!mutual.has(row.friend_id)) {
-        mutual.set(row.friend_id, new Set());
-      }
-      mutual.get(row.user_id)?.add(row.friend_id);
-      mutual.get(row.friend_id)?.add(row.user_id);
-    }
-  });
-
-  return mutual;
+  return friends;
 };
 
 const buildSimilarFriends = (selfPhase: string, friends: FriendContext[]) => {

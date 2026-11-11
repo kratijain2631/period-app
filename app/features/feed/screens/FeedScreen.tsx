@@ -14,7 +14,7 @@ import NotificationsSheet from '../../notifications/components/NotificationsShee
 import { useNotifications } from '../../notifications/hooks/useNotifications';
 import FriendSyncButton from '../../friends/components/FriendSyncButton';
 import { fetchCycleEvents, type CycleEventRow } from '../../../services/supabase/cycleEvents';
-import { fetchUserProfilesByIds } from '../../../services/supabase/users';
+import { fetchFriendProfiles } from '../../../services/supabase/friendSharing';
 import { sendBoop } from '../../../services/supabase/boops';
 import { selectSession, useSessionStore } from '../../../state/sessionStore';
 import { selectIsOnline, useConnectionStore } from '../../../state/connectionStore';
@@ -46,11 +46,14 @@ const FeedScreen = () => {
       const friendIds = Array.from(new Set(filtered.map((event) => event.user_id)));
       if (friendIds.length) {
         try {
-          const profiles = await fetchUserProfilesByIds(friendIds);
+          // Other people's rows in users can't be read directly; friend_profiles returns
+          // names for friends only.
+          const profiles = await fetchFriendProfiles(friendIds);
           const nextMap: Record<string, string> = {};
           profiles.forEach((profile) => {
-            if (profile.full_name) {
-              nextMap[profile.id] = profile.full_name;
+            const name = profile.full_name?.trim() || profile.alias?.trim();
+            if (name) {
+              nextMap[profile.friend_id] = name;
             }
           });
           setNameMap(nextMap);
