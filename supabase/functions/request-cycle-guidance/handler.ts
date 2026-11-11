@@ -24,15 +24,16 @@ export const createGuidanceHandler = (
     const client = createCallerClient(authorization);
     const { data: auth, error: authError } = await client.auth.getUser();
     if (authError || !auth.user) return json({ error: 'Authentication required' }, 401);
-    let input: { userId?: unknown; phase?: unknown; phaseStart?: unknown };
+    let input: { userId?: unknown; phase?: unknown; phaseStart?: unknown; refresh?: unknown };
     try { input = await request.json(); } catch { return json({ error: 'Invalid JSON' }, 400); }
     if (!input || typeof input.phase !== 'string' ||
       !['menstruation', 'follicular', 'ovulation', 'luteal', 'pms'].includes(input.phase) ||
-      (input.phaseStart !== null && typeof input.phaseStart !== 'string')) {
+      (input.phaseStart !== null && typeof input.phaseStart !== 'string') ||
+      (input.refresh !== undefined && typeof input.refresh !== 'boolean')) {
       return json({ error: 'Invalid phase' }, 400);
     }
     if (input.userId !== auth.user.id) return json({ error: 'Account changed' }, 403);
-    const { data: requestId, error: claimError } = await client.rpc('claim_cycle_guidance', {
+    const { data: requestId, error: claimError } = await client.rpc(input.refresh ? 'claim_cycle_guidance_refresh' : 'claim_cycle_guidance', {
       p_phase: input.phase, p_phase_start: input.phaseStart,
     });
     if (claimError) throw claimError;
@@ -42,7 +43,8 @@ export const createGuidanceHandler = (
       const matches = cached?.phase === input.phase &&
         (cached?.phase_started_at ?? null) === input.phaseStart &&
         cached?.dos?.length && cached?.donts?.length;
-      return matches ? json({ guidance: cached }) : json({ guidance: null, pending: true }, 202);
+      return matches ? json({ guidance: cached, refreshLimited: Boolean(input.refresh) })
+        : json({ guidance: null, pending: true }, 202);
     }
 
     // A friend-lookup outage must not prevent personal tips. Do not use raw

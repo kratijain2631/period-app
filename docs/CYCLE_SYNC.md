@@ -100,11 +100,13 @@ The bell / [`NotificationsScreen`](../app/features/notifications/screens/Notific
 
 Implemented for build 1.0.13 (34); backend deployed and authenticated integration-tested 2026-11-03. The You page shows local dos/don’ts immediately, then requests AI guidance on focus through `ensureCycleGuidance` → `request-cycle-guidance`. This does not read HealthKit or trigger another cycle sync itself.
 
+Manual refresh is implemented locally for a future build (2026-11-11): Refresh tips bypasses the saved cache through a separate caller-scoped claim, enforces a two-minute cooldown, and leaves current advice visible on failure. `usePhaseGuidance` owns request lifetime and feedback; the presenter only receives data/actions. The new migration and updated handler are not deployed; see [GUIDANCE.md](GUIDANCE.md#explicit-refresh-implemented-locally-2026-11-11-not-deployed).
+
 Cache identity is account + `currentPhase` + `currentPhaseStart`, so a new occurrence of the same phase cannot reuse a previous cycle's advice. The handler verifies the user's JWT; caller-scoped claim/complete RPCs compare the stored snapshot before generation and again before saving. A two-minute lease prevents duplicate generation across requests/devices. Late client results are ignored after account/navigation changes; generation errors leave the local tips visible. Missing/stale server snapshots must sync through the normal lifecycle before generation can succeed.
 
 AI input contains only the phase and up to three same-phase accepted friends' IDs/display names from sanitized RPCs; no raw HealthKit samples, personal symptoms or email addresses. Content/presentation rules: [GUIDANCE.md](GUIDANCE.md). Native device checks remain in [TODO.md](TODO.md).
 
-The new path needs **no cron or service-role key**. Live metadata still shows the old `nightly-cycle-guidance` job active alongside `daily-phase-change-reminder`; the friend-recommendations job is absent. The old batch function is unchanged and has a scheduler-authorization gap tracked in [BUGS.md](BUGS.md). Do not confuse job dispatch success with successful AI results or notification delivery.
+The new path needs **no cron or service-role key**. Live metadata still shows the old `nightly-cycle-guidance` job active alongside `daily-phase-change-reminder`; the friend-recommendations job is absent. The legacy schedule is unchanged by this feature; main records its scheduler-secret authorization fix as deployed 2026-11-07 (see [BUGS.md](BUGS.md)). Do not confuse job dispatch success with successful AI results or notification delivery.
 
 ---
 

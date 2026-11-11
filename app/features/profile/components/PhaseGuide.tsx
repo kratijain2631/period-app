@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { splitGuidanceTip } from '../../../../packages/domain/cycles/guidance';
 import { brand, brandType } from '../../../theme/brand';
@@ -8,9 +8,13 @@ type Props = {
   donts: string[];
   personalized: boolean;
   phaseLabel: string | null;
+  onRefresh?: () => void;
+  refreshing?: boolean;
+  refreshDisabled?: boolean;
+  message?: string | null;
 };
 
-export const PhaseGuide = ({ dos, donts, personalized, phaseLabel }: Props) => (
+export const PhaseGuide = ({ dos, donts, personalized, phaseLabel, onRefresh, refreshing = false, refreshDisabled = false, message }: Props) => (
   <View style={styles.section}>
     <View style={styles.heading}>
       <Text accessibilityRole="header" style={styles.title}>Phase Guide</Text>
@@ -22,6 +26,23 @@ export const PhaseGuide = ({ dos, donts, personalized, phaseLabel }: Props) => (
       {personalized ? 'Ideas for your estimated phase.' : 'A few ideas to start with.'}
       {' '}Follow how you feel.
     </Text>
+    {onRefresh ? (
+      <View style={styles.refreshRow}>
+        <Pressable
+          onPress={onRefresh}
+          disabled={refreshing || refreshDisabled}
+          accessibilityRole="button"
+          accessibilityLabel={refreshing ? 'Refreshing tips' : 'Refresh tips'}
+          accessibilityHint="Request fresh AI ideas for your current phase"
+          accessibilityState={{ disabled: refreshing || refreshDisabled, busy: refreshing }}
+          style={({ pressed }) => [styles.refreshButton, { opacity: refreshing || refreshDisabled ? 0.55 : pressed ? 0.7 : 1 }]}
+        >
+          {refreshing ? <ActivityIndicator size="small" color={brand.colors.accent} /> : <Ionicons name="refresh-outline" size={16} color={brand.colors.accent} accessible={false} />}
+          <Text style={styles.refreshText}>{refreshing ? 'Refreshing…' : 'Refresh tips'}</Text>
+        </Pressable>
+      </View>
+    ) : null}
+    {message ? <Text accessibilityLiveRegion="polite" style={styles.message}>{message}</Text> : null}
     {([
       { label: 'Dos', note: 'Make room for', tips: dos, icon: 'add' as const, tone: '#3F6B55', fill: '#EDF5F0' },
       { label: 'Don’ts', note: 'Go easy on', tips: donts, icon: 'remove' as const, tone: '#994B35', fill: '#FFF0EB' },
@@ -53,6 +74,10 @@ export const PhaseGuide = ({ dos, donts, personalized, phaseLabel }: Props) => (
 );
 
 const styles = StyleSheet.create({
+  refreshRow: { flexDirection: 'row', marginBottom: 12 },
+  refreshButton: { flexDirection: 'row', alignItems: 'center', gap: 7, minHeight: 44, paddingHorizontal: 14, paddingVertical: 10, borderRadius: 99, backgroundColor: brand.colors.accentSoft },
+  refreshText: { fontSize: 13, color: brand.colors.accent, ...brandType.semibold },
+  message: { fontSize: 13, lineHeight: 20, color: '#5A564F', marginBottom: 12, ...brandType.body },
   section: { marginBottom: 24 },
   heading: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 10, marginBottom: 6 },
   title: { fontSize: 28, color: brand.colors.primaryText, ...brandType.display },

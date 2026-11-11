@@ -96,3 +96,45 @@ export const ensureCycleGuidance = (
   inFlight.set(key, request);
   return request;
 };
+
+export type GuidanceRefreshResult = {
+  guidance: CycleGuidanceRow | null;
+  refreshLimited: boolean;
+  pending: boolean;
+};
+
+const refreshing = new Map<string, Promise<GuidanceRefreshResult>>();
+
+// Explicit refresh bypasses a valid cache. The server enforces account-scoped
+// cooldown/leases; old guidance is never deleted to request new advice.
+export const refreshCycleGuidance = (
+  userId: string,
+  phase: string,
+  phaseStart: string | null,
+): Promise<GuidanceRefreshResult> => {
+  if (!isSupabaseConfigured || !userId || phase === 'unknown') {
+    return Promise.resolve({ guidance: null, refreshLimited: false, pending: false });
+  }
+  const key = JSON.stringify([userId, phase, phaseStart]);
+  const pending = refreshing.get(key);
+  if (pending) return pending;
+  const request = (async () => {
+    // Avoid racing an automatic generation already started in this process.
+    await inFlight.get(key)?.catch(() => null);
+    const { data, error } = await supabase.functions.invoke('request-cycle-guidance', {
+      body: { userId, phase, phaseStart, refresh: true },
+    });
+    if (error) throw error;
+    const guidance = parseGuidance(data?.guidance ?? null);
+    if (!guidanceMatchesPhase(guidance, phase, phaseStart) && data?.pending !== true) {
+      throw new Error('Refresh returned no current guidance');
+    }
+    return {
+      guidance: guidanceMatchesPhase(guidance, phase, phaseStart) ? guidance : null,
+      refreshLimited: data?.refreshLimited === true,
+      pending: data?.pending === true,
+    };
+  })().finally(() => { refreshing.delete(key); });
+  refreshing.set(key, request);
+  return request;
+};

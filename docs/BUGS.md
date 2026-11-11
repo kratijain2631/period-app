@@ -51,7 +51,7 @@ Known bugs to fix. This is for **open** bugs; problems we already diagnosed and 
 
 ### Backend hardening (found 2026-11-03)
 
-- [ ] **Legacy `cycle-guidance` batch handler has no in-function caller authorization.** The existing `supabase/functions/cycle-guidance/index.ts` ignores the request and uses a service-role client to generate guidance for every account. Live metadata on 2026-11-03 confirms `verify_jwt=true` and an active `nightly-cycle-guidance` cron. The gateway requires a valid JWT, but source review indicates a normal signed-in caller can still reach the all-users batch because scheduler-only authorization is missing (not exercised, to avoid generating advice for real users). Audit the existing job and add explicit scheduler-only authorization before further use; do not direct the new client to this batch endpoint. The new `request-cycle-guidance` endpoint verifies a user JWT and scopes all database operations to that caller. This is pre-existing; the legacy endpoint was left unchanged to avoid breaking an unverified deployment.
+- [x] **Legacy `cycle-guidance` batch handler lacked caller authorization — FIXED 2026-11-07.** Current main records the `_shared/cronAuth.ts` scheduler-secret check and migration as deployed to staging/production; callers without the secret are rejected. The scheduled job is still active (read-only check 2026-11-11). The manual refresh task integrates this fix; it does not redeploy or remove the batch. Historical guidance/source notes describing the missing authorization predate that fix.
 
 ### Found in testing (2026-08-03, owner)
 

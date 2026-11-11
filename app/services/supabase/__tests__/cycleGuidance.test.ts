@@ -73,3 +73,31 @@ it('does not call the server before a phase is known', async () => {
   await expect(ensureCycleGuidance('user-1', 'unknown', null)).resolves.toBeNull();
   expect(supabase.from).not.toHaveBeenCalled();
 });
+
+it('manual refresh bypasses the cache and coalesces double taps', async () => {
+  const { refreshCycleGuidance } = require('../cycleGuidance');
+  const first = refreshCycleGuidance('user-1', 'luteal', cached.phase_started_at);
+  const second = refreshCycleGuidance('user-1', 'luteal', cached.phase_started_at);
+  expect(first).toBe(second);
+  await expect(first).resolves.toEqual({ guidance: cached, refreshLimited: false, pending: false });
+  expect(supabase.from).not.toHaveBeenCalled();
+  expect(supabase.functions.invoke).toHaveBeenCalledWith('request-cycle-guidance', {
+    body: { userId: 'user-1', phase: 'luteal', phaseStart: cached.phase_started_at, refresh: true },
+  });
+});
+
+it('manual refresh preserves cooldown and pending responses', async () => {
+  const { refreshCycleGuidance } = require('../cycleGuidance');
+  supabase.functions.invoke.mockResolvedValueOnce({ data: { guidance: cached, refreshLimited: true }, error: null });
+  expect((await refreshCycleGuidance('user-1', 'luteal', cached.phase_started_at)).refreshLimited).toBe(true);
+  supabase.functions.invoke.mockResolvedValueOnce({ data: { guidance: null, pending: true }, error: null });
+  expect((await refreshCycleGuidance('user-1', 'luteal', cached.phase_started_at)).pending).toBe(true);
+});
+
+
+it('manual refresh rejects malformed success and can retry after errors', async () => {
+  const { refreshCycleGuidance } = require('../cycleGuidance');
+  supabase.functions.invoke.mockResolvedValueOnce({ data: { guidance: null }, error: null });
+  await expect(refreshCycleGuidance('user-1', 'luteal', cached.phase_started_at)).rejects.toThrow('no current guidance');
+  await expect(refreshCycleGuidance('user-1', 'luteal', cached.phase_started_at)).resolves.toEqual({ guidance: cached, refreshLimited: false, pending: false });
+});

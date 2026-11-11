@@ -8,6 +8,8 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ### Added
 
+- **Manual Phase Guide refresh (local, rollout pending).** The You page can explicitly request new AI advice without deleting current tips. Loading/error/cooldown feedback and account/phase guards are controller-owned; a new caller-scoped refresh RPC shares generation leases and enforces a two-minute cooldown. Existing page-open caching, old RPCs and cron jobs remain compatible. 140 Jest tests, TypeScript/Deno, iOS JS export and embedded PostgreSQL checks pass; staging configuration, deployment and a native build remain pending.
+
 - Added a shared testing guide and instructions for recording code, database, staging, and test-account changes in GitHub.
 
 - **Merged migrations apply themselves (`.github/workflows/database.yml`).** On a merge to `main` that changes `supabase/migrations/`, GitHub Actions pushes to staging, runs `test-accounts:rls` there, then pushes to production. It refuses a database with no migration history, and stops before production if anything fails. `database-setup.yml` does production's one-time history setup, checked against staging's fingerprint. Needs six repository secrets, listed in [DB_PUSH.md](DB_PUSH.md). Nothing runs until they're added.

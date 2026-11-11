@@ -2,7 +2,10 @@
 
 Open items, roughly in priority order, with completed items retained as a decision and delivery record.
 
-- [~] **Manual refresh for Phase Guide** — 🚧 (WIP — Codex, 2026-11-11). Add an explicit Refresh tips action that regenerates advice with caller-scoped cooldown/concurrency protection, preserves visible tips on failure and ignores stale account/phase responses. Existing nightly guidance scheduling remains unchanged.
+- [~] **Manual refresh for Phase Guide** — 🚧 (WIP — Codex, 2026-11-11; implementation and local checks complete, rollout pending). The You page now has an explicit Refresh tips action that bypasses the current advice cache, preserves visible tips on failure, rejects late account/phase responses and enforces a two-minute server cooldown. Existing nightly guidance scheduling remains unchanged (active, read-only check 2026-11-11).
+  - [x] Add the button, loading/error/cooldown feedback, scoped controller, service and handler support.
+  - [x] Add additive refresh-claim migration and regression checks: 140 Jest tests pass, TypeScript/Deno checks and iOS JS export pass, PostgreSQL fixture verifies leases/cooldown/account/phase isolation, and actual-component browser fixture confirms loading/error feedback with tips retained.
+  - [ ] Merge migration through the Database deploy workflow; redeploy `request-cycle-guidance` after the new RPC is available; verify on staging personas and publish a native build. No live migration/function deployment or build was performed for this change. `.env.staging` is missing, so staging/native verification remains pending. See GUIDANCE and TROUBLESHOOTING for the contract and rollout order.
 
 ## 🎯 Phase Guide — implementation/backend complete; finish native rollout
 - [~] **Redesign how the "You" page do's/don'ts (cycle guidance) get generated.** 🚧 (WIP — Codex, 2026-11-03; content/cards complete; SQL + function deployed, 1.0.13 (34) built; submission/device verification pending). Fixes the "No guidance yet" bug ([BUGS.md](BUGS.md)) at the design level, not just by babysitting a cron.

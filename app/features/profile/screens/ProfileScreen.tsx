@@ -18,17 +18,14 @@ import {
 } from 'react-native';
 import { Buffer } from 'buffer';
 import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
 import { selectAlias, selectSession, useSessionStore } from '../../../state/sessionStore';
 import {
   fetchCurrentUserProfile,
   updateCurrentUserProfile,
 } from '../../../services/supabase/users';
-import {
-  ensureCycleGuidance,
-  type CycleGuidanceRow,
-} from '../../../services/supabase/cycleGuidance';
+import { usePhaseGuidance } from '../hooks/usePhaseGuidance';
 import { guidanceMatchesPhase, resolvePhaseGuidance } from '../../../../packages/domain/cycles/guidance';
 import { useCycleSnapshot } from '../../feed/hooks/useCycleSnapshot';
 import { getCycleDay } from '../../../../packages/domain/cycles/models';
@@ -87,14 +84,10 @@ const ProfileScreen = () => {
   const [isAvatarBusy, setAvatarBusy] = useState(false);
   const [avatarError, setAvatarError] = useState<string | null>(null);
   const avatarPulse = useRef(new Animated.Value(0)).current;
-  const [guidanceState, setGuidanceState] = useState<{
-    userId: string; guidance: CycleGuidanceRow | null;
-  } | null>(null);
-  const cycleGuidance = guidanceState?.userId === session?.userId
-    ? guidanceState?.guidance ?? null : null;
-  const [cycleGuidanceStatus, setCycleGuidanceStatus] = useState<
-    'idle' | 'loading' | 'error'
-  >('idle');
+  const {
+    guidance: cycleGuidance, status: cycleGuidanceStatus,
+    message: guidanceMessage, canRefresh: canRefreshGuidance, refresh: refreshGuidance,
+  } = usePhaseGuidance(session?.userId, cyclePhaseKey, cyclePhaseStart);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [accountAction, setAccountAction] = useState<'idle' | 'signingOut' | 'deleting'>('idle');
   const [accountError, setAccountError] = useState<string | null>(null);
@@ -369,30 +362,6 @@ const ProfileScreen = () => {
   useEffect(() => {
     loadProfile();
   }, [loadProfile]);
-
-  useFocusEffect(
-    useCallback(() => {
-      let active = true;
-      if (!session?.userId || cyclePhaseKey === 'unknown') {
-        setGuidanceState(null);
-        setCycleGuidanceStatus('idle');
-        return;
-      }
-      const userId = session.userId;
-      setCycleGuidanceStatus('loading');
-      ensureCycleGuidance(userId, cyclePhaseKey, cyclePhaseStart)
-        .then((guidance) => {
-          if (!active) return;
-          setGuidanceState({ userId, guidance });
-          setCycleGuidanceStatus('idle');
-        })
-        .catch((error) => {
-          console.warn('[profile] Failed to load cycle guidance', error);
-          if (active) setCycleGuidanceStatus('error');
-        });
-      return () => { active = false; };
-    }, [session?.userId, cyclePhaseKey, cyclePhaseStart]),
-  );
 
   // Your @handle — used for display instead of the email.
   const aliasHandle = useMemo(() => {
@@ -670,6 +639,10 @@ const ProfileScreen = () => {
           dos={phaseDos}
           donts={phaseDonts}
           personalized={currentGuidance}
+          onRefresh={refreshGuidance}
+          refreshing={cycleGuidanceStatus === 'loading'}
+          refreshDisabled={!canRefreshGuidance}
+          message={guidanceMessage}
           phaseLabel={cyclePhaseKey === 'unknown' ? null : formatPhaseLabel(cyclePhaseKey)}
         />
 

@@ -104,3 +104,18 @@ it('uses only sanitized friend phases and names, excluding self and unknown IDs'
   expect(generate).toHaveBeenCalledWith('luteal', [{ id: 'friend-1', name: 'Maya', phase: 'luteal' }], 'test-key', 'test-model');
   expect(client.from).not.toHaveBeenCalled();
 });
+
+it('uses the separate caller-scoped refresh claim and does not spend during cooldown', async () => {
+  client.rpc.mockImplementation(async (name: string) => ({
+    data: name === 'claim_cycle_guidance_refresh' ? null : [], error: null,
+  }));
+  const response = await handler(request({ ...input, refresh: true }));
+  expect(client.rpc).toHaveBeenCalledWith('claim_cycle_guidance_refresh', { p_phase: input.phase, p_phase_start: input.phaseStart });
+  expect((await response.json()).refreshLimited).toBe(true);
+  expect(generate).not.toHaveBeenCalled();
+});
+
+it('rejects a non-boolean refresh flag before claiming', async () => {
+  expect((await handler(request({ ...input, refresh: 'true' }))).status).toBe(400);
+  expect(client.rpc).not.toHaveBeenCalled();
+});

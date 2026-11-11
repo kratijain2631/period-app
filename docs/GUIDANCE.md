@@ -28,3 +28,16 @@ The social/planning ideas are product suggestions. These sources do not establis
 Advice is visible on full-width cards with short headings, readable detail and no line limit. Green plus and terracotta minus marks distinguish dos and don'ts without relying only on color. There is no flip interaction or hidden advice. Older single-sentence cached tips are shown once, without repeating a made-up heading.
 
 The native implementation lives in `app/features/profile/components/PhaseGuide.tsx`; fallback content and string parsing live in `packages/domain/cycles/guidance.ts`. Deployment and device verification steps are in [TROUBLESHOOTING.md](TROUBLESHOOTING.md#on-demand-cycle-guidance-backend-deployed-2026-11-03-device-verification-pending).
+
+
+## Explicit refresh (implemented locally 2026-11-11; not deployed)
+
+Normal page opens continue to reuse valid advice. **Refresh tips** requests new AI suggestions even when a current cache exists. It does not delete or blank the old tips: a failed, unavailable or rate-limited request leaves the guide useful. A two-minute account-scoped cooldown applies after successful generation and failed/in-flight claims. The button disables while loading or when signed out/no phase is known; feedback explains loading, failure, cooldown or a request already being prepared.
+
+The presenter (`PhaseGuide.tsx`) receives only tip arrays, context and the optional `onRefresh`, `refreshing`, `refreshDisabled` and `message` props. It does no fetching. `usePhaseGuidance` owns focus/account/phase lifetime, double-tap protection and result/message state; the service coalesces explicit requests and the server remains the authority for leases/cooldown. A response after leaving the page or changing account/phase cannot replace current advice. The fallback and editorial policy above are unchanged.
+
+The additive `claim_cycle_guidance_refresh(text,text)` RPC bypasses a valid cache but checks the current server snapshot, shares `cycle_guidance_requests` with normal generation and rate-limits by saved `generated_at`. Existing claim/complete RPC signatures remain unchanged. The edge handler accepts an optional boolean `refresh`; clients without it retain the old behavior. `refreshLimited` explains a denied explicit claim without spending on AI.
+
+**Scheduling:** the legacy `nightly-cycle-guidance` job is still active (read-only production check 2026-11-11); it was not removed by this change. Current main includes the scheduler-secret authorization fix from 2026-11-07. New clients need no cron for page-open or manual generation; the separate daily notification job is unaffected. Retiring the legacy job is a separate rollout decision for older clients.
+
+**Delivery:** merge the migration through [DB_PUSH.md](DB_PUSH.md), deploy the updated handler, verify on staging personas, then publish a native build. No live tests, migration application, function deployment or build were performed in this refresh task. `.env.staging` is absent locally. Local checks use mocks and synthetic PostgreSQL/browser fixtures only; native VoiceOver/Dynamic Type and real authenticated staging behavior remain unverified.
