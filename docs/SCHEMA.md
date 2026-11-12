@@ -53,6 +53,8 @@ The full schema — tables, functions, RLS policies, indexes — is defined in `
 
 **Scheduled jobs (pg_cron):** `daily-phase-change-reminder` (15:00 UTC → `phase-change-reminder`) and `nightly-cycle-guidance` (03:00 UTC → `cycle-guidance`). Both send the Vault `cron_secret` in an `x-cron-secret` header, and the functions reject calls without it. The `nightly-friend-recommendations` job is deliberately off (`20261107014000`). See [CYCLE_SYNC.md](CYCLE_SYNC.md).
 
+**Pending retirement, not applied (2026-11-11):** `20261111211000_retire-nightly-cycle-guidance.sql` idempotently unschedules only the named nightly guidance job, without dropping data, RPCs or the edge function. Keep this migration in draft until the on-demand-capable client is distributed and testers have upgraded; Apple agreement errors currently block the replacement submissions. The live job remains active. `daily-phase-change-reminder` is unaffected.
+
 ## How it works
 
 1. **Auth:** Sign in with Apple → Supabase Auth → the `handle_new_auth_user` trigger creates the `users` profile row.

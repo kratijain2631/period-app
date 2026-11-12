@@ -76,6 +76,8 @@ When a `background` sync (HealthKit delivery) detects an actual phase change, it
 
 **Who can run the scheduled functions (since 2026-11-07).** `phase-change-reminder`, `cycle-guidance` and `friend-recommendations` reject any caller without the `x-cron-secret` header. The cron jobs read the secret from Vault (`cron_secret`) and send it; it's never stored anywhere else ([`_shared/cronAuth.ts`](../supabase/functions/_shared/cronAuth.ts), `20261107013000_scheduled-function-secret.sql`). The jobs: `daily-phase-change-reminder` at 15:00 UTC and `nightly-cycle-guidance` at 03:00 UTC; `nightly-friend-recommendations` is deliberately off.
 
+**Guidance schedule retirement is pending, not live.** The owner approved removing the legacy nightly guidance job once no longer needed (2026-11-11). A draft migration removes only `nightly-cycle-guidance`; it must not merge until testers have an on-demand-capable client (minimum 1.0.13/build 34). The 1.0.13/1.0.14 submissions currently report an Apple agreement error, so availability/adoption are not confirmed. Keep the nightly job active meanwhile. The daily notification job in (c) is independent and remains enabled. See [TROUBLESHOOTING.md](TROUBLESHOOTING.md#apple-agreement-error-blocks-guidance-retirement-2026-11-11).
+
 ### (d) In-app notifications (a separate system) — friends' activity
 The bell / [`NotificationsScreen`](../app/features/notifications/screens/NotificationsScreen.tsx) with a new/read distinction (`notifications.read_at`). Populated by:
 - **DB triggers** ([`20260730130000`](../supabase/migrations/20260730130000_notification-triggers-engagement.sql)) that insert a `notifications` row when someone reacts to your post/event or boops you.

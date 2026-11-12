@@ -96,3 +96,10 @@ The step-by-step procedure, including preflight checks, signing in safely and re
 ## Recording changes and results
 
 When a persona, fixture, or setup step changes, update the [persona runbook](TEST_ACCOUNTS.md) and any affected steps above. Add a dated entry to [RELEASE_NOTES.md](RELEASE_NOTES.md) under `Unreleased` for staging or test-account changes, including changes made in a dashboard. Record the environment, build or commit, persona aliases, checks run, observed outcome, and pending checks. Link unresolved failures in [BUGS.md](BUGS.md) and follow-up work in [TODO.md](TODO.md). Use secret names when documenting access setup.
+
+
+## Nightly guidance retirement gate
+
+Before merging the pending `20261111211000_retire-nightly-cycle-guidance.sql`, confirm an on-demand-capable build (minimum 1.0.13/build 34) is available to testers and verify its page-open generation/cache behavior on staging. Confirm active testers have upgraded. The 2026-11-11 EAS check found Apple agreement errors on builds 34/35, so that gate is still open. This prerequisite is separate from the manual Refresh tips feature's rollout.
+
+The local `scripts/db/test-guidance-schedule-retirement.mjs` fixture runs the migration with in-memory PostgreSQL and a stubbed pg_cron API. It checks narrow targeting, preserved reminder/unrelated jobs and cached advice, and safe reruns; it never connects to either backend. After the normal deployment workflow succeeds, read scheduled-job metadata on both projects to confirm only nightly guidance is gone. Never invoke a production job or seed test users there to verify retirement.
