@@ -68,7 +68,9 @@ Larger asks that need their own design + PRs (not part of the composer/reaction 
 - [x] **Additive-only migrations + keep `tsc` green** — codified as hard rules in [INSTRUCTIONS.md](INSTRUCTIONS.md) §12 (2026-08-02). Not a task, an ongoing convention.
 
 ## Dev workflow (post-beta, optional)
-- [ ] **After the friend-rule migration merges: redeploy `cycle-guidance` to staging, then production, and recheck two things on staging.** The function's friend lookup now uses accepted requests, and the Database deploy workflow doesn't deploy functions. On staging, check that a friend with missing `friend_sharing` rows still shows correctly, and that a non-friend can't react to a cycle event.
+- [x] Verified the friend-rule migration on staging and production. The [deployment run](https://github.com/kratijain2631/period-app/actions/runs/43074359211) passed all 75 staging access checks, including rejection of a non-friend's cycle-event reaction, before pushing to production.
+- [ ] Redeploy `cycle-guidance` to staging, verify its accepted-friend lookup there, then deploy to production. The database workflow does not deploy functions.
+- [ ] On the staging simulator, verify that Circle still displays an accepted friend with missing `friend_sharing` rows. The automated suite exercised disabled sharing flags.
 - [x] **Adopt `supabase db push` instead of hand-pasting SQL (Option B) — DONE 2026-11-11.** Owner asked on 2026-11-06, and on 2026-11-08 asked for no manual steps at all. Staging has migration history since 2026-11-08 and production since 2026-11-11. The six secrets are set, the one-time production setup ran, and the first automatic run applied `20261108180000` to production. Details in [DB_PUSH.md](DB_PUSH.md).
 - [ ] **Make the Database deploy, test and Docs checks required on `main`.** Needs a repo admin (Krati) under Settings → Branches. Optionally add required reviewers to the `production` environment so production waits for a click.
 - [ ] **Deploy edge functions from CI too.** The Database deploy workflow applies migrations only; functions are still deployed by hand, staging first.

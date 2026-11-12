@@ -29,7 +29,7 @@ The STAGING · FAKE HEALTH pill alone doesn't prove you're on staging. A success
 |---|---|---|
 | Unit tests | `npm test` | Every change. CI runs it on every push to `main`. |
 | Types | `npx tsc --noEmit` | Every change. EAS and Metro don't type-check, so this is the only static net. |
-| Access rules on staging | `npm run test-accounts:rls` | After any change to RLS, grants or database functions. Needs `.env.staging`. The Database deploy workflow also runs it on staging before every production push (66 checks as of 2026-11-11). |
+| Access rules on staging | `npm run test-accounts:rls` | After any change to RLS, grants or database functions. Needs `.env.staging`. The Database deploy workflow also runs it on staging before every production push. Use the staging job log for the count and result of a specific run. |
 
 A cloud agent without a Mac can run these but not the simulator. Say so in the report rather than claiming a staging test.
 
