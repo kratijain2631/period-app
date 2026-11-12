@@ -91,6 +91,18 @@ const config: ExpoConfig = {
   },
   // Android config is omitted until there's an Android release (see ANDROID_PACKAGE).
   ...(ANDROID_PACKAGE ? { android: { package: ANDROID_PACKAGE } } : {}),
+  // Over-the-air JS updates (EAS Update). An update only reaches builds with the
+  // same runtime version, which here is the app version: bump `version` for any
+  // native change so an update can never land on a build missing its native code.
+  // How to publish: docs/INSTRUCTIONS.md → "Over-the-air updates".
+  runtimeVersion: { policy: 'appVersion' },
+  updates: {
+    url: `https://u.expo.dev/${EAS_PROJECT_ID}`,
+    // Check on every cold start, keep launching straight away with what's on the
+    // phone, and use a downloaded update from the next launch.
+    checkAutomatically: 'ON_LOAD',
+    fallbackToCacheTimeout: 0,
+  },
   extra: {
     eas: {
       projectId: EAS_PROJECT_ID,
