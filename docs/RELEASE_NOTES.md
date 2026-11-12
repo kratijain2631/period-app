@@ -6,6 +6,10 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## Unreleased
 
+### Infrastructure & release setup
+
+- **Offline alias fix uploaded; owner checklist reconciled (2026-11-12).** Build 1.0.16 (37) and Apple submission `35b18e69-b469-498b-bf5a-f8a0797d2f7a` both report `FINISHED`, with no upload error. BUGS/TODO and relevant runbooks now distinguish delivered fix from pending phone retest. The older build-36 refresh step and nightly retirement are done; contacts/extended phone checks and DSA UI confirmation remain. Legacy `cycle-guidance` redeploy is superseded by retirement, not falsely marked deployed; the missing-sharing-row Circle UI check remains engineering work.
+
 ### Added
 
 - **Security rules lint (`scripts/security/lint.js`, `supabase/security/allowlist.json`).** `npm run test:security`, and so the required Security checks, now also check the database catalog. Every table must have RLS on, and no function can be run without a login. Functions logged-in users can run must check who is calling. SECURITY DEFINER functions must set `search_path`. Every policy must check the caller, and UPDATE policies must pin ownership and consent columns. Exceptions live in the allowlist with a reason, and entries that stop matching fail the lint. It found one real gap, fixed by `20261112190000_new-user-trigger-search-path.sql`: the sign-up trigger didn't pin its `search_path`. Testing (2026-11-12, local Docker): passes on the repo; planted holes each fail with the object named, including a recipient able to rewrite a request's sender, a table with RLS off and a no-login function. `scripts/db/start-local.sh` now retries starting Supabase once, because a GitHub runner failed with "address already in use" on the database port before any check ran.
@@ -13,20 +17,20 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 ### Infrastructure & release setup
 
 - **Nightly guidance retired, verified on both projects (2026-11-12).** PR #83 merged at `0765324f`. [Database deploy run 43274996960](https://github.com/kratijain2631/period-app/actions/runs/43274996960) applied `20261111211000` to staging, passed all 75 staging access checks, then applied production. Post-deploy read-only metadata confirms nightly guidance absent and `daily-phase-change-reminder` active at 15:00 UTC in both projects. Cached tips, all user tables, functions and RPCs remain. No new production test users or AI calls were made.
-- **Offline alias build registered and compiled.** 1.0.16 (37), [EAS build](https://expo.dev/accounts/kratijain26/projects/period-app/builds/41c1a64e-ac8a-480f-a72a-5ff377edce5e), source/tag `781bf582` / `v1.0.16-build37`, is `FINISHED`. [Automatic Apple upload](https://expo.dev/accounts/kratijain26/projects/period-app/submissions/35b18e69-b469-498b-bf5a-f8a0797d2f7a) is queued; upload completion and the physical cold-start retest remain pending.
+- **Offline alias build registered and compiled.** 1.0.16 (37), [EAS build](https://expo.dev/accounts/kratijain26/projects/period-app/builds/41c1a64e-ac8a-480f-a72a-5ff377edce5e), source/tag `781bf582` / `v1.0.16-build37`, is `FINISHED`. [Automatic Apple upload](https://expo.dev/accounts/kratijain26/projects/period-app/submissions/35b18e69-b469-498b-bf5a-f8a0797d2f7a) finished successfully (rechecked 2026-11-12); TestFlight install visibility and physical cold-start retest remain unverified.
 
 ### Changed
 
 - **⚠️ BREAKING / not backward-compatible: retire nightly guidance generation (applied 2026-11-12).** Builds <=1.0.12 no longer receive newly precomputed advice; saved tips remain readable. Fresh guidance requires an on-demand-capable client (minimum 1.0.13/build 34; validated 1.0.15/build 36). Owner confirms all important users updated and refresh works, and accepts old-client loss of fresh advice. PR #83 removes only `nightly-cycle-guidance`; daily reminders, cached advice, tables, functions and RPCs stay. Applied through Database deploy run 43274996960; both projects’ metadata verified.
 - **Initial retirement hold resolved.** Builds 34/35 failed Apple upload, so the draft initially stayed unapplied. Build 36 upload/adoption and owner refresh verification now satisfy the rollout gate; DSA status remains a separate future EU launch task.
 
-## 2026-11-12 — TestFlight build 1.0.16 (build 37) · upload pending
+## 2026-11-12 — TestFlight build 1.0.16 (build 37)
 
-Offline alias recovery release prepared. 154 tests, TypeScript, iOS JS export and isolated staging account-isolation checks pass. Native compilation finished; Apple upload and physical cold-start retest remain pending; this fix is not in 1.0.15. Nightly-job retirement is a separate backend rollout in PR #83.
+Offline alias recovery release prepared. 154 tests, TypeScript, iOS JS export and isolated staging account-isolation checks pass. Native compilation and Apple upload finished; physical cold-start retest remains pending; this fix is not in 1.0.15. Nightly-job retirement is a separate backend rollout in PR #83.
 
 ### Fixed
 
-- **Offline profile failures no longer restart alias setup (source fix, native delivery pending).** Preserve the signed-in account’s cached alias when offline; without a cache, show profile retry and retry automatically on reconnect. Wait for auth restoration, clear profile state across accounts and reject late account-mismatched lookups/alias saves. Own-alias renaming remains allowed; no database permission or identifier changes.
+- **Offline profile failures no longer restart alias setup (included in 1.0.16 (37), uploaded; physical retest pending).** Preserve the signed-in account’s cached alias when offline; without a cache, show profile retry and retry automatically on reconnect. Wait for auth restoration, clear profile state across accounts and reject late account-mismatched lookups/alias saves. Own-alias renaming remains allowed; no database permission or identifier changes.
 
 ### Verification
 
@@ -34,7 +38,7 @@ Offline alias recovery release prepared. 154 tests, TypeScript, iOS JS export an
 
 ### Known / not yet done
 
-- **Offline alias regression discovered (2026-11-12).** Owner confirmed Refresh tips success and correct advice retention on airplane-mode refresh in 1.0.15 (36), but offline cold start incorrectly asks for an alias. The source fix is compiled in 1.0.16 (37); Apple upload and physical cold-start retest are pending. Owner reports all important users updated to 1.0.15; legacy-client isolation checks passed and nightly retirement subsequently completed.
+- **Offline alias regression discovered (2026-11-12).** Owner confirmed Refresh tips success and correct advice retention on airplane-mode refresh in 1.0.15 (36), but offline cold start incorrectly asks for an alias. The source fix is compiled in 1.0.16 (37); Apple upload succeeded; physical cold-start retest is pending. Owner reports all important users updated to 1.0.15; legacy-client isolation checks passed and nightly retirement subsequently completed.
 
 ### Infrastructure & release setup
 

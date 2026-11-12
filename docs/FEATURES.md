@@ -223,3 +223,5 @@ Early planning framed the roadmap as levels — largely superseded by the plan a
 - **Level 2:** other auth methods; in-app tracking (vs. read-only).
 
 _(Add new ideas under the theme they fit, and pull them into "The plan" when prioritized.)_
+
+**Offline onboarding fix (2026-11-12):** built and uploaded in 1.0.16 (37), preserving the existing account’s cached alias on profile-fetch failure and offering retry when no profile is cached. Automated/staging checks pass; physical cold-start retest remains open in TODO.
