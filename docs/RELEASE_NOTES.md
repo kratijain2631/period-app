@@ -8,7 +8,9 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ### Added
 
-- **Nightly guidance retirement planned; not applied.** Owner requested removing the legacy job once on-demand guidance replaces it. Retirement is blocked by Apple agreement errors on the replacement-build submissions; the live guidance and daily reminder schedules remain unchanged.
+- **⚠️ BREAKING / not backward-compatible if applied before client rollout:** the pending nightly-guidance retirement migration stops automatic fresh advice for builds ≤1.0.12. Cached tips remain, but a validated on-demand-capable client (minimum 1.0.13/build 34) must be delivered and all active testers upgraded before merging. The migration removes only `nightly-cycle-guidance`; daily phase reminders, caches, tables, functions and RPCs remain.
+- **Apple submissions are errored, not still queued (verified 2026-11-11).** EAS submissions for 1.0.13/build 34 (`a644dafb-…`) and 1.0.14/build 35 (`dbea0ad5-…`) report `EAS_ASC_REQUIRED_AGREEMENTS_MISSING_OR_EXPIRED`. The Account Holder must accept the required App Store Connect/Developer agreements before retrying; TestFlight availability is not established by these failed submissions.
+- **Nightly guidance retirement prepared; not applied.** Owner requested removing the legacy job once on-demand guidance replaces it. Retirement is blocked by Apple agreement errors on the replacement-build submissions; the live guidance and daily reminder schedules remain unchanged.
 
 - **PRs must update the release notes (`.github/workflows/docs-check.yml`, `scripts/ci/check-docs.sh`).** A PR that changes anything other than docs fails the Docs check unless it adds a line to this file; the `no-release-notes` label skips it. It also warns when a migration doesn't touch `SCHEMA.md` or test tooling doesn't touch `TESTING.md`. A new PR template lists the docs to check, including changes made outside git.
 - Added a shared testing guide and instructions for recording code, database, staging, and test-account changes in GitHub.

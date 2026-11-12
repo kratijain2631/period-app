@@ -3,6 +3,9 @@
 Open items, roughly in priority order. Done work isn't listed here.
 
 - [~] **Retire nightly cycle-guidance after the on-demand client is available.** 🚧 (WIP — Codex, 2026-11-11). Owner authorizes retirement when no longer needed. Prepare a narrow migration; do not apply/merge it until Apple agreements are accepted, the replacement build is delivered and testers have upgraded. Build 1.0.13/34 and 1.0.14/35 submissions currently fail with `EAS_ASC_REQUIRED_AGREEMENTS_MISSING_OR_EXPIRED`. Daily phase reminders stay enabled.
+  - [x] Prepare an idempotent migration that targets only `nightly-cycle-guidance`, with saved tips/RPCs and other jobs preserved; local SQL fixture and 76 Jest tests pass.
+  - [ ] Account Holder accepts the required Apple agreements, then retry the existing build submission and confirm TestFlight availability.
+  - [ ] Verify the on-demand client with testers and confirm nobody depends on the legacy generator; then merge the retirement migration through the Database deploy workflow and verify both projects. Live schedule is unchanged.
 
 ## 🎯 Next up — make cycle-guidance on-demand + always-on fallback (retire the cron as the only path)
 - [ ] **Redesign how the "You" page do's/don'ts (cycle guidance) get generated.** Fixes the "No guidance yet" bug ([BUGS.md](BUGS.md)) at the design level, not just by babysitting a cron.

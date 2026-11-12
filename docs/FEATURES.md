@@ -135,6 +135,7 @@ First-run flow is make-or-break for a social health app:
 > *(Original deferred note kept for history: building our own model was meant to be "Later" — but it's now the actual approach, since Apple gives us no predictions to lean on.)*
 
 - **Phase-based recommendations & reminders** — what to do today based on your phase (nutrition, exercise, skincare, productivity, emotional support). Not just educate — *facilitate* a cycle-based lifestyle.
+  - [~] **Retire nightly generation after on-demand rollout** (2026-11-11): narrow migration prepared and locally verified; live schedule unchanged. Apple agreement errors prevent confirming replacement-build delivery. Upgrade all active testers to a validated on-demand client before applying; keep daily phase notifications. See TODO/TROUBLESHOOTING.
 - **In-app logging** — mood, alcohol, diet, exercise, products used, habits, pain, flow. Pattern-match habits/products against outcomes (cycle length, variability, pain) and share aggregate insights across the community.
 - **Phase as identity** — optionally display your current phase as a status / bio so friends know.
 - **Calendar app sync** *(later)* — reflect cycle phases into a personal calendar.
