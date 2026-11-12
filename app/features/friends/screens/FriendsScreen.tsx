@@ -1,4 +1,3 @@
-import ContactDetails from '../../profile/screens/ContactDetails';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated,
@@ -57,7 +56,6 @@ const palette = {
 
 const FriendsScreen = () => {
   const navigation = useNavigation();
-  const [showContactDetails, setShowContactDetails] = useState(false);
   const session = useSessionStore(selectSession);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<UserSearchResult[]>([]);
@@ -681,10 +679,6 @@ const FriendsScreen = () => {
             </View>
           ) : null}
 
-          <TouchableOpacity onPress={() => setShowContactDetails(value => !value)}>
-            <Text style={styles.discoverabilityTitle}>{showContactDetails ? 'Hide contact details' : 'Manage contact details'}</Text>
-          </TouchableOpacity>
-          {showContactDetails && session ? <ContactDetails key={session.userId} userId={session.userId} /> : null}
           <View style={styles.discoverabilityRow}>
             <View style={styles.discoverabilityCopy}>
               <Text style={styles.discoverabilityTitle}>Let contacts find me</Text>
