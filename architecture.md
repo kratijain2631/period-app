@@ -61,7 +61,8 @@ supabase/
 │   ├── delete-account/
 │   ├── friend-recommendations/ # Not scheduled
 │   ├── notifications-handler/  # Not deployed
-│   └── phase-change-reminder/  # Daily reminder push (cron)
+│   ├── phase-change-reminder/  # Daily reminder push (cron)
+│   └── request-cycle-guidance/ # Authenticated on-demand and manual AI guidance
 └── tests/                # RLS policy tests
 
 overall/                  # SSOT: 2025-11-11-cycle-companion-ssot.md

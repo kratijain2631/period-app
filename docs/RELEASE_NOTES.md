@@ -6,11 +6,48 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## Unreleased
 
+### Changed
+
+- **⚠️ BREAKING / not backward-compatible: retire nightly guidance generation (deployment pending).** Builds <=1.0.12 will stop receiving newly precomputed advice; saved tips remain readable. Fresh guidance requires an on-demand-capable client (minimum 1.0.13/build 34; validated 1.0.15/build 36). Owner confirms all important users updated and refresh works, and accepts old-client loss of fresh advice. PR #83 removes only `nightly-cycle-guidance`; daily reminders, cached advice, tables, functions and RPCs stay. Apply only through Database deploy, then verify both projects’ job metadata.
+- **Initial retirement hold resolved.** Builds 34/35 failed Apple upload, so the draft initially stayed unapplied. Build 36 upload/adoption and owner refresh verification now satisfy the rollout gate; DSA status remains a separate future EU launch task.
+
+### Fixed
+
+- **Offline profile failures no longer restart alias setup (source fix, native delivery pending).** Preserve the signed-in account’s cached alias when offline; without a cache, show profile retry and retry automatically on reconnect. Wait for auth restoration, clear profile state across accounts and reject late account-mismatched lookups/alias saves. Own-alias renaming remains allowed; no database permission or identifier changes.
+
+### Verification
+
+- **Owner 1.0.15 results and staging tests (2026-11-12).** All important users are reported updated; Refresh tips works and in-session airplane-mode refresh retains tips. Cold-start offline revealed the alias bug above. 154 Jest tests and TypeScript pass. Two isolated staging accounts verified own rename, duplicate alias denial, cross-account profile/snapshot/advice isolation and the exact 1.0.12 guidance read; both accounts/data removed, no AI calls or shared-persona resets. No simulator runtime is installed; native retest remains pending.
+
+### Known / not yet done
+
+- **Offline alias regression claimed (2026-11-12).** Owner confirmed Refresh tips success and correct advice retention on airplane-mode refresh in 1.0.15 (36), but offline cold start incorrectly asks for an alias. Investigating profile-load failure handling and account isolation; no fix shipped yet. Owner reports all important users updated to 1.0.15; legacy-client compatibility and nightly retirement are being reviewed.
+
+### Infrastructure & release setup
+
+- **Contacts rollout verification (2026-11-12).** All 29 contacts service/controller tests passed against code matching build 36. Physical permission and two-account toggle checks remain open. See the [device checklist](CONTACT_DISCOVERY_ROLLOUT.md).
+
+- **Guidance status audit and phone test steps (2026-11-12).** Corrected stale build-34 submission/new-build-pending wording across TODO, FEATURES, BUGS, GUIDANCE, CYCLE_SYNC and TROUBLESHOOTING. Build 36 includes on-demand advice and Refresh tips; compilation/upload succeeded, but tester group availability/adoption and native checks remain unverified. Browser access timed out when attempting to inspect availability. Closed the stale nightly-500 checkbox using the already recorded successful 2026-11-08 run; no backend change.
+
+- **Future EU launch gate recorded (2026-11-12).** Owner confirms TestFlight-only distribution for now. TODO requires reassessing DSA trader status, updating App Store Connect and completing applicable contact verification before any future EU App Store launch. Current declaration completion is not assumed.
+- **Refresh build/upload succeeded (rechecked 2026-11-12).** Build 1.0.15 (36), `70771a46-d436-4d5a-8eb2-98bfbf5625c2`, and submission `c777ddf1-bf03-4475-ba3a-f36476c233e5` both report `FINISHED`; submission has no error. Tester availability/adoption and native checks remain unverified.
+
+- **Refresh release registered on EAS (2026-11-11).** Version 1.0.15 (36), [EAS build](https://expo.dev/accounts/kratijain26/projects/period-app/builds/70771a46-d436-4d5a-8eb2-98bfbf5625c2), was initially `IN_QUEUE` from tagged source `b3b3b493` / `v1.0.15-build36`; automatic [submission](https://expo.dev/accounts/kratijain26/projects/period-app/submissions/c777ddf1-bf03-4475-ba3a-f36476c233e5) was scheduled after compilation. Both are now `FINISHED` (rechecked 2026-11-12); tester availability/adoption and native checks remain open.
+
+## 2026-11-11 — TestFlight build 1.0.15 (build 36)
+
+Refresh tips native build and Apple upload both finished (rechecked 2026-11-12), excluding the concurrent Home redesign. [EAS build](https://expo.dev/accounts/kratijain26/projects/period-app/builds/70771a46-d436-4d5a-8eb2-98bfbf5625c2); automatic [submission](https://expo.dev/accounts/kratijain26/projects/period-app/submissions/c777ddf1-bf03-4475-ba3a-f36476c233e5) finished. Tag `v1.0.15-build36`, source `b3b3b493`. Tester availability/adoption and native checks remain unverified. The current DSA declaration’s completion is not confirmed.
+
 ### Added
 
-- **⚠️ BREAKING / not backward-compatible if applied before client rollout:** the pending nightly-guidance retirement migration stops automatic fresh advice for builds ≤1.0.12. Cached tips remain, but a validated on-demand-capable client (minimum 1.0.13/build 34) must be delivered and all active testers upgraded before merging. The migration removes only `nightly-cycle-guidance`; daily phase reminders, caches, tables, functions and RPCs remain.
-- **Apple submissions are errored, not still queued (verified 2026-11-11).** EAS submissions for 1.0.13/build 34 (`a644dafb-…`) and 1.0.14/build 35 (`dbea0ad5-…`) report `EAS_ASC_REQUIRED_AGREEMENTS_MISSING_OR_EXPIRED`. The Account Holder must accept the required App Store Connect/Developer agreements before retrying; TestFlight availability is not established by these failed submissions.
-- **Nightly guidance retirement prepared; not applied.** Owner requested removing the legacy job once on-demand guidance replaces it. Retirement is blocked by Apple agreement errors on the replacement-build submissions; the live guidance and daily reminder schedules remain unchanged.
+- **Security checks on every database pull request (`.github/workflows/security.yml`).** Pull requests that touch `supabase/`, the database scripts (`scripts/db/`), the test-account scripts or persona data, and pushes to `main`, now build a throwaway Supabase from the repo's migrations on the runner, seed the personas and run all 75 access-rule checks. It uses no secrets and never touches staging or production. Other pull requests get a quick pass, so it can be made a required check. Run it locally with `npm run test:security` (needs Docker). The test-account scripts accept `TEST_ACCOUNTS_TARGET=local`, which only allows a localhost URL. Testing (2026-11-12, local Docker, same steps as the workflow): `main` passes 75 of 75 in about 40 seconds with cached images; a planted migration reopening posts fails with 3 named checks and exit code 1. Not yet run on GitHub.
+- **Guidance release migration history reconciled.** Removed the unmerged duplicate `20261103120000` migration from this branch because main already captures those live objects in `20261106190000`; the refresh RPC is the only new database change. No recorded migration or database object is removed.
+
+- **Builds 34/35 submission status corrected (2026-11-11).** Both uploads failed with the required-Apple-agreement error; they are no longer merely queued. Resolve agreements, resubmit and verify tester adoption before merging the separate nightly-guidance retirement draft. The live job remains active.
+
+- **Refresh migration version kept unique.** Moved the pending manual-refresh migration to `20261111210000` after main added the `20261111180000` friend-rule migration; the migration is now applied to staging and production through the Database deploy workflow.
+
+- **Manual Phase Guide refresh (backend deployed, native rollout pending).** The You page can explicitly request new AI advice without deleting current tips. Loading/error/cooldown feedback and account/phase guards are controller-owned; a new caller-scoped refresh RPC shares generation leases and enforces a two-minute cooldown. Existing page-open caching, old RPCs and cron jobs remain compatible. 145 Jest tests, TypeScript/Deno, iOS JS export and embedded PostgreSQL checks pass. Migration and handler are deployed; native delivery and phone checks remain pending.
 
 - **PRs must update the release notes (`.github/workflows/docs-check.yml`, `scripts/ci/check-docs.sh`).** A PR that changes anything other than docs fails the Docs check unless it adds a line to this file; the `no-release-notes` label skips it. It also warns when a migration doesn't touch `SCHEMA.md` or test tooling doesn't touch `TESTING.md`. A new PR template lists the docs to check, including changes made outside git.
 - Added a shared testing guide and instructions for recording code, database, staging, and test-account changes in GitHub.
@@ -45,6 +82,8 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ### Infrastructure & release setup
 
+- **Manual refresh deployed (2026-11-11).** [Database deploy run 43154655774](https://github.com/kratijain2631/period-app/actions/runs/43154655774) applied `20261111210000_manual-guidance-refresh.sql` to staging, passed all 75 staging access checks, then applied it to production on 2026-11-11. The updated authenticated handler reached staging, passed isolated-account API checks (cache, refresh claim/save, duplicate suppression, cooldown and access denial), then reached production (ACTIVE version 3). Synthetic staging data was removed; no paid AI call or existing persona reset occurred. Native checks remain open.
+- **Apple upload retry still blocked.** Build 35 submission `70f04e68-47e6-476c-838e-5d3e46aa6074` failed with the same required-agreement error after the owner reported accepting an agreement. Another pending item is the DSA declaration; owner assessment remains required. Nightly guidance retirement stays a draft until new-client delivery/adoption.
 - **Staging Supabase project created (2026-11-03/04).** `period-app-staging` (`rntqwmptuavqnbjovnae`) on the free plan in the owner's Supabase org; a spare project in that org was paused to free the slot. Its schema was built from the repo's migrations plus a one-off catch-up script for objects production had that no migration did, and it matched production. Vault secrets set, email sign-in on, five edge functions deployed like production but without `OPENAI_API_KEY`. `notifications-handler` (not on production either) and `request-cycle-guidance` (production only) weren't deployed. Seeded with the six personas. `.env.staging` is local to the owner's Mac.
 - **Production schema drift found (2026-11-04).** Production had `cycle_guidance_requests`, `cycle_guidance.phase_started_at`, `claim_cycle_guidance` and `complete_cycle_guidance` with no migration, and no friend-recommendations cron job. Captured in `20261106190000_capture-hand-applied-guidance.sql` and `20261107014000_unschedule-friend-recommendations.sql`.
 - **Privacy and access fixes applied to staging and production by hand (2026-11-04 to 2026-11-08).** Before the Database deploy workflow existed, the migrations listed under Fixed went to staging first, then were pasted into production and verified on both. The dates are on each line. The scheduled edge functions were redeployed to both with the cron secret check on 2026-11-07.
@@ -52,6 +91,47 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 - **Production switched to migration tracking (2026-11-11).** The one-time setup workflow marked 39 migrations as applied after production's fingerprint matched staging's (except function access). The first Database deploy run then applied `20261108180000_no-login-function-access.sql` to production; staging had nothing to apply and passed all 66 access checks. Three earlier setup attempts failed and changed nothing: the direct host was unreachable, the history check broke on a database without history (fixed in #77), and the staging secret was malformed (#78 now names a bad secret). From now on, merging a migration is the only way to change either database.
 - **The `production` GitHub Environment** was created by the first run and has no required reviewers. Add some under Settings → Environments if production should wait for a click.
 - **Edge functions still deploy by hand.** The Database deploy workflow only applies migrations.
+
+## 2026-11-03 — TestFlight build 1.0.14 (build 35)
+
+**Native build finished; Apple submission failed.** [EAS build](https://expo.dev/accounts/kratijain26/projects/period-app/builds/bf9a1168-1a04-430f-b342-bc6128d92fd8), [submission](https://expo.dev/accounts/kratijain26/projects/period-app/submissions/dbea0ad5-7488-4cef-a16d-cb238d5050a6). Rechecked 2026-11-11: `ERRORED` / `EAS_ASC_REQUIRED_AGREEMENTS_MISSING_OR_EXPIRED`. Account Holder must accept the required Apple agreements, then retry this completed build. This submission has not confirmed TestFlight availability.
+
+### Fixed
+
+- **Contacts discovery recovery and feedback.** Manage selected contacts through iOS Settings to avoid the broken native access picker; refresh permission on return, clear stale results after access/account changes, show progress immediately and put actionable empty/error messages beside Find Contacts. Late lookups cannot restore invalid results; discoverability writes verify the intended account.
+
+### Infrastructure & release setup
+
+- **Contacts migration confirmed live; privacy checks passed.** Verified default-off preference, exact matching RPC and grants, then tested owner-only access, opt-in/out, caller independence and self exclusion in a transaction with all synthetic data rolled back. Added reproducible SQL and permission/toggle/lifecycle regression tests; 98 Jest tests and TypeScript pass.
+
+### Known / not yet done
+
+- **Contacts rollout remains open.** Owner testing on 1.0.12 / iOS 26.6.2 found flashing/no result with Limited Access; Full Access reaches the empty-match state. Recovery changes still need testing on a new native build, including denied/limited/full access and two-account discoverability. See [verification matrix](CONTACT_DISCOVERY_ROLLOUT.md).
+
+## 2026-11-03 — TestFlight build 1.0.13 (build 34)
+
+**Native build finished; Apple submission failed.** [EAS build](https://expo.dev/accounts/kratijain26/projects/period-app/builds/b5517231-315b-48d7-adb1-9e98af8c8687), [submission](https://expo.dev/accounts/kratijain26/projects/period-app/submissions/a644dafb-6b2c-4ffc-a8b0-f8169b294049). Rechecked 2026-11-11: `ERRORED` / `EAS_ASC_REQUIRED_AGREEMENTS_MISSING_OR_EXPIRED`. Account Holder must accept the required Apple agreements, then retry this completed build. This submission has not confirmed TestFlight availability.
+
+### Fixed
+
+- **Phase Guide always has tips, including offline or before Health sync.** Local fallback guidance appears immediately, and cached advice from a different phase/cycle is never shown. Profile guidance refreshes only when the You page is focused and ignores late results after navigation/account changes.
+
+### Changed
+
+- **More useful dos and don’ts, readable at a glance.** Concrete phase-aware suggestions pair a short heading with practical detail. Full-width cards show the complete advice, wrap with larger text and replace the hidden flip interaction. AI follows the same optional, nonjudgmental content rules; NHS sources and editorial limits are documented in GUIDANCE.md.
+
+### Infrastructure & release setup
+
+- **On-demand guidance backend deployed (2026-11-03).** Applied the additive cache/lease migration, configured the current publishable client key and deployed `request-cycle-guidance`. PostgreSQL regression checks, Deno typecheck and live unauthenticated denial/permission checks pass; no cron or service-role key is needed for this path.
+- **Live authenticated verification and status-doc audit.** An approved synthetic account verified AI generation, cache reuse, 200/202 overlapping requests and account isolation, then was removed. FEATURES/TODO/BUGS, schema, cycle-sync, design and troubleshooting now distinguish completed implementation/backend work from pending native checks. Live inventory confirms 14 public tables and two active legacy/reminder cron jobs; friend-recommendations scheduling remains absent.
+
+### Added
+
+- **On-demand AI guidance, cached per phase occurrence.** A new authenticated `request-cycle-guidance` function uses caller-scoped database RPCs and sanitized friend summaries; no service-role key or cron is needed. Concurrent requests share a two-minute database lease, malformed/failed AI responses are not cached, and results are discarded if the phase changes during generation. Regression coverage added for fallback selection, cache invalidation, auth/account isolation, duplicate requests and AI failures.
+
+### Known / not yet done
+
+- **Device verification remains required.** Backend migration/function are live, and authenticated AI generation/cache reuse passed an isolated live test. Offline/account switching, HealthKit and native accessibility still need testing on a phone. The pre-existing batch handler's missing scheduler-only authorization is logged in BUGS; its legacy cron is already active and is not used by the new client.
 
 ## 2026-08-12 — TestFlight build 1.0.12 (build 33)
 

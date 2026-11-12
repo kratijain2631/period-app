@@ -375,7 +375,7 @@ export const searchUsersByAliasOrEmail = async (
   return (data as UserSearchResult[]) ?? [];
 };
 
-export const updateUserAlias = async (alias: string) => {
+export const updateUserAlias = async (alias: string, expectedUserId?: string) => {
   if (!isSupabaseConfigured) {
     return;
   }
@@ -389,6 +389,9 @@ export const updateUserAlias = async (alias: string) => {
   }
   if (!data.user) {
     throw new Error('Supabase user is not available.');
+  }
+  if (expectedUserId && data.user.id !== expectedUserId) {
+    throw new Error('Account changed. Please try again.');
   }
   const { error: updateError } = await supabase
     .from('users')

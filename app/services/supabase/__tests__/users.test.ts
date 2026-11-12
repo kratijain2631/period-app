@@ -4,6 +4,7 @@ import {
   hasRemoteAutoPostSettings,
   saveCurrentUserAutoPostSettings,
   upsertCurrentUserProfile,
+  updateUserAlias,
 } from '../users';
 
 jest.mock('../client', () => ({
@@ -174,5 +175,15 @@ describe('upsertCurrentUserProfile', () => {
       .mockReturnValueOnce({ select: legacySelect });
 
     await expect(fetchCurrentAutoPostSettings()).resolves.toBeNull();
+  });
+});
+
+
+describe('alias account isolation', () => {
+  it('refuses a delayed alias save if the authenticated account changed', async () => {
+    jest.clearAllMocks();
+    supabase.auth.getUser.mockResolvedValue({ data: { user: { id: 'new-account' } }, error: null });
+    await expect(updateUserAlias('Previous alias', 'previous-account')).rejects.toThrow('Account changed');
+    expect(supabase.from).not.toHaveBeenCalled();
   });
 });

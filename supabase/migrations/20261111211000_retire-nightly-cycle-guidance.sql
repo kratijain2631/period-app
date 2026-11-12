@@ -1,6 +1,6 @@
--- HOLD: merge only after an on-demand-capable client (>= 1.0.13/build 34)
--- is available and active testers have updated. Older clients cannot request
--- new guidance themselves. Apple agreement failures currently block that rollout.
+-- Rollout gate met 2026-11-12: owner confirms all important users on 1.0.15
+-- and successful refresh. Owner accepts stale/missing tips for older clients.
+-- Builds <=1.0.12 cannot request new guidance themselves; minimum path is 1.0.13/34.
 -- Remove only this named job; preserve cache/RPCs/function and daily reminders.
 -- Idempotent; a rollback must be a new migration restoring the scheduler-secret
 -- job definition from 20261107013000, not an edit to migration history.

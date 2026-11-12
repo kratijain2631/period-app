@@ -29,6 +29,7 @@ The STAGING · FAKE HEALTH pill alone doesn't prove you're on staging. A success
 |---|---|---|
 | Unit tests | `npm test` | Every change. CI runs it on every push to `main`. |
 | Types | `npx tsc --noEmit` | Every change. EAS and Metro don't type-check, so this is the only static net. |
+| Access rules, local | `npm run test:security` | Before opening a PR that touches `supabase/`. Needs Docker. Builds a throwaway database from the migrations, seeds the personas and runs the same checks. The **Security checks** workflow runs this on every such PR and on pushes to `main`, with no secrets. |
 | Access rules on staging | `npm run test-accounts:rls` | After any change to RLS, grants or database functions. Needs `.env.staging`. The Database deploy workflow also runs it on staging before every production push. Use the staging job log for the count and result of a specific run. |
 
 A cloud agent without a Mac can run these but not the simulator. Say so in the report rather than claiming a staging test.
@@ -82,7 +83,7 @@ The step-by-step procedure, including preflight checks, signing in safely and re
 ## 4. Database changes
 
 1. Write a migration (rules in [DB_PUSH.md](DB_PUSH.md)) and test it locally in Docker: `supabase start`, then `supabase db reset --local`.
-2. If it changes access rules, add or update a check in `npm run test-accounts:rls`.
+2. If it changes access rules, add or update a check in `npm run test-accounts:rls`, and run `npm run test:security`. The PR's **Security checks** run does the same, and fails before anything reaches staging.
 3. Merge the PR. The Database deploy workflow applies it to staging, runs the RLS checks there, and only then applies it to production. Watch the run in the Actions tab.
 4. Edge functions aren't deployed by the workflow. Deploy a changed function to staging first, test it there, then deploy it to production.
 
@@ -91,15 +92,26 @@ The step-by-step procedure, including preflight checks, signing in safely and re
 - **Real HealthKit, background delivery, push notifications and haptics** need a real phone on a TestFlight or dev build. The on-device checklist is in [TODO.md](TODO.md).
 - **Scheduled jobs** (nightly guidance at 03:00 UTC, phase reminders at 15:00 UTC) run on their own schedule. Changing the simulator's date is the practical way to test reminders.
 - **AI text**: staging has no `OPENAI_API_KEY`, so recommendations use their free fallback text.
-- **`request-cycle-guidance`** exists only on production until its source is in the repo ([TODO.md](TODO.md)).
+- **`request-cycle-guidance`** is deployed on staging and production (2026-11-11). Staging has `PROJECT_PUBLISHABLE_KEY` configured but no `OPENAI_API_KEY`; cached requests and refresh claim/save/cooldown can be verified without paid generation. Actual AI generation still needs separate verification in an appropriately configured staging environment.
+
+## Guidance verification — 2026-11-11
+
+PR #79 / merge `e32d9848`: Database deploy run 43154655774 passed 75 staging access checks before production. An isolated synthetic staging account (not a shared persona) verified real JWT login, cached HTTP response, refresh claim/save, duplicate suppression, HTTP refresh cooldown, wrong-account/invalid-token denial and private lease-table denial. The account and cascading records were removed in cleanup; no OpenAI request or shared persona reset occurred. Production received only the migration and handler deployment, with no synthetic test records.
+
+Local checks: 145 Jest tests, TypeScript, Deno, iOS JS export, embedded PostgreSQL and actual-component browser feedback checks pass. Reproduce SQL coverage with `node scripts/db/test-guidance-refresh.mjs /path/to/@electric-sql/pglite/dist/index.js`. Browser fixtures do not prove native accessibility, HealthKit or real-phone lifecycle behavior; these remain open in TODO. `.env.staging` is still absent locally and no usable simulator runtime is installed.
 
 ## Recording changes and results
 
 When a persona, fixture, or setup step changes, update the [persona runbook](TEST_ACCOUNTS.md) and any affected steps above. Add a dated entry to [RELEASE_NOTES.md](RELEASE_NOTES.md) under `Unreleased` for staging or test-account changes, including changes made in a dashboard. Record the environment, build or commit, persona aliases, checks run, observed outcome, and pending checks. Link unresolved failures in [BUGS.md](BUGS.md) and follow-up work in [TODO.md](TODO.md). Use secret names when documenting access setup.
 
+## Offline profile and legacy-client checks — 2026-11-12
 
-## Nightly guidance retirement gate
+154 Jest tests and TypeScript pass after the offline alias fix. `useProfileGate.test.tsx` covers persisted-cache cold start, network failure before offline detection, missing-cache retry, confirmed missing alias, auth hydration, reconnection, account switching/late results and same-account token refresh. Alias save rejects a changed initiating account. No iPhone simulator runtimes are installed (`simctl list runtimes` empty); native UI checks are not claimed.
 
-Before merging the pending `20261111211000_retire-nightly-cycle-guidance.sql`, confirm an on-demand-capable build (minimum 1.0.13/build 34) is available to testers and verify its page-open generation/cache behavior on staging. Confirm active testers have upgraded. The 2026-11-11 EAS check found Apple agreement errors on builds 34/35, so that gate is still open. This prerequisite is separate from the manual Refresh tips feature's rollout.
+Two disposable synthetic staging accounts signed in with real JWTs. Own-alias rename succeeded; duplicate aliases were rejected; cross-account alias/snapshot updates affected zero rows and target values remained unchanged. The exact build-33 guidance SELECT returned its own cached advice; another account could not overwrite it. Both accounts and cascading records were deleted, shared personas were untouched, and no AI calls or production test writes occurred. Keys stayed in memory. Existing six shared personas remain available; no password reset or reseed occurred.
 
-The local `scripts/db/test-guidance-schedule-retirement.mjs` fixture runs the migration with in-memory PostgreSQL and a stubbed pg_cron API. It checks narrow targeting, preserved reminder/unrelated jobs and cached advice, and safe reruns; it never connects to either backend. After the normal deployment workflow succeeds, read scheduled-job metadata on both projects to confirm only nightly guidance is gone. Never invoke a production job or seed test users there to verify retirement.
+Owner’s 1.0.15 physical-device results: Refresh tips works, in-session airplane-mode refresh retains advice with an error, and offline cold start incorrectly entered alias setup. Retest cold start after installing the fix.
+
+## Nightly guidance retirement gate — updated 2026-11-12
+
+Owner confirms important users on 1.0.15, successful refresh and accepts missing/stale new advice for older clients. This supersedes the initial draft’s Apple agreement blocker. `scripts/db/test-guidance-schedule-retirement.mjs` executes the migration in embedded PostgreSQL with a stubbed pg_cron API, verifying named-job targeting, retained reminder/unrelated jobs, retained saved tips and safe reruns. Run it with a temporary PGlite module path. It does not replace the PR’s full migration/security checks or staging deployment. After Database deploy, query only cron metadata to verify nightly guidance absent and daily reminder active in both projects; do not invoke production jobs or seed production users.

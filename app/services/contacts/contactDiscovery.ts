@@ -35,10 +35,6 @@ export const getContactDiscoveryPermission = async (): Promise<ContactDiscoveryP
 export const requestContactDiscoveryPermission = async (): Promise<ContactDiscoveryPermission> =>
   permissionFromResponse(await Contacts.requestPermissionsAsync());
 
-export const presentLimitedContactPicker = async (): Promise<void> => {
-  await Contacts.presentAccessPickerAsync();
-};
-
 export const findDiscoverableContacts = async (): Promise<ContactMatch[]> => {
   if (!isSupabaseConfigured) {
     return [];
@@ -105,13 +101,16 @@ export const fetchContactDiscoverability = async (): Promise<boolean> => {
   return data?.discoverable_by_contacts === true;
 };
 
-export const setContactDiscoverability = async (enabled: boolean): Promise<void> => {
+export const setContactDiscoverability = async (enabled: boolean, expectedUserId?: string): Promise<void> => {
   if (!isSupabaseConfigured) {
     return;
   }
   const { data: authData, error: authError } = await supabase.auth.getUser();
   if (authError || !authData.user) {
     throw authError ?? new Error('No signed-in user.');
+  }
+  if (expectedUserId && authData.user.id !== expectedUserId) {
+    throw new Error('The signed-in account changed. Try again.');
   }
   const { error } = await supabase
     .from('users')

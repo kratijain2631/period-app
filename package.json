@@ -13,6 +13,7 @@
     "test-accounts:seed": "node scripts/test-accounts/run.js seed",
     "test-accounts:actors": "node scripts/test-accounts/run.js actors",
     "test-accounts:rls": "node scripts/test-accounts/run.js rls",
+    "test:security": "scripts/db/start-local.sh && scripts/db/security-checks.sh",
     "postinstall": "patch-package"
   },
   "dependencies": {

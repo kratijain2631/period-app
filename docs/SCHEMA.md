@@ -16,15 +16,22 @@ The full schema — tables, functions, RLS policies, indexes — is defined in `
 | `event_reactions` | Emoji reactions to cycle events. |
 | `boops` | Friend "boop" nudges (from / to / optional cycle event). |
 | `notifications` | In-app notifications, with a `read_at` column (null = unread) for the notifications page's new/read state. Populated by engagement triggers (reactions/boops) and, once deployed, the notifications-handler. |
+| `cycle_guidance` | Owner-readable AI dos/don’ts and friend suggestions, cached by phase plus nullable `phase_started_at`; caller-scoped completion RPC writes the new on-demand path. |
+| `friend_recommendations` | Pair recommendations/score cache used by the friend detail screen; separate from personal Phase Guide. |
+| `cycle_guidance_requests` | Applied 2026-11-03: caller-scoped two-minute generation leases; auth-user deletion cascades. No direct anon/authenticated table access. |
 | `device_tokens` | Push-notification (Expo) tokens per device. |
 | `cycle_guidance` | One row per user: the AI do's/don'ts for their current phase, with `phase_started_at` so it's regenerated when the phase changes. Written by the `cycle-guidance` edge function. |
 | `cycle_guidance_requests` | Server-only bookkeeping for on-demand guidance requests (`claim_cycle_guidance` / `complete_cycle_guidance`). Clients have no access. |
 | `friend_recommendations` | Per friend pair: suggestions and a score from the `friend-recommendations` edge function. |
 
+The on-demand guidance migration also adds nullable `cycle_guidance.phase_started_at`; old clients and the legacy batch worker remain compatible. These additions were applied and their permissions verified on **2026-11-03**.
+
 ## Functions
 
 | Function | Purpose |
 |---|---|
+| `claim_cycle_guidance_refresh` | Applied to staging and production by Database deploy run 43154655774 on 2026-11-11 (`20261111210000`): explicit caller-scoped regeneration using the existing lease table and saved generation timestamp for a two-minute cooldown. No signature changes to existing RPCs. |
+| `claim_cycle_guidance` / `complete_cycle_guidance` | Applied 2026-11-03: authenticate with `auth.uid()`, validate the current server snapshot, serialize generation claims and save only the matching claim/phase result. Authenticated callers can affect only their own guidance. |
 | `handle_new_auth_user` | Trigger: creates a `users` row when a new auth user signs up. |
 | `handle_updated_at` | Trigger: maintains `updated_at` timestamps. |
 | `populate_post_alias` | Trigger: always sets a post's alias from its author's profile, so a post can't carry someone else's name (since 2026-11-06). |
@@ -53,8 +60,6 @@ The full schema — tables, functions, RLS policies, indexes — is defined in `
 
 **Scheduled jobs (pg_cron):** `daily-phase-change-reminder` (15:00 UTC → `phase-change-reminder`) and `nightly-cycle-guidance` (03:00 UTC → `cycle-guidance`). Both send the Vault `cron_secret` in an `x-cron-secret` header, and the functions reject calls without it. The `nightly-friend-recommendations` job is deliberately off (`20261107014000`). See [CYCLE_SYNC.md](CYCLE_SYNC.md).
 
-**Pending retirement, not applied (2026-11-11):** `20261111211000_retire-nightly-cycle-guidance.sql` idempotently unschedules only the named nightly guidance job, without dropping data, RPCs or the edge function. Keep this migration in draft until the on-demand-capable client is distributed and testers have upgraded; Apple agreement errors currently block the replacement submissions. The live job remains active. `daily-phase-change-reminder` is unaffected.
-
 ## How it works
 
 1. **Auth:** Sign in with Apple → Supabase Auth → the `handle_new_auth_user` trigger creates the `users` profile row.
@@ -75,3 +80,5 @@ Raw `cycle_snapshots` and `cycle_events` rows are owner-only. Friends must use t
 - **Schema is in code** (`supabase/migrations/`); **real data is not** (database only); **test data is generated** by the staging persona scripts, never stored in production.
 - Applying the migrations to a fresh Supabase project reproduces the schema exactly.
 - Whether another project (e.g. the original collaborator's) matches is only guaranteed if it was built from these same migrations with no out-of-band dashboard changes — see [LEARNINGS.md](LEARNINGS.md).
+
+**Nightly guidance retirement ready for deployment (2026-11-12):** `20261111211000_retire-nightly-cycle-guidance.sql` removes only the named cron job. Owner confirms 1.0.15 adoption and refresh success; older-client loss of fresh advice is accepted. Tables, saved guidance, RPCs/functions and the daily reminder remain. Deployment/metadata checks are still pending.
