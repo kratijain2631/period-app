@@ -171,3 +171,6 @@ The old “install build 36 and test Refresh tips” step is done: owner confirm
 Account Holder: check whether Apple still shows a pending DSA declaration and complete the accurate TestFlight-only declaration if needed; its completion has not been confirmed. Reassess before a future EU App Store launch. Successful uploads establish no agreement blocker for builds 36/37; they do not establish the DSA UI state.
 
 Engineering’s missing-sharing-row Circle UI check stays open. The old batch redeploy is superseded by verified nightly retirement; no owner action is required for either engineering item. Nightly retirement is done on both projects and daily reminders remain active.
+
+
+- [ ] Verify staging SMS delivery and complete the phone/email matrix in [TESTING.md](TESTING.md) before distributing the new onboarding flow.

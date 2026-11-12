@@ -1,3 +1,4 @@
+import ContactDetails from '../../profile/screens/ContactDetails';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated,
@@ -56,6 +57,7 @@ const palette = {
 
 const FriendsScreen = () => {
   const navigation = useNavigation();
+  const [showContactDetails, setShowContactDetails] = useState(false);
   const session = useSessionStore(selectSession);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<UserSearchResult[]>([]);
@@ -602,7 +604,7 @@ const FriendsScreen = () => {
             <View style={styles.contactsHeadingCopy}>
               <Text style={styles.contactsTitle}>Find friends from contacts</Text>
               <Text style={styles.contactsBody}>
-                Choose which contacts Cadence can check. Raw email addresses stay on this device.
+                Choose which contacts Cadence can check. Contact phone numbers and emails stay on this device.
               </Text>
             </View>
           </View>
@@ -679,11 +681,15 @@ const FriendsScreen = () => {
             </View>
           ) : null}
 
+          <TouchableOpacity onPress={() => setShowContactDetails(value => !value)}>
+            <Text style={styles.discoverabilityTitle}>{showContactDetails ? 'Hide contact details' : 'Manage contact details'}</Text>
+          </TouchableOpacity>
+          {showContactDetails && session ? <ContactDetails key={session.userId} userId={session.userId} /> : null}
           <View style={styles.discoverabilityRow}>
             <View style={styles.discoverabilityCopy}>
               <Text style={styles.discoverabilityTitle}>Let contacts find me</Text>
               <Text style={styles.contactsBody}>
-                People who already have your account email can see you here.
+                People who already have your verified phone number or account email can see you here.
               </Text>
             </View>
             <Switch

@@ -4,6 +4,12 @@ on:
   push:
     branches:
       - main
+  pull_request:
+    paths:
+      - 'app/services/contacts/**'
+      - 'app/features/profile/screens/ContactDetails.tsx'
+      - 'app/features/profile/screens/AliasScreen.tsx'
+      - 'app/features/friends/**'
   workflow_dispatch: {}
 
 jobs:
@@ -17,5 +23,7 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm ci
+      - name: Typecheck
+        run: npx tsc --noEmit
       - name: Run tests
         run: npm test

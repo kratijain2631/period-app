@@ -1,3 +1,4 @@
+import { normalizeContactPhone } from './phone';
 import * as Contacts from 'expo-contacts';
 import { sha256 } from 'js-sha256';
 import { isSupabaseConfigured, supabase } from '../supabase/client';
@@ -13,7 +14,7 @@ export type ContactMatch = {
 type ContactMatchRow = {
   id: string;
   alias?: string | null;
-  email_hash: string;
+  match_hash: string;
 };
 
 export const normalizeContactEmail = (email: string) => email.trim().toLowerCase();
@@ -41,12 +42,17 @@ export const findDiscoverableContacts = async (): Promise<ContactMatch[]> => {
   }
 
   const response = await Contacts.getContactsAsync({
-    fields: [Contacts.Fields.Emails],
+    fields: [Contacts.Fields.Emails, Contacts.Fields.PhoneNumbers],
     sort: Contacts.SortTypes.FirstName,
   });
   const nameByHash = new Map<string, string>();
+  const deviceRegion = Intl.DateTimeFormat().resolvedOptions().locale.match(/[-_]([A-Z]{2})(?:-|$)/)?.[1];
   response.data.forEach((contact) => {
     const displayName = contact.name?.trim() || 'Contact';
+    contact.phoneNumbers?.forEach(({ number, countryCode }) => {
+      const phone = number && normalizeContactPhone(number, countryCode || deviceRegion);
+      if (phone) nameByHash.set(sha256(phone), displayName);
+    });
     contact.emails?.forEach(({ email }) => {
       if (!email) {
         return;
@@ -65,10 +71,9 @@ export const findDiscoverableContacts = async (): Promise<ContactMatch[]> => {
     batches.push(hashes.slice(index, index + 200));
   }
   const responses = await Promise.all(
-    batches.map((emailHashes) =>
-      supabase.rpc('contact_friend_matches', {
-        email_hashes: emailHashes,
-        max_results: 100,
+    batches.map((identifiers) =>
+      supabase.rpc('contact_friend_matches_v2', {
+        identifiers,
       }),
     ),
   );
@@ -80,10 +85,11 @@ export const findDiscoverableContacts = async (): Promise<ContactMatch[]> => {
     rows.push(...(((data as ContactMatchRow[]) ?? [])));
   });
 
-  return rows.slice(0, 50).map((row) => ({
+  const unique = new Map(rows.map(row => [row.id, row]));
+  return [...unique.values()].slice(0, 50).map((row) => ({
     id: row.id,
     alias: row.alias,
-    contactName: nameByHash.get(row.email_hash) ?? 'Contact',
+    contactName: nameByHash.get(row.match_hash) ?? 'Contact',
   }));
 };
 

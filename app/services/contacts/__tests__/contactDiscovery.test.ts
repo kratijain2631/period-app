@@ -1,5 +1,5 @@
 jest.mock('expo-contacts', () => ({
-  Fields: { Emails: 'emails' },
+  Fields: { Emails: 'emails', PhoneNumbers: 'phoneNumbers' },
   SortTypes: { FirstName: 'firstName' },
   getPermissionsAsync: jest.fn(),
   requestPermissionsAsync: jest.fn(),
@@ -120,17 +120,28 @@ describe('contact discovery', () => {
       data: [{ name: 'Maya', emails: [{ email: 'maya@example.com' }] }],
     });
     (supabase.rpc as jest.Mock).mockResolvedValue({
-      data: [{ id: 'user-2', alias: 'maya', email_hash: hashContactEmail('maya@example.com') }],
+      data: [{ id: 'user-2', alias: 'maya', match_hash: hashContactEmail('maya@example.com') }],
       error: null,
     });
 
     await expect(findDiscoverableContacts()).resolves.toEqual([
       { id: 'user-2', alias: 'maya', contactName: 'Maya' },
     ]);
-    expect(supabase.rpc).toHaveBeenCalledWith('contact_friend_matches', {
-      email_hashes: [hashContactEmail('maya@example.com')],
-      max_results: 100,
+    expect(supabase.rpc).toHaveBeenCalledWith('contact_friend_matches_v2', {
+      identifiers: [hashContactEmail('maya@example.com')],
     });
     expect(JSON.stringify((supabase.rpc as jest.Mock).mock.calls)).not.toContain('maya@example.com');
+  });
+  it('matches a national phone number and deduplicates an account across batches', async () => {
+    const { sha256 } = require('js-sha256');
+    const hash = sha256('+14155550123');
+    (Contacts.getContactsAsync as jest.Mock).mockResolvedValue({ data: [{
+      name: 'Phone friend', phoneNumbers: [{ number: '(415) 555-0123', countryCode: 'us' }],
+      emails: Array.from({length: 200}, (_, i) => ({email: i + '@example.com'})),
+    }] });
+    (supabase.rpc as jest.Mock).mockResolvedValue({ data: [{ id: 'friend', match_hash: hash }] });
+    expect(await findDiscoverableContacts()).toEqual([{id: 'friend', contactName: 'Phone friend'}]);
+    expect((supabase.rpc as jest.Mock).mock.calls[0][1].identifiers).toContain(hash);
+    expect(JSON.stringify((supabase.rpc as jest.Mock).mock.calls)).not.toContain('555-0123');
   });
 });

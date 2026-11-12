@@ -101,7 +101,7 @@ export const useContactDiscovery = (userId: string | undefined, isFocused: boole
       const others = matches.filter((match) => match.id !== userId);
       setContactMatches(others);
       setContactNotice(others.length === 0
-        ? 'No discoverable contacts found. Contacts need an email matching their account and “Let contacts find me” turned on.'
+        ? 'No discoverable contacts found. Contacts need a phone number or email matching their account and “Let contacts find me” turned on.'
         : null);
     } catch {
       if (version === lookupVersion.current) {

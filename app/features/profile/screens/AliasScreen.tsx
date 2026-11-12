@@ -1,15 +1,19 @@
+import ContactDetails from './ContactDetails';
 import { useState } from 'react';
-import { SafeAreaView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity } from 'react-native';
 import { updateUserAlias } from '../../../services/supabase/users';
 import { useSessionStore } from '../../../state/sessionStore';
 
 const AliasScreen = () => {
+  const userId = useSessionStore(state => state.session?.userId);
+  const [detailsReady, setDetailsReady] = useState(false);
   const [alias, setAlias] = useState('');
   const [isSaving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const setAliasInStore = useSessionStore((state) => state.setAlias);
 
   const handleSave = async () => {
+    if (!detailsReady) return;
     const trimmed = alias.trim();
     if (!trimmed) {
       setError('Please enter an alias.');
@@ -36,8 +40,8 @@ const AliasScreen = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.content}>
-        <Text style={styles.title}>Choose your alias</Text>
+      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        <Text style={styles.title}>Set up your account</Text>
         <Text style={styles.subtitle}>This is how friends will see you in the feed.</Text>
         <TextInput
           style={styles.input}
@@ -47,15 +51,17 @@ const AliasScreen = () => {
           autoCapitalize="words"
           autoCorrect={false}
         />
+        {userId ? <ContactDetails key={userId} userId={userId} onReady={setDetailsReady} /> : null}
+        <Text style={styles.subtitle}>You can let friends find you by phone or email in Circle.</Text>
         {error ? <Text style={styles.errorText}>{error}</Text> : null}
         <TouchableOpacity
-          style={[styles.primaryButton, isSaving ? styles.primaryButtonDisabled : null]}
+          style={[styles.primaryButton, isSaving || !detailsReady ? styles.primaryButtonDisabled : null]}
           onPress={handleSave}
-          disabled={isSaving}
+          disabled={isSaving || !detailsReady}
         >
           <Text style={styles.primaryButtonText}>{isSaving ? 'Saving...' : 'Continue'}</Text>
         </TouchableOpacity>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 };

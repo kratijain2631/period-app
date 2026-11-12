@@ -48,6 +48,7 @@ The on-demand guidance migration also adds nullable `cycle_guidance.phase_starte
 | `is_friend` | True when the caller and the given user have an accepted friend request in either direction. The single rule behind every friend-visibility policy and RPC. Added by `20261111180000_friend-rule.sql`, applied to staging and production by the Database deploy workflow on merge. |
 | `cycle_event_visible` | True when the caller owns the cycle event or is friends with its owner. Used by event-reaction and boop policies, since `cycle_events` is owner-only. |
 | `friend_profiles` | Names (alias, full name) for the given users who are the caller's friends. Use this for other people's names: `users` only returns your own row. |
+| `contact_friend_matches_v2` | Authenticated lookup of up to 200 hashes against confirmed Auth phone/email fields of opted-in accounts. One result per account. The private per-caller counter limits checks to 20,000 identifiers per hour. |
 | `contact_friend_matches` | Privacy-minimized contact discovery: matches submitted normalized email hashes only against users who opted into contact discoverability. Raw address-book emails are never submitted. |
 | `ensure_friend_sharing` | Keeps legacy `friend_sharing` rows in step with accepted requests. |
 | `delete_account` | Account self-deletion — clears the user's data and removes their auth record (SECURITY DEFINER). |
@@ -82,3 +83,4 @@ Raw `cycle_snapshots` and `cycle_events` rows are owner-only. Friends must use t
 - Whether another project (e.g. the original collaborator's) matches is only guaranteed if it was built from these same migrations with no out-of-band dashboard changes — see [LEARNINGS.md](LEARNINGS.md).
 
 **Nightly guidance retirement applied to staging and production (2026-11-12):** `20261111211000_retire-nightly-cycle-guidance.sql` removes only the named cron job. Owner confirms 1.0.15 adoption and refresh success; older-client loss of fresh advice is accepted. Tables, saved guidance, RPCs/functions and the daily reminder remain. [Database deploy run 43274996960](https://github.com/kratijain2631/period-app/actions/runs/43274996960) applied `20261111211000` to staging, passed all 75 staging access checks, then applied production. Post-deploy read-only metadata confirms nightly guidance absent and `daily-phase-change-reminder` active at 15:00 UTC in both projects.
+

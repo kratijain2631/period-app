@@ -14,3 +14,7 @@ export TEST_PERSONA_PASSWORD
 node scripts/security/lint.js
 npm run --silent test-accounts:seed
 npm run --silent test-accounts:rls
+
+
+# Exercise verified-phone matching in the disposable database.
+psql "$DB_URL" -v ON_ERROR_STOP=1 -f supabase/tests/phone-contact-discovery.sql
