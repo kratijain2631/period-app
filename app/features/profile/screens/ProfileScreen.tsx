@@ -29,10 +29,11 @@ import {
 import { usePhaseGuidance } from '../hooks/usePhaseGuidance';
 import { guidanceMatchesPhase, resolvePhaseGuidance } from '../../../../packages/domain/cycles/guidance';
 import { useCycleSnapshot } from '../../feed/hooks/useCycleSnapshot';
-import { getCycleDay } from '../../../../packages/domain/cycles/models';
+import { getCycleDay, hasCycleData } from '../../../../packages/domain/cycles/models';
 import { generateAvatarImage, uploadAvatarBlob } from '../../../services/supabase/avatars';
 import { deleteCurrentAccount, signOut } from '../../../services/supabase/auth';
 import { brand, brandType } from '../../../theme/brand';
+import { APP_NAME } from '../../../config/branding';
 import { CycleRing, PhaseAvatar, PhaseIndicator, getPhaseBg, getPhaseColor } from '../../../components/brand/CycleRing';
 import { DottieMascot } from '../../../components/brand/DottieMascot';
 import { PhaseGuide } from '../components/PhaseGuide';
@@ -523,6 +524,9 @@ const ProfileScreen = () => {
     [snapshot],
   );
 
+  // Without period data from Apple Health, every recap number would be a
+  // default (28 days, day 1, 6 months), so show how to add data instead.
+  const showRecap = hasCycleData(snapshot);
   const cycleLengthDays = snapshot?.cycleLengthDays ?? 28;
   const monthlyTracked = Math.max(
     1,
@@ -605,6 +609,17 @@ const ProfileScreen = () => {
           <View style={styles.recapBlock}>
           <Text style={styles.recapEyebrow}>Your Monthly Recap</Text>
 
+          {!showRecap ? (
+            <View style={styles.recapLargeCard}>
+              <Text style={styles.recapLargeLabel}>No cycle data yet</Text>
+              <Text style={styles.noDataText}>
+                {APP_NAME} reads your period history from Apple Health. Log a period in the Health app, or
+                turn on Apple Health syncing in Flo, Clue or the app you track with, and your recap will
+                appear here.
+              </Text>
+            </View>
+          ) : (
+          <>
           <View style={styles.recapLargeCard}>
             <Text style={styles.recapLargeLabel}>Cycle Length</Text>
             <Text style={styles.recapLargeHint}>Right on track!</Text>
@@ -631,6 +646,8 @@ const ProfileScreen = () => {
               </View>
             </View>
           </View>
+          </>
+          )}
           </View>
         </Animated.View>
 
@@ -897,6 +914,13 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     marginBottom: 8,
     ...brandType.semibold,
+  },
+  noDataText: {
+    marginTop: 6,
+    fontSize: 13,
+    lineHeight: 19,
+    color: '#5A564F',
+    ...brandType.body,
   },
   recapLargeCard: {
     borderRadius: 24,

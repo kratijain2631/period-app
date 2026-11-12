@@ -34,7 +34,7 @@ import {
 import { searchUsersByAliasOrEmail, type UserSearchResult } from '../../../services/supabase/users';
 import { fetchFriendCycleSnapshots, type CycleSnapshotRow } from '../../../services/supabase/cycleSnapshots';
 import { computeSyncScore } from '../utils/syncScore';
-import { getCycleDay, type CyclePhase } from '../../../../packages/domain/cycles/models';
+import { getCycleDay, hasCycleData, type CyclePhase } from '../../../../packages/domain/cycles/models';
 import { brand, brandType } from '../../../theme/brand';
 import { DottieAndFriend } from '../../../components/brand/DottieMascot';
 import { PhaseAvatar, getPhaseColor } from '../../../components/brand/CycleRing';
@@ -133,7 +133,8 @@ const FriendsScreen = () => {
           const selfSnapshotValue = snapshots.find((row) => row.user_id === session?.userId)?.snapshot;
           const scores = mutualFriendIds.map((friendId) => {
             const friendSnapshot = snapshotMap.get(friendId)?.snapshot;
-            if (!selfSnapshotValue || !friendSnapshot) {
+            // No score without period data on both sides: it would be made up.
+            if (!hasCycleData(selfSnapshotValue) || !hasCycleData(friendSnapshot)) {
               return [friendId, null] as const;
             }
             try {
@@ -748,6 +749,7 @@ const FriendsScreen = () => {
                 const username = friendUsername(row.user_id);
                 const initial = username.replace('@', '').trim().slice(0, 1).toUpperCase() || '?';
                 const normalizedScoreRaw = friendScores[row.user_id];
+                const hasScore = typeof normalizedScoreRaw === 'number';
                 const normalizedScore =
                   typeof normalizedScoreRaw === 'number'
                     ? normalizedScoreRaw <= 1
@@ -784,6 +786,7 @@ const FriendsScreen = () => {
                           {`Day ${friendCycleDay ?? '--'} · ${formatPairSummary(row.snapshot?.currentPhase)}`}
                         </Text>
 
+                        {hasScore ? (
                         <View style={styles.scoreRow}>
                           <View style={styles.scoreTrack}>
                             <View
@@ -798,9 +801,12 @@ const FriendsScreen = () => {
                           </View>
                           <Text style={styles.scoreValue}>{`${normalizedScore}%`}</Text>
                         </View>
+                        ) : null}
 
                         <View style={styles.friendFootRow}>
-                          <Text style={styles.friendStatus}>{trendLabel}</Text>
+                          <Text style={styles.friendStatus}>
+                            {hasScore ? trendLabel : 'Sync score needs period data from both of you'}
+                          </Text>
                           <Text style={styles.friendLastActive}>{formatSyncedAt(row.last_synced_at)}</Text>
                         </View>
                       </View>

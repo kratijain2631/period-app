@@ -158,8 +158,9 @@ const buildFlowRuns = (samples: readonly CycleSample[]): FlowRun[] => {
 export const getPeriodRuns = (samples: readonly CycleSample[]): FlowRun[] => buildFlowRuns(samples);
 
 // True when the snapshot holds at least one period day from Apple Health.
-export const hasCycleData = (snapshot?: Pick<CycleSnapshot, 'samples'> | null): boolean =>
-  buildFlowRuns(snapshot?.samples ?? []).length > 0;
+export const hasCycleData = <T extends Pick<CycleSnapshot, 'samples'>>(
+  snapshot?: T | null,
+): snapshot is T => buildFlowRuns(snapshot?.samples ?? []).length > 0;
 
 const roundAverage = (values: readonly number[]) =>
   values.length ? Math.round(values.reduce((sum, item) => sum + item, 0) / values.length) : null;
