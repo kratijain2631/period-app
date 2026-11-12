@@ -42,6 +42,8 @@ export type Row =
       /** Picks the row to attack, as column filters with the victim's or another actor's id. */
       where: Record<string, unknown>;
       set?: Record<string, unknown>;
+      /** A row the service key creates first, for targets the seed doesn't provide. Removed afterwards. */
+      setup?: Record<string, unknown>;
       expect: 'allowed' | 'hidden';
     }
   | {
@@ -100,7 +102,7 @@ export const context = (): Promise<Context> => {
 const idOf = (ctx: Context, actor: Actor) => (actor === 'anon' ? null : ctx.ids[PERSONA_FOR[actor]]);
 
 // Tables whose victim rows `{ rowOf }` can point at, with the column that says who owns them.
-const OWNER_COLUMN: Record<string, string> = { posts: 'user_id', cycle_events: 'user_id' };
+const OWNER_COLUMN: Record<string, string> = { posts: 'user_id', cycle_events: 'user_id', friend_requests: 'from_user_id' };
 
 const resolve = async (ctx: Context, self: string | null, value: unknown): Promise<unknown> => {
   if (Array.isArray(value)) return Promise.all(value.map((item) => resolve(ctx, self, item)));
@@ -152,29 +154,42 @@ export const run = async (row: Row): Promise<{ outcome: Expect; detail: string }
 
   if (row.op === 'update' || row.op === 'delete') {
     const where = await resolveRow(ctx, self, row.where);
-    let pick = ctx.admin.from(row.table).select('*');
-    for (const [key, value] of Object.entries(where)) pick = pick.eq(key, value as string);
-    const { data: before } = await pick.limit(1);
-    const original = (before ?? [])[0] as Record<string, unknown> | undefined;
-    if (!original) throw new Error(`No ${row.table} row matches ${JSON.stringify(row.where)} to attack.`);
-    const key = 'id' in original ? 'id' : null;
-    const match = (query: any) => (key ? query.eq('id', original.id) : Object.entries(where).reduce((q: any, [k, v]) => q.eq(k, v), query));
-
-    if (row.op === 'update') {
-      const set = await resolveRow(ctx, self, row.set ?? {});
-      await match(client.from(row.table).update(set));
-      const { data: after } = await match(ctx.admin.from(row.table).select('*'));
-      const now = ((after ?? [])[0] ?? {}) as Record<string, unknown>;
-      const changed = Object.keys(set).some((column) => JSON.stringify(now[column]) !== JSON.stringify(original[column]));
-      if (changed) await match(ctx.admin.from(row.table).update(original));
-      return { outcome: changed ? 'allowed' : 'hidden', detail: changed ? 'row changed' : 'row unchanged' };
+    const setup = row.setup ? await resolveRow(ctx, self, row.setup) : null;
+    if (setup) {
+      const { error } = await ctx.admin.from(row.table).insert(setup);
+      if (error) throw new Error(`Setting up a ${row.table} row failed: ${error.message}`);
     }
+    try {
+      let pick = ctx.admin.from(row.table).select('*');
+      for (const [key, value] of Object.entries(where)) pick = pick.eq(key, value as string);
+      const { data: before } = await pick.limit(1);
+      const original = (before ?? [])[0] as Record<string, unknown> | undefined;
+      if (!original) throw new Error(`No ${row.table} row matches ${JSON.stringify(row.where)} to attack.`);
+      const key = 'id' in original ? 'id' : null;
+      const match = (query: any) => (key ? query.eq('id', original.id) : Object.entries(where).reduce((q: any, [k, v]) => q.eq(k, v), query));
 
-    await match(client.from(row.table).delete());
-    const { data: after } = await match(ctx.admin.from(row.table).select('*'));
-    const gone = (after ?? []).length === 0;
-    if (gone) await ctx.admin.from(row.table).insert(original);
-    return { outcome: gone ? 'allowed' : 'hidden', detail: gone ? 'row deleted' : 'row still there' };
+      if (row.op === 'update') {
+        const set = await resolveRow(ctx, self, row.set ?? {});
+        await match(client.from(row.table).update(set));
+        const { data: after } = await match(ctx.admin.from(row.table).select('*'));
+        const now = ((after ?? [])[0] ?? {}) as Record<string, unknown>;
+        const changed = Object.keys(set).some((column) => JSON.stringify(now[column]) !== JSON.stringify(original[column]));
+        if (changed) await match(ctx.admin.from(row.table).update(original));
+        return { outcome: changed ? 'allowed' : 'hidden', detail: changed ? 'row changed' : 'row unchanged' };
+      }
+
+      await match(client.from(row.table).delete());
+      const { data: after } = await match(ctx.admin.from(row.table).select('*'));
+      const gone = (after ?? []).length === 0;
+      if (gone && !setup) await ctx.admin.from(row.table).insert(original);
+      return { outcome: gone ? 'allowed' : 'hidden', detail: gone ? 'row deleted' : 'row still there' };
+    } finally {
+      if (setup) {
+        let cleanup = ctx.admin.from(row.table).delete();
+        for (const [key, value] of Object.entries(where)) cleanup = cleanup.eq(key, value as string);
+        await cleanup;
+      }
+    }
   }
 
   const { data, error } = await client.rpc(row.fn, await resolveRow(ctx, self, row.args ?? {}));

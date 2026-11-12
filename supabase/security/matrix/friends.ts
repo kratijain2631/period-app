@@ -17,6 +17,8 @@ const rows: Row[] = [
   { name: 'a sender cannot accept their own request', as: 'pendingSender', op: 'update', table: 'friend_requests',
     where: { from_user_id: 'pendingSender', to_user_id: 'pendingRecipient' }, set: { status: 'accepted' }, expect: 'hidden' },
   // bea's own requests to dev and eli don't involve ava, so ava mustn't see them.
+  { name: 'a stranger cannot delete the victim\'s requests', as: 'stranger', op: 'delete', table: 'friend_requests',
+    where: { from_user_id: 'victim' }, expect: 'hidden' },
   { name: 'a friend cannot see the victim\'s requests with other people', as: 'friend', op: 'select', table: 'friend_requests',
     owner: 'from_user_id', target: 'owner', expect: 'hidden' },
   { name: 'no login sees no requests', as: 'anon', op: 'select', table: 'friend_requests', owner: 'from_user_id', expect: 'hidden' },
@@ -24,6 +26,8 @@ const rows: Row[] = [
   // friend_sharing (legacy, but it must still not be forgeable)
   { name: 'a stranger cannot write sharing in the victim\'s name', as: 'stranger', op: 'insert', table: 'friend_sharing',
     row: { user_id: 'victim', friend_id: 'self', has_shared: true }, expect: 'denied' },
+  { name: 'a friend cannot change the victim\'s sharing', as: 'friend', op: 'update', table: 'friend_sharing',
+    where: { user_id: 'victim', friend_id: 'friend' }, set: { has_shared: false }, expect: 'hidden' },
   { name: 'a stranger cannot read the victim\'s sharing', as: 'stranger', op: 'select', table: 'friend_sharing', owner: 'user_id', expect: 'hidden' },
 
   // posts

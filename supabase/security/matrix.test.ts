@@ -2,10 +2,8 @@
  * Runs every attack matrix file as Jest tests (`npm run test:security`). Needs a seeded
  * database: TEST_ACCOUNTS_TARGET=local with the local stack's keys, or `.env.staging`.
  */
-import { context, run, type Row } from './engine';
-import friends from './matrix/friends';
-
-const files: Record<string, Row[]> = { friends };
+import { context, run } from './engine';
+import { files } from './matrix';
 
 afterAll(async () => {
   await (await context()).done();
