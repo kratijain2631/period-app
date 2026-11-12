@@ -30,7 +30,7 @@ Advice is visible on full-width cards with short headings, readable detail and n
 The native implementation lives in `app/features/profile/components/PhaseGuide.tsx`; fallback content and string parsing live in `packages/domain/cycles/guidance.ts`. Deployment and device verification steps are in [TROUBLESHOOTING.md](TROUBLESHOOTING.md#on-demand-cycle-guidance-backend-deployed-2026-11-03-device-verification-pending).
 
 
-## Explicit refresh (implemented locally 2026-11-11; not deployed)
+## Explicit refresh (backend deployed 2026-11-11; native rollout pending)
 
 Normal page opens continue to reuse valid advice. **Refresh tips** requests new AI suggestions even when a current cache exists. It does not delete or blank the old tips: a failed, unavailable or rate-limited request leaves the guide useful. A two-minute account-scoped cooldown applies after successful generation and failed/in-flight claims. The button disables while loading or when signed out/no phase is known; feedback explains loading, failure, cooldown or a request already being prepared.
 
@@ -40,4 +40,4 @@ The additive `claim_cycle_guidance_refresh(text,text)` RPC bypasses a valid cach
 
 **Scheduling:** the legacy `nightly-cycle-guidance` job is still active (read-only production check 2026-11-11); it was not removed by this change. Current main includes the scheduler-secret authorization fix from 2026-11-07. New clients need no cron for page-open or manual generation; the separate daily notification job is unaffected. Retiring the legacy job is a separate rollout decision for older clients.
 
-**Delivery:** merge the migration through [DB_PUSH.md](DB_PUSH.md), deploy the updated handler, verify on staging personas, then publish a native build. No live tests, migration application, function deployment or build were performed in this refresh task. `.env.staging` is absent locally. Local checks use mocks and synthetic PostgreSQL/browser fixtures only; native VoiceOver/Dynamic Type and real authenticated staging behavior remain unverified.
+**Delivery:** [Database deploy run 43154655774](https://github.com/kratijain2631/period-app/actions/runs/43154655774) applied `20261111210000_manual-guidance-refresh.sql` to staging, passed all 75 staging access checks, then applied it to production on 2026-11-11. The updated handler was deployed to staging, authenticated API checks passed using an isolated synthetic account (deleted afterward), then the handler was deployed to production (ACTIVE, version 3). Staging checks covered cache reads, refresh claim/save, duplicate suppression, HTTP cooldown and authorization; no AI call or existing persona reset occurred. The new button requires a new native build; VoiceOver/Dynamic Type, HealthKit and real-phone lifecycle checks remain pending. See [TROUBLESHOOTING.md](TROUBLESHOOTING.md#manual-phase-guide-refresh-2026-11-11--backend-deployed-native-rollout-pending).

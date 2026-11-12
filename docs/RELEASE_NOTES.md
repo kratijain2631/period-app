@@ -6,15 +6,19 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## Unreleased
 
+## 2026-11-11 — TestFlight build 1.0.15 (build 36) · build pending
+
+Refresh tips release prepared from merged main, excluding the concurrent Home redesign. Native build and Apple upload are not yet confirmed; required Apple agreements remain unresolved.
+
 ### Added
 
 - **Guidance release migration history reconciled.** Removed the unmerged duplicate `20261103120000` migration from this branch because main already captures those live objects in `20261106190000`; the refresh RPC is the only new database change. No recorded migration or database object is removed.
 
 - **Builds 34/35 submission status corrected (2026-11-11).** Both uploads failed with the required-Apple-agreement error; they are no longer merely queued. Resolve agreements, resubmit and verify tester adoption before merging the separate nightly-guidance retirement draft. The live job remains active.
 
-- **Refresh migration version kept unique.** Moved the pending manual-refresh migration to `20261111210000` after main added the `20261111180000` friend-rule migration; no database deployment was performed.
+- **Refresh migration version kept unique.** Moved the pending manual-refresh migration to `20261111210000` after main added the `20261111180000` friend-rule migration; the migration is now applied to staging and production through the Database deploy workflow.
 
-- **Manual Phase Guide refresh (local, rollout pending).** The You page can explicitly request new AI advice without deleting current tips. Loading/error/cooldown feedback and account/phase guards are controller-owned; a new caller-scoped refresh RPC shares generation leases and enforces a two-minute cooldown. Existing page-open caching, old RPCs and cron jobs remain compatible. 140 Jest tests, TypeScript/Deno, iOS JS export and embedded PostgreSQL checks pass; staging configuration, deployment and a native build remain pending.
+- **Manual Phase Guide refresh (backend deployed, native rollout pending).** The You page can explicitly request new AI advice without deleting current tips. Loading/error/cooldown feedback and account/phase guards are controller-owned; a new caller-scoped refresh RPC shares generation leases and enforces a two-minute cooldown. Existing page-open caching, old RPCs and cron jobs remain compatible. 145 Jest tests, TypeScript/Deno, iOS JS export and embedded PostgreSQL checks pass. Migration and handler are deployed; native delivery and phone checks remain pending.
 
 - **PRs must update the release notes (`.github/workflows/docs-check.yml`, `scripts/ci/check-docs.sh`).** A PR that changes anything other than docs fails the Docs check unless it adds a line to this file; the `no-release-notes` label skips it. It also warns when a migration doesn't touch `SCHEMA.md` or test tooling doesn't touch `TESTING.md`. A new PR template lists the docs to check, including changes made outside git.
 - Added a shared testing guide and instructions for recording code, database, staging, and test-account changes in GitHub.
@@ -49,6 +53,8 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ### Infrastructure & release setup
 
+- **Manual refresh deployed (2026-11-11).** [Database deploy run 43154655774](https://github.com/kratijain2631/period-app/actions/runs/43154655774) applied `20261111210000_manual-guidance-refresh.sql` to staging, passed all 75 staging access checks, then applied it to production on 2026-11-11. The updated authenticated handler reached staging, passed isolated-account API checks (cache, refresh claim/save, duplicate suppression, cooldown and access denial), then reached production (ACTIVE version 3). Synthetic staging data was removed; no paid AI call or existing persona reset occurred. Native checks remain open.
+- **Apple upload retry still blocked.** Build 35 submission `70f04e68-47e6-476c-838e-5d3e46aa6074` failed with the same required-agreement error after the owner reported accepting an agreement. Another pending item is the DSA declaration; owner assessment remains required. Nightly guidance retirement stays a draft until new-client delivery/adoption.
 - **Staging Supabase project created (2026-11-03/04).** `period-app-staging` (`rntqwmptuavqnbjovnae`) on the free plan in the owner's Supabase org; a spare project in that org was paused to free the slot. Its schema was built from the repo's migrations plus a one-off catch-up script for objects production had that no migration did, and it matched production. Vault secrets set, email sign-in on, five edge functions deployed like production but without `OPENAI_API_KEY`. `notifications-handler` (not on production either) and `request-cycle-guidance` (production only) weren't deployed. Seeded with the six personas. `.env.staging` is local to the owner's Mac.
 - **Production schema drift found (2026-11-04).** Production had `cycle_guidance_requests`, `cycle_guidance.phase_started_at`, `claim_cycle_guidance` and `complete_cycle_guidance` with no migration, and no friend-recommendations cron job. Captured in `20261106190000_capture-hand-applied-guidance.sql` and `20261107014000_unschedule-friend-recommendations.sql`.
 - **Privacy and access fixes applied to staging and production by hand (2026-11-04 to 2026-11-08).** Before the Database deploy workflow existed, the migrations listed under Fixed went to staging first, then were pasted into production and verified on both. The dates are on each line. The scheduled edge functions were redeployed to both with the cron secret check on 2026-11-07.

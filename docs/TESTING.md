@@ -91,7 +91,13 @@ The step-by-step procedure, including preflight checks, signing in safely and re
 - **Real HealthKit, background delivery, push notifications and haptics** need a real phone on a TestFlight or dev build. The on-device checklist is in [TODO.md](TODO.md).
 - **Scheduled jobs** (nightly guidance at 03:00 UTC, phase reminders at 15:00 UTC) run on their own schedule. Changing the simulator's date is the practical way to test reminders.
 - **AI text**: staging has no `OPENAI_API_KEY`, so recommendations use their free fallback text.
-- **`request-cycle-guidance`** exists only on production until its source is in the repo ([TODO.md](TODO.md)).
+- **`request-cycle-guidance`** is deployed on staging and production (2026-11-11). Staging has `PROJECT_PUBLISHABLE_KEY` configured but no `OPENAI_API_KEY`; cached requests and refresh claim/save/cooldown can be verified without paid generation. Actual AI generation still needs separate verification in an appropriately configured staging environment.
+
+## Guidance verification — 2026-11-11
+
+PR #79 / merge `e32d9848`: Database deploy run 43154655774 passed 75 staging access checks before production. An isolated synthetic staging account (not a shared persona) verified real JWT login, cached HTTP response, refresh claim/save, duplicate suppression, HTTP refresh cooldown, wrong-account/invalid-token denial and private lease-table denial. The account and cascading records were removed in cleanup; no OpenAI request or shared persona reset occurred. Production received only the migration and handler deployment, with no synthetic test records.
+
+Local checks: 145 Jest tests, TypeScript, Deno, iOS JS export, embedded PostgreSQL and actual-component browser feedback checks pass. Reproduce SQL coverage with `node scripts/db/test-guidance-refresh.mjs /path/to/@electric-sql/pglite/dist/index.js`. Browser fixtures do not prove native accessibility, HealthKit or real-phone lifecycle behavior; these remain open in TODO. `.env.staging` is still absent locally and no usable simulator runtime is installed.
 
 ## Recording changes and results
 
