@@ -30,6 +30,8 @@ type SessionState = {
   isHydrating: boolean;
   alias: string | null;
   isProfileHydrating: boolean;
+  profileLoadError: string | null;
+  profileRetryCount: number;
   setSession: (session: Session | null) => void;
   markCompanionIntroSeen: () => void;
   setHealthPermissions: (nextState: Partial<HealthPermissionsState>) => void;
@@ -37,6 +39,8 @@ type SessionState = {
   setHydrating: (isHydrating: boolean) => void;
   setAlias: (alias: string | null) => void;
   setProfileHydrating: (isHydrating: boolean) => void;
+  setProfileLoadError: (error: string | null) => void;
+  retryProfile: () => void;
   reset: () => void;
 };
 
@@ -119,7 +123,14 @@ export const useSessionStore = create<SessionState>()(
       isHydrating: true,
       alias: null,
       isProfileHydrating: false,
-      setSession: (session) => set({ session }),
+      profileLoadError: null,
+      profileRetryCount: 0,
+      setSession: (session) => set((state) => state.session?.userId === session?.userId
+        ? { session }
+        : {
+            session, alias: null, autoPostSettings: initialAutoPostSettings,
+            profileLoadError: null, isProfileHydrating: Boolean(session),
+          }),
       markCompanionIntroSeen: () => set({ hasSeenCompanionIntro: true }),
       setHealthPermissions: (nextState) =>
         set((state) => ({
@@ -136,6 +147,8 @@ export const useSessionStore = create<SessionState>()(
       setHydrating: (isHydrating) => set({ isHydrating }),
       setAlias: (alias) => set({ alias }),
       setProfileHydrating: (isProfileHydrating) => set({ isProfileHydrating }),
+      setProfileLoadError: (profileLoadError) => set({ profileLoadError }),
+      retryProfile: () => set((state) => ({ profileRetryCount: state.profileRetryCount + 1 })),
       reset: () =>
         set({
           session: null,
@@ -145,6 +158,8 @@ export const useSessionStore = create<SessionState>()(
           isHydrating: false,
           alias: null,
           isProfileHydrating: false,
+          profileLoadError: null,
+          profileRetryCount: 0,
         }),
     }),
     persistOptions,

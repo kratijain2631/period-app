@@ -3,7 +3,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { useCallback, useEffect, useRef } from 'react';
-import { ActivityIndicator, Animated, Easing, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Animated, Easing, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import AuthScreen from '../features/auth/screens/AuthScreen';
 import CompanionIntroScreen from '../features/companion/screens/CompanionIntroScreen';
@@ -39,6 +39,7 @@ const AppNavigator = () => {
   const isHydrating = useSessionStore(selectIsHydrating);
   const alias = useSessionStore(selectAlias);
   const isProfileHydrating = useSessionStore(selectIsProfileHydrating);
+  const profileLoadError = useSessionStore((state) => state.profileLoadError);
 
   useEffect(() => {
     console.log(
@@ -47,9 +48,10 @@ const AppNavigator = () => {
   }, [session, hasSeenIntro, permissionsGranted]);
 
   const isAuthed = Boolean(session);
-  const needsAlias = isAuthed && !alias;
+  const profileUnavailable = isAuthed && !alias && Boolean(profileLoadError);
+  const needsAlias = isAuthed && !alias && !profileUnavailable;
   const needsIntro = isAuthed && !hasSeenIntro;
-  const readyForHome = isAuthed && !needsAlias && !needsIntro;
+  const readyForHome = isAuthed && !needsAlias && !needsIntro && !profileUnavailable;
 
   return (
     <SafeAreaProvider>
@@ -63,10 +65,13 @@ const AppNavigator = () => {
             />
           )}
           {!isHydrating && !isAuthed && <Stack.Screen name="Auth" component={AuthScreen} />}
+          {!isHydrating && !isProfileHydrating && profileUnavailable && (
+            <Stack.Screen name="ProfileUnavailable" component={ProfileUnavailableScreen} />
+          )}
           {!isHydrating && isAuthed && !isProfileHydrating && needsAlias && (
             <Stack.Screen name="Alias" component={AliasScreen} />
           )}
-          {!isHydrating && !needsAlias && needsIntro && (
+          {!isHydrating && !needsAlias && !profileUnavailable && needsIntro && (
             <Stack.Screen name="CompanionIntro" component={CompanionIntroScreen} />
           )}
           {!isHydrating && readyForHome && <Stack.Screen name="MainTabs" component={MainTabs} />}
@@ -88,6 +93,20 @@ const AuthLoadingScreen = () => (
     <ActivityIndicator />
   </View>
 );
+
+const ProfileUnavailableScreen = () => {
+  const message = useSessionStore((state) => state.profileLoadError);
+  const retry = useSessionStore((state) => state.retryProfile);
+  return (
+    <View style={{ flex: 1, justifyContent: 'center', padding: 24, gap: 16 }}>
+      <Text style={{ fontSize: 22, fontWeight: '600' }}>Can’t load your profile</Text>
+      <Text>{message}</Text>
+      <TouchableOpacity accessibilityRole="button" onPress={retry} style={{ paddingVertical: 16 }}>
+        <Text style={{ fontWeight: '600' }}>Try again</Text>
+      </TouchableOpacity>
+    </View>
+  );
+};
 
 const HomeStackScreen = () => (
   // Profile lives only in the "You" tab now — the Home cycle card navigates

@@ -6,6 +6,14 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## Unreleased
 
+### Fixed
+
+- **Offline profile failures no longer restart alias setup (source fix, native delivery pending).** Preserve the signed-in account’s cached alias when offline; without a cache, show profile retry and retry automatically on reconnect. Wait for auth restoration, clear profile state across accounts and reject late account-mismatched lookups/alias saves. Own-alias renaming remains allowed; no database permission or identifier changes.
+
+### Verification
+
+- **Owner 1.0.15 results and staging tests (2026-11-12).** All important users are reported updated; Refresh tips works and in-session airplane-mode refresh retains tips. Cold-start offline revealed the alias bug above. 154 Jest tests and TypeScript pass. Two isolated staging accounts verified own rename, duplicate alias denial, cross-account profile/snapshot/advice isolation and the exact 1.0.12 guidance read; both accounts/data removed, no AI calls or shared-persona resets. No simulator runtime is installed; native retest remains pending.
+
 ### Known / not yet done
 
 - **Offline alias regression claimed (2026-11-12).** Owner confirmed Refresh tips success and correct advice retention on airplane-mode refresh in 1.0.15 (36), but offline cold start incorrectly asks for an alias. Investigating profile-load failure handling and account isolation; no fix shipped yet. Owner reports all important users updated to 1.0.15; legacy-client compatibility and nightly retirement are being reviewed.

@@ -103,3 +103,11 @@ Local checks: 145 Jest tests, TypeScript, Deno, iOS JS export, embedded PostgreS
 ## Recording changes and results
 
 When a persona, fixture, or setup step changes, update the [persona runbook](TEST_ACCOUNTS.md) and any affected steps above. Add a dated entry to [RELEASE_NOTES.md](RELEASE_NOTES.md) under `Unreleased` for staging or test-account changes, including changes made in a dashboard. Record the environment, build or commit, persona aliases, checks run, observed outcome, and pending checks. Link unresolved failures in [BUGS.md](BUGS.md) and follow-up work in [TODO.md](TODO.md). Use secret names when documenting access setup.
+
+## Offline profile and legacy-client checks — 2026-11-12
+
+154 Jest tests and TypeScript pass after the offline alias fix. `useProfileGate.test.tsx` covers persisted-cache cold start, network failure before offline detection, missing-cache retry, confirmed missing alias, auth hydration, reconnection, account switching/late results and same-account token refresh. Alias save rejects a changed initiating account. No iPhone simulator runtimes are installed (`simctl list runtimes` empty); native UI checks are not claimed.
+
+Two disposable synthetic staging accounts signed in with real JWTs. Own-alias rename succeeded; duplicate aliases were rejected; cross-account alias/snapshot updates affected zero rows and target values remained unchanged. The exact build-33 guidance SELECT returned its own cached advice; another account could not overwrite it. Both accounts and cascading records were deleted, shared personas were untouched, and no AI calls or production test writes occurred. Keys stayed in memory. Existing six shared personas remain available; no password reset or reseed occurred.
+
+Owner’s 1.0.15 physical-device results: Refresh tips works, in-session airplane-mode refresh retains advice with an error, and offline cold start incorrectly entered alias setup. Retest cold start after installing the fix.

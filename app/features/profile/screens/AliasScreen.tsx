@@ -15,11 +15,13 @@ const AliasScreen = () => {
       setError('Please enter an alias.');
       return;
     }
+    const expectedUserId = useSessionStore.getState().session?.userId;
+    if (!expectedUserId) return;
     setSaving(true);
     setError(null);
     try {
-      await updateUserAlias(trimmed);
-      setAliasInStore(trimmed);
+      await updateUserAlias(trimmed, expectedUserId);
+      if (useSessionStore.getState().session?.userId === expectedUserId) setAliasInStore(trimmed);
     } catch (err) {
       console.warn('[alias] Failed to save alias', err);
       setError(

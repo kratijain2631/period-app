@@ -2,6 +2,9 @@
 
 Open items, roughly in priority order, with completed items retained as a decision and delivery record.
 
+- [x] **Fix offline cold-start alias onboarding** (2026-11-12, source complete): distinguish an unavailable profile from a confirmed missing alias; keep current-account cache, retry on reconnect and guard account changes. Regression and isolated staging checks pass.
+- [ ] **Deliver/retest the offline alias fix on a phone.** Force-close and reopen in airplane mode with an existing account; no alias prompt. Reconnect and verify the same alias/account; verify profile retry when there is no cache. Not part of installed 1.0.15.
+
 - [ ] **Before any future EU App Store launch, reassess DSA trader status.** Current owner-confirmed plan (2026-11-12): TestFlight only. Before enabling EU App Store distribution, review the then-current commercial/professional plans against [Apple’s DSA criteria](https://developer.apple.com/help/app-store-connect/manage-compliance-information/manage-european-union-digital-services-act-trader-requirements/), update the account/app declaration in App Store Connect, and, if a trader, provide and verify the required public contact information. Confirm compliance is complete before launch. TestFlight-only intent does not settle status for a future EU release; submission of the current declaration has not been confirmed.
 
 - [~] **Manual refresh for Phase Guide** — 🚧 (WIP — Codex, 2026-11-11; implementation, migration and handler deployment complete; native rollout pending). The You page now has an explicit Refresh tips action that bypasses the current advice cache, preserves visible tips on failure, rejects late account/phase responses and enforces a two-minute server cooldown. Existing nightly guidance scheduling remains unchanged (active, read-only check 2026-11-11).
@@ -10,7 +13,8 @@ Open items, roughly in priority order, with completed items retained as a decisi
   - [x] Merge PR #79 and apply the migration through Database deploy run 43154655774: 75 staging access checks passed before production. Deploy the handler to staging, verify authenticated cache/refresh/cooldown/authorization with an isolated synthetic account, delete it, then deploy production handler (ACTIVE version 3). No AI call or shared persona reset.
   - [x] Register native build 1.0.15 (36) on EAS (`70771a46-d436-4d5a-8eb2-98bfbf5625c2`, `FINISHED` rechecked 2026-11-12), tagged `v1.0.15-build36`; automatic submission also `FINISHED` (`c777ddf1-bf03-4475-ba3a-f36476c233e5`).
   - [x] Confirm 1.0.15 (36) native compilation and Apple upload: EAS build and submission both `FINISHED` on recheck 2026-11-12; no submission error.
-  - [ ] Confirm tester availability and verify on a phone: successful regeneration, offline retention, account/phase changes, VoiceOver and Dynamic Type. Build 36 upload succeeded; the current DSA declaration’s completion is not confirmed. No usable simulator runtime or local `.env.staging` is available.
+  - [x] Owner confirms 1.0.15 is installed, all important users updated, successful Refresh tips and in-session airplane-mode refresh retains advice (2026-11-12). This confirms availability to the tested group, not every external tester.
+  - [ ] Complete remaining phone checks: account/phase changes, VoiceOver/Dynamic Type, HealthKit and two-device concurrency. Cold-start offline testing found the separate alias bug above. Current DSA declaration completion remains unconfirmed; no simulator runtime is installed.
 
 ## 🎯 Phase Guide — implementation/backend complete; finish native rollout
 - [~] **Redesign how the "You" page do's/don'ts (cycle guidance) get generated.** 🚧 (WIP — Codex, 2026-11-03; content/cards complete; SQL + function deployed, 1.0.15 (36) built and uploaded; tester availability/device verification pending). Fixes the "No guidance yet" bug ([BUGS.md](BUGS.md)) at the design level, not just by babysitting a cron.
