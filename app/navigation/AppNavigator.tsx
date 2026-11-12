@@ -12,6 +12,8 @@ import FriendsScreen from '../features/friends/screens/FriendsScreen';
 import HomeScreen from '../features/home/screens/HomeScreen';
 import NotificationsScreen from '../features/notifications/screens/NotificationsScreen';
 import ProfileScreen from '../features/profile/screens/ProfileScreen';
+import { ScrollView } from 'react-native';
+import ContactDetails from '../features/profile/screens/ContactDetails';
 import AutoPostSettingsScreen from '../features/profile/screens/AutoPostSettingsScreen';
 import AliasScreen from '../features/profile/screens/AliasScreen';
 import { navigationRef } from './navigationRef';
@@ -31,6 +33,15 @@ const Tab = createBottomTabNavigator();
 const HomeStack = createNativeStackNavigator();
 const FriendsStack = createNativeStackNavigator();
 const ProfileStack = createNativeStackNavigator();
+
+function ManageContactDetailsScreen() {
+  const session = useSessionStore(selectSession);
+  return (
+    <ScrollView contentContainerStyle={{ padding: 24 }} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets>
+      {session ? <ContactDetails key={session.userId} userId={session.userId} /> : null}
+    </ScrollView>
+  );
+}
 
 const AppNavigator = () => {
   const session = useSessionStore(selectSession);
@@ -126,6 +137,11 @@ const FriendsStackScreen = () => (
 const ProfileStackScreen = () => (
   <ProfileStack.Navigator screenOptions={{ headerShown: false, gestureEnabled: true }}>
     <ProfileStack.Screen name="ProfileRoot" component={ProfileScreen} />
+    <ProfileStack.Screen
+      name="ManageContactDetails"
+      component={ManageContactDetailsScreen}
+      options={{ headerShown: true, title: 'Manage contact details', headerBackButtonDisplayMode: 'minimal' }}
+    />
     <ProfileStack.Screen
       name="AutoPostSettings"
       component={AutoPostSettingsScreen}

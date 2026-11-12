@@ -711,6 +711,18 @@ const ProfileScreen = () => {
               style={[styles.accountRow, styles.accountRowDivider]}
               onPress={() => {
                 setSettingsOpen(false);
+                (navigation as any).navigate('ManageContactDetails');
+              }}
+            >
+              <Ionicons name="person-outline" size={18} color="#8A857E" />
+              <Text style={styles.accountRowText}>Manage contact details</Text>
+              <Ionicons name="chevron-forward" size={16} color="#DDD9D3" />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.accountRow, styles.accountRowDivider]}
+              onPress={() => {
+                setSettingsOpen(false);
                 navigateToAutoPostSettings();
               }}
             >
