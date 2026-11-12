@@ -58,7 +58,7 @@ The on-demand guidance migration also adds nullable `cycle_guidance.phase_starte
 
 **Other rules added 2026-11-04 to 2026-11-08:** friend requests must start as pending and clients can change only `status`; aliases are unique ignoring case and surrounding spaces; you can react only to posts you can see and boop only friends; a post reaction or boop is visible only to whoever made it, received it or wrote the post, and to friends of whoever made it.
 
-**Scheduled jobs (pg_cron):** `daily-phase-change-reminder` (15:00 UTC → `phase-change-reminder`) and `nightly-cycle-guidance` (03:00 UTC → `cycle-guidance`). Both send the Vault `cron_secret` in an `x-cron-secret` header, and the functions reject calls without it. The `nightly-friend-recommendations` job is deliberately off (`20261107014000`). See [CYCLE_SYNC.md](CYCLE_SYNC.md).
+**Scheduled jobs (pg_cron), verified 2026-11-12:** `daily-phase-change-reminder` remains active (15:00 UTC → `phase-change-reminder`). `nightly-cycle-guidance` was removed by `20261111211000`. The remaining reminder sends the Vault `cron_secret` in an `x-cron-secret` header; scheduled handlers still reject calls without it. The `nightly-friend-recommendations` job is deliberately off (`20261107014000`). See [CYCLE_SYNC.md](CYCLE_SYNC.md).
 
 ## How it works
 
@@ -81,4 +81,4 @@ Raw `cycle_snapshots` and `cycle_events` rows are owner-only. Friends must use t
 - Applying the migrations to a fresh Supabase project reproduces the schema exactly.
 - Whether another project (e.g. the original collaborator's) matches is only guaranteed if it was built from these same migrations with no out-of-band dashboard changes — see [LEARNINGS.md](LEARNINGS.md).
 
-**Nightly guidance retirement ready for deployment (2026-11-12):** `20261111211000_retire-nightly-cycle-guidance.sql` removes only the named cron job. Owner confirms 1.0.15 adoption and refresh success; older-client loss of fresh advice is accepted. Tables, saved guidance, RPCs/functions and the daily reminder remain. Deployment/metadata checks are still pending.
+**Nightly guidance retirement applied to staging and production (2026-11-12):** `20261111211000_retire-nightly-cycle-guidance.sql` removes only the named cron job. Owner confirms 1.0.15 adoption and refresh success; older-client loss of fresh advice is accepted. Tables, saved guidance, RPCs/functions and the daily reminder remain. [Database deploy run 43274996960](https://github.com/kratijain2631/period-app/actions/runs/43274996960) applied `20261111211000` to staging, passed all 75 staging access checks, then applied production. Post-deploy read-only metadata confirms nightly guidance absent and `daily-phase-change-reminder` active at 15:00 UTC in both projects.

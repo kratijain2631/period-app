@@ -6,14 +6,19 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## Unreleased
 
+### Infrastructure & release setup
+
+- **Nightly guidance retired, verified on both projects (2026-11-12).** PR #83 merged at `0765324f`. [Database deploy run 43274996960](https://github.com/kratijain2631/period-app/actions/runs/43274996960) applied `20261111211000` to staging, passed all 75 staging access checks, then applied production. Post-deploy read-only metadata confirms nightly guidance absent and `daily-phase-change-reminder` active at 15:00 UTC in both projects. Cached tips, all user tables, functions and RPCs remain. No new production test users or AI calls were made.
+- **Offline alias build registered and compiled.** 1.0.16 (37), [EAS build](https://expo.dev/accounts/kratijain26/projects/period-app/builds/41c1a64e-ac8a-480f-a72a-5ff377edce5e), source/tag `781bf582` / `v1.0.16-build37`, is `FINISHED`. [Automatic Apple upload](https://expo.dev/accounts/kratijain26/projects/period-app/submissions/35b18e69-b469-498b-bf5a-f8a0797d2f7a) is queued; upload completion and the physical cold-start retest remain pending.
+
 ### Changed
 
-- **⚠️ BREAKING / not backward-compatible: retire nightly guidance generation (deployment pending).** Builds <=1.0.12 will stop receiving newly precomputed advice; saved tips remain readable. Fresh guidance requires an on-demand-capable client (minimum 1.0.13/build 34; validated 1.0.15/build 36). Owner confirms all important users updated and refresh works, and accepts old-client loss of fresh advice. PR #83 removes only `nightly-cycle-guidance`; daily reminders, cached advice, tables, functions and RPCs stay. Apply only through Database deploy, then verify both projects’ job metadata.
+- **⚠️ BREAKING / not backward-compatible: retire nightly guidance generation (applied 2026-11-12).** Builds <=1.0.12 no longer receive newly precomputed advice; saved tips remain readable. Fresh guidance requires an on-demand-capable client (minimum 1.0.13/build 34; validated 1.0.15/build 36). Owner confirms all important users updated and refresh works, and accepts old-client loss of fresh advice. PR #83 removes only `nightly-cycle-guidance`; daily reminders, cached advice, tables, functions and RPCs stay. Applied through Database deploy run 43274996960; both projects’ metadata verified.
 - **Initial retirement hold resolved.** Builds 34/35 failed Apple upload, so the draft initially stayed unapplied. Build 36 upload/adoption and owner refresh verification now satisfy the rollout gate; DSA status remains a separate future EU launch task.
 
-## 2026-11-12 — TestFlight build 1.0.16 (build 37) · build pending
+## 2026-11-12 — TestFlight build 1.0.16 (build 37) · upload pending
 
-Offline alias recovery release prepared. 154 tests, TypeScript, iOS JS export and isolated staging account-isolation checks pass. Native compilation/upload and physical cold-start retest remain pending; this fix is not in 1.0.15. Nightly-job retirement is a separate backend rollout in PR #83.
+Offline alias recovery release prepared. 154 tests, TypeScript, iOS JS export and isolated staging account-isolation checks pass. Native compilation finished; Apple upload and physical cold-start retest remain pending; this fix is not in 1.0.15. Nightly-job retirement is a separate backend rollout in PR #83.
 
 ### Fixed
 
@@ -25,7 +30,7 @@ Offline alias recovery release prepared. 154 tests, TypeScript, iOS JS export an
 
 ### Known / not yet done
 
-- **Offline alias regression claimed (2026-11-12).** Owner confirmed Refresh tips success and correct advice retention on airplane-mode refresh in 1.0.15 (36), but offline cold start incorrectly asks for an alias. Investigating profile-load failure handling and account isolation; no fix shipped yet. Owner reports all important users updated to 1.0.15; legacy-client compatibility and nightly retirement are being reviewed.
+- **Offline alias regression discovered (2026-11-12).** Owner confirmed Refresh tips success and correct advice retention on airplane-mode refresh in 1.0.15 (36), but offline cold start incorrectly asks for an alias. The source fix is compiled in 1.0.16 (37); Apple upload and physical cold-start retest are pending. Owner reports all important users updated to 1.0.15; legacy-client isolation checks passed and nightly retirement subsequently completed.
 
 ### Infrastructure & release setup
 
