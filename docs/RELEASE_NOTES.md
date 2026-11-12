@@ -25,6 +25,7 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ### Changed
 
+- **Removed `node-fetch`.** It and its types were only used by the old OpenAI architecture test. No user-visible change. The unused `FeedScreen` is kept on purpose, because a feed page may come back. Testing (2026-11-12): `npx tsc --noEmit` clean, `npm test` 154 of 154.
 - **⚠️ BREAKING / not backward-compatible: retire nightly guidance generation (applied 2026-11-12).** Builds <=1.0.12 no longer receive newly precomputed advice; saved tips remain readable. Fresh guidance requires an on-demand-capable client (minimum 1.0.13/build 34; validated 1.0.15/build 36). Owner confirms all important users updated and refresh works, and accepts old-client loss of fresh advice. PR #83 removes only `nightly-cycle-guidance`; daily reminders, cached advice, tables, functions and RPCs stay. Applied through Database deploy run 43274996960; both projects’ metadata verified.
 - **Initial retirement hold resolved.** Builds 34/35 failed Apple upload, so the draft initially stayed unapplied. Build 36 upload/adoption and owner refresh verification now satisfy the rollout gate; DSA status remains a separate future EU launch task.
 
