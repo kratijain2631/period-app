@@ -1,4 +1,8 @@
+import { createHash } from 'crypto';
 import type { Row } from '../engine';
+
+// What a phone would send for bea's email: a SHA-256 of the normalised address.
+const victimEmailHash = createHash('sha256').update('bea@personas.example.com').digest('hex');
 
 // Account data, notifications, guidance and the remaining functions. The victim is bea; ava is
 // her friend and cleo a stranger (see engine.ts).
@@ -86,6 +90,10 @@ const rows: Row[] = [
   { name: 'no login cannot delete an account', as: 'anon', op: 'rpc', fn: 'delete_account', expect: 'denied' },
   { name: 'no login cannot match contacts', as: 'anon', op: 'rpc', fn: 'contact_friend_matches',
     args: { email_hashes: [], max_results: 1 }, expect: 'denied' },
+  { name: 'no login cannot match contacts by email or phone', as: 'anon', op: 'rpc', fn: 'contact_friend_matches_v2',
+    args: { identifiers: [victimEmailHash] }, expect: 'denied' },
+  { name: 'contact matching doesn\'t find someone who hasn\'t opted in', as: 'stranger', op: 'rpc', fn: 'contact_friend_matches_v2',
+    args: { identifiers: [victimEmailHash] }, field: 'id', expect: 'hidden' },
   { name: 'no login cannot send requests by email', as: 'anon', op: 'rpc', fn: 'send_friend_request_by_email',
     args: { target_email: 'bea@personas.example.com' }, expect: 'denied' },
   { name: 'no login cannot remove friends', as: 'anon', op: 'rpc', fn: 'remove_friend',
