@@ -8,6 +8,8 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ### Added
 
+- **Builds 34/35 submission status corrected (2026-11-11).** Both uploads failed with the required-Apple-agreement error; they are no longer merely queued. Resolve agreements, resubmit and verify tester adoption before merging the separate nightly-guidance retirement draft. The live job remains active.
+
 - **Refresh migration version kept unique.** Moved the pending manual-refresh migration to `20261111210000` after main added the `20261111180000` friend-rule migration; no database deployment was performed.
 
 - **Manual Phase Guide refresh (local, rollout pending).** The You page can explicitly request new AI advice without deleting current tips. Loading/error/cooldown feedback and account/phase guards are controller-owned; a new caller-scoped refresh RPC shares generation leases and enforces a two-minute cooldown. Existing page-open caching, old RPCs and cron jobs remain compatible. 140 Jest tests, TypeScript/Deno, iOS JS export and embedded PostgreSQL checks pass; staging configuration, deployment and a native build remain pending.
@@ -41,7 +43,7 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## 2026-11-03 — TestFlight build 1.0.14 (build 35)
 
-**Native build finished; automatic submission queued on EAS.** [EAS build](https://expo.dev/accounts/kratijain26/projects/period-app/builds/bf9a1168-1a04-430f-b342-bc6128d92fd8), with [automatic submission](https://expo.dev/accounts/kratijain26/projects/period-app/submissions/dbea0ad5-7488-4cef-a16d-cb238d5050a6) queued (`IN_QUEUE`; no upload logs yet). Source tag: `v1.0.14-build35` (`a67b00dd`). TestFlight availability is not yet confirmed.
+**Native build finished; Apple submission failed.** [EAS build](https://expo.dev/accounts/kratijain26/projects/period-app/builds/bf9a1168-1a04-430f-b342-bc6128d92fd8), [submission](https://expo.dev/accounts/kratijain26/projects/period-app/submissions/dbea0ad5-7488-4cef-a16d-cb238d5050a6). Rechecked 2026-11-11: `ERRORED` / `EAS_ASC_REQUIRED_AGREEMENTS_MISSING_OR_EXPIRED`. Account Holder must accept the required Apple agreements, then retry this completed build. This submission has not confirmed TestFlight availability.
 
 ### Fixed
 
@@ -57,7 +59,7 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## 2026-11-03 — TestFlight build 1.0.13 (build 34)
 
-**Native build finished; automatic submission queued on EAS.** [EAS build](https://expo.dev/accounts/kratijain26/projects/period-app/builds/b5517231-315b-48d7-adb1-9e98af8c8687), with [auto-submission queued](https://expo.dev/accounts/kratijain26/projects/period-app/submissions/a644dafb-6b2c-4ffc-a8b0-f8169b294049) (`IN_QUEUE`, rechecked 2026-11-03 at 4:28 p.m. ET; no upload logs yet). Source: tag `v1.0.13-build34`. TestFlight availability is not yet confirmed.
+**Native build finished; Apple submission failed.** [EAS build](https://expo.dev/accounts/kratijain26/projects/period-app/builds/b5517231-315b-48d7-adb1-9e98af8c8687), [submission](https://expo.dev/accounts/kratijain26/projects/period-app/submissions/a644dafb-6b2c-4ffc-a8b0-f8169b294049). Rechecked 2026-11-11: `ERRORED` / `EAS_ASC_REQUIRED_AGREEMENTS_MISSING_OR_EXPIRED`. Account Holder must accept the required Apple agreements, then retry this completed build. This submission has not confirmed TestFlight availability.
 
 ### Fixed
 
