@@ -1,0 +1,10 @@
+{
+  "$comment": "Exceptions to the rules lint (scripts/security/lint.js). Each entry needs a reason, so loosening access shows up in the pull request diff. Entries that stop matching anything fail the lint and must be removed.",
+  "signed-in-function-ignores-caller": {
+    "sync-score": "Placeholder that returns a score from a hash of the given id. It reads no table, so the caller doesn't matter."
+  },
+  "ownership-columns-pinned": {
+    "friend_sharing.friend_id (friend_sharing_update_own)": "friend_sharing controls nothing since 20261111180000; it's kept only for older app builds.",
+    "notifications.friend_id (notifications_update_own)": "Only changes your own notification (the row stays pinned to auth.uid() by user_id), so it can't reach anyone else's data."
+  }
+}
