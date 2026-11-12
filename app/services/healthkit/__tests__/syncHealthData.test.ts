@@ -315,4 +315,18 @@ describe('syncHealthData signal integration', () => {
     // The phase-transition post still carries the real current phase.
     expect(transitionEvent?.phase).toBe(snapshot?.currentPhase);
   });
+  it('does not overwrite the shared snapshot or post a phase change when Health returns nothing', async () => {
+    mockQueryCategorySamples.mockResolvedValue([]);
+    mockQueryQuantitySamples.mockResolvedValue([]);
+
+    const snapshot = await syncHealthData({ trigger: 'background' });
+
+    expect(snapshot?.currentPhase).toBe('unknown');
+    // The local cache still reflects this device's (empty) reading...
+    expect(mockUpsertCycleSnapshot).toHaveBeenCalled();
+    // ...but friends keep seeing the last real snapshot.
+    expect(mockUpsertCycleSnapshotRemote).not.toHaveBeenCalled();
+    const postedEvents = mockUpsertCycleEvents.mock.calls[0]?.[0] ?? [];
+    expect(postedEvents).toEqual([]);
+  });
 });
