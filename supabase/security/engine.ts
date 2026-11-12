@@ -49,6 +49,18 @@ export type Row =
   | {
       name: string;
       as: Actor;
+      op: 'storage';
+      action: 'read' | 'upload' | 'update' | 'delete';
+      bucket: string;
+      /** Object path; 'victim' or 'self' as the first folder is replaced by that user's id. */
+      path: string;
+      /** The service key uploads the object first, as the victim's existing file. */
+      existing?: boolean;
+      expect: 'allowed' | 'denied' | 'hidden';
+    }
+  | {
+      name: string;
+      as: Actor;
       op: 'rpc';
       fn: string;
       args?: Record<string, unknown>;
@@ -189,6 +201,47 @@ export const run = async (row: Row): Promise<{ outcome: Expect; detail: string }
         for (const [key, value] of Object.entries(where)) cleanup = cleanup.eq(key, value as string);
         await cleanup;
       }
+    }
+  }
+
+  if (row.op === 'storage') {
+    const [first, ...rest] = row.path.split('/');
+    const objectPath = [String(await resolve(ctx, self, first)), ...rest].join('/');
+    const original = new Blob(['security matrix original'], { type: 'text/plain' });
+    const contents = async () => {
+      const { data } = await ctx.admin.storage.from(row.bucket).download(objectPath);
+      return data ? await data.text() : null;
+    };
+    if (row.existing) {
+      const { error } = await ctx.admin.storage.from(row.bucket).upload(objectPath, original, { upsert: true });
+      if (error) throw new Error(`Setting up ${objectPath} failed: ${error.message}`);
+    }
+    try {
+      const bucket = client.storage.from(row.bucket);
+      const attempt = new Blob(['security matrix attempt'], { type: 'text/plain' });
+      if (row.action === 'read') {
+        const { data, error } = await bucket.download(objectPath);
+        return data ? { outcome: 'allowed', detail: 'downloaded' } : { outcome: 'hidden', detail: error?.message ?? 'nothing' };
+      }
+      if (row.action === 'upload') {
+        const { error } = await bucket.upload(objectPath, attempt);
+        const now = await contents();
+        return now === 'security matrix attempt'
+          ? { outcome: 'allowed', detail: 'stored' }
+          : { outcome: 'denied', detail: error?.message ?? 'not stored' };
+      }
+      if (row.action === 'update') {
+        const { error } = await bucket.update(objectPath, attempt);
+        const now = await contents();
+        return now === 'security matrix attempt'
+          ? { outcome: 'allowed', detail: 'replaced' }
+          : { outcome: 'hidden', detail: error?.message ?? 'unchanged' };
+      }
+      await bucket.remove([objectPath]);
+      const now = await contents();
+      return now === null ? { outcome: 'allowed', detail: 'deleted' } : { outcome: 'hidden', detail: 'still there' };
+    } finally {
+      await ctx.admin.storage.from(row.bucket).remove([objectPath]);
     }
   }
 

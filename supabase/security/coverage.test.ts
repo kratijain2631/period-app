@@ -25,7 +25,12 @@ const catalog = (sql: string): string[] =>
     .filter(Boolean);
 
 (local ? describe : describe.skip)('coverage guard', () => {
-  const covered = new Set(rows.map((row) => ('table' in row ? `${row.table}.${row.op}` : `rpc.${row.fn}`)));
+  const STORAGE_OP = { read: 'select', upload: 'insert', update: 'update', delete: 'delete' } as const;
+  const covered = new Set(
+    rows.map((row) =>
+      'table' in row ? `${row.table}.${row.op}` : 'bucket' in row ? `storage:${row.bucket}.${STORAGE_OP[row.action]}` : `rpc.${row.fn}`,
+    ),
+  );
 
   it('every operation a policy allows has a matrix row', () => {
     const reachable = catalog(`
@@ -38,6 +43,22 @@ const catalog = (sql: string): string[] =>
              else array['select', 'insert', 'update', 'delete'] end) as op
        where n.nspname = 'public'
          and (po.polroles = '{0}' or po.polroles && array(select oid from pg_roles where rolname in ('anon', 'authenticated')))`);
+    const missing = reachable.filter((cell) => !covered.has(cell) && !notApplicable[cell]);
+    expect(missing).toEqual([]);
+  });
+
+  it('every storage operation a policy allows has a matrix row', () => {
+    // Policies on storage.objects name their bucket as bucket_id = '<name>'.
+    const reachable = catalog(`
+      select distinct 'storage:' || substring(coalesce(pg_get_expr(po.polqual, po.polrelid), pg_get_expr(po.polwithcheck, po.polrelid))
+               from 'bucket_id = ''([^'']+)''') || '.' || op
+        from pg_policy po
+        cross join lateral unnest(case po.polcmd when 'r' then array['select'] when 'a' then array['insert']
+             when 'w' then array['update'] when 'd' then array['delete']
+             else array['select', 'insert', 'update', 'delete'] end) as op
+       where po.polrelid = 'storage.objects'::regclass
+         and (po.polroles = '{0}' or po.polroles && array(select oid from pg_roles where rolname in ('anon', 'authenticated')))`);
+    expect(reachable.length).toBeGreaterThan(0);
     const missing = reachable.filter((cell) => !covered.has(cell) && !notApplicable[cell]);
     expect(missing).toEqual([]);
   });
@@ -56,6 +77,7 @@ const catalog = (sql: string): string[] =>
     const functions = new Set(catalog(`select p.proname from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname = 'public'`));
     const stale = Object.keys(notApplicable).filter((cell) => {
       const [scope, name] = cell.split('.');
+      if (scope.startsWith('storage:')) return covered.has(cell);
       return scope === 'rpc' ? !functions.has(name) : !tables.has(scope) || covered.has(cell);
     });
     expect(stale).toEqual([]);

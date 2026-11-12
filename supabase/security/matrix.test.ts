@@ -11,7 +11,7 @@ afterAll(async () => {
 
 describe.each(Object.entries(files))('%s', (_file, rows) => {
   // Rows change shared persona data and put it back, so they run one at a time.
-  it.each(rows.map((row) => [`${row.as} · ${row.op} · ${'table' in row ? row.table : row.fn}: ${row.name}`, row] as const))(
+  it.each(rows.map((row) => [`${row.as} · ${row.op} · ${'table' in row ? row.table : 'bucket' in row ? `${row.bucket} ${row.action}` : row.fn}: ${row.name}`, row] as const))(
     '%s',
     async (_label, row) => {
       const { outcome, detail } = await run(row);
