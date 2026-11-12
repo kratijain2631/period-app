@@ -8,6 +8,8 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ### Added
 
+- **Nightly guidance retirement planned; not applied.** Owner requested removing the legacy job once on-demand guidance replaces it. Retirement is blocked by Apple agreement errors on the replacement-build submissions; the live guidance and daily reminder schedules remain unchanged.
+
 - **PRs must update the release notes (`.github/workflows/docs-check.yml`, `scripts/ci/check-docs.sh`).** A PR that changes anything other than docs fails the Docs check unless it adds a line to this file; the `no-release-notes` label skips it. It also warns when a migration doesn't touch `SCHEMA.md` or test tooling doesn't touch `TESTING.md`. A new PR template lists the docs to check, including changes made outside git.
 - Added a shared testing guide and instructions for recording code, database, staging, and test-account changes in GitHub.
 - **[TESTING.md](TESTING.md) covers every way to test.** Which backend each way of running the app uses (TestFlight and `npm run start` hit production, `npm run start:staging` hits staging), the hard rules, the checks, the personas, simulator build steps, testing database changes, and what staging can't test.
