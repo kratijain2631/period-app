@@ -6,6 +6,14 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## Unreleased
 
+- 2026-11-12 — **1.0.17 fixes for the friends beta (source only, not yet built).** Testing: `npx tsc --noEmit` clean; 165 Jest tests and the iOS JS export pass. Not yet checked on a phone or simulator.
+  - **Phone verification is off by default.** New accounts finish setup with only an alias, and the phone section is hidden in contact details, until a build sets `EXPO_PUBLIC_PHONE_VERIFICATION=true`. Production has no SMS provider yet, so the required phone step from #90 would have stopped new users. This makes main releasable again.
+  - **Over-the-air updates.** `expo-updates` added, with a channel per build profile and the app version as the runtime version. From 1.0.17 on, JS-only fixes can ship with `eas update` (INSTRUCTIONS.md §2b). Native change: needs the 1.0.17 build.
+  - **Empty Health syncs no longer wipe shared data.** A sync with no flow or signal samples keeps the snapshot friends see and posts no phase change.
+  - **No-data state.** Without period data in Apple Health, the You recap explains how to add it instead of showing default numbers, and sync scores are hidden until both friends have data.
+  - **Friend requests in Circle.** Incoming requests (Accept/Decline) and sent requests are listed; Circle refreshes as soon as a request changes; "Requested you" in search and contact results is an Accept button; email requests show their confirmation. Accepting removes the opposite pending request when both people asked. The email helper no longer says the app hides whether an account exists, since sent requests now show the recipient's alias.
+  - **Friend Sync cycle history** compares whole periods instead of single days. Phase names show "PMS" in capitals everywhere.
+
 - 2026-11-12 — Phone/email discovery migration applied to staging and production in [Database deploy](https://github.com/kratijain2631/period-app/actions/runs/43298960603). The 76 staging access checks, 155 Jest tests, TypeScript and local SQL contract checks passed. Hosted SMS delivery and native onboarding/contact checks remain pending. No TestFlight build includes this change yet.
 - New account setup confirms the sign-in email and verifies a phone number by SMS. Circle uses one default-off preference for matching by either verified identifier. Manage contact details is under You → Settings, where users can update their account email and verified phone number. Requires the new database RPC and a configured SMS provider before releasing the client.
 

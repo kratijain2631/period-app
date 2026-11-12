@@ -156,7 +156,7 @@ Structural cleanups — not user-facing, but they make everything after them che
 - [ ] App Privacy "nutrition labels" + age rating in App Store Connect (declare health-data collection)
 
 ## Nice to have
-- [ ] Set up EAS Update (`expo-updates`) for instant over-the-air JS updates during the beta (no rebuild)
+- [x] _(Added in source 2026-11-12 for 1.0.17; first works once a 1.0.17 build is installed. Steps: INSTRUCTIONS.md §2b.)_ Set up EAS Update (`expo-updates`) for instant over-the-air JS updates during the beta (no rebuild)
 - [ ] Cosmetic: clean up leftover "Cycle Companion" references in docs (`thoughts/`, `prompts/`, `implementation-docs/`, `overall/`)
 
 ## Separate track (not this repo)
@@ -173,4 +173,4 @@ Account Holder: check whether Apple still shows a pending DSA declaration and co
 Engineering’s missing-sharing-row Circle UI check stays open. The old batch redeploy is superseded by verified nightly retirement; no owner action is required for either engineering item. Nightly retirement is done on both projects and daily reminders remain active.
 
 
-- [ ] Verify staging SMS delivery and complete the phone/email matrix in [TESTING.md](TESTING.md) before distributing the new onboarding flow.
+- [ ] Verify staging SMS delivery and complete the phone/email matrix in [TESTING.md](TESTING.md), then set `EXPO_PUBLIC_PHONE_VERIFICATION=true` for production builds. Until then, phone verification is off and sign-up needs only an alias (1.0.17). Original item: verify staging SMS delivery and complete the phone/email matrix in [TESTING.md](TESTING.md) before distributing the new onboarding flow.
