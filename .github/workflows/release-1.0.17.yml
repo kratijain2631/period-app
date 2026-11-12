@@ -1,0 +1,47 @@
+name: iOS 1.0.17 release
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/release-1.0.17.yml']
+  workflow_dispatch: {}
+permissions:
+  contents: read
+concurrency:
+  group: ios-release-1-0-17
+  cancel-in-progress: false
+jobs:
+  staging:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npx tsc --noEmit && npm test -- --runInBand
+      - name: Verify two staging accounts
+        env:
+          STAGING_SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL }}
+          STAGING_SUPABASE_ANON_KEY: ${{ secrets.STAGING_SUPABASE_ANON_KEY }}
+          STAGING_SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.STAGING_SUPABASE_SERVICE_ROLE_KEY }}
+          TEST_PERSONA_PASSWORD: ${{ secrets.TEST_PERSONA_PASSWORD }}
+        run: node scripts/test-accounts/contact-release.cjs
+  testflight:
+    needs: staging
+    runs-on: ubuntu-latest
+    env:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+    steps:
+      - name: Check Expo access
+        run: test -n "$EXPO_TOKEN" || { echo 'Missing repository Actions secret EXPO_TOKEN'; exit 1; }
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Build and submit iOS candidate
+        run: |
+          grep -q "version: '1.0.17'" app.config.ts
+          npx --yes eas-cli@21.6.0 build --platform ios --profile production --auto-submit --non-interactive
