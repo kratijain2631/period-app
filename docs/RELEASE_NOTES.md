@@ -6,6 +6,10 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## Unreleased
 
+## 2026-11-12 — TestFlight build 1.0.16 (build 37) · build pending
+
+Offline alias recovery release prepared. 154 tests, TypeScript, iOS JS export and isolated staging account-isolation checks pass. Native compilation/upload and physical cold-start retest remain pending; this fix is not in 1.0.15. Nightly-job retirement is a separate backend rollout in PR #83.
+
 ### Fixed
 
 - **Offline profile failures no longer restart alias setup (source fix, native delivery pending).** Preserve the signed-in account’s cached alias when offline; without a cache, show profile retry and retry automatically on reconnect. Wait for auth restoration, clear profile state across accounts and reject late account-mismatched lookups/alias saves. Own-alias renaming remains allowed; no database permission or identifier changes.
