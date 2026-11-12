@@ -162,3 +162,5 @@ Structural cleanups — not user-facing, but they make everything after them che
 - [ ] Fix the "Sync Sisters" app in Newly: run `eas init --force` inside Newly so it gets its own EAS project id (currently collides with this project's id)
 
 See [IDENTIFIERS.md](IDENTIFIERS.md) for all names/identifiers and where to change them.
+
+- [ ] Verify staging SMS delivery and complete the phone/email matrix in [TESTING.md](TESTING.md) before distributing the new onboarding flow.

@@ -6,6 +6,8 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## Unreleased
 
+- New account setup confirms the sign-in email and verifies a phone number by SMS. Circle uses one default-off preference for matching by either verified identifier. Existing developers can add their number in Circle. Requires the new database RPC and a configured SMS provider before releasing the client.
+
 ### Changed
 
 - **⚠️ BREAKING / not backward-compatible: retire nightly guidance generation (deployment pending).** Builds <=1.0.12 will stop receiving newly precomputed advice; saved tips remain readable. Fresh guidance requires an on-demand-capable client (minimum 1.0.13/build 34; validated 1.0.15/build 36). Owner confirms all important users updated and refresh works, and accepts old-client loss of fresh advice. PR #83 removes only `nightly-cycle-guidance`; daily reminders, cached advice, tables, functions and RPCs stay. Apply only through Database deploy, then verify both projects’ job metadata.

@@ -48,6 +48,7 @@ The on-demand guidance migration also adds nullable `cycle_guidance.phase_starte
 | `is_friend` | True when the caller and the given user have an accepted friend request in either direction. The single rule behind every friend-visibility policy and RPC. Added by `20261111180000_friend-rule.sql`, applied to staging and production by the Database deploy workflow on merge. |
 | `cycle_event_visible` | True when the caller owns the cycle event or is friends with its owner. Used by event-reaction and boop policies, since `cycle_events` is owner-only. |
 | `friend_profiles` | Names (alias, full name) for the given users who are the caller's friends. Use this for other people's names: `users` only returns your own row. |
+| `contact_friend_matches_v2` | Authenticated lookup of up to 200 hashes against confirmed Auth phone/email fields of opted-in accounts. One result per account. The private per-caller counter limits checks to 20,000 identifiers per hour. |
 | `contact_friend_matches` | Privacy-minimized contact discovery: matches submitted normalized email hashes only against users who opted into contact discoverability. Raw address-book emails are never submitted. |
 | `ensure_friend_sharing` | Keeps legacy `friend_sharing` rows in step with accepted requests. |
 | `delete_account` | Account self-deletion — clears the user's data and removes their auth record (SECURITY DEFINER). |

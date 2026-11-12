@@ -54,7 +54,7 @@ Known bugs to fix. This is for **open** bugs; problems we already diagnosed and 
 
 ### Backend hardening (found 2026-11-03)
 
-- [x] **Legacy `cycle-guidance` batch handler lacked caller authorization — FIXED 2026-11-07.** Current main records the `_shared/cronAuth.ts` scheduler-secret check and migration as deployed to staging/production; callers without the secret are rejected. The scheduled job is still active (read-only check 2026-11-11). The manual refresh task integrates this fix; it does not redeploy or remove the batch. Historical guidance/source notes describing the missing authorization predate that fix.
+- [x] **Legacy `cycle-guidance` batch handler lacked caller authorization — FIXED 2026-11-07.** Current main records the `_shared/cronAuth.ts` scheduler-secret check and migration as deployed to staging/production; callers without the secret are rejected. The scheduled job was active on 2026-11-11 and retired through PR #83 on 2026-11-12. The manual refresh task integrates this fix; it does not redeploy or remove the batch. Historical guidance/source notes describing the missing authorization predate that fix.
 
 ### Found in testing (2026-08-03, owner)
 

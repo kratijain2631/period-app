@@ -115,3 +115,9 @@ Owner’s 1.0.15 physical-device results: Refresh tips works, in-session airplan
 ## Nightly guidance retirement gate — updated 2026-11-12
 
 Owner confirms important users on 1.0.15, successful refresh and accepts missing/stale new advice for older clients. This supersedes the initial draft’s Apple agreement blocker. `scripts/db/test-guidance-schedule-retirement.mjs` executes the migration in embedded PostgreSQL with a stubbed pg_cron API, verifying named-job targeting, retained reminder/unrelated jobs, retained saved tips and safe reruns. Run it with a temporary PGlite module path. It does not replace the PR’s full migration/security checks or staging deployment. After Database deploy, query only cron metadata to verify nightly guidance absent and daily reminder active in both projects; do not invoke production jobs or seed production users.
+
+## Phone and email discovery
+
+Before distributing a client with required phone setup, enable phone verification, require phone change confirmations, and configure an SMS provider in the target Supabase Auth project. Validate delivery with an authorized test number. Keep provider credentials server-side. Apple users can keep their sign-in email (including a private relay) or verify a different account email that friends know. Verify email change confirmations are enabled. Existing users can verify a number in Circle → Manage contact details.
+
+On staging, use two synthetic accounts. Complete fresh alias setup with a verified email and SMS number. Try an incorrect code and retry. With B opted in, test three address cards separately: B’s phone only, B’s email only, and both together (one result). Repeat with B off (zero). Verify denied, limited and full iOS access and Settings revocation. A must be able to search while undiscoverable. Record the backend, build, OS, aliases and actual results. Do not record codes or phone numbers. Hosted SMS and native UI checks are pending.

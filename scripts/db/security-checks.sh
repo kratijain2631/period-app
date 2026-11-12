@@ -12,3 +12,7 @@ export TEST_PERSONA_PASSWORD
 
 npm run --silent test-accounts:seed
 npm run --silent test-accounts:rls
+
+# Exercise verified-phone matching in the disposable database.
+eval "$(supabase status -o env | grep '^DB_URL=')"
+psql "$DB_URL" -v ON_ERROR_STOP=1 -f supabase/tests/phone-contact-discovery.sql

@@ -236,6 +236,7 @@ const checkNoLoginFunctions = async (
     ['friend_profiles', { friend_ids: [] }],
     ['friend_request_profiles', { request_ids: [] }],
     ['shared_cycle_events', { max_rows: 1 }],
+    ['contact_friend_matches_v2', { identifiers: [] }],
     ['contact_friend_matches', { email_hashes: [], max_results: 1 }],
     ['sync-score', { friend_id: nobody }],
     ['ensure_friend_sharing', { request_ids: [] }],
