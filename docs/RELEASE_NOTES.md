@@ -5,6 +5,8 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 **`· public`** on a header means the build was **submitted for Beta App Review / available to external (public) TestFlight testers**. Builds without it were uploaded to TestFlight but kept **internal** (not submitted for external review).
 
 ## Unreleased
+
+- 2026-11-12 — Phone/email discovery migration applied to staging and production in [Database deploy](https://github.com/kratijain2631/period-app/actions/runs/43298960603). The 76 staging access checks, 155 Jest tests, TypeScript and local SQL contract checks passed. Hosted SMS delivery and native onboarding/contact checks remain pending. No TestFlight build includes this change yet.
 - New account setup confirms the sign-in email and verifies a phone number by SMS. Circle uses one default-off preference for matching by either verified identifier. Existing developers can add their number in Circle. Requires the new database RPC and a configured SMS provider before releasing the client.
 
 
@@ -438,4 +440,3 @@ The app as it existed before this work began.
 - **Profile customization + avatar editing** (`avatar-generator` edge function).
 - **Add a mood to your update**, **event reactions**, **friend removal** (`remove_friend` RPC), **swipe-back** on Friend Sync, refreshed home feed / reactions UX.
 - **Jest CI fixes** (jsdom + localStorage/auth), `architecture.md`, simulator-setup doc.
-
