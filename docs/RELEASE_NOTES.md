@@ -6,6 +6,10 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## Unreleased
 
+### Known / not yet done
+
+- **Offline alias regression claimed (2026-11-12).** Owner confirmed Refresh tips success and correct advice retention on airplane-mode refresh in 1.0.15 (36), but offline cold start incorrectly asks for an alias. Investigating profile-load failure handling and account isolation; no fix shipped yet. Owner reports all important users updated to 1.0.15; legacy-client compatibility and nightly retirement are being reviewed.
+
 ### Infrastructure & release setup
 
 - **Guidance status audit and phone test steps (2026-11-12).** Corrected stale build-34 submission/new-build-pending wording across TODO, FEATURES, BUGS, GUIDANCE, CYCLE_SYNC and TROUBLESHOOTING. Build 36 includes on-demand advice and Refresh tips; compilation/upload succeeded, but tester group availability/adoption and native checks remain unverified. Browser access timed out when attempting to inspect availability. Closed the stale nightly-500 checkbox using the already recorded successful 2026-11-08 run; no backend change.
