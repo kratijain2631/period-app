@@ -116,3 +116,5 @@ This isn't tied to any agent or model. The hard rules are in [AGENTS.md](../AGEN
 ### Contact-discovery QA pair
 
 The 1.0.17 release workflow provisions `circleqa-a@personas.example.com` (searcher) and `circleqa-b@personas.example.com` (target) only in staging. Use Email (dev) and the existing `TEST_PERSONA_PASSWORD`. The target fixture number is the fictional +1 202-555-0148. Automated checks simulate confirmation with the staging Admin API and restore the target to undiscoverable. For a real delivery test, use an authorized SMS-capable number. The six shared cycle personas are independent of this pair.
+
+Both QA accounts were provisioned and signed in successfully on 2026-11-12. The staging run verified opt-out on the last lookup and restored circleqa-b to undiscoverable.
