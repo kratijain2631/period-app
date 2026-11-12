@@ -27,7 +27,35 @@ export const assertNotProduction = (url: string) => {
   }
 };
 
+/**
+ * With TEST_ACCOUNTS_TARGET=local, the seed and checks run against a local Supabase (Docker),
+ * taking its URL and keys from the environment (`supabase status -o env`). Used by CI on pull
+ * requests. Only a localhost URL is accepted, so this can't point at a real project.
+ */
+const loadLocalEnv = (): StagingEnv => {
+  const url = process.env.API_URL ?? '';
+  const anonKey = process.env.ANON_KEY ?? '';
+  const serviceRoleKey = process.env.SERVICE_ROLE_KEY ?? '';
+  const personaPassword = process.env.TEST_PERSONA_PASSWORD ?? '';
+  if (!/^http:\/\/(127\.0\.0\.1|localhost)(:\d+)?\/?$/.test(url)) {
+    throw new Error('TEST_ACCOUNTS_TARGET=local needs API_URL to be a local Supabase (http://127.0.0.1:<port>).');
+  }
+  if (!anonKey || !serviceRoleKey) {
+    throw new Error('TEST_ACCOUNTS_TARGET=local needs ANON_KEY and SERVICE_ROLE_KEY from `supabase status -o env`.');
+  }
+  return {
+    raw: { EXPO_PUBLIC_SUPABASE_URL: url, EXPO_PUBLIC_SUPABASE_ANON_KEY: anonKey },
+    url,
+    anonKey,
+    serviceRoleKey,
+    personaPassword: personaPassword || undefined,
+  };
+};
+
 export const loadStagingEnv = (): StagingEnv => {
+  if (process.env.TEST_ACCOUNTS_TARGET === 'local') {
+    return loadLocalEnv();
+  }
   if (!fs.existsSync(STAGING_ENV_FILE)) {
     throw new Error(
       'Missing .env.staging. Copy scripts/test-accounts/staging.env.example to .env.staging and fill it in (see docs/TEST_ACCOUNTS.md).',

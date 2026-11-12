@@ -29,6 +29,7 @@ The STAGING · FAKE HEALTH pill alone doesn't prove you're on staging. A success
 |---|---|---|
 | Unit tests | `npm test` | Every change. CI runs it on every push to `main`. |
 | Types | `npx tsc --noEmit` | Every change. EAS and Metro don't type-check, so this is the only static net. |
+| Access rules, local | `npm run test:security` | Before opening a PR that touches `supabase/`. Needs Docker. Builds a throwaway database from the migrations, seeds the personas and runs the same checks. The **Security checks** workflow runs this on every such PR and on pushes to `main`, with no secrets. |
 | Access rules on staging | `npm run test-accounts:rls` | After any change to RLS, grants or database functions. Needs `.env.staging`. The Database deploy workflow also runs it on staging before every production push. Use the staging job log for the count and result of a specific run. |
 
 A cloud agent without a Mac can run these but not the simulator. Say so in the report rather than claiming a staging test.
@@ -82,7 +83,7 @@ The step-by-step procedure, including preflight checks, signing in safely and re
 ## 4. Database changes
 
 1. Write a migration (rules in [DB_PUSH.md](DB_PUSH.md)) and test it locally in Docker: `supabase start`, then `supabase db reset --local`.
-2. If it changes access rules, add or update a check in `npm run test-accounts:rls`.
+2. If it changes access rules, add or update a check in `npm run test-accounts:rls`, and run `npm run test:security`. The PR's **Security checks** run does the same, and fails before anything reaches staging.
 3. Merge the PR. The Database deploy workflow applies it to staging, runs the RLS checks there, and only then applies it to production. Watch the run in the Actions tab.
 4. Edge functions aren't deployed by the workflow. Deploy a changed function to staging first, test it there, then deploy it to production.
 
