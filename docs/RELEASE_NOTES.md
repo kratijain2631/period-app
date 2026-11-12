@@ -11,6 +11,10 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 - **⚠️ BREAKING / not backward-compatible: retire nightly guidance generation (deployment pending).** Builds <=1.0.12 will stop receiving newly precomputed advice; saved tips remain readable. Fresh guidance requires an on-demand-capable client (minimum 1.0.13/build 34; validated 1.0.15/build 36). Owner confirms all important users updated and refresh works, and accepts old-client loss of fresh advice. PR #83 removes only `nightly-cycle-guidance`; daily reminders, cached advice, tables, functions and RPCs stay. Apply only through Database deploy, then verify both projects’ job metadata.
 - **Initial retirement hold resolved.** Builds 34/35 failed Apple upload, so the draft initially stayed unapplied. Build 36 upload/adoption and owner refresh verification now satisfy the rollout gate; DSA status remains a separate future EU launch task.
 
+## 2026-11-12 — TestFlight build 1.0.16 (build 37) · build pending
+
+Offline alias recovery release prepared. 154 tests, TypeScript, iOS JS export and isolated staging account-isolation checks pass. Native compilation/upload and physical cold-start retest remain pending; this fix is not in 1.0.15. Nightly-job retirement is a separate backend rollout in PR #83.
+
 ### Fixed
 
 - **Offline profile failures no longer restart alias setup (source fix, native delivery pending).** Preserve the signed-in account’s cached alias when offline; without a cache, show profile retry and retry automatically on reconnect. Wait for auth restoration, clear profile state across accounts and reject late account-mismatched lookups/alias saves. Own-alias renaming remains allowed; no database permission or identifier changes.
