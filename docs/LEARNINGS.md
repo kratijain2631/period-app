@@ -33,6 +33,12 @@ Background, decisions and their rationale, and reusable concepts from building t
 - **Supabase native Sign in with Apple only needs Client IDs:** for the native `signInWithIdToken` flow, Supabase's Apple provider just needs the bundle id in its **Client IDs** field to validate the token audience. The Services ID / `.p8` secret key is only for the *web* OAuth redirect flow, which this app doesn't use.
 - **`EXPO_PUBLIC_*` and cloud builds:** `.env` is gitignored, so EAS cloud builds don't see it. Runtime public vars must also be set as EAS environment variables. (Details in TROUBLESHOOTING.md.)
 
+## Phase Guide redesign (2026-11-03)
+
+The original precompute-and-cache approach was sensible because AI takes seconds and costs per request, but depending only on a scheduled batch left the You page empty when scheduling or the legacy service-role credential failed. The replacement preserves caching while adding immediate editorial fallback and lazy, caller-authenticated generation. Cache identity includes the phase occurrence (`currentPhaseStart`), not just its name; database leases prevent duplicate paid calls. Caller-scoped RPCs avoid the disabled legacy service-role-key dependency. An isolated, owner-approved live test verified generation, cache reuse, concurrency and auth denial; its synthetic account was removed.
+
+Advice is optional context, not a promise of phase-based energy, mood or ability. Showing short titles plus practical detail directly also removes the old hidden flip interaction and repetitive heading/body copy. Editorial sources/limits are in [GUIDANCE.md](GUIDANCE.md); delivery state belongs in [TODO.md](TODO.md) and [RELEASE_NOTES.md](RELEASE_NOTES.md). The legacy batch remains a separate authorization follow-up, not a dependency of the new guide.
+
 ## App architecture notes (non-obvious bits)
 
 - **Sign in with Apple nonce:** the app generates a raw nonce, passes `sha256(rawNonce)` to Apple, and the raw nonce to Supabase — Supabase re-hashes and compares. Correct per the standard native flow.

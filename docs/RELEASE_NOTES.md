@@ -8,6 +8,14 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ### Added
 
+- **Guidance release migration history reconciled.** Removed the unmerged duplicate `20261103120000` migration from this branch because main already captures those live objects in `20261106190000`; the refresh RPC is the only new database change. No recorded migration or database object is removed.
+
+- **Builds 34/35 submission status corrected (2026-11-11).** Both uploads failed with the required-Apple-agreement error; they are no longer merely queued. Resolve agreements, resubmit and verify tester adoption before merging the separate nightly-guidance retirement draft. The live job remains active.
+
+- **Refresh migration version kept unique.** Moved the pending manual-refresh migration to `20261111210000` after main added the `20261111180000` friend-rule migration; no database deployment was performed.
+
+- **Manual Phase Guide refresh (local, rollout pending).** The You page can explicitly request new AI advice without deleting current tips. Loading/error/cooldown feedback and account/phase guards are controller-owned; a new caller-scoped refresh RPC shares generation leases and enforces a two-minute cooldown. Existing page-open caching, old RPCs and cron jobs remain compatible. 140 Jest tests, TypeScript/Deno, iOS JS export and embedded PostgreSQL checks pass; staging configuration, deployment and a native build remain pending.
+
 - **PRs must update the release notes (`.github/workflows/docs-check.yml`, `scripts/ci/check-docs.sh`).** A PR that changes anything other than docs fails the Docs check unless it adds a line to this file; the `no-release-notes` label skips it. It also warns when a migration doesn't touch `SCHEMA.md` or test tooling doesn't touch `TESTING.md`. A new PR template lists the docs to check, including changes made outside git.
 - Added a shared testing guide and instructions for recording code, database, staging, and test-account changes in GitHub.
 - **[TESTING.md](TESTING.md) covers every way to test.** Which backend each way of running the app uses (TestFlight and `npm run start` hit production, `npm run start:staging` hits staging), the hard rules, the checks, the personas, simulator build steps, testing database changes, and what staging can't test.
@@ -48,6 +56,47 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 - **Production switched to migration tracking (2026-11-11).** The one-time setup workflow marked 39 migrations as applied after production's fingerprint matched staging's (except function access). The first Database deploy run then applied `20261108180000_no-login-function-access.sql` to production; staging had nothing to apply and passed all 66 access checks. Three earlier setup attempts failed and changed nothing: the direct host was unreachable, the history check broke on a database without history (fixed in #77), and the staging secret was malformed (#78 now names a bad secret). From now on, merging a migration is the only way to change either database.
 - **The `production` GitHub Environment** was created by the first run and has no required reviewers. Add some under Settings → Environments if production should wait for a click.
 - **Edge functions still deploy by hand.** The Database deploy workflow only applies migrations.
+
+## 2026-11-03 — TestFlight build 1.0.14 (build 35)
+
+**Native build finished; Apple submission failed.** [EAS build](https://expo.dev/accounts/kratijain26/projects/period-app/builds/bf9a1168-1a04-430f-b342-bc6128d92fd8), [submission](https://expo.dev/accounts/kratijain26/projects/period-app/submissions/dbea0ad5-7488-4cef-a16d-cb238d5050a6). Rechecked 2026-11-11: `ERRORED` / `EAS_ASC_REQUIRED_AGREEMENTS_MISSING_OR_EXPIRED`. Account Holder must accept the required Apple agreements, then retry this completed build. This submission has not confirmed TestFlight availability.
+
+### Fixed
+
+- **Contacts discovery recovery and feedback.** Manage selected contacts through iOS Settings to avoid the broken native access picker; refresh permission on return, clear stale results after access/account changes, show progress immediately and put actionable empty/error messages beside Find Contacts. Late lookups cannot restore invalid results; discoverability writes verify the intended account.
+
+### Infrastructure & release setup
+
+- **Contacts migration confirmed live; privacy checks passed.** Verified default-off preference, exact matching RPC and grants, then tested owner-only access, opt-in/out, caller independence and self exclusion in a transaction with all synthetic data rolled back. Added reproducible SQL and permission/toggle/lifecycle regression tests; 98 Jest tests and TypeScript pass.
+
+### Known / not yet done
+
+- **Contacts rollout remains open.** Owner testing on 1.0.12 / iOS 26.6.2 found flashing/no result with Limited Access; Full Access reaches the empty-match state. Recovery changes still need testing on a new native build, including denied/limited/full access and two-account discoverability. See [verification matrix](CONTACT_DISCOVERY_ROLLOUT.md).
+
+## 2026-11-03 — TestFlight build 1.0.13 (build 34)
+
+**Native build finished; Apple submission failed.** [EAS build](https://expo.dev/accounts/kratijain26/projects/period-app/builds/b5517231-315b-48d7-adb1-9e98af8c8687), [submission](https://expo.dev/accounts/kratijain26/projects/period-app/submissions/a644dafb-6b2c-4ffc-a8b0-f8169b294049). Rechecked 2026-11-11: `ERRORED` / `EAS_ASC_REQUIRED_AGREEMENTS_MISSING_OR_EXPIRED`. Account Holder must accept the required Apple agreements, then retry this completed build. This submission has not confirmed TestFlight availability.
+
+### Fixed
+
+- **Phase Guide always has tips, including offline or before Health sync.** Local fallback guidance appears immediately, and cached advice from a different phase/cycle is never shown. Profile guidance refreshes only when the You page is focused and ignores late results after navigation/account changes.
+
+### Changed
+
+- **More useful dos and don’ts, readable at a glance.** Concrete phase-aware suggestions pair a short heading with practical detail. Full-width cards show the complete advice, wrap with larger text and replace the hidden flip interaction. AI follows the same optional, nonjudgmental content rules; NHS sources and editorial limits are documented in GUIDANCE.md.
+
+### Infrastructure & release setup
+
+- **On-demand guidance backend deployed (2026-11-03).** Applied the additive cache/lease migration, configured the current publishable client key and deployed `request-cycle-guidance`. PostgreSQL regression checks, Deno typecheck and live unauthenticated denial/permission checks pass; no cron or service-role key is needed for this path.
+- **Live authenticated verification and status-doc audit.** An approved synthetic account verified AI generation, cache reuse, 200/202 overlapping requests and account isolation, then was removed. FEATURES/TODO/BUGS, schema, cycle-sync, design and troubleshooting now distinguish completed implementation/backend work from pending native checks. Live inventory confirms 14 public tables and two active legacy/reminder cron jobs; friend-recommendations scheduling remains absent.
+
+### Added
+
+- **On-demand AI guidance, cached per phase occurrence.** A new authenticated `request-cycle-guidance` function uses caller-scoped database RPCs and sanitized friend summaries; no service-role key or cron is needed. Concurrent requests share a two-minute database lease, malformed/failed AI responses are not cached, and results are discarded if the phase changes during generation. Regression coverage added for fallback selection, cache invalidation, auth/account isolation, duplicate requests and AI failures.
+
+### Known / not yet done
+
+- **Device verification remains required.** Backend migration/function are live, and authenticated AI generation/cache reuse passed an isolated live test. Offline/account switching, HealthKit and native accessibility still need testing on a phone. The pre-existing batch handler's missing scheduler-only authorization is logged in BUGS; its legacy cron is already active and is not used by the new client.
 
 ## 2026-08-12 — TestFlight build 1.0.12 (build 33)
 

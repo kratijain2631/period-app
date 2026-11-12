@@ -16,15 +16,22 @@ The full schema — tables, functions, RLS policies, indexes — is defined in `
 | `event_reactions` | Emoji reactions to cycle events. |
 | `boops` | Friend "boop" nudges (from / to / optional cycle event). |
 | `notifications` | In-app notifications, with a `read_at` column (null = unread) for the notifications page's new/read state. Populated by engagement triggers (reactions/boops) and, once deployed, the notifications-handler. |
+| `cycle_guidance` | Owner-readable AI dos/don’ts and friend suggestions, cached by phase plus nullable `phase_started_at`; caller-scoped completion RPC writes the new on-demand path. |
+| `friend_recommendations` | Pair recommendations/score cache used by the friend detail screen; separate from personal Phase Guide. |
+| `cycle_guidance_requests` | Applied 2026-11-03: caller-scoped two-minute generation leases; auth-user deletion cascades. No direct anon/authenticated table access. |
 | `device_tokens` | Push-notification (Expo) tokens per device. |
 | `cycle_guidance` | One row per user: the AI do's/don'ts for their current phase, with `phase_started_at` so it's regenerated when the phase changes. Written by the `cycle-guidance` edge function. |
 | `cycle_guidance_requests` | Server-only bookkeeping for on-demand guidance requests (`claim_cycle_guidance` / `complete_cycle_guidance`). Clients have no access. |
 | `friend_recommendations` | Per friend pair: suggestions and a score from the `friend-recommendations` edge function. |
 
+The on-demand guidance migration also adds nullable `cycle_guidance.phase_started_at`; old clients and the legacy batch worker remain compatible. These additions were applied and their permissions verified on **2026-11-03**.
+
 ## Functions
 
 | Function | Purpose |
 |---|---|
+| `claim_cycle_guidance_refresh` | Pending migration `20261111210000`: explicit caller-scoped regeneration using the existing lease table and saved generation timestamp for a two-minute cooldown. No signature changes to existing RPCs; not applied by this task. |
+| `claim_cycle_guidance` / `complete_cycle_guidance` | Applied 2026-11-03: authenticate with `auth.uid()`, validate the current server snapshot, serialize generation claims and save only the matching claim/phase result. Authenticated callers can affect only their own guidance. |
 | `handle_new_auth_user` | Trigger: creates a `users` row when a new auth user signs up. |
 | `handle_updated_at` | Trigger: maintains `updated_at` timestamps. |
 | `populate_post_alias` | Trigger: always sets a post's alias from its author's profile, so a post can't carry someone else's name (since 2026-11-06). |
