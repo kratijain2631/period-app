@@ -1,6 +1,6 @@
 # Security test suite design
 
-Status: decisions made 2026-11-04. Phase 0 is done. A first cut of phase 3 is built (2026-11-12): `.github/workflows/security.yml` runs `npm run test:security` on pull requests touching database paths and on pushes to `main`. That builds a throwaway database from the migrations and runs the existing `test-accounts:rls` checks (75), with no secrets. Phases 1 and 2 (Jest attack matrix, rules lint, coverage guard) aren't built yet; when they are, `test:security` runs them too. Run time locally: about 40 seconds once Docker images are cached.
+Status: decisions made 2026-11-04. Phase 0 is done. A first cut of phase 3 is built (2026-11-12): `.github/workflows/security.yml` runs `npm run test:security` on pull requests touching database paths and on pushes to `main`. That builds a throwaway database from the migrations and runs the existing `test-accounts:rls` checks (75), with no secrets. Phases 1 and 2 (Jest attack matrix, rules lint, coverage guard) aren't built yet; when they are, `test:security` runs them too. Run time locally: about 40 seconds once Docker images are cached; on GitHub about 2½ minutes from cold. Since 2026-11-12 the `rls` check is required on `main` (ruleset `main-protection`).
 
 ## Summary
 
