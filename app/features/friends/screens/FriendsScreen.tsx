@@ -1,3 +1,4 @@
+import { formatPhaseName } from '../../../../packages/domain/cycles/phaseName';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated,
@@ -315,7 +316,7 @@ const FriendsScreen = () => {
     if (!value) {
       return 'Unknown';
     }
-    return value.charAt(0).toUpperCase() + value.slice(1);
+    return formatPhaseName(value);
   }, []);
 
   const formatPairSummary = useCallback(

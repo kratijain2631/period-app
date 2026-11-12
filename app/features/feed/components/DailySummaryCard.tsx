@@ -1,3 +1,4 @@
+import { formatPhaseName } from '../../../../packages/domain/cycles/phaseName';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import type { CycleSnapshot } from '../../../../packages/domain/cycles/models';
 
@@ -21,8 +22,7 @@ const formatPhaseLabel = (value?: string | null) => {
   if (!value) {
     return 'Unknown phase';
   }
-  const normalized = value.replace(/_/g, ' ');
-  return normalized.charAt(0).toUpperCase() + normalized.slice(1);
+  return formatPhaseName(value);
 };
 
 const formatPhaseSourceLabel = (value?: string | null) => {

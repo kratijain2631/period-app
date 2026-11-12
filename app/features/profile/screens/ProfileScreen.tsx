@@ -1,3 +1,4 @@
+import { formatPhaseName } from '../../../../packages/domain/cycles/phaseName';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActionSheetIOS,
@@ -327,9 +328,7 @@ const ProfileScreen = () => {
     if (!value) {
       return null;
     }
-    if (value === 'pms') return 'PMS';
-    const normalized = value.replace(/_/g, ' ');
-    return normalized.charAt(0).toUpperCase() + normalized.slice(1);
+    return formatPhaseName(value);
   };
 
   const formatPhaseSourceLabel = (value?: string | null) => {

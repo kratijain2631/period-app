@@ -1,3 +1,4 @@
+import { formatPhaseName } from '../../../../packages/domain/cycles/phaseName';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
@@ -977,8 +978,7 @@ const HomeScreen = () => {
     if (!value) {
       return null;
     }
-    const normalized = value.replace(/_/g, ' ');
-    return normalized.charAt(0).toUpperCase() + normalized.slice(1);
+    return formatPhaseName(value);
   };
 
   const formatPhaseSourceLabel = (value?: string | null) => {

@@ -42,4 +42,18 @@ describe('computeSyncScore flow timing', () => {
     });
     expect(summary.metrics.daysApart).toBe(7);
   });
+
+  it('builds cycle history from whole periods, not single days', () => {
+    const summary = computeSyncScore({
+      selfSnapshot: snapshotFor([...period('2026-09-01', 5), ...period('2026-09-29', 5), ...period('2026-10-27', 5)]),
+      friendSnapshot: snapshotFor([...period('2026-09-04', 4), ...period('2026-10-02', 4), ...period('2026-10-29', 4)]),
+      now,
+    });
+    const rows = summary.cycleTrend;
+    expect(rows.map((row) => row.label)).toEqual(['Most recent', 'Previous cycle', 'Two cycles ago']);
+    expect(rows.map((row) => row.selfStart.slice(0, 10))).toEqual(['2026-10-27', '2026-09-29', '2026-09-01']);
+    expect(rows.map((row) => row.daysApart)).toEqual([2, 3, 3]);
+    expect(rows[0].overlapDays).toBe(3);
+    expect(rows[0].trend).toBe('closer');
+  });
 });
