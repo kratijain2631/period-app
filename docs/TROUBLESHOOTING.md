@@ -181,3 +181,9 @@ To install a build directly from an `.ipa` file (outside TestFlight or the EAS i
 - **Privacy policy:** hosted as a Claude artifact (not in the repo).
 - **`@expo/ngrok`:** installed with `--no-save` for tunneling, so it's in `node_modules` but not `package.json` (reinstall if tunneling and it's missing).
 - **Installed builds** (dev client + TestFlight) on the physical test phone.
+
+## DSA distribution plan and build 36 follow-up (2026-11-12)
+
+Owner confirms TestFlight only for now; see TODO’s future EU App Store launch gate for reassessment before expanding distribution. This records intent, not completion of the declaration in Apple’s UI. Apple explicitly treats TestFlight-only distribution as not acting as a trader on the App Store in its [DSA criteria](https://developer.apple.com/help/app-store-connect/manage-compliance-information/manage-european-union-digital-services-act-trader-requirements/).
+
+EAS build `70771a46-d436-4d5a-8eb2-98bfbf5625c2` (1.0.15 / 36) and automatic submission `c777ddf1-bf03-4475-ba3a-f36476c233e5` both now report `FINISHED`, with no submission error. This supersedes the queued status above and the earlier agreement blocker for this upload; it does not confirm tester availability, adoption, native QA or which Apple account requirement changed. Keep nightly retirement PR #83 gated on confirmed replacement-client rollout.

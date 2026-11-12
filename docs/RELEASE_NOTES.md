@@ -8,11 +8,14 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ### Infrastructure & release setup
 
+- **Future EU launch gate recorded (2026-11-12).** Owner confirms TestFlight-only distribution for now. TODO requires reassessing DSA trader status, updating App Store Connect and completing applicable contact verification before any future EU App Store launch. Current declaration completion is not assumed.
+- **Refresh build/upload succeeded (rechecked 2026-11-12).** Build 1.0.15 (36), `70771a46-d436-4d5a-8eb2-98bfbf5625c2`, and submission `c777ddf1-bf03-4475-ba3a-f36476c233e5` both report `FINISHED`; submission has no error. Tester availability/adoption and native checks remain unverified.
+
 - **Refresh release registered on EAS (2026-11-11).** Version 1.0.15 (36), [EAS build](https://expo.dev/accounts/kratijain26/projects/period-app/builds/70771a46-d436-4d5a-8eb2-98bfbf5625c2), is `IN_QUEUE` from tagged source `b3b3b493` / `v1.0.15-build36`; automatic [submission](https://expo.dev/accounts/kratijain26/projects/period-app/submissions/c777ddf1-bf03-4475-ba3a-f36476c233e5) is scheduled after compilation. This confirms registration, not a finished build or TestFlight availability. Apple agreements/DSA assessment and native verification remain open.
 
-## 2026-11-11 — TestFlight build 1.0.15 (build 36) · build queued
+## 2026-11-11 — TestFlight build 1.0.15 (build 36)
 
-Refresh tips release registered on EAS (`IN_QUEUE`), excluding the concurrent Home redesign. [EAS build](https://expo.dev/accounts/kratijain26/projects/period-app/builds/70771a46-d436-4d5a-8eb2-98bfbf5625c2); automatic [submission](https://expo.dev/accounts/kratijain26/projects/period-app/submissions/c777ddf1-bf03-4475-ba3a-f36476c233e5) scheduled. Tag `v1.0.15-build36`, source `b3b3b493`. Native completion and Apple upload are not yet confirmed; required Apple agreements remain unresolved.
+Refresh tips native build and Apple upload both finished (rechecked 2026-11-12), excluding the concurrent Home redesign. [EAS build](https://expo.dev/accounts/kratijain26/projects/period-app/builds/70771a46-d436-4d5a-8eb2-98bfbf5625c2); automatic [submission](https://expo.dev/accounts/kratijain26/projects/period-app/submissions/c777ddf1-bf03-4475-ba3a-f36476c233e5) finished. Tag `v1.0.15-build36`, source `b3b3b493`. Tester availability/adoption and native checks remain unverified. The current DSA declaration’s completion is not confirmed.
 
 ### Added
 
