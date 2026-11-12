@@ -2,6 +2,8 @@
 
 Open items, roughly in priority order. Done work isn't listed here.
 
+- [~] **Retire nightly cycle-guidance after the on-demand client is available.** 🚧 (WIP — Codex, 2026-11-11). Owner authorizes retirement when no longer needed. Prepare a narrow migration; do not apply/merge it until Apple agreements are accepted, the replacement build is delivered and testers have upgraded. Build 1.0.13/34 and 1.0.14/35 submissions currently fail with `EAS_ASC_REQUIRED_AGREEMENTS_MISSING_OR_EXPIRED`. Daily phase reminders stay enabled.
+
 ## 🎯 Next up — make cycle-guidance on-demand + always-on fallback (retire the cron as the only path)
 - [ ] **Redesign how the "You" page do's/don'ts (cycle guidance) get generated.** Fixes the "No guidance yet" bug ([BUGS.md](BUGS.md)) at the design level, not just by babysitting a cron.
   - **Why it's a cron today (the rationale, so we don't "fix" it into something worse):** it's a **precompute-and-cache** pattern — the AI call is slow (seconds) and costs money per call, and do's/don'ts only change **per phase**, so a nightly job generates one `cycle_guidance` row and the app reads it instantly + pays once, instead of calling the model on every page open.
