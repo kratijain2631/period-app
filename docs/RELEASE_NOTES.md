@@ -8,10 +8,12 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ### Infrastructure & release setup
 
+- **Guidance status audit and phone test steps (2026-11-12).** Corrected stale build-34 submission/new-build-pending wording across TODO, FEATURES, BUGS, GUIDANCE, CYCLE_SYNC and TROUBLESHOOTING. Build 36 includes on-demand advice and Refresh tips; compilation/upload succeeded, but tester group availability/adoption and native checks remain unverified. Browser access timed out when attempting to inspect availability. Closed the stale nightly-500 checkbox using the already recorded successful 2026-11-08 run; no backend change.
+
 - **Future EU launch gate recorded (2026-11-12).** Owner confirms TestFlight-only distribution for now. TODO requires reassessing DSA trader status, updating App Store Connect and completing applicable contact verification before any future EU App Store launch. Current declaration completion is not assumed.
 - **Refresh build/upload succeeded (rechecked 2026-11-12).** Build 1.0.15 (36), `70771a46-d436-4d5a-8eb2-98bfbf5625c2`, and submission `c777ddf1-bf03-4475-ba3a-f36476c233e5` both report `FINISHED`; submission has no error. Tester availability/adoption and native checks remain unverified.
 
-- **Refresh release registered on EAS (2026-11-11).** Version 1.0.15 (36), [EAS build](https://expo.dev/accounts/kratijain26/projects/period-app/builds/70771a46-d436-4d5a-8eb2-98bfbf5625c2), is `IN_QUEUE` from tagged source `b3b3b493` / `v1.0.15-build36`; automatic [submission](https://expo.dev/accounts/kratijain26/projects/period-app/submissions/c777ddf1-bf03-4475-ba3a-f36476c233e5) is scheduled after compilation. This confirms registration, not a finished build or TestFlight availability. Apple agreements/DSA assessment and native verification remain open.
+- **Refresh release registered on EAS (2026-11-11).** Version 1.0.15 (36), [EAS build](https://expo.dev/accounts/kratijain26/projects/period-app/builds/70771a46-d436-4d5a-8eb2-98bfbf5625c2), was initially `IN_QUEUE` from tagged source `b3b3b493` / `v1.0.15-build36`; automatic [submission](https://expo.dev/accounts/kratijain26/projects/period-app/submissions/c777ddf1-bf03-4475-ba3a-f36476c233e5) was scheduled after compilation. Both are now `FINISHED` (rechecked 2026-11-12); tester availability/adoption and native checks remain open.
 
 ## 2026-11-11 — TestFlight build 1.0.15 (build 36)
 

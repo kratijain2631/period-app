@@ -28,7 +28,7 @@ The sequencing below **is** the plan; the category sections after it are a refer
 
 ### Next — the moat
 - **Richer cycle/calendar view** on Apple's data + predictions (§ Cycle)
-- **Phase-based recommendations** (§ Cycle) — Phase Guide implemented; backend deployed and live-tested 2026-11-03; 1.0.13 (34) built; EAS submissions for builds 34/35 failed with required-agreement errors (rechecked 2026-11-11). Refresh backend is deployed; new client delivery and device verification remain pending.
+- **Phase-based recommendations** (§ Cycle) — Phase Guide implemented; backend deployed and live-tested 2026-11-03; 1.0.13 (34) built; EAS submissions for builds 34/35 failed with required-agreement errors (rechecked 2026-11-11). Refresh backend is deployed; replacement 1.0.15 (36) built and uploaded successfully (rechecked 2026-11-12). Tester availability/adoption and device verification remain pending.
 - **Friends overview + calendar-of-friends + a real sync score** (§ Social)
 - **Groups** of friends (§ Social)
 - **Privacy & data-controls dashboard** (§ Privacy)
@@ -135,10 +135,10 @@ First-run flow is make-or-break for a social health app:
 > *(Original deferred note kept for history: building our own model was meant to be "Later" — but it's now the actual approach, since Apple gives us no predictions to lean on.)*
 
 - **Phase-based recommendations & reminders** — what to do today based on your phase (nutrition, exercise, skincare, productivity, emotional support). Not just educate — *facilitate* a cycle-based lifestyle.
-  - [~] **Refresh tips on demand** — backend deployed 2026-11-11: explicit regeneration, two-minute server cooldown, disabled/loading feedback, retained advice on errors and account/phase guards. Migration reached both projects after 75 staging access checks; authenticated staging API checks passed and the handler reached production. Native delivery and device checks remain open in TODO. Existing guidance cron is unchanged.
+  - [~] **Refresh tips on demand** — backend deployed 2026-11-11: explicit regeneration, two-minute server cooldown, disabled/loading feedback, retained advice on errors and account/phase guards. Migration reached both projects after 75 staging access checks; authenticated staging API checks passed and the handler reached production. Native build/upload succeeded in 1.0.15 (36); tester availability/adoption and device checks remain open in TODO. Existing guidance cron is unchanged.
     **Refresh release status (rechecked 2026-11-12):** 1.0.15 (36) from `v1.0.15-build36` / `b3b3b493` has a finished EAS build and successful Apple upload. Tester availability/adoption and native checks remain unconfirmed; see RELEASE_NOTES and TODO.
   - [x] **Always-available Phase Guide implementation** (2026-11-03): three practical dos/three don’ts for each phase plus unknown, immediate local fallback, readable full-width cards, authenticated on-demand generation and phase-occurrence cache with duplicate-request protection. SQL/function deployed; live synthetic-account AI/cache/concurrency/auth checks and 71 tests pass. Copy rules/sources: [GUIDANCE.md](GUIDANCE.md).
-  - [~] **Phase Guide native rollout** — 1.0.13 (34) built; submission and phone checks tracked in [TODO.md](TODO.md). Keep open until offline/account switching, HealthKit and native accessibility are verified.
+  - [~] **Phase Guide native rollout** — 1.0.15 (36) built and uploaded; tester availability/adoption and phone checks tracked in [TODO.md](TODO.md). Keep open until offline/account switching, HealthKit and native accessibility are verified.
   - [ ] **Broader recommendation categories and reminders** — nutrition/skincare/productivity coverage and additional reminder behavior remain future work; the implemented guide offers optional everyday ideas rather than predicting capability from a phase.
 - **In-app logging** — mood, alcohol, diet, exercise, products used, habits, pain, flow. Pattern-match habits/products against outcomes (cycle length, variability, pain) and share aggregate insights across the community.
 - **Phase as identity** — optionally display your current phase as a status / bio so friends know.

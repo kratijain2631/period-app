@@ -102,7 +102,7 @@ The bell / [`NotificationsScreen`](../app/features/notifications/screens/Notific
 
 Implemented for build 1.0.13 (34); backend deployed and authenticated integration-tested 2026-11-03. The You page shows local dos/don’ts immediately, then requests AI guidance on focus through `ensureCycleGuidance` → `request-cycle-guidance`. This does not read HealthKit or trigger another cycle sync itself.
 
-Manual refresh backend is deployed on staging and production (2026-11-11); the native button still awaits a new build. Refresh tips bypasses the saved cache through a separate caller-scoped claim, enforces a two-minute cooldown, and leaves current advice visible on failure. `usePhaseGuidance` owns request lifetime and feedback; the presenter only receives data/actions. See [GUIDANCE.md](GUIDANCE.md#explicit-refresh-backend-deployed-2026-11-11-native-rollout-pending).
+Manual refresh backend is deployed on staging and production (2026-11-11); the native button is included in built/uploaded 1.0.15 (36), with tester availability and phone checks pending. Refresh tips bypasses the saved cache through a separate caller-scoped claim, enforces a two-minute cooldown, and leaves current advice visible on failure. `usePhaseGuidance` owns request lifetime and feedback; the presenter only receives data/actions. See [GUIDANCE.md](GUIDANCE.md#explicit-refresh-backend-deployed-2026-11-11-native-rollout-pending).
 
 **Refresh release status (rechecked 2026-11-12):** 1.0.15 (36) from `v1.0.15-build36` / `b3b3b493` has a finished EAS build and successful Apple upload. Tester availability/adoption and native checks remain unconfirmed; see RELEASE_NOTES and TODO.
 
