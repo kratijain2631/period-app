@@ -21,6 +21,7 @@ Refresh tips native build and Apple upload both finished (rechecked 2026-11-12),
 
 ### Added
 
+- **Security checks on every database pull request (`.github/workflows/security.yml`).** Pull requests that touch `supabase/`, the database scripts (`scripts/db/`), the test-account scripts or persona data, and pushes to `main`, now build a throwaway Supabase from the repo's migrations on the runner, seed the personas and run all 75 access-rule checks. It uses no secrets and never touches staging or production. Other pull requests get a quick pass, so it can be made a required check. Run it locally with `npm run test:security` (needs Docker). The test-account scripts accept `TEST_ACCOUNTS_TARGET=local`, which only allows a localhost URL. Testing (2026-11-12, local Docker, same steps as the workflow): `main` passes 75 of 75 in about 40 seconds with cached images; a planted migration reopening posts fails with 3 named checks and exit code 1. Not yet run on GitHub.
 - **Guidance release migration history reconciled.** Removed the unmerged duplicate `20261103120000` migration from this branch because main already captures those live objects in `20261106190000`; the refresh RPC is the only new database change. No recorded migration or database object is removed.
 
 - **Builds 34/35 submission status corrected (2026-11-11).** Both uploads failed with the required-Apple-agreement error; they are no longer merely queued. Resolve agreements, resubmit and verify tester adoption before merging the separate nightly-guidance retirement draft. The live job remains active.

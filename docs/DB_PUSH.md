@@ -11,8 +11,8 @@ Every database change is a migration file in `supabase/migrations/`. Merging it 
 
 1. **Write the migration.** Add `supabase/migrations/<YYYYMMDDHHMMSS>_<what-it-does>.sql`, timestamped later than every existing file. Follow the migration rules in [INSTRUCTIONS.md](INSTRUCTIONS.md) §12 (additive only), and make it safe to re-run where you can.
 2. **Grant function access explicitly.** New functions are callable only by logged-in users and the service role. Write `grant execute ... to authenticated` only when the app needs to call the function, and add a `revoke` when a function is server-only. Nothing should be callable without a login.
-3. **Test it locally in Docker.** Run `supabase start`, then `supabase db reset --local`, which rebuilds from every migration. Check the result with SQL or the local API.
-4. **Open a PR and merge it.**
+3. **Test it locally in Docker.** `npm run test:security` rebuilds a database from every migration, seeds the personas and runs the access-rule checks.
+4. **Open a PR.** The **Security checks** workflow runs the same thing on the PR, with no secrets and nothing touching staging or production. Merge once it's green.
 5. **Watch the Actions tab.** The Database deploy run shows which migrations it applied to each project. If anything fails, it stops before production and GitHub emails whoever merged.
 6. **Record it in [RELEASE_NOTES.md](RELEASE_NOTES.md)** in the same PR.
 
