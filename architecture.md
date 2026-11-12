@@ -23,7 +23,7 @@ app/
 ├── features/              # Feature-based UI code
 │   ├── auth/             # Sign in with Apple
 │   ├── companion/        # Onboarding & HealthKit permissions
-│   ├── feed/             # useCycleSnapshot hook (shared by Home and You)
+│   ├── feed/             # Daily summary card & feed screen
 │   ├── friends/          # Friend list, sync screen, requests
 │   ├── home/             # Home screen
 │   ├── notifications/    # Notification bell & sheet
