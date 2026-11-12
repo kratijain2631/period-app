@@ -17,15 +17,19 @@ npm test -- --runInBand
 npx tsc --noEmit
 ```
 
-Do not use `supabase db push`; migration tracking is incomplete (see [TROUBLESHOOTING](TROUBLESHOOTING.md)).
+For migration history and deployments, follow [DB_PUSH.md](DB_PUSH.md). This verification requires no deployment.
 
 ## Recovery build
 
 **1.0.14 (35)** native build finished successfully: [EAS build](https://expo.dev/accounts/kratijain26/projects/period-app/builds/bf9a1168-1a04-430f-b342-bc6128d92fd8); [automatic submission](https://expo.dev/accounts/kratijain26/projects/period-app/submissions/dbea0ad5-7488-4cef-a16d-cb238d5050a6) failed (`ERRORED`, `EAS_ASC_REQUIRED_AGREEMENTS_MISSING_OR_EXPIRED`; rechecked 2026-11-11). Source tag `v1.0.14-build35`, commit `a67b00dd`. TestFlight availability and new-build device checks are not yet confirmed.
 
+## Verification update — 2026-11-12
+
+Use TestFlight **1.0.15 (36)** for the retry. Its upload finished and the owner reported using it. Both contacts Jest suites passed (29 tests); their service, controller and test files match the build 36 tag. Local full suite: 118 passed, one skipped. No tester accounts or address books were used. The production SQL result above is from November 3. A fresh query was unavailable because the database hostname did not resolve. CoreDevice and CoreSimulator were unavailable in this session. All physical results below retain their original build attribution.
+
 ## Physical iPhone test setup
 
-Use iOS 18+ for Limited Access and an installed TestFlight build ≥1.0.12. Record the exact app version/build and iOS version. Two tester accounts, A and B, are needed for visible match/opt-out checks. On A's phone, save B's **actual account email** in a contact. Sign in with Apple “Hide My Email” can make this different from B's usual email; phone-number matching is not implemented. Avoid changing real contacts unnecessarily: use a dedicated test contact and remove it afterward.
+Use iOS 18+ for Limited Access and TestFlight 1.0.15 (36) or a later build containing the recovery changes. Record the exact app version/build and iOS version. Two tester accounts, A and B, are needed for visible match/opt-out checks. On A's phone, save B's **actual account email** in a contact. Sign in with Apple “Hide My Email” can make this different from B's usual email; phone-number matching is not implemented. Avoid changing real contacts unnecessarily: use a dedicated test contact and remove it afterward.
 
 B controls their own “Let contacts find me” switch. A's Contacts permission determines which local contacts A can search. A's own discoverability switch is independent of A's ability to search.
 

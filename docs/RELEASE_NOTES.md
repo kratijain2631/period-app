@@ -12,6 +12,8 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ### Infrastructure & release setup
 
+- **Contacts rollout verification (2026-11-12).** All 29 contacts service/controller tests passed against code matching build 36. Physical permission and two-account toggle checks remain open. See the [device checklist](CONTACT_DISCOVERY_ROLLOUT.md).
+
 - **Guidance status audit and phone test steps (2026-11-12).** Corrected stale build-34 submission/new-build-pending wording across TODO, FEATURES, BUGS, GUIDANCE, CYCLE_SYNC and TROUBLESHOOTING. Build 36 includes on-demand advice and Refresh tips; compilation/upload succeeded, but tester group availability/adoption and native checks remain unverified. Browser access timed out when attempting to inspect availability. Closed the stale nightly-500 checkbox using the already recorded successful 2026-11-08 run; no backend change.
 
 - **Future EU launch gate recorded (2026-11-12).** Owner confirms TestFlight-only distribution for now. TODO requires reassessing DSA trader status, updating App Store Connect and completing applicable contact verification before any future EU App Store launch. Current declaration completion is not assumed.
