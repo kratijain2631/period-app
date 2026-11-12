@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
-# Starts a local Supabase in Docker with only the services the access-rule checks need, then
+# Starts a local Supabase in Docker with only the services the security checks need (database,
+# auth, API and storage for the avatar bucket), then
 # rebuilds the database from every migration in the repo.
 set -euo pipefail
 
 start() {
-  supabase start -x realtime,storage-api,imgproxy,mailpit,postgres-meta,studio,edge-runtime,logflare,vector,supavisor
+  supabase start -x realtime,imgproxy,mailpit,postgres-meta,studio,edge-runtime,logflare,vector,supavisor
 }
 
 # GitHub's runners occasionally fail to bind the database port on the first try ("address

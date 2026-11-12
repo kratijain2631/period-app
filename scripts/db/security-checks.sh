@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Runs the rules lint, then seeds the test personas into the local Supabase and runs the
-# access-rule checks against it.
+# attack matrix and the access-rule checks against it.
 # Uses the local stack's own keys; refuses anything that isn't a localhost URL.
 set -euo pipefail
 
@@ -13,6 +13,7 @@ export TEST_PERSONA_PASSWORD
 
 node scripts/security/lint.js
 npm run --silent test-accounts:seed
+npx jest -c jest.security.config.js
 npm run --silent test-accounts:rls
 
 
