@@ -104,6 +104,8 @@ Implemented for build 1.0.13 (34); backend deployed and authenticated integratio
 
 Manual refresh backend is deployed on staging and production (2026-11-11); the native button still awaits a new build. Refresh tips bypasses the saved cache through a separate caller-scoped claim, enforces a two-minute cooldown, and leaves current advice visible on failure. `usePhaseGuidance` owns request lifetime and feedback; the presenter only receives data/actions. See [GUIDANCE.md](GUIDANCE.md#explicit-refresh-backend-deployed-2026-11-11-native-rollout-pending).
 
+**Refresh release registration (2026-11-11):** 1.0.15 (36) is queued on EAS from `v1.0.15-build36` / `b3b3b493`. Build and automatic submission completion, TestFlight availability and native checks remain unconfirmed; see RELEASE_NOTES and TODO.
+
 Cache identity is account + `currentPhase` + `currentPhaseStart`, so a new occurrence of the same phase cannot reuse a previous cycle's advice. The handler verifies the user's JWT; caller-scoped claim/complete RPCs compare the stored snapshot before generation and again before saving. A two-minute lease prevents duplicate generation across requests/devices. Late client results are ignored after account/navigation changes; generation errors leave the local tips visible. Missing/stale server snapshots must sync through the normal lifecycle before generation can succeed.
 
 AI input contains only the phase and up to three same-phase accepted friends' IDs/display names from sanitized RPCs; no raw HealthKit samples, personal symptoms or email addresses. Content/presentation rules: [GUIDANCE.md](GUIDANCE.md). Native device checks remain in [TODO.md](TODO.md).
