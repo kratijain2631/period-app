@@ -60,7 +60,7 @@ Recovery build **1.0.14 (35)** finished successfully on EAS ([EAS build](https:/
 
 ## Manual Phase Guide refresh (2026-11-11 — local only)
 
-1. Merge `20261111180000_manual-guidance-refresh.sql` through the [Database deploy workflow](DB_PUSH.md); do not apply it to production by hand. It adds a separate caller-scoped refresh claim and keeps all existing RPCs compatible.
+1. Merge `20261111210000_manual-guidance-refresh.sql` through the [Database deploy workflow](DB_PUSH.md); do not apply it to production by hand. It adds a separate caller-scoped refresh claim and keeps all existing RPCs compatible.
 2. After that RPC exists, deploy the updated `request-cycle-guidance` handler to staging, then production after verification. Existing calls without `refresh` retain the cache-first path; `refresh: true` uses the new claim. Deploy the handler before releasing a client that exposes the button, so it cannot silently reuse old advice when explicit regeneration was requested.
 3. On staging personas, verify manual regeneration after cooldown, a second tap during/after a request, offline/API failure with old tips retained, no-data disabled state, and account/phase change during a pending response. Use [TESTING.md](TESTING.md), then publish a new native build. Refresh is not part of an already shipped binary.
 

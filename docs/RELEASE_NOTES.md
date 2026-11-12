@@ -8,6 +8,8 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ### Added
 
+- **Refresh migration version kept unique.** Moved the pending manual-refresh migration to `20261111210000` after main added the `20261111180000` friend-rule migration; no database deployment was performed.
+
 - **Manual Phase Guide refresh (local, rollout pending).** The You page can explicitly request new AI advice without deleting current tips. Loading/error/cooldown feedback and account/phase guards are controller-owned; a new caller-scoped refresh RPC shares generation leases and enforces a two-minute cooldown. Existing page-open caching, old RPCs and cron jobs remain compatible. 140 Jest tests, TypeScript/Deno, iOS JS export and embedded PostgreSQL checks pass; staging configuration, deployment and a native build remain pending.
 
 - Added a shared testing guide and instructions for recording code, database, staging, and test-account changes in GitHub.

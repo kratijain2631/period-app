@@ -27,7 +27,7 @@ The on-demand guidance migration also adds nullable `cycle_guidance.phase_starte
 
 | Function | Purpose |
 |---|---|
-| `claim_cycle_guidance_refresh` | Pending migration `20261111180000`: explicit caller-scoped regeneration using the existing lease table and saved generation timestamp for a two-minute cooldown. No signature changes to existing RPCs; not applied by this task. |
+| `claim_cycle_guidance_refresh` | Pending migration `20261111210000`: explicit caller-scoped regeneration using the existing lease table and saved generation timestamp for a two-minute cooldown. No signature changes to existing RPCs; not applied by this task. |
 | `claim_cycle_guidance` / `complete_cycle_guidance` | Applied 2026-11-03: authenticate with `auth.uid()`, validate the current server snapshot, serialize generation claims and save only the matching claim/phase result. Authenticated callers can affect only their own guidance. |
 | `handle_new_auth_user` | Trigger: creates a `users` row when a new auth user signs up. |
 | `handle_updated_at` | Trigger: maintains `updated_at` timestamps. |

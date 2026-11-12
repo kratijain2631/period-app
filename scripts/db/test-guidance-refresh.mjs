@@ -18,7 +18,7 @@ try {
   `);
   await db.exec(read('20260124190446_cycle_guidance.sql'));
   await db.exec(read('20261106190000_capture-hand-applied-guidance.sql'));
-  const migration = read('20261111180000_manual-guidance-refresh.sql');
+  const migration = read('20261111210000_manual-guidance-refresh.sql');
   await db.exec(migration);
   await db.exec(migration); // safe to re-run
   await db.exec('grant select on public.cycle_guidance to authenticated');
