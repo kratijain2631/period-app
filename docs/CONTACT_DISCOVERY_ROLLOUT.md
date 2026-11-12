@@ -25,11 +25,11 @@ For migration history and deployments, follow [DB_PUSH.md](DB_PUSH.md). This ver
 
 ## Verification update — 2026-11-12
 
-Use TestFlight **1.0.15 (36)** for the retry. Its upload finished and the owner reported using it. Both contacts Jest suites passed (29 tests); their service, controller and test files match the build 36 tag. Local full suite: 118 passed, one skipped. No tester accounts or address books were used. The production SQL result above is from November 3. A fresh query was unavailable because the database hostname did not resolve. CoreDevice and CoreSimulator were unavailable in this session. All physical results below retain their original build attribution.
+Use TestFlight **1.0.16 (37)** for the retry when visible; it carries the 1.0.15 (36) contacts recovery and adds the offline alias fix. Build 36’s upload finished and the owner reported using build 36; build 37’s upload is also finished, with its install visibility still unconfirmed. Both contacts Jest suites passed (29 tests); their service, controller and test files match the build 36 tag and are unchanged in the build 37 tag (verified by source diff). Local full suite: 118 passed, one skipped. No tester accounts or address books were used. The production SQL result above is from November 3. A fresh query was unavailable because the database hostname did not resolve. CoreDevice and CoreSimulator were unavailable in this session. All physical results below retain their original build attribution.
 
 ## Physical iPhone test setup
 
-Use iOS 18+ for Limited Access and TestFlight 1.0.15 (36) or a later build containing the recovery changes. Record the exact app version/build and iOS version. Two tester accounts, A and B, are needed for visible match/opt-out checks. On A's phone, save B's **actual account email** in a contact. Sign in with Apple “Hide My Email” can make this different from B's usual email; the email-only builds do not match by phone. Avoid changing real contacts unnecessarily: use a dedicated test contact and remove it afterward.
+Use iOS 18+ for Limited Access and TestFlight 1.0.16 (37) when available (1.0.15 / 36 also contains the contacts recovery). Record the exact app version/build and iOS version. Two tester accounts, A and B, are needed for visible match/opt-out checks. On A's phone, save B's **actual account email** in a contact. Sign in with Apple “Hide My Email” can make this different from B's usual email; the email-only builds do not match by phone. Avoid changing real contacts unnecessarily: use a dedicated test contact and remove it afterward.
 
 B controls their own “Let contacts find me” switch. A's Contacts permission determines which local contacts A can search. A's own discoverability switch is independent of A's ability to search.
 
@@ -56,3 +56,4 @@ The screen now delegates contacts state/actions to `app/features/friends/hooks/u
 The native access picker is no longer invoked: selected-contact management opens Settings instead. Apple acknowledges a [contact-access-picker defect](https://developer.apple.com/forums/thread/814292), and [Expo maintainers classify it as upstream](https://github.com/expo/expo/issues/46977). It is consistent with the picker symptom, but **the separate limited-read failure has not been diagnosed conclusively**. Native recovery/limited-read behavior must be retested; passing mocked lifecycle tests does not close that finding.
 
 Close the rollout only after the physical matrix passes and permission recovery/invalidation findings are resolved. For the new phone/email client, run the additional checks in [TESTING.md](TESTING.md).
+

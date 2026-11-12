@@ -90,7 +90,7 @@ The step-by-step procedure, including preflight checks, signing in safely and re
 ## 5. Things staging can't test
 
 - **Real HealthKit, background delivery, push notifications and haptics** need a real phone on a TestFlight or dev build. The on-device checklist is in [TODO.md](TODO.md).
-- **Scheduled jobs** (nightly guidance at 03:00 UTC, phase reminders at 15:00 UTC) run on their own schedule. Changing the simulator's date is the practical way to test reminders.
+- **Scheduled phase reminders** at 15:00 UTC run on their own schedule. Nightly guidance was retired on 2026-11-12. Changing the simulator's date is the practical way to test reminders.
 - **AI text**: staging has no `OPENAI_API_KEY`, so recommendations use their free fallback text.
 - **`request-cycle-guidance`** is deployed on staging and production (2026-11-11). Staging has `PROJECT_PUBLISHABLE_KEY` configured but no `OPENAI_API_KEY`; cached requests and refresh claim/save/cooldown can be verified without paid generation. Actual AI generation still needs separate verification in an appropriately configured staging environment.
 
@@ -114,7 +114,10 @@ Owner’s 1.0.15 physical-device results: Refresh tips works, in-session airplan
 
 ## Nightly guidance retirement gate — updated 2026-11-12
 
-Owner confirms important users on 1.0.15, successful refresh and accepts missing/stale new advice for older clients. This supersedes the initial draft’s Apple agreement blocker. `scripts/db/test-guidance-schedule-retirement.mjs` executes the migration in embedded PostgreSQL with a stubbed pg_cron API, verifying named-job targeting, retained reminder/unrelated jobs, retained saved tips and safe reruns. Run it with a temporary PGlite module path. It does not replace the PR’s full migration/security checks or staging deployment. After Database deploy, query only cron metadata to verify nightly guidance absent and daily reminder active in both projects; do not invoke production jobs or seed production users.
+Owner confirms important users on 1.0.15, successful refresh and accepts missing/stale new advice for older clients. This supersedes the initial draft’s Apple agreement blocker. `scripts/db/test-guidance-schedule-retirement.mjs` executes the migration in embedded PostgreSQL with a stubbed pg_cron API, verifying named-job targeting, retained reminder/unrelated jobs, retained saved tips and safe reruns. Run it with a temporary PGlite module path. It does not replace the PR’s full migration/security checks or staging deployment. Completed: [Database deploy run 43274996960](https://github.com/kratijain2631/period-app/actions/runs/43274996960) applied `20261111211000` to staging, passed all 75 staging access checks, then applied production. Post-deploy read-only metadata confirms nightly guidance absent and `daily-phase-change-reminder` active at 15:00 UTC in both projects. No production job was invoked and no production test users were created.
+
+**Release handoff (2026-11-12):** offline-profile fix source `781bf582` / `v1.0.16-build37`, build `41c1a64e-ac8a-480f-a72a-5ff377edce5e` and submission `35b18e69-b469-498b-bf5a-f8a0797d2f7a` both `FINISHED`. Owner should retest offline cold start on 1.0.16 when installable. The earlier 1.0.15 refresh and offline-retention tests are already complete; contacts, extended phone tests and the engineering missing-sharing-row Circle UI check remain open.
+
 
 ## Phone and email discovery
 
