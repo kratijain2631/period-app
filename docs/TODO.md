@@ -2,6 +2,11 @@
 
 Open items, roughly in priority order, with completed items retained as a decision and delivery record.
 
+- [~] **Retire nightly cycle-guidance after on-demand rollout.** 🚧 (WIP — Codex, 2026-11-12). Owner authorizes retirement and confirms all important users on 1.0.15 with working refresh; accepts that older clients may lose fresh guidance. Daily phase reminders stay enabled.
+  - [x] Prepare the idempotent named-job migration and local PostgreSQL regression fixture, preserving cached advice/RPCs/functions and other jobs.
+  - [x] Resolve the replacement-upload gate: 1.0.15 (36) built/uploaded and owner confirms availability, active-user adoption and refresh success. The prior Apple agreement failures no longer block this rollout; DSA declaration completion remains separate.
+  - [~] Merge PR #83 through Database deploy; verify both projects have no nightly guidance job and the daily reminder stays active. Planned only until workflow completion is recorded.
+
 - [x] **Fix offline cold-start alias onboarding** (2026-11-12, source complete): distinguish an unavailable profile from a confirmed missing alias; keep current-account cache, retry on reconnect and guard account changes. Regression and isolated staging checks pass.
 - [ ] **Deliver/retest the offline alias fix on a phone.** Force-close and reopen in airplane mode with an existing account; no alias prompt. Reconnect and verify the same alias/account; verify profile retry when there is no cache. Not part of installed 1.0.15.
 

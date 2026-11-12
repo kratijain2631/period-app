@@ -122,3 +122,5 @@ The new path needs **no cron or service-role key**. Live metadata still shows th
 - ⏳ **Needs deploy:** the older `notifications-handler` (for friend-facing pushes).
 - ✅ **Phase Guide implementation/backend:** authenticated AI generation, cache reuse, duplicate-request handling and auth isolation verified live 2026-11-03; 1.0.13 (34) built. Submission and native/offline/accessibility checks remain open.
 - 🚫 **Deliberately not built:** silent server-side auto-posting of predictions (see §5).
+
+**Nightly retirement rollout (2026-11-12):** PR #83 now proceeds through Database deploy after owner confirmation that important users are on 1.0.15 and refresh works. Only the nightly guidance job is removed; the daily notification job remains. Older builds <=1.0.12 keep saved advice but cannot request replacements. Live removal is not confirmed until workflow/job metadata checks complete.

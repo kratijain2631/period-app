@@ -80,3 +80,5 @@ Raw `cycle_snapshots` and `cycle_events` rows are owner-only. Friends must use t
 - **Schema is in code** (`supabase/migrations/`); **real data is not** (database only); **test data is generated** by the staging persona scripts, never stored in production.
 - Applying the migrations to a fresh Supabase project reproduces the schema exactly.
 - Whether another project (e.g. the original collaborator's) matches is only guaranteed if it was built from these same migrations with no out-of-band dashboard changes — see [LEARNINGS.md](LEARNINGS.md).
+
+**Nightly guidance retirement ready for deployment (2026-11-12):** `20261111211000_retire-nightly-cycle-guidance.sql` removes only the named cron job. Owner confirms 1.0.15 adoption and refresh success; older-client loss of fresh advice is accepted. Tables, saved guidance, RPCs/functions and the daily reminder remain. Deployment/metadata checks are still pending.
