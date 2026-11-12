@@ -2,6 +2,8 @@
 
 ## Keep project instructions and change history in GitHub
 
+I want all instructions and notes to be in GitHub instead of stored at the agent level.
+
 Read this file and [TESTING.md](TESTING.md) before starting work. Keep shared instructions, decisions, and handoff notes in this repository so any contributor can pick up the work from GitHub.
 
 Before finishing, record what changed in [RELEASE_NOTES.md](RELEASE_NOTES.md) under `Unreleased` and update the relevant docs in the same commit. This includes work done outside the codebase. For example, record a database migration in [SCHEMA.md](SCHEMA.md) and say where it was applied. Update [FEATURES.md](FEATURES.md) when feature status changes and [TODO.md](TODO.md) when follow-up work opens or closes.
