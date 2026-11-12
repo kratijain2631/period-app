@@ -255,6 +255,87 @@ const checkNoLoginFunctions = async (
   await dev.client.auth.signOut();
 };
 
+// One rule: an accepted friend request, either way. ava and bea are seeded friends; fay is
+// not friends with bea.
+const checkFriendRule = async (
+  signIn: (key: string) => Promise<Persona>,
+  admin: SupabaseClient,
+  record: Record,
+) => {
+  const [ava, bea, fay] = await Promise.all(['ava', 'bea', 'fay'].map(signIn));
+  const { data: beaPosts } = await admin.from('posts').select('id').eq('user_id', bea.id).limit(1);
+  const { data: beaEvents } = await admin.from('cycle_events').select('id').eq('user_id', bea.id).limit(1);
+  const postId = (beaPosts as Array<{ id: string }>)[0].id;
+  const eventId = (beaEvents as Array<{ id: string }>)[0].id;
+  const made: { reactions: string[]; eventReactions: string[]; boops: string[] } = {
+    reactions: [], eventReactions: [], boops: [],
+  };
+
+  const sees = async (who: Persona) => {
+    const [posts, events, summaries, names] = await Promise.all([
+      who.client.from('posts').select('id').eq('user_id', bea.id),
+      who.client.rpc('shared_cycle_events', { max_rows: 200 }),
+      who.client.rpc('friend_cycle_summaries'),
+      who.client.rpc('friend_profiles', { friend_ids: [bea.id] }),
+    ]);
+    const ofBea = (rows: unknown) => ((rows ?? []) as Array<{ user_id?: string; friend_id?: string }>)
+      .filter((row) => (row.user_id ?? row.friend_id) === bea.id).length;
+    return {
+      posts: (posts.data ?? []).length,
+      events: ofBea(events.data),
+      summary: ofBea(summaries.data),
+      name: ofBea(names.data),
+    };
+  };
+  const tryWrites = async (who: Persona) => {
+    const reaction = await who.client.from('post_reactions')
+      .insert({ post_id: postId, user_id: who.id, emoji: '🧪' }).select('id');
+    // Can't ask for the row back: its read rule hides it even when the insert went through.
+    const eventInsert = await who.client.from('event_reactions')
+      .insert({ event_id: eventId, user_id: who.id, emoji: '🧪' });
+    const { data: eventRows } = await admin.from('event_reactions').select('id')
+      .eq('event_id', eventId).eq('user_id', who.id).eq('emoji', '🧪');
+    const boop = await who.client.from('boops')
+      .insert({ from_user_id: who.id, to_user_id: bea.id }).select('id');
+    made.reactions.push(...((reaction.data ?? []) as Array<{ id: string }>).map((row) => row.id));
+    made.eventReactions.push(...((eventRows ?? []) as Array<{ id: string }>).map((row) => row.id));
+    made.boops.push(...((boop.data ?? []) as Array<{ id: string }>).map((row) => row.id));
+    return { reaction: !reaction.error, eventReaction: !eventInsert.error && (eventRows ?? []).length > 0, boop: !boop.error };
+  };
+  const setBeaSharing = (on: boolean) =>
+    admin.from('friend_sharing').update({ has_shared: on }).eq('user_id', bea.id).eq('friend_id', ava.id);
+
+  try {
+    const friend = await sees(ava);
+    record('a friend sees posts, cycle events, summary and name',
+      friend.posts > 0 && friend.events > 0 && friend.summary === 1 && friend.name === 1, JSON.stringify(friend));
+    const friendWrites = await tryWrites(ava);
+    record('a friend can react to a post and a cycle event, and boop',
+      friendWrites.reaction && friendWrites.eventReaction && friendWrites.boop, JSON.stringify(friendWrites));
+
+    const stranger = await sees(fay);
+    record('a non-friend sees no posts, cycle events, summary or name',
+      stranger.posts === 0 && stranger.events === 0 && stranger.summary === 0 && stranger.name === 0,
+      JSON.stringify(stranger));
+    const strangerWrites = await tryWrites(fay);
+    record('a non-friend cannot react to a post', !strangerWrites.reaction);
+    record('a non-friend cannot react to a cycle event', !strangerWrites.eventReaction);
+    record('a non-friend cannot boop', !strangerWrites.boop);
+
+    await setBeaSharing(false);
+    const sharingOff = await sees(ava);
+    record('friend_sharing no longer controls access',
+      sharingOff.posts > 0 && sharingOff.events > 0 && sharingOff.summary === 1 && sharingOff.name === 1,
+      JSON.stringify(sharingOff));
+  } finally {
+    await setBeaSharing(true);
+    if (made.reactions.length) await admin.from('post_reactions').delete().in('id', made.reactions);
+    if (made.eventReactions.length) await admin.from('event_reactions').delete().in('id', made.eventReactions);
+    if (made.boops.length) await admin.from('boops').delete().in('id', made.boops);
+    await Promise.all([ava, bea, fay].map(({ client }) => client.auth.signOut()));
+  }
+};
+
 export const main = async () => {
   const env = loadStagingEnv();
   const password = requirePersonaPassword(env);
@@ -333,7 +414,16 @@ export const main = async () => {
       record('both people can then see each other', (await canSee(fay.client, cleo.id)) && (await canSee(cleo.client, fay.id)));
       const removed = await fay.client.rpc('remove_friend', { target_friend_id: cleo.id });
       record('remove_friend still works', !removed.error, removed.error?.message);
-      record('removing a friend ends access', !(await canSee(fay.client, cleo.id)));
+      record('removing a friend ends access both ways',
+        !(await canSee(fay.client, cleo.id)) && !(await canSee(cleo.client, fay.id)));
+      const { data: leftover } = await admin.from('friend_sharing').select('user_id')
+        .in('user_id', [fay.id, cleo.id]).in('friend_id', [fay.id, cleo.id]);
+      record('removing a friend deletes sharing both ways', (leftover ?? []).length === 0);
+      const resent = await insertAs(fay.client, fay.id, cleo.id, 'pending');
+      const resentId = (resent.data as { id: string } | null)?.id ?? '';
+      await cleo.client.from('friend_requests').update({ status: 'accepted' }).eq('id', resentId);
+      await cleo.client.rpc('ensure_friend_sharing', { request_ids: [resentId] });
+      record('re-adding a removed friend restores access', await canSee(fay.client, cleo.id));
     }
   } finally {
     await cleanUp();
@@ -346,6 +436,7 @@ export const main = async () => {
   await checkProfileEmail(signIn, admin, record);
   await checkAliases(signIn, admin, record);
   await checkNoLoginFunctions(signIn, createAnonClient(env), record);
+  await checkFriendRule(signIn, admin, record);
 
   const failed = results.filter((result) => !result.pass);
   console.log(`\n${results.length - failed.length} passed, ${failed.length} failed.`);

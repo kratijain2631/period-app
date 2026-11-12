@@ -29,6 +29,10 @@ app/
 │   ├── notifications/    # Notification bell & sheet
 │   └── profile/          # User profile & alias
 │
+├── components/           # Shared components (error boundary, dev badge, brand)
+├── config/               # App constants (branding.ts: links, names)
+├── theme/                # Colours and type (brand.ts)
+│
 ├── navigation/           # AppNavigator.tsx (routing logic)
 │
 ├── services/             # Business logic & integrations
@@ -36,6 +40,7 @@ app/
 │   ├── healthkit/        # HealthKit sync (syncHealthData.ts is core)
 │   ├── supabase/         # Backend services (one file per table/feature)
 │   ├── notifications/    # Push notifications
+│   ├── contacts/         # Contact-based friend discovery (hashed emails)
 │   └── boops/            # Offline queue sync
 │
 ├── state/                # Global state (Zustand stores)
@@ -49,7 +54,15 @@ packages/domain/cycles/    # Domain models (CycleSnapshot, phase estimation)
 
 supabase/
 ├── migrations/           # Database schema changes
-├── functions/            # Edge functions (notifications-handler, etc.)
+├── functions/            # Edge functions
+│   ├── _shared/          # Shared code (cron caller check)
+│   ├── avatar-generator/
+│   ├── cycle-guidance/   # Nightly AI guidance (cron)
+│   ├── delete-account/
+│   ├── friend-recommendations/ # Not scheduled
+│   ├── notifications-handler/  # Not deployed
+│   ├── phase-change-reminder/  # Daily reminder push (cron)
+│   └── request-cycle-guidance/ # Authenticated on-demand and manual AI guidance
 └── tests/                # RLS policy tests
 
 overall/                  # SSOT: 2025-11-11-cycle-companion-ssot.md

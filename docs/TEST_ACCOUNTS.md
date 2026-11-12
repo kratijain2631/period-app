@@ -11,6 +11,7 @@ Code-defined test users with realistic Apple Health cycle history, living in a *
 | Personas | `packages/domain/testing/personas.ts` | The cast (logins, profiles, cycle profiles), the social graph, and a deterministic cycle-history generator. Pure TS, unit tested. |
 | Seed | `npm run test-accounts:seed` | Creates or resets every persona on staging: login, profile, generated cycle snapshot + recent feed events (computed with the app's own `deriveSnapshot`), friendships, posts, reactions and boops. Idempotent: re-run it any time to get back to a known state. |
 | Fake Health | `app/services/healthkit/fakeHealthClient.ts` | In **dev builds only**, with `EXPO_PUBLIC_FAKE_HEALTH=true`, `healthkitClient` serves the signed-in persona's generated samples instead of HealthKit. The real sync → snapshot → upload code runs unchanged. Release builds can't enable it (`__DEV__` gate, tested). |
+| Access checks | `npm run test-accounts:rls` | Signs in as personas and checks the access rules: friend requests, friend search, reactions, boops, emails and no-login function access. The Database deploy workflow runs it on staging before every production push. |
 | Actors | `npm run test-accounts:actors -- <command>` | Signs in as personas with their password and acts through the normal API + RLS: post, react, boop, friend requests, scripted scenarios. |
 | Staging Metro | `npm run start:staging` | Starts the dev-client Metro server with `.env.staging` values. A purple **STAGING · FAKE HEALTH** pill shows in dev builds so you always know where you are. |
 
@@ -30,7 +31,7 @@ All personas share one password: `TEST_PERSONA_PASSWORD` from your `.env.staging
 ## One-time setup
 
 1. **Create the staging project** in the Supabase dashboard (e.g. `period-app-staging`; the free plan allows 2 active projects per org).
-2. **Build its schema from the repo.** Either run each file in `supabase/migrations/` in filename order in the SQL editor, or on this *fresh, empty* project use the CLI: `supabase link --project-ref <staging-ref>` then `supabase db push`. (Never `db push` to production; see TROUBLESHOOTING.md → Migrations.)
+2. **Build its schema from the repo.** Either run each file in `supabase/migrations/` in filename order in the SQL editor, or on this *fresh, empty* project use the CLI: `supabase link --project-ref <staging-ref>` then `supabase db push`. (Production is changed only by the Database deploy workflow; see [DB_PUSH.md](DB_PUSH.md).) The current staging project was built this way on 2026-11-03/04, plus a catch-up script for objects production had that no migration did at the time; those are now in migrations.
 3. **Check staging matches production.** Production was built by hand-pasting SQL, so compare schemas, e.g. `supabase db dump --schema public -f prod.sql` against each project and `diff` them. Fix any gaps on staging before relying on it.
 4. **Deploy the edge functions** to staging (`supabase functions deploy --project-ref <staging-ref>`). Leave `OPENAI_API_KEY` unset there so recommendations use their free fallback text.
 5. **Make sure Email sign-in is enabled** (Authentication → Providers → Email). Confirmation emails aren't needed; the seed confirms persona logins itself.
@@ -108,4 +109,5 @@ This isn't tied to any agent or model. The hard rules are in [AGENTS.md](../AGEN
 - The service-role key bypasses RLS. It stays in the gitignored `.env.staging`, and the scripts refuse to run if it appears in an `EXPO_PUBLIC_*` variable.
 - **`.env.local` exists only while `start:staging` runs.** It holds the public staging values, because `.env` would otherwise override them in dev bundles (see TROUBLESHOOTING.md → Gotchas). The script refuses to overwrite a `.env.local` it didn't create and removes its own on exit. If Metro is force-killed, delete the file, or every Metro server you start will use staging. While it exists, any other running Metro server picks it up too.
 - **Check where a dev build will connect before launching it with a real session.** The dev client reopens the last server, and with a production server a zero-sample sync runs immediately (BUGS.md). The most reliable proof you're on staging is that a persona can sign in; personas don't exist on production.
-- New migrations should be applied to staging first, then production.
+- New migrations reach staging first automatically: merging one runs the Database deploy workflow, which applies it to staging, runs `test-accounts:rls`, then applies it to production ([DB_PUSH.md](DB_PUSH.md)). Edge functions aren't covered, so deploy a changed one to staging by hand first.
+- [TESTING.md](TESTING.md) is the overview of every kind of testing; this file is the persona detail.

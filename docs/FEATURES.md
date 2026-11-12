@@ -186,10 +186,13 @@ For menstrual data specifically, privacy is a **feature area**, not just a desig
 - **Privacy/consent dashboard** — see and control exactly what each friend (or group) can see.
 - **Data export** — let users download their own data.
 - **Deletion** — account + data deletion (shipped) and clear, honest disclosure of what's stored and shared.
+- [x] **Backend privacy lockdown (shipped to staging and production 2026-11-04 to 2026-11-11, no app build needed).** Friend requests can't be forged, friend search is limited, post reactions and boops are friends-only, profile emails match the login, nothing is callable without a login, and the scheduled jobs can't be triggered by outsiders. Checked by `npm run test-accounts:rls` on every database deploy. Details in [RELEASE_NOTES.md](RELEASE_NOTES.md).
 - **Biometric app lock — Face ID / Touch ID (requested 2026-07-27)** — gate opening the app (and/or re-auth for sensitive actions) behind Face ID / Touch ID via `expo-local-authentication`, opt-in in settings. Especially fitting for intimate cycle data. Note: this is *device-unlock*, separate from the account-level "Sign in with Face ID / passkey" auth path (which pairs with the "Sign in without Apple" TODO).
 - **Expand the settings page (requested 2026-07-27, future task)** — the profile/settings screen needs more controls. Candidates: sharing/consent controls (ties into the consent-model fix), notification preferences (per-type toggles, quiet hours), the biometric lock toggle above, auto-post settings entry, data export/deletion, and account/name management. Scope as its own design pass.
 
 ## Profiles & identity
+
+- [x] **Unique aliases (2026-11-06).** Aliases are unique ignoring case, and a post always shows its author's alias. The next build shows "That alias is taken."; older builds show the generic save error.
 
 - **Scope and complete avatar setup/editing.** Avatar-generation infrastructure and profile avatar editing already exist, but define the intended user flow and states: adding an avatar for the first time, replacing/removing it, loading and failure handling, whether users can upload a photo versus generate one, and where avatars appear across profiles, the feed, and friend discovery.
 
