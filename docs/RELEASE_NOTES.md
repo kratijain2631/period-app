@@ -8,6 +8,8 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ### Added
 
+- **Guidance release migration history reconciled.** Removed the unmerged duplicate `20261103120000` migration from this branch because main already captures those live objects in `20261106190000`; the refresh RPC is the only new database change. No recorded migration or database object is removed.
+
 - **Builds 34/35 submission status corrected (2026-11-11).** Both uploads failed with the required-Apple-agreement error; they are no longer merely queued. Resolve agreements, resubmit and verify tester adoption before merging the separate nightly-guidance retirement draft. The live job remains active.
 
 - **Refresh migration version kept unique.** Moved the pending manual-refresh migration to `20261111210000` after main added the `20261111180000` friend-rule migration; no database deployment was performed.
