@@ -140,3 +140,5 @@ Use the staging development client for repeatable checks. Start it with `npm run
 6. As an upgrade regression, open an existing profile online, force-quit and launch in airplane mode. Verify it keeps its alias. Restore connectivity and confirm Refresh tips still works.
 
 Record build, iOS version, tester aliases, and observed outcomes. Leave phone numbers and verification codes out of GitHub.
+
+2026-11-12 — [1.0.17 release run](https://github.com/kratijain2631/period-app/actions/runs/43318041600) passed TypeScript and all 155 Jest tests. The two dedicated staging accounts signed in and passed phone-only, email-only, combined/deduplicated, caller independence and opt-out lookups. The release job stopped before starting EAS because the GitHub Actions repository secret `EXPO_TOKEN` was missing. After configuring the secret, re-run failed jobs on that run. SMS delivery and physical-device checks remain pending.

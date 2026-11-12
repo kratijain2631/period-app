@@ -8,6 +8,8 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## 2026-11-12 — 1.0.17 iOS release candidate
 
+2026-11-12 — [1.0.17 release run](https://github.com/kratijain2631/period-app/actions/runs/43318041600) passed TypeScript and all 155 Jest tests. The two dedicated staging accounts signed in and passed phone-only, email-only, combined/deduplicated, caller independence and opt-out lookups. The release job stopped before starting EAS because the GitHub Actions repository secret `EXPO_TOKEN` was missing. After configuring the secret, re-run failed jobs on that run. SMS delivery and physical-device checks remain pending.
+
 Prepared for internal TestFlight. Build number and Apple upload are pending verification. [What to test](TESTING.md#1017-iphone-checklist).
 - Added a startup check of recent GitHub work and an offer to review colleagues’ changes since the previous session.
 
