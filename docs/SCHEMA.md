@@ -32,7 +32,7 @@ The on-demand guidance migration also adds nullable `cycle_guidance.phase_starte
 |---|---|
 | `claim_cycle_guidance_refresh` | Applied to staging and production by Database deploy run 43154655774 on 2026-11-11 (`20261111210000`): explicit caller-scoped regeneration using the existing lease table and saved generation timestamp for a two-minute cooldown. No signature changes to existing RPCs. |
 | `claim_cycle_guidance` / `complete_cycle_guidance` | Applied 2026-11-03: authenticate with `auth.uid()`, validate the current server snapshot, serialize generation claims and save only the matching claim/phase result. Authenticated callers can affect only their own guidance. |
-| `handle_new_auth_user` | Trigger: creates a `users` row when a new auth user signs up. |
+| `handle_new_auth_user` | Trigger: creates a `users` row when a new auth user signs up. Pins `search_path` since `20261112190000`, applied by the Database deploy on merge. |
 | `handle_updated_at` | Trigger: maintains `updated_at` timestamps. |
 | `populate_post_alias` | Trigger: always sets a post's alias from its author's profile, so a post can't carry someone else's name (since 2026-11-06). |
 | `enforce_users_email` | Trigger: keeps the profile email equal to the login email. |

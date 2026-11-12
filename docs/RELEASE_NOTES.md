@@ -6,6 +6,10 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## Unreleased
 
+### Added
+
+- **Security rules lint (`scripts/security/lint.js`, `supabase/security/allowlist.json`).** `npm run test:security`, and so the required Security checks, now also check the database catalog. Every table must have RLS on, and no function can be run without a login. Functions logged-in users can run must check who is calling. SECURITY DEFINER functions must set `search_path`. Every policy must check the caller, and UPDATE policies must pin ownership and consent columns. Exceptions live in the allowlist with a reason, and entries that stop matching fail the lint. It found one real gap, fixed by `20261112190000_new-user-trigger-search-path.sql`: the sign-up trigger didn't pin its `search_path`. Testing (2026-11-12, local Docker): passes on the repo; planted holes each fail with the object named, including a recipient able to rewrite a request's sender, a table with RLS off and a no-login function.
+
 ### Infrastructure & release setup
 
 - **Nightly guidance retired, verified on both projects (2026-11-12).** PR #83 merged at `0765324f`. [Database deploy run 43274996960](https://github.com/kratijain2631/period-app/actions/runs/43274996960) applied `20261111211000` to staging, passed all 75 staging access checks, then applied production. Post-deploy read-only metadata confirms nightly guidance absent and `daily-phase-change-reminder` active at 15:00 UTC in both projects. Cached tips, all user tables, functions and RPCs remain. No new production test users or AI calls were made.
