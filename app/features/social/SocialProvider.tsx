@@ -4,6 +4,7 @@ import { useActivityFeed } from '../feed/hooks/useActivityFeed';
 import { useNotifications } from '../notifications/hooks/useNotifications';
 import { useSessionStore } from '../../state/sessionStore';
 import { loadCircle } from './CircleData';
+import { subscribeToPosts } from '../../services/supabase/posts';
 
 function useSocialResources(id: string, alias: string | null) {
   const feed = useActivityFeed(id, alias);
@@ -56,6 +57,18 @@ function useSocialResources(id: string, alias: string | null) {
       sub.remove();
     };
   }, [feed.reload, refreshCircle, notifications.reload]);
+  // A friend's new post refreshes the feed right away. Short delay so a burst of posts is one reload.
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const channel = subscribeToPosts(() => {
+      clearTimeout(timer);
+      timer = setTimeout(() => void feed.reload(), 500);
+    });
+    return () => {
+      clearTimeout(timer);
+      channel?.unsubscribe();
+    };
+  }, [feed.reload]);
   const [commentsRevision, setCommentsRevision] = useState(0);
   const commentsChanged = useCallback(() => setCommentsRevision((value) => value + 1), []);
   const respondToRequest = useCallback(
