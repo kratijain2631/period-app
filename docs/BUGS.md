@@ -4,10 +4,12 @@ Known bugs to fix. This is for **open** bugs; problems we already diagnosed and 
 
 ## Open
 
+- [x] **Production Phase Guide rechecked (2026-11-13).** The owner retried Refresh tips on their phone and confirmed it works. The staging configuration issue is tracked below.
+
 - [x] Explicit cycle erasure removes the saved snapshot, related automatic posts and cycle notices, and blocks future uploads until reconnection. See Cycle privacy in the release notes.
 
 - [ ] General email-change delivery needs a verified custom sender and a reachable confirmation landing URL. Both hosted environments currently use the default team-restricted sender, secure email change and a localhost redirect. Verify receipt at both addresses, including Apple relay, after configuration.
-- [ ] Staging fresh guidance returns HTTP 503. The generation key is absent there. Configure a staging-scoped key and test a fresh result before marking live generation verified.
+- [ ] Staging fresh guidance returns HTTP 503. The generation key is absent there. Set the OpenAI key in staging and test a fresh result before marking live generation verified.
 
 - [ ] **Hosted SMS setup blocks required phone onboarding (verified 2026-11-12).** Public Auth settings report phone auth disabled on staging and production. A normal JWT phone-change request on an isolated staging user returned HTTP 500 / `unexpected_failure`; the exact 500 cause is not established. Enable/configure SMS and verify delivery, wrong code, resend and valid confirmation before distributing required-phone onboarding. Admin-simulated verification in lookup tests does not complete this requirement. No production writes or configuration changes.
 
