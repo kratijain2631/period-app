@@ -34,7 +34,7 @@ export async function loadCircle(userId: string) {
   });
   return { people, outgoing: pending.map(row => ({
     id: row.id, memberId: row.to_user_id, createdAt: row.created_at,
-    alias: recipientByRequest.get(row.id)?.alias || '',
+    alias: recipientByRequest.get(row.id)?.alias || '', name: recipientByRequest.get(row.id)?.full_name,
   })) };
 }
 

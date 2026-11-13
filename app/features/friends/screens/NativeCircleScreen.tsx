@@ -198,7 +198,8 @@ export function AddFriendsScreen() {
       {message && <AppText accessibilityLiveRegion="polite">{message}</AppText>}
       <FriendRequestsCard
         incoming={notifications.friendRequests.map(r => ({
-          id: r.id, memberId: r.from_user_id, alias: notifications.requestProfileMap[r.from_user_id]?.alias || '', createdAt: r.created_at,
+          id: r.id, memberId: r.from_user_id, alias: notifications.requestProfileMap[r.from_user_id]?.alias || '',
+          name: notifications.requestProfileMap[r.from_user_id]?.name, createdAt: r.created_at,
         }))}
         outgoing={circle.outgoing}
         onCancel={cancel}

@@ -3,7 +3,7 @@ import { useRef } from 'react';
 import { Image, Pressable, View } from 'react-native';
 import { AppText, Surface } from '../../../components/ui/WidgetPrimitives';
 import { useWidgetTheme } from '../../../theme/widgetTheme';
-import type { ActivityItemModel } from '../models/activity';
+import { activityKey, type ActivityItemModel } from '../models/activity';
 import { getDoubleTapResult } from '../../home/utils/reactionDoubleTap';
 import { ReactionBar, BoopAction } from './ReactionBar';
 
@@ -33,7 +33,7 @@ export const ActivityItem = ({
   const t = useWidgetTheme();
   const threads = useCommentThreads();
   const focusPost = () =>
-    threads?.setCurrent((id) => (model.target.type === 'post' && id === model.target.id ? id : null));
+    threads?.setCurrent((id) => (id === activityKey(model.target) ? id : null));
   const act =
     <Args extends unknown[]>(action: (...args: Args) => void) =>
     (...args: Args) => {

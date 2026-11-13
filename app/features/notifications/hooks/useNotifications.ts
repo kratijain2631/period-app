@@ -43,7 +43,7 @@ export const useNotifications = () => {
   const [notifications, setNotifications] = useState<NotificationRow[]>([]);
   const [friendshipRevision, invalidateFriendships] = useState(0);
   const [friendRequests, setFriendRequests] = useState<FriendRequestRow[]>([]);
-  const [requestProfileMap, setRequestProfileMap] = useState<Record<string, { alias?: string | null }>>({});
+  const [requestProfileMap, setRequestProfileMap] = useState<Record<string, { alias?: string | null; name?: string | null }>>({});
   const [acceptances, setAcceptances] = useState<AcceptanceNotification[]>([]);
   // Acceptances that have been viewed on the notifications page this session —
   // kept visible (styled as read) rather than cleared, so the page shows history.
@@ -131,10 +131,11 @@ export const useNotifications = () => {
         return;
       }
       const profiles = await fetchFriendRequestProfiles(requestIds);
-      const nextMap: Record<string, { alias?: string | null }> = {};
+      const nextMap: Record<string, { alias?: string | null; name?: string | null }> = {};
       profiles.forEach((profile) => {
         nextMap[profile.other_user_id] = {
           alias: profile.alias ?? null,
+          name: profile.full_name ?? null,
         };
       });
       if (version === requestRead.current) setRequestProfileMap(nextMap);

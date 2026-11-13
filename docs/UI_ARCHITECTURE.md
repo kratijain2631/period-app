@@ -63,7 +63,7 @@ The native app and interactive design have four bottom tabs. An outward profile 
 | Edit profile / settings | You flows | Identity and posting preferences in the preview. Native settings also includes account actions and contact details |
 | Sign-in / profile and contact setup / introduction and permissions | Native onboarding | Verified contacts and alias → initial ranking and posting choices → optional Apple Health → Home |
 
-The wheel and full Phase Guide are sections of You. The countdown on Home opens the wheel. Add friends owns discovery and invitations. Sent requests support cancellation. Incoming requests also appear directly in Notifications. The member profile links eligible friends to the deeper pair comparison.
+The wheel and full Phase Guide are sections of You. The countdown on Home opens the wheel. Add friends owns discovery and invitations. Received and Sent tabs share a request card. Sent requests support cancellation. Incoming requests also appear directly in Notifications. The member profile links eligible friends to the deeper pair comparison.
 
 ## Preliminary widget assignments
 
@@ -80,7 +80,7 @@ Each product widget has one primary page. Home reads a small selection from thos
 | You | **Health connection and sync status** · last sync, readable data, recoverable error | Cycle strip shows state and freshness |
 | You | **Account and sharing settings** · automatic phase-post preferences, account actions, verified contact details and Community rankings opt-in | You settings. Contact details moved here on main in [PR #92](https://github.com/kratijain2631/period-app/pull/92) |
 | Feed | **Activity stream and individual updates** · social posts and published cycle events with author and time | Latest update → Feed. Author → member profile |
-| Feed | **Post comments** · one expanded thread per list, post a comment or delete your own via an inline trash action | Shared post on Feed, You and member profiles |
+| Feed | **Activity comments** · one expanded thread per list, keyed by parent type and ID. Reply to written and automatic updates or delete your own via the inline trash action | Shared updates on Feed and member profiles, written posts in My posts |
 | Feed | **Post composer and author actions** · audience, mood, draft, submit and delete | Compose or resume in Feed |
 | Feed | **Reaction bar, emoji picker and update boops** · counts, choices and delivery state | Activity item, including shared updates on a profile |
 | Feed | **Notification inbox** · unread indicator, activity and links to subjects | Header bell → secondary Notifications page. Friend requests themselves belong to Circle |
