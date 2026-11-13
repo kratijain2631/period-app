@@ -49,11 +49,12 @@ The native app and interactive design have four bottom tabs. An outward profile 
 
 | Page or flow | Placement in the design | Entry and contents |
 | --- | --- | --- |
+| Opening and sign-in | Launch and signed-out entry | Shared drop artwork, wordmark and two-line tagline. Preview enters Home and native sign-in uses the existing authentication flow |
 | Home | Bottom tab | Selected previews that open a complete widget on Feed, Circle or You |
 | Feed | Bottom tab | Updates, publishing and responses to updates |
 | Circle | Bottom tab | Personal rankings, searchable friend directory and opt-in community rankings |
 | Add friends | Secondary page, only from the Add Friends button beside Friends | Friend requests, Discover friends and Grow your circle |
-| You | Bottom tab | Private identity editing, cycle, monthly recap, full Phase Guide, My updates and settings |
+| You | Bottom tab | Private identity editing, cycle, monthly recap, full Phase Guide, My posts and settings |
 | Notifications | Secondary page, opened by the bell | One chronological list (oldest first) of activity and incoming requests with inline Accept/Decline. Identified senders open profiles |
 | Member profile | Secondary page, one route parameterized by member ID | Open any person from a ranking, directory, request, search result, feed author or notification. Tap your name on You to open your own outward profile. Show identity and bio, relationship actions, eligible pair sync and shared updates visible to this viewer |
 | Compose update / delete confirmation | Feed flow | Draft, mood, audience and submit. An author can remove their update |
@@ -72,12 +73,12 @@ Each product widget has one primary page. Home reads a small selection from thos
 | You | **Coming up** · Home preview of the next estimated phase | Home countdown → full cycle wheel on You |
 | You | **Phase Guide** · full suggestions for this phase, everyday fallback and personalized tips when available | One tip, such as “Try something new” → full guide inline |
 | You | **Monthly recap** · cycle metrics and tracking coverage | You |
-| You | **My updates** · the signed-in member's own shared posts and published cycle updates, newest first | Last section of You; filters the same items and actions as Feed |
+| You | **My posts** · the signed-in member's own posts, newest first | Last section of You; filters the same items and actions as Feed |
 | You | **Profile identity, bio and avatar editor** · private editing and read-only outward identity | Greeting uses the name. The name on You opens the outward profile; the pencil edits it. Native supports avatar editing |
 | You | **Health connection and sync status** · last sync, readable data, recoverable error | Cycle strip shows state and freshness |
-| You | **Account and sharing settings** · automatic phase-post preferences, account actions, verified contact details | You settings. Contact details moved here on main in [PR #92](https://github.com/kratijain2631/period-app/pull/92) |
+| You | **Account and sharing settings** · automatic phase-post preferences, account actions, verified contact details and Community rankings opt-in | You settings. Contact details moved here on main in [PR #92](https://github.com/kratijain2631/period-app/pull/92) |
 | Feed | **Activity stream and individual updates** · social posts and published cycle events with author and time | Latest update → Feed. Author → member profile |
-| Feed | **Post comments** · inline discussion on visible posts, post a comment or delete your own | Shared post on Feed, You and member profiles |
+| Feed | **Post comments** · one expanded thread per list, post a comment or delete your own via an inline trash action | Shared post on Feed, You and member profiles |
 | Feed | **Post composer and author actions** · audience, mood, draft, submit and delete | Compose or resume in Feed |
 | Feed | **Reaction bar, emoji picker and update boops** · counts, choices and delivery state | Activity item, including shared updates on a profile |
 | Feed | **Notification inbox** · unread indicator, activity and links to subjects | Header bell → secondary Notifications page. Friend requests themselves belong to Circle |
@@ -85,7 +86,7 @@ Each product widget has one primary page. Home reads a small selection from thos
 | Circle | **Friend directory and identity row** · name, alias, search and available score; more than four matching friends scroll inside the list, with search above it | People shortcut → Circle. Each user row → outward profile |
 | Circle | **Outward profile and pair sync** · shared identity, relationship, available score and shared updates. Native friend detail also has trends, comparisons, suggestions, friend-directed boops and removal | Same member ID from every entry. The viewer's private cycle and settings stay on You |
 | Circle | **Most supportive** · recipient-only ranking of friends’ saved reactions, comments and boops in the last 30 days | Second personal tab beside Most in sync |
-| Circle | **Cycle Community** · opt-in global Top 10, shown in four-row scroll areas. Largest Circle counts accepted friends; Loudest Voices counts extant manual posts this UTC month. Aliases open outward profiles | Circle only |
+| Circle | **Community rankings** · opt-in global Top 10, shown in four-row scroll areas. Largest Circle counts accepted friends; Loudest Voices counts extant manual posts this UTC month. Aliases open outward profiles | Circle only |
 | Circle | **Friend requests** · scrollable incoming list with Accept/Decline | Add friends and Notifications share the same requests and decisions |
 | Circle | **Discover friends** · search by name/alias, exact verified email/phone or permitted contacts; select up to five, keep sent requests gray, respond to incoming, remove accepted friends from suggestions | Add friends |
 | Circle | **Grow your circle** · share or copy the configured invite link via matching stacked controls | Add friends |
@@ -99,7 +100,7 @@ The greeting, illustrations, tabs and headings are shared presentation or naviga
 | You | Private symptom or period check-in, cycle calendar/history, insights, year recap and recap sharing | Check-in shortcut or new recap |
 | You | Check-in streak, daily quest or intention, XP/reward balance | Current intention or earned milestone once supported |
 | Feed | Post editing, richer activity types, shared recaps and group updates | Latest relevant update |
-| Feed | Instagram Stories export action on your own authored posts; reusable from My updates. Preview the export before handing it off to Instagram | Inside the post action menu |
+| Feed | Instagram Stories export action on your own authored posts; reusable from My posts. Preview the export before handing it off to Instagram | Inside the post action menu |
 | Circle | Try a private personal rank outside the Top 10 and compare monthly posting days with post totals in the pilot | No Home placement planned |
 | Circle | Groups and membership, friend calendar overlays, per-friend sharing controls, care actions and shared plans | A shared plan or group preview |
 
@@ -299,10 +300,10 @@ The page directory and widget assignments above describe the current design. Thi
 |---|---|
 | **Home** | Cycle strip → one guide tip → upcoming estimate → top match when available → latest update. Header links to Circle and Notifications |
 | **Feed** | Full activity stream, composer, reactions, boops and entry to Notifications |
-| **Circle** | Two personal ranking tabs → friend directory (Add Friends button) → two Cycle Community tabs |
+| **Circle** | Two personal ranking tabs → friend directory (Add Friends button) → two Community rankings tabs |
 | **Add friends** | Incoming request card → member and contact discovery → share/copy invite. Reuse pending requests and relationship decisions in Notifications |
 | **Friend detail** | Friend identity → pair score/confidence → comparison/trends → pair guidance → boop/care → relationship actions. Access revocation takes precedence over cached content |
-| **You** | Profile identity/editor and outward profile entry → cycle/metrics → full Phase Guide → My updates, with settings accessible in the header. No duplicate Profile screen instance under Home |
+| **You** | Profile identity/editor and outward profile entry → cycle/metrics → full Phase Guide → My posts, with settings accessible in the header. No duplicate Profile screen instance under Home |
 | **Notifications** | Requests + activity grouped by read state; navigation to original subject; shared badge counts. Rendering a row does not itself accept a request or clear history |
 | **Auth / Alias / Intro** | Separate gated workflows using shared fields/buttons/status components. Onboarding owns progression; individual permission steps own explanation and outcome, not global navigation |
 | **Auto-post settings / Settings** | Preference sections, permissions/connections, account actions; later notifications/privacy/export/biometric controls. Do not expose a functional-looking switch without persistence and enforcement |

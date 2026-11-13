@@ -1,3 +1,5 @@
+import { Ionicons } from '@expo/vector-icons';
+import { useCommentThreads } from './CommentThreads';
 import { useEffect, useRef, useState } from 'react';
 import { Pressable, ScrollView, TextInput, View } from 'react-native';
 import { AppText, ActionButton } from '../../../components/ui/WidgetPrimitives';
@@ -11,6 +13,7 @@ export type CommentActions = {
   remove: (id: string) => Promise<void>;
 };
 export function PostComments({
+  postId,
   self,
   offline,
   actions,
@@ -18,6 +21,7 @@ export function PostComments({
   onProfile,
   focused = true,
 }: {
+  postId: string;
   self: string;
   offline: boolean;
   actions: CommentActions;
@@ -26,7 +30,8 @@ export function PostComments({
   focused?: boolean;
 }) {
   const theme = useWidgetTheme();
-  const [open, setOpen] = useState(false);
+  const threads = useCommentThreads();
+  const open = threads?.current === postId;
   const [rows, setRows] = useState<PostComment[]>([]);
   const [draft, setDraft] = useState('');
   const [limit, setLimit] = useState(20);
@@ -90,7 +95,7 @@ export function PostComments({
       <Pressable
         accessibilityRole="button"
         accessibilityState={{ expanded: open }}
-        onPress={() => setOpen((v) => !v)}
+        onPress={() => threads?.setCurrent((id) => (id === postId ? null : postId))}
         style={{ minHeight: 44, justifyContent: 'center' }}
       >
         <AppText style={{ color: theme.colors.accent, fontFamily: theme.type.semibold }}>
@@ -112,21 +117,36 @@ export function PostComments({
                 key={row.id}
                 style={{ paddingVertical: 6, borderTopWidth: 1, borderColor: theme.colors.border }}
               >
-                <TextAction
-                  label={
-                    row.user_id === self ? 'You' : row.alias ? '@' + row.alias.replace(/^@/, '') : 'Circle member'
-                  }
-                  onPress={() => onProfile(row.user_id)}
-                />
-                <AppText>{row.body}</AppText>
-                {row.user_id === self && (
-                  <ActionButton
-                    outline
-                    label="Delete comment"
-                    disabled={busy || offline}
-                    onPress={() => void mutate(row.id)}
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <TextAction
+                    label={
+                      row.user_id === self
+                        ? 'You'
+                        : row.alias
+                          ? '@' + row.alias.replace(/^@/, '')
+                          : 'Circle member'
+                    }
+                    onPress={() => onProfile(row.user_id)}
                   />
-                )}
+                  {row.user_id === self && (
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel="Delete comment"
+                      disabled={busy || offline}
+                      onPress={() => void mutate(row.id)}
+                      style={({ pressed }) => ({
+                        height: 44,
+                        width: 44,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        opacity: busy || offline || pressed ? 0.45 : 1,
+                      })}
+                    >
+                      <Ionicons name="trash-outline" size={15} color={theme.colors.secondary} />
+                    </Pressable>
+                  )}
+                </View>
+                <AppText>{row.body}</AppText>
               </View>
             ))}
             {more && <TextAction label="Show more comments" onPress={() => setLimit((n) => n + 20)} />}

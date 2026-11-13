@@ -152,9 +152,10 @@ First-run flow is make-or-break for a social health app:
 - [x] **Comment on posts** (implemented, unreleased). Members who can see a post can comment, see others’ replies and delete their own. Comments disappear with the post.
 
 - [x] **Circle rankings** (implemented, unreleased). Most in sync compares eligible friends. Most supportive ranks saved reactions, post comments and boops received over 30 days. Removing a friend removes their eligibility.
-- [x] **Cycle Community** (implemented, unreleased). Opt-in Top 10 by **Largest Circle** (distinct accepted friends) or **Loudest Voices** (current-month manual posts). Invite attempts, automatic cycle updates and deleted posts earn no points. Participation discloses only an alias and count.
+- [x] **Opening identity and thumbnail** (implemented, unreleased). This app uses a smiling drop inside its five phase colors for the app icon, launch and sign-in. The dated design gallery includes the opening page.
+- [x] **Community rankings** (implemented, unreleased). Opt-in Top 10 by **Largest Circle** (distinct accepted friends) or **Loudest Voices** (current-month manual posts). Invite attempts, automatic cycle updates and deleted posts earn no points. Participation discloses only an alias and count. The visibility switch lives in You → Settings.
 - [ ] **Test whether ranks encourage participation.** Try a private “your rank” below tenth and compare monthly post count with distinct days posting. Ask whether a reachable next rank encourages someone to speak up or creates pressure; watch for unwanted requests and low-effort posts.
-- [ ] **Share to Instagram Stories** (iPhone first). From your own manually written post in Feed or My updates, preview a portrait card before opening Instagram’s composer. Leave out friends, reactions and automatically attached cycle data. Offer Save image when Instagram is unavailable. Publishing remains the member’s choice in Instagram.
+- [ ] **Share to Instagram Stories** (iPhone first). From your own manually written post in Feed or My posts, preview a portrait card before opening Instagram’s composer. Leave out friends, reactions and automatically attached cycle data. Offer Save image when Instagram is unavailable. Publishing remains the member’s choice in Instagram.
 
 
 - **Friends & groups** — friend/de-friend by Apple ID or phone; also **group** relations you can join/leave like an individual friend.

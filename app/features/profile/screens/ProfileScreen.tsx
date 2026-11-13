@@ -1,3 +1,4 @@
+import { RankingVisibility } from '../components/RankingVisibility';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActionSheetIOS,
@@ -475,9 +476,9 @@ const ProfileScreen = () => {
 
         <View style={{ marginTop: 14, gap: 8 }}>
           <Text accessibilityRole="header" style={styles.sectionTitle}>
-            My updates
+            My posts
           </Text>
-          {session && <MemberUpdates memberId={session.userId} />}
+          {session && <MemberUpdates memberId={session.userId} postsOnly />}
         </View>
       </ScrollView>
 
@@ -488,13 +489,16 @@ const ProfileScreen = () => {
         onRequestClose={() => setSettingsOpen(false)}
       >
         <Pressable style={styles.settingsOverlay} onPress={() => setSettingsOpen(false)}>
-          <Pressable style={styles.settingsSheet} onPress={() => {}}>
+          <ScrollView style={{ flexGrow: 0, maxHeight: '90%' }} contentContainerStyle={styles.settingsSheet} keyboardShouldPersistTaps="handled" bounces={false}>
+            <Pressable onPress={() => {}}>
             <View style={styles.settingsHeader}>
               <Text style={styles.settingsTitle}>Settings</Text>
               <TouchableOpacity onPress={() => setSettingsOpen(false)} accessibilityLabel="Close settings">
                 <Text style={styles.settingsClose}>Done</Text>
               </TouchableOpacity>
             </View>
+
+            {settingsOpen && session && <RankingVisibility key={session.userId} userId={session.userId} />}
 
             {profileEmail ? (
               <View style={[styles.accountRow, styles.accountRowDivider]}>
@@ -554,7 +558,8 @@ const ProfileScreen = () => {
             </TouchableOpacity>
 
             {accountError ? <Text style={styles.inlineError}>{accountError}</Text> : null}
-          </Pressable>
+            </Pressable>
+          </ScrollView>
         </Pressable>
       </Modal>
     </SafeAreaView>

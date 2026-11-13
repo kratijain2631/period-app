@@ -239,7 +239,9 @@ export function YouPage({
   onProfile: () => void;
   updates: ReactNode;
 }) {
+  const [refreshes, setRefreshes] = useState(0);
   const guide = fallbackPhaseGuidance(model.phase);
+  const tips = [...guide.dos.slice(refreshes % guide.dos.length), ...guide.dos.slice(0, refreshes % guide.dos.length)];
   const previewTip = [model.guidance.title, model.guidance.body].filter(Boolean).join(': ');
   return (
     <>
@@ -260,15 +262,18 @@ export function YouPage({
       )}
       <View nativeID="phase-guide" tabIndex={-1}>
         <PhaseGuide
-          dos={[previewTip, ...guide.dos.slice(1)]}
+          dos={refreshes ? tips : [previewTip, ...guide.dos.slice(1)]}
+          onRefresh={() => setRefreshes(n => n + 1)}
+          refreshDisabled={model.state !== 'ready' || model.phase === 'unknown'}
+          message={model.phase === 'unknown' ? 'Sync your cycle to refresh tips.' : refreshes ? 'Sample tips refreshed.' : null}
           donts={guide.donts}
           personalized={false}
           phaseLabel={model.state === 'ready' ? phaseLabels[model.phase] : null}
         />
       </View>
-      <View nativeID="my-updates" tabIndex={-1} style={{ gap: 8 }}>
+      <View nativeID="my-posts" tabIndex={-1} style={{ gap: 8 }}>
         <AppText role="heading" accessibilityRole="header">
-          My updates
+          My posts
         </AppText>
         {updates}
       </View>

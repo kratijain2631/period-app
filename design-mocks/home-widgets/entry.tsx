@@ -1,3 +1,6 @@
+import { CommentThreads } from '../../app/features/feed/components/CommentThreads';
+import { OpeningIdentity } from '../../app/components/brand/OpeningIdentity';
+import { SettingsMenu, SampleContactDetails, PostingSettings } from './PreviewPreferences';
 import { PostComments } from '../../app/features/feed/components/PostComments';
 import type { PostComment } from '../../app/services/supabase/postComments';
 import { NotificationItem } from '../../app/features/notifications/components/NotificationItem';
@@ -29,9 +32,13 @@ import {
 } from '../../app/features/feed/models/activity';
 import type { CycleOverview } from '../../app/features/cycle/models/cycleOverview';
 import { fallbackPhaseGuidance, splitGuidanceTip } from '../../packages/domain/cycles/guidance';
-import { SyncSpotlight, rankSync, type CirclePerson } from '../../app/features/friends/components/CircleWidgets';
+import {
+  SyncSpotlight,
+  rankSync,
+  type CirclePerson,
+} from '../../app/features/friends/components/CircleWidgets';
 import { AddFriendsPage, CirclePage, FeedPage, YouPage, type PersonalBoard } from './Pages';
-import { ProfileEditor, OutwardProfile, PreviewSettings } from './PreviewDetails';
+import { ProfileEditor, OutwardProfile } from './PreviewDetails';
 import {
   example,
   activity,
@@ -51,14 +58,30 @@ import {
   type PreviewState,
 } from './fixtures';
 
-type Section = 'cycle' | 'phase-guide' | 'my-updates' | 'leaderboard' | 'discover' | 'requests';
+type Section = 'cycle' | 'phase-guide' | 'my-posts' | 'leaderboard' | 'discover' | 'requests';
 const sampleItemKeys = new Set(activity.map((item) => activityKey(item.target)));
 const states = ['Ready', 'Empty', 'Loading', 'Error', 'Stale', 'Offline'] as const;
 const pageIcons = { Home: 'home', Feed: 'chatbubbles', Circle: 'people', You: 'person-circle' } as const;
-type Detail = 'add-friends' | 'edit' | 'settings' | 'write' | 'profile' | 'notifications' | 'delete' | null;
+type Detail =
+  | 'opening'
+  | 'contacts'
+  | 'posting'
+  | 'sign-out'
+  | 'delete-account'
+  | 'add-friends'
+  | 'edit'
+  | 'settings'
+  | 'write'
+  | 'profile'
+  | 'notifications'
+  | 'delete'
+  | null;
 const screenParam = () => new URLSearchParams(window.location.search).get('screen');
 const initialPage = (): PreviewPage => {
   if (screenParam() === 'profile' || screenParam() === 'add-friends') return 'Circle';
+  if (['settings', 'contacts', 'posting', 'edit', 'sign-out', 'delete-account'].includes(screenParam() ?? ''))
+    return 'You';
+  if (screenParam() === 'write') return 'Feed';
   if (screenParam() === 'notifications') return 'Feed';
   return pages.find((p) => p.toLowerCase() === screenParam()) ?? 'Home';
 };
@@ -81,19 +104,30 @@ function Preview() {
     if (initialPage() === 'Circle' && (hash === 'discover' || hash === 'requests' || hash === 'leaderboard'))
       return hash;
     if (initialPage() !== 'You') return null;
+    if (hash === 'my-updates') return 'my-posts';
     if (hash === 'upcoming') return 'cycle';
-    return hash === 'cycle' || hash === 'phase-guide' || hash === 'my-updates' ? hash : null;
+    return hash === 'cycle' || hash === 'phase-guide' || hash === 'my-posts' ? hash : null;
   });
-  const [detail, setDetail] = useState<Detail>(() =>
-    screenParam() === 'profile'
-      ? 'profile'
-      : screenParam() === 'notifications'
-        ? 'notifications'
-        : screenParam() === 'add-friends' ||
-            (initialPage() === 'Circle' && ['#requests', '#discover'].includes(window.location.hash))
-          ? 'add-friends'
-          : null,
-  );
+  const [detail, setDetail] = useState<Detail>(() => {
+    const screen = screenParam();
+    if (!screen || screen === 'opening') return 'opening';
+    if (
+      screen === 'profile' ||
+      screen === 'notifications' ||
+      screen === 'add-friends' ||
+      screen === 'settings' ||
+      screen === 'contacts' ||
+      screen === 'posting' ||
+      screen === 'edit' ||
+      screen === 'write' ||
+      screen === 'sign-out' ||
+      screen === 'delete-account'
+    )
+      return screen;
+    if (initialPage() === 'Circle' && ['#requests', '#discover'].includes(window.location.hash))
+      return 'add-friends';
+    return null;
+  });
   const [profile, setProfile] = useState(initialProfile);
   const [text, setText] = useState('');
   const [mood, setMood] = useState<string | null>(null);
@@ -111,12 +145,16 @@ function Preview() {
   });
   const [picker, setPicker] = useState<string | null>(null);
   const [deleteKey, setDeleteKey] = useState<string | null>(null);
-  const [personId, setPersonId] = useState(() => new URLSearchParams(window.location.search).get('person') ?? '');
-  const [returnTo, setReturnTo] = useState<{ page: PreviewPage; detail: Detail; section: Section | null }>(() => ({
-    page: initialPage(),
-    detail: null,
-    section: null,
-  }));
+  const [personId, setPersonId] = useState(
+    () => new URLSearchParams(window.location.search).get('person') ?? '',
+  );
+  const [returnTo, setReturnTo] = useState<{ page: PreviewPage; detail: Detail; section: Section | null }>(
+    () => ({
+      page: initialPage(),
+      detail: null,
+      section: null,
+    }),
+  );
   const me = { id: 'self', name: profile.name, alias: profile.alias, score: null };
   const personById = (id: string) => [me, ...people, request, ...sampleContacts].find((p) => p.id === id);
   const person = personById(personId);
@@ -128,10 +166,15 @@ function Preview() {
     ari: 'incoming',
     lou: 'outgoing',
   });
-  const [autoShare, setAutoShare] = useState(false);
+  const [ranked, setRanked] = useState(false);
+  const [postSettings, setPostSettings] = useState({ period: false, first: true, phase: false });
+  const [contactDetails, setContactDetails] = useState({ email: 'alex@example.com', phone: '+12025550120' });
+  const settingsChild =
+    detail === 'contacts' || detail === 'posting' || detail === 'sign-out' || detail === 'delete-account';
   const theme = neutral ? neutralTheme : illustratedTheme;
   const offline = state === 'Offline';
-  const incomingRequests = state === 'Empty' ? [] : sampleContacts.filter((p) => relations[p.id] === 'incoming');
+  const incomingRequests =
+    state === 'Empty' ? [] : sampleContacts.filter((p) => relations[p.id] === 'incoming');
   const sendRequests = (ids: readonly string[]) => {
     if (offline || ids.length > batchLimit) return;
     setRelations((prev) => {
@@ -152,8 +195,10 @@ function Preview() {
     ...(state === 'Empty' ? [] : people),
     ...sampleContacts.filter((p) => relations[p.id] === 'friends'),
   ];
-  const visibleItems = state === 'Empty' ? items.filter((p) => !sampleItemKeys.has(activityKey(p.target))) : items;
+  const visibleItems =
+    state === 'Empty' ? items.filter((p) => !sampleItemKeys.has(activityKey(p.target))) : items;
   const ownItems = visibleItems.filter((p) => p.isSelf);
+  const ownPosts = ownItems.filter((i) => i.target.type === 'post');
   const topFriend = rankSync(visiblePeople)[0];
   const unavailable = state === 'Loading' || state === 'Error';
   const model: CycleOverview =
@@ -177,10 +222,7 @@ function Preview() {
       detail === 'profile' ? (person?.name ?? 'Profile') : detail === 'notifications' ? 'Notifications' : page;
     document.title = title + ' · Widget preview';
     const url = new URL(window.location.href);
-    url.searchParams.set(
-      'screen',
-      detail === 'profile' || detail === 'notifications' || detail === 'add-friends' ? detail : page.toLowerCase(),
-    );
+    url.searchParams.set('screen', detail && detail !== 'delete' ? detail : page.toLowerCase());
     if (detail === 'profile') url.searchParams.set('person', personId);
     else url.searchParams.delete('person');
     url.hash = section ?? '';
@@ -200,7 +242,7 @@ function Preview() {
     setPicker(null);
   };
   const openFriend = (p: CirclePerson) => {
-    setReturnTo({ page, detail, section });
+    if (detail !== 'profile') setReturnTo({ page, detail, section });
     setPersonId(p.id);
     navigate(page, 'profile');
   };
@@ -251,6 +293,7 @@ function Preview() {
         comments={
           item.target.type === 'post' && (
             <PostComments
+              postId={item.target.id}
               self="self"
               offline={offline}
               revision={0}
@@ -323,6 +366,14 @@ function Preview() {
   let content: ReactNode;
   if (detail) {
     switch (detail) {
+      case 'opening':
+        content = (
+          <View style={{ flexGrow: 1, justifyContent: 'center', paddingHorizontal: 14, gap: 54 }}>
+            <OpeningIdentity />
+            <ActionButton label="Enter preview" onPress={() => navigate('Home')} />
+          </View>
+        );
+        break;
       case 'write':
         content = composer;
         break;
@@ -387,7 +438,11 @@ function Preview() {
                   onPress={() => sendRequests([person.id])}
                 />
               ) : incoming ? (
-                <ActionButton label="Accept request" disabled={offline} onPress={() => respond(person.id, true)} />
+                <ActionButton
+                  label="Accept request"
+                  disabled={offline}
+                  onPress={() => respond(person.id, true)}
+                />
               ) : undefined
             }
           />
@@ -395,7 +450,33 @@ function Preview() {
         break;
       }
       case 'settings':
-        content = <PreviewSettings enabled={autoShare} onChange={setAutoShare} />;
+        content = (
+          <SettingsMenu email={contactDetails.email} ranked={ranked} onRanked={setRanked} onOpen={setDetail} />
+        );
+        break;
+      case 'contacts':
+        content = <SampleContactDetails details={contactDetails} save={setContactDetails} />;
+        break;
+      case 'posting':
+        content = <PostingSettings value={postSettings} change={setPostSettings} />;
+        break;
+      case 'sign-out':
+      case 'delete-account':
+        content = (
+          <Surface style={{ gap: 12 }}>
+            <AppText role="heading">{detail === 'sign-out' ? 'Sign out?' : 'Delete this account?'}</AppText>
+            <AppText>
+              {detail === 'sign-out'
+                ? 'Leave the sample session and return to the opening page.'
+                : 'Reset the sample profile, posts and settings for this preview.'}
+            </AppText>
+            <ActionButton outline label="Cancel" onPress={() => setDetail('settings')} />
+            <ActionButton
+              label={detail === 'sign-out' ? 'Sign out' : 'Delete sample account'}
+              onPress={() => window.location.assign(window.location.pathname + '?screen=opening')}
+            />
+          </Surface>
+        );
         break;
       case 'add-friends':
         content = (
@@ -494,7 +575,10 @@ function Preview() {
         <CycleSummaryStrip model={model} onOpen={() => navigate('You', null, 'cycle')} />
         <PhaseGuidancePreview {...model.guidance} onOpenGuide={() => navigate('You', null, 'phase-guide')} />
         {model.upcoming && (
-          <UpcomingTransition transition={model.upcoming} onOpenDetails={() => navigate('You', null, 'cycle')} />
+          <UpcomingTransition
+            transition={model.upcoming}
+            onOpenDetails={() => navigate('You', null, 'cycle')}
+          />
         )}
         {!unavailable && topFriend && (
           <SyncSpotlight
@@ -559,11 +643,15 @@ function Preview() {
               row.friends +
               (relations[row.person.id] === 'friends' && !people.some((p) => p.id === row.person.id) ? 1 : 0),
           })),
-          {
-            person: me,
-            friends: visiblePeople.length,
-            posts: earlierManualPosts + ownItems.filter((i) => i.target.type === 'post').length,
-          },
+          ...(ranked
+            ? [
+                {
+                  person: me,
+                  friends: visiblePeople.length,
+                  posts: earlierManualPosts + ownItems.filter((i) => i.target.type === 'post').length,
+                },
+              ]
+            : []),
         ]}
         support={supportWithVisiblePosts(ownItems, comments)}
         onRetry={() => setState('Ready')}
@@ -580,17 +668,17 @@ function Preview() {
         updates={
           unavailable ? (
             <Surface>
-              <AppText>{state === 'Loading' ? 'Loading your updates…' : 'Your updates couldn’t load.'}</AppText>
+              <AppText>{state === 'Loading' ? 'Loading your posts…' : 'Your posts couldn’t load.'}</AppText>
               {state === 'Error' && <TextAction label="Try again" onPress={() => setState('Ready')} />}
             </Surface>
           ) : (
             <>
-              {(offline || state === 'Stale') && <AppText role="caption">Showing your saved updates</AppText>}
-              {ownItems.length ? (
-                ownItems.map(renderItem)
+              {(offline || state === 'Stale') && <AppText role="caption">Showing your saved posts</AppText>}
+              {ownPosts.length ? (
+                ownPosts.map(renderItem)
               ) : (
                 <Surface>
-                  <AppText>Your shared updates will appear here.</AppText>
+                  <AppText>Your posts will appear here.</AppText>
                   <TextAction label="Write an update" onPress={() => navigate('Feed', 'write')} />
                 </Surface>
               )}
@@ -633,6 +721,13 @@ function Preview() {
             {controls && (
               <View style={{ paddingBottom: 5, gap: 4 }}>
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4 }}>
+                  <TextAction
+                    label="Opening page"
+                    onPress={() => {
+                      navigate('Home', 'opening');
+                      setControls(false);
+                    }}
+                  />
                   {[320, 390, 480].map((w) => (
                     <ActionButton outline={width !== w} key={w} label={w + ' PX'} onPress={() => setWidth(w)} />
                   ))}
@@ -662,6 +757,7 @@ function Preview() {
             )}
           </View>
           <View
+            testID="preview-device"
             style={{
               width,
               maxWidth: '100%',
@@ -695,9 +791,9 @@ function Preview() {
               key={page + '-' + detail}
               style={{ flex: 1 }}
               keyboardShouldPersistTaps="handled"
-              contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 28 }}
+              contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 28, flexGrow: 1 }}
             >
-              {detail && (
+              {!!detail && detail !== 'opening' && (
                 <TextAction
                   label={
                     '‹ Back to ' +
@@ -707,56 +803,60 @@ function Preview() {
                         : returnTo.detail === 'add-friends'
                           ? 'Add friends'
                           : returnTo.page
-                      : page)
+                      : settingsChild
+                        ? 'Settings'
+                        : page)
                   }
                   onPress={() =>
                     detail === 'profile'
                       ? navigate(returnTo.page, returnTo.detail, returnTo.section)
-                      : navigate(page)
+                      : navigate(page, settingsChild ? 'settings' : null)
                   }
                 />
               )}
-              {content}
+              <CommentThreads key={page + '-' + detail}>{content}</CommentThreads>
             </ScrollView>
-            <View
-              accessibilityRole="tablist"
-              style={{
-                backgroundColor: theme.colors.surface,
-                borderTopWidth: 1,
-                borderColor: theme.colors.border,
-                flexDirection: 'row',
-                paddingHorizontal: 12,
-                paddingTop: 5,
-                paddingBottom: 7,
-              }}
-            >
-              {pages.map((label) => (
-                <Pressable
-                  accessibilityRole="tab"
-                  accessibilityLabel={label}
-                  accessibilityState={{ selected: page === label }}
-                  onPress={() => navigate(label)}
-                  key={label}
-                  style={{ flex: 1, minHeight: 49, alignItems: 'center', justifyContent: 'center', gap: 1 }}
-                >
-                  <Ionicons
-                    name={page === label ? pageIcons[label] : `${pageIcons[label]}-outline`}
-                    size={22}
-                    color={page === label ? theme.colors.accent : theme.colors.secondary}
-                  />
-                  <AppText
-                    role="caption"
-                    style={{
-                      fontFamily: theme.type.semibold,
-                      fontSize: 11,
-                      color: page === label ? theme.colors.accent : theme.colors.secondary,
-                    }}
+            {detail !== 'opening' && (
+              <View
+                accessibilityRole="tablist"
+                style={{
+                  backgroundColor: theme.colors.surface,
+                  borderTopWidth: 1,
+                  borderColor: theme.colors.border,
+                  flexDirection: 'row',
+                  paddingHorizontal: 12,
+                  paddingTop: 5,
+                  paddingBottom: 7,
+                }}
+              >
+                {pages.map((label) => (
+                  <Pressable
+                    accessibilityRole="tab"
+                    accessibilityLabel={label}
+                    accessibilityState={{ selected: page === label }}
+                    onPress={() => navigate(label)}
+                    key={label}
+                    style={{ flex: 1, minHeight: 49, alignItems: 'center', justifyContent: 'center', gap: 1 }}
                   >
-                    {label}
-                  </AppText>
-                </Pressable>
-              ))}
-            </View>
+                    <Ionicons
+                      name={page === label ? pageIcons[label] : `${pageIcons[label]}-outline`}
+                      size={22}
+                      color={page === label ? theme.colors.accent : theme.colors.secondary}
+                    />
+                    <AppText
+                      role="caption"
+                      style={{
+                        fontFamily: theme.type.semibold,
+                        fontSize: 11,
+                        color: page === label ? theme.colors.accent : theme.colors.secondary,
+                      }}
+                    >
+                      {label}
+                    </AppText>
+                  </Pressable>
+                ))}
+              </View>
+            )}
           </View>
         </View>
         <ReactionPicker

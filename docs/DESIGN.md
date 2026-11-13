@@ -85,3 +85,7 @@ For **UI mockups with legible text**, the image models rank roughly:
 - [FEATURES.md](FEATURES.md) → "Design & aesthetics", "usable vs. likeable" teardown, "Profiles & identity" (avatars).
 - [PITCH.md](PITCH.md) → the red-drop / "Sisters by Blood" origin for the branding motif.
 - [TODO.md](TODO.md) → the actionable design task points here.
+
+## Design v1.0 · November 12, 2026
+
+The [screen index](../design/2026-11-12/v1.0/README.md) and [visual gallery](../design/2026-11-12/v1.0/index.html) record this version of the illustrated preview. The thumbnail, animated opening and signed-out page share the smiling drop and five phase colors.

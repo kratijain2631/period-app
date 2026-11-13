@@ -1,3 +1,4 @@
+import { useCommentThreads } from './CommentThreads';
 import { useRef } from 'react';
 import { Image, Pressable, View } from 'react-native';
 import { AppText, Surface } from '../../../components/ui/WidgetPrimitives';
@@ -30,7 +31,19 @@ export const ActivityItem = ({
   onOpenProfile?: () => void;
 }) => {
   const t = useWidgetTheme();
-  const lastTap = useRef<{ postId: string | null; timestamp: number | null }>({ postId: null, timestamp: null });
+  const threads = useCommentThreads();
+  const focusPost = () =>
+    threads?.setCurrent((id) => (model.target.type === 'post' && id === model.target.id ? id : null));
+  const act =
+    <Args extends unknown[]>(action: (...args: Args) => void) =>
+    (...args: Args) => {
+      focusPost();
+      action(...args);
+    };
+  const lastTap = useRef<{ postId: string | null; timestamp: number | null }>({
+    postId: null,
+    timestamp: null,
+  });
   const date = new Date(model.createdAt);
   const identity = (
     <>
@@ -70,7 +83,7 @@ export const ActivityItem = ({
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={`View ${model.actorName}'s profile`}
-            onPress={onOpenProfile}
+            onPress={act(onOpenProfile)}
             style={{ flex: 1, minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 10 }}
           >
             {identity}
@@ -80,7 +93,7 @@ export const ActivityItem = ({
         )}
         {model.isSelf && model.target.type === 'post' ? (
           <Pressable
-            onPress={onDelete}
+            onPress={act(onDelete)}
             disabled={pending || offline}
             accessibilityRole="button"
             accessibilityLabel="Delete your post"
@@ -91,8 +104,9 @@ export const ActivityItem = ({
         ) : null}
       </View>
       <Pressable
-        onLongPress={onChooseReaction}
+        onLongPress={act(onChooseReaction)}
         onPress={() => {
+          focusPost();
           const result = getDoubleTapResult(
             lastTap.current,
             `${model.target.type}:${model.target.id}`,
@@ -120,8 +134,8 @@ export const ActivityItem = ({
         <ReactionBar
           reactions={model.reactions}
           disabled={pending || offline || !model.reactionsAvailable}
-          onReact={onReact}
-          onChoose={onChooseReaction}
+          onReact={act(onReact)}
+          onChoose={act(onChooseReaction)}
         />
         {!model.isSelf ? (
           <View style={{ alignSelf: 'flex-start' }}>
@@ -129,7 +143,7 @@ export const ActivityItem = ({
               count={model.boopCount}
               status={model.boopStatus}
               disabled={pending || !model.boopsAvailable}
-              onBoop={onBoop}
+              onBoop={act(onBoop)}
             />
           </View>
         ) : model.boopCount > 0 ? (

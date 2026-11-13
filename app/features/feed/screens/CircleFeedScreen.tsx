@@ -1,3 +1,4 @@
+import { CommentThreads } from '../components/CommentThreads';
 import { useState } from 'react';
 import { FlatList, View, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -19,56 +20,64 @@ export default function CircleFeedScreen() {
   const [refreshing, setRefreshing] = useState(false);
   return (
     <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1, backgroundColor: t.colors.canvas }}>
-      <FlatList
-        data={feed.items}
-        keyExtractor={(i) => activityKey(i.target)}
-        renderItem={({ item }) => <SharedActivity item={item} />}
-        keyboardShouldPersistTaps="handled"
-        contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={async () => {
-              setRefreshing(true);
-              try {
-                await feed.reload();
-              } finally {
-                setRefreshing(false);
-              }
-            }}
-          />
-        }
-        ListHeaderComponent={
-          <View style={{ gap: 14, marginBottom: 12 }}>
-            <PageHeading
-              title="Feed"
-              icon="notifications-outline"
-              action="Notifications"
-              onPress={() => nav.navigate('Notifications')}
+      <CommentThreads>
+        <FlatList
+          data={feed.items}
+          keyExtractor={(i) => activityKey(i.target)}
+          renderItem={({ item }) => <SharedActivity item={item} />}
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={async () => {
+                setRefreshing(true);
+                try {
+                  await feed.reload();
+                } finally {
+                  setRefreshing(false);
+                }
+              }}
             />
-            <PostComposer
-              text={c.text}
-              mood={c.mood}
-              posting={c.posting}
-              offline={offline}
-              error={c.error}
-              onChangeText={c.setText}
-              onChangeMood={c.setMood}
-              onSubmit={c.submit}
-            />
-            <AppText role="heading" accessibilityRole="header">
-              Latest activity
+          }
+          ListHeaderComponent={
+            <View style={{ gap: 14, marginBottom: 12 }}>
+              <PageHeading
+                title="Feed"
+                icon="notifications-outline"
+                action="Notifications"
+                onPress={() => nav.navigate('Notifications')}
+              />
+              <PostComposer
+                text={c.text}
+                mood={c.mood}
+                posting={c.posting}
+                offline={offline}
+                error={c.error}
+                onChangeText={c.setText}
+                onChangeMood={c.setMood}
+                onSubmit={c.submit}
+              />
+              <AppText role="heading" accessibilityRole="header">
+                Latest activity
+              </AppText>
+              {offline && <AppText>Offline · Showing saved activity</AppText>}
+              {feed.error && <AppText accessibilityRole="alert">{feed.error}</AppText>}
+            </View>
+          }
+          ListEmptyComponent={
+            <AppText>
+              {offline
+                ? 'Connect to the internet to load your circle feed.'
+                : feed.loading
+                  ? 'Loading updates…'
+                  : feed.error
+                    ? 'Pull down to retry.'
+                    : 'No shared updates yet.'}
             </AppText>
-            {offline && <AppText>Offline · Showing saved activity</AppText>}
-            {feed.error && <AppText accessibilityRole="alert">{feed.error}</AppText>}
-          </View>
-        }
-        ListEmptyComponent={
-          <AppText>
-            {offline ? 'Connect to the internet to load your circle feed.' : feed.loading ? 'Loading updates…' : feed.error ? 'Pull down to retry.' : 'No shared updates yet.'}
-          </AppText>
-        }
-      />
+          }
+        />
+      </CommentThreads>
     </SafeAreaView>
   );
 }

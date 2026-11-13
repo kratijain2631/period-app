@@ -27,7 +27,7 @@ Before working on this project, read the docs linked from the [README](../README
 - **[IDENTIFIERS.md](IDENTIFIERS.md)** — every name/identifier, where it lives, and how costly it is to change.
 - **[SCHEMA.md](SCHEMA.md)** — the Supabase database (tables, functions, how it works).
 - **[CYCLE_SYNC.md](CYCLE_SYNC.md)** — how cycle phases are derived, when sync runs, and every posting/notification/background mechanism (the phase-update system end to end).
-- **[UI_ARCHITECTURE.md](UI_ARCHITECTURE.md)** — before changing a screen, identify its widgets, primary destination and actions in the [page directory](UI_ARCHITECTURE.md#page-directory). Keep data and behavior, widget contracts, screen composition and theme separate. Home links to compact previews; change the presentation or shared tokens without duplicating the underlying logic. Update the directory when moving a widget or adding a page.
+- **[UI_ARCHITECTURE.md](UI_ARCHITECTURE.md)** — before changing a screen, identify its widgets, primary destination and actions in the [page directory](UI_ARCHITECTURE.md#page-directory). Keep data and behavior, widget contracts, screen composition and theme separate. Consult the [v1.0 screen index](../design/2026-11-12/v1.0/README.md) for the dated visual reference. Home links to compact previews; change the presentation or shared tokens without duplicating the underlying logic. Update the directory when moving a widget or adding a page.
 - **[FEATURES.md](FEATURES.md)** — the product/feature backlog.
 - **[BUGS.md](BUGS.md)** — known open bugs.
 - **[RELEASE_NOTES.md](RELEASE_NOTES.md)** — what shipped in each build.

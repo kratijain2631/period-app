@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { View, ScrollView, Pressable, Switch } from 'react-native';
+import { ScrollView, Pressable } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { AppText, Surface, ActionButton } from '../../../components/ui/WidgetPrimitives';
 import { RankingTabs } from '../../../components/ui/RankingTabs';
@@ -7,7 +7,6 @@ import { useWidgetTheme } from '../../../theme/widgetTheme';
 import { rankSync, PeopleList, type CirclePerson } from './CircleWidgets';
 import { loadStandings, loadSupport, type Standing, type Support } from '../../social/CircleData';
 import { useSocial } from '../../social/SocialProvider';
-import { supabase } from '../../../services/supabase/client';
 export const personalBoards = ['Most in sync', 'Most supportive'] as const;
 export type PersonalBoard = (typeof personalBoards)[number];
 
@@ -111,7 +110,6 @@ export function PersonalRankings({
 const boards = ['Largest Circle', 'Loudest Voices'] as const;
 export function CommunityRankings({ onOpen }: { onOpen: (id: string, alias: string) => void }) {
   const {
-    id,
     circle,
     feed: { rankingsRevision },
   } = useSocial();
@@ -121,9 +119,6 @@ export function CommunityRankings({ onOpen }: { onOpen: (id: string, alias: stri
   const [entries, setEntries] = useState<Standing[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
-  const [enabled, setEnabled] = useState<boolean | null>(null);
-  const [saving, setSaving] = useState(false);
-  const [prefError, setPrefError] = useState(false);
   const [version, retry] = useState(0);
   useFocusEffect(
     useCallback(() => {
@@ -148,48 +143,10 @@ export function CommunityRankings({ onOpen }: { onOpen: (id: string, alias: stri
       };
     }, [metric, version, rankingsRevision, circle.people]),
   );
-  useFocusEffect(
-    useCallback(() => {
-      let active = true;
-      void (async () => {
-        const { data, error } = await supabase
-          .from('users')
-          .select('community_rankings_enabled')
-          .eq('id', id)
-          .single();
-        if (active) {
-          setEnabled(error ? null : data.community_rankings_enabled);
-          setPrefError(!!error);
-        }
-      })();
-      return () => {
-        active = false;
-      };
-    }, [id, version]),
-  );
-  const toggle = async (value: boolean) => {
-    if (saving || enabled === null) return;
-    setSaving(true);
-    try {
-      const { data, error } = await supabase
-        .from('users')
-        .update({ community_rankings_enabled: value })
-        .eq('id', id)
-        .select('community_rankings_enabled')
-        .single();
-      if (error) throw error;
-      setEnabled(data.community_rankings_enabled);
-      retry((x) => x + 1);
-    } catch {
-      setPrefError(true);
-    } finally {
-      setSaving(false);
-    }
-  };
   return (
     <Surface style={{ gap: 10 }}>
       <AppText role="heading" accessibilityRole="header">
-        Cycle Community
+        Community rankings
       </AppText>
       <RankingTabs label="Community rankings" options={boards} selected={board} onSelect={choose} />
       <AppText role="caption">
@@ -233,17 +190,6 @@ export function CommunityRankings({ onOpen }: { onOpen: (id: string, alias: stri
       ) : (
         <AppText>No ranked members yet.</AppText>
       )}
-      <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
-        <AppText style={{ flex: 1 }}>Include me in community rankings</AppText>
-        <Switch
-          accessibilityLabel="Include me in community rankings"
-          value={enabled === true}
-          disabled={saving || enabled === null}
-          onValueChange={toggle}
-        />
-      </View>
-      <AppText role="caption">Only your alias and counts appear on these boards.</AppText>
-      {prefError && <ActionButton outline label="Retry ranking preference" onPress={() => retry((x) => x + 1)} />}
     </Surface>
   );
 }

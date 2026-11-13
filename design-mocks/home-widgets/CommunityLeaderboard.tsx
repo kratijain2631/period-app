@@ -25,7 +25,7 @@ export function CommunityLeaderboard({
   return (
     <Surface style={{ gap: 10 }}>
       <AppText role="heading" accessibilityRole="header">
-        Cycle Community
+        Community rankings
       </AppText>
       <RankingTabs label="Community rankings" options={boards} selected={board} onSelect={setBoard} />
       <AppText role="caption" style={{ color: t.colors.secondary }}>

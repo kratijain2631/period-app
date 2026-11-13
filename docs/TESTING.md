@@ -162,3 +162,7 @@ Use two staging accounts and a third unrelated viewer after applying the migrati
 Local verification (2026-11-12): all 179 app tests passed; TypeScript passed for native and preview, and the iOS JavaScript bundle exported. The preview confirmed accepting a sample request in Notifications adds the sender to Friends and removes the request from Add friends. No iPhone simulator runtime was installed.
 
 Automated coverage includes cycle range/empty-state selectors, request subscriptions and response races, shared feed mutation failures and deletion, and the transaction in `supabase/tests/circle-rankings.sql` exercised in the disposable database security checks. The iOS JavaScript export does not replace a signed-in device run.
+
+## Illustrated preview · 2026-11-12
+
+[Design v1.0](../design/2026-11-12/v1.0/README.md) records 118 browser screenshots with local sample accounts. Checked contact-setting screens and simulated email/SMS confirmation, Community rankings visibility off and on, scrollable lists to rank ten, one open comment thread, small comment deletion, composer, notifications and guidance refresh. The iOS JavaScript bundle exported locally. Signed-in device testing and real contact confirmation remain pending.

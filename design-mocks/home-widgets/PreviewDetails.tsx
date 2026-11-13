@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { Pressable, ScrollView, TextInput, View, Switch } from 'react-native';
+import { Pressable, ScrollView, TextInput, View } from 'react-native';
 import { AppText, ActionButton, Surface } from '../../app/components/ui/WidgetPrimitives';
 import { useWidgetTheme } from '../../app/theme/widgetTheme';
 import { ProfileIdentity, type ProfileIdentityModel } from '../../app/features/profile/components/ProfileWidgets';
@@ -367,21 +367,6 @@ export function OutwardProfile({
           {updates}
         </>
       )}
-    </>
-  );
-}
-
-export function PreviewSettings({ enabled, onChange }: { enabled: boolean; onChange: (value: boolean) => void }) {
-  return (
-    <>
-      <AppText role="heading">Post settings</AppText>
-      <Surface style={{ gap: 12 }}>
-        <AppText role="heading">Automatic phase updates</AppText>
-        <AppText>Share an update with your circle when your estimated phase changes.</AppText>
-        <View style={{ alignSelf: 'flex-start' }}>
-          <Switch accessibilityLabel="Automatic phase updates" value={enabled} onValueChange={onChange} />
-        </View>
-      </Surface>
     </>
   );
 }

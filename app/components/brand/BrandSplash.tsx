@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
-import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
-import { APP_NAME, APP_TAGLINE } from '../../config/branding';
-import { brand, brandType } from '../../theme/brand';
+import { Animated, Easing, StyleSheet, View } from 'react-native';
+import { OpeningIdentity } from './OpeningIdentity';
+import { illustratedTheme } from '../../theme/widgetTheme';
 
 type Props = {
   /** Called once the intro has fully faded out. */
@@ -59,9 +59,7 @@ export const BrandSplash = ({ onDone }: Props) => {
   return (
     <View style={styles.container}>
       <Animated.View style={[styles.content, { opacity, transform: [{ translateY: lift }] }]}>
-        <View style={styles.drop} />
-        <Text style={styles.name}>{APP_NAME}</Text>
-        <Text style={styles.tagline}>{APP_TAGLINE}</Text>
+        <OpeningIdentity />
       </Animated.View>
     </View>
   );
@@ -70,7 +68,7 @@ export const BrandSplash = ({ onDone }: Props) => {
 const styles = StyleSheet.create({
   container: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: brand.colors.background,
+    backgroundColor: illustratedTheme.colors.canvas,
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 100,
@@ -78,30 +76,6 @@ const styles = StyleSheet.create({
   content: {
     alignItems: 'center',
     paddingHorizontal: 32,
-  },
-  // A simple red "drop" mark (rounded square, pointed bottom-left, rotated).
-  drop: {
-    width: 34,
-    height: 34,
-    backgroundColor: brand.colors.accent,
-    borderTopLeftRadius: 17,
-    borderTopRightRadius: 17,
-    borderBottomRightRadius: 17,
-    borderBottomLeftRadius: 4,
-    transform: [{ rotate: '45deg' }],
-    marginBottom: 22,
-  },
-  name: {
-    ...brandType.display,
-    fontSize: 40,
-    color: brand.colors.primaryText,
-    marginBottom: 10,
-  },
-  tagline: {
-    ...brandType.body,
-    fontSize: 15,
-    color: brand.colors.secondaryText,
-    textAlign: 'center',
   },
 });
 
