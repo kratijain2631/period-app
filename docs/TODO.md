@@ -31,6 +31,7 @@ Open items, roughly in priority order, with completed items retained as a decisi
 
 - [x] Preview a thumbnail using Home’s actual waving mascot and match the opening wordmark to Home.
 - [x] Review the revised icon in the live preview. The owner approved the waving mascot for the app thumbnail.
+- [x] Ship the approved thumbnail, matching opening wordmark, standalone Settings and You bio fix together in TestFlight 1.0.19 (41). [iPhone walkthrough](TESTING.md#1019-settings-and-mascot).
 
 - [x] Give the redesign a distinct 1.0.18 TestFlight version. The previous 1.0.17 (39) contains the same features. This design’s visual reference is v1.0.
 

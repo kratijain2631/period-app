@@ -8,6 +8,8 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## 2026-11-12 — TestFlight build 1.0.19 (build 41)
 
+Expo finished the [signed build](https://expo.dev/accounts/kratijain26/projects/period-app/builds/bcd2ba31-c1d9-4719-ba5b-36f1aa63779e) and [Apple upload](https://expo.dev/accounts/kratijain26/projects/period-app/submissions/ae6609a9-6c9d-43cb-88ed-dd1498edbf9d) from `v1.0.19-build41` for internal TestFlight.
+
 - This release adds the approved thumbnail, standalone Settings page, shared Home/opening wordmark, and the bio banner fix to the redesign in builds 39 and 40. [iPhone test steps](TESTING.md#1019-settings-and-mascot).
 
 - The opening page and Home use the same lowercase Nunito ExtraBold wordmark, including its size, spacing and terracotta color. The approved app thumbnail now uses Home’s actual waving mascot inside the five-color ring. [Opening preview](../design/2026-11-12/mascot-thumbnail/opening.png) and [1024 px thumbnail](../app/components/brand/assets/app-icon.png).
