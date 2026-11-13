@@ -49,7 +49,7 @@ notifications ───trigger───┼─▶ push_outbox ──insert trigge
 ## Status
 
 - **Staging (2026-11-13):** migration applied by the Database deploy workflow, `send-push` deployed (version 1, gateway JWT checks off). Callers without the secret get 401. With made-up tokens for ava, cleo and fay, the `cramps-thread` and `new-friend` scenarios each produced a delivery straight away. Expo answered `DeviceNotRegistered`, the function removed the token, and later rows were recorded as `skipped: no registered device`. A friend request repeated within the day wasn't queued again. Rows queued before the function existed were handled once by the first retry run (21:50 UTC).
-- **Production:** migration applied 2026-11-13; `send-push` **not deployed yet**, so rows queue and expire after a day without sending.
+- **Production (2026-11-13):** migration applied by the Database deploy workflow; `send-push` deployed (version 1, gateway JWT checks off) at the owner's request, and callers without the secret get 401. Nothing was queued at deploy time, so no late pushes went out. 4 users had registered tokens. No test activity was created on production; the first real friend request, reaction or boop is the first live send. Check it with the query under [Checking it](#checking-it).
 - **Not yet confirmed:** delivery to a real phone.
 
 ## Phases
