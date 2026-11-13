@@ -14,6 +14,15 @@ type Props = {
   onEdit: () => void;
 };
 
+export function OptionalPhonePrompt({ onAdd }: { onAdd: () => void }) {
+  return (
+    <View style={{ gap: 6 }}>
+      <AppText>Phone number (optional)</AppText>
+      <ActionButton outline label="Add phone number" onPress={onAdd} />
+    </View>
+  );
+}
+
 export function PhoneChangeForm({ currentPhone, busy, onSend, onVerify, onCancel, onEdit }: Props) {
   const { fontScale } = useWindowDimensions();
   const [callingCode, setCallingCode] = useState('+1');

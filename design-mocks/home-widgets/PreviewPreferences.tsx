@@ -3,7 +3,7 @@ import { EmailChangeForm, PendingEmail } from '../../app/features/profile/compon
 import { SettingsPage, ContactValue } from '../../app/features/profile/components/SettingsPage';
 import { useState } from 'react';
 import { View } from 'react-native';
-import { PhoneChangeForm } from '../../app/features/profile/components/PhoneChangeForm';
+import { OptionalPhonePrompt, PhoneChangeForm } from '../../app/features/profile/components/PhoneChangeForm';
 import { AppText, ActionButton } from '../../app/components/ui/WidgetPrimitives';
 import { useWidgetTheme } from '../../app/theme/widgetTheme';
 import { RankingVisibilityRow } from '../../app/features/profile/components/RankingVisibilityRow';
@@ -37,7 +37,7 @@ export function SettingsMenu({
   );
 }
 
-export function SampleContactDetails({ details, save }: { details: Details; save: (next: Details) => void }) {
+export function SampleContactDetails({ details, save, setup = false }: { details: Details; save: (next: Details) => void; setup?: boolean }) {
   const t = useWidgetTheme();
   const [email, setEmail] = useState<string | null>(null);
   const [pendingEmail, setPendingEmail] = useState('');
@@ -74,7 +74,9 @@ export function SampleContactDetails({ details, save }: { details: Details; save
         )}
       </View>
       <View style={{ gap: 8, borderTopWidth: 1, borderColor: t.colors.border }}>
-        {!editingPhone ? (
+        {setup && !editingPhone && !details.phone ? (
+          <OptionalPhonePrompt onAdd={() => { setEditingPhone(true); report(''); }} />
+        ) : !editingPhone ? (
           <ContactValue
             label="Phone number"
             value={details.phone}

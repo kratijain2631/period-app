@@ -11,7 +11,7 @@ Use this as the launch tracker. Claim an item the same way as in [BUGS.md](BUGS.
 - [ ] **Medical disclaimer and minimum age.** Phases are estimates; nothing in the app says it isn't medical advice or contraception. Decide the minimum age (a period app will attract teens) and how it's enforced.
 - [ ] **Manual period logging.** The app depends entirely on Apple Health, so anyone who tracks elsewhere sees an empty app. See [TODO.md → Manual cycle entry](TODO.md) and the write-back item.
 - [ ] **Server push notifications.** `notifications-handler` is not deployed (needs an Expo access token) and token registration is unverified. See [FEATURES.md → Engagement & notifications](FEATURES.md#engagement--notifications).
-- [ ] **Phone verification in onboarding.** Staging reports phone auth enabled. Real SMS receipt and confirmation on a device remain open. The last documented production check showed phone auth disabled. See the SMS item at the top of [BUGS.md](BUGS.md).
+- [ ] **SMS delivery for optional phone verification.** Signup works with a verified email and alias. Staging reports phone auth enabled. Real SMS receipt and confirmation on a device remain open. The last documented production check showed phone auth disabled. See the SMS item at the top of [BUGS.md](BUGS.md).
 - [ ] **Crash reporting and basic analytics.** Neither exists. Add a crash reporter (for example Sentry) before strangers use the app.
 - [ ] **Final name and identifiers.** Display name "Cadence" vs bundle id `com.syncsisters.cycle`. Decide before launch; see [IDENTIFIERS.md](IDENTIFIERS.md).
 
