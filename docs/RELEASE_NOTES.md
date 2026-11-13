@@ -21,6 +21,7 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 **Friend discovery and requests**
 
+- **Find from contacts** goes back to its normal label when matches are cleared, for example after returning from Settings. One tap now searches again; before, the first tap only hid an empty panel. The filter, selection count and Send button appear only when there are matches, so denied access shows just the notice. "Contacts access updated" appears only after returning from Settings or the permission sheet, not on every return to the app, and now also after the two-step iOS contacts sheet.
 - Real staging sessions matched an opted-in test account by confirmed email, by a preverified fictional phone number and by both together with one result. Opting out hid the match. Sending, canceling, resending and accepting requests updated both accounts.
 
 **Posting, comments and rankings**

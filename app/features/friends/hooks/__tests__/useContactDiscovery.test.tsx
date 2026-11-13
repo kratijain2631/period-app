@@ -153,3 +153,47 @@ it('shows an actionable explanation for empty results', async () => {
   expect(current.contactNotice).toContain('email matching their account');
   expect(current.contactNotice).toContain('Let contacts find me');
 });
+
+it('closes the lookup when returning from Settings so one tap searches again', async () => {
+  await mount();
+  await act(async () => current.handleFindContacts());
+  expect(current.isContactLookupOpen).toBe(true);
+  await act(async () => current.handleContactSettings());
+  await act(async () => onAppState('background'));
+  await act(async () => onAppState('active'));
+  expect(current.isContactLookupOpen).toBe(false);
+  expect(current.contactMatches).toEqual([]);
+  expect(current.contactNotice).toContain('Tap Find Contacts');
+});
+
+it('says access was updated after the permission sheet backgrounds the app, but not on a plain return', async () => {
+  await mount();
+  await act(async () => onAppState('background'));
+  await act(async () => onAppState('active'));
+  expect(current.contactNotice).toBeNull();
+
+  mockContacts.getContactDiscoveryPermission.mockResolvedValue('undetermined');
+  const sheet = deferred<contacts.ContactDiscoveryPermission>();
+  mockContacts.requestContactDiscoveryPermission.mockReturnValue(sheet.promise);
+  let lookup!: Promise<void>;
+  await act(async () => { lookup = current.handleFindContacts(); });
+  // iOS 18+ backgrounds the app for the alert and again for the contact picker.
+  await act(async () => onAppState('inactive'));
+  await act(async () => onAppState('active'));
+  await act(async () => onAppState('inactive'));
+  mockContacts.getContactDiscoveryPermission.mockResolvedValue('limited');
+  await act(async () => onAppState('active'));
+  await act(async () => { sheet.resolve('limited'); await lookup; });
+  expect(current.isContactLookupOpen).toBe(false);
+  expect(current.contactNotice).toContain('Tap Find Contacts');
+});
+
+it('hiding the lookup clears matches and the notice', async () => {
+  mockContacts.findDiscoverableContacts.mockResolvedValue([]);
+  await mount();
+  await act(async () => current.handleFindContacts());
+  expect(current.contactNotice).toContain('No discoverable contacts');
+  await act(async () => current.closeContactLookup());
+  expect(current.isContactLookupOpen).toBe(false);
+  expect(current.contactNotice).toBeNull();
+});

@@ -175,6 +175,36 @@ The two contact suites passed **30/30** service/controller tests using mocked OS
 
 Read-only public Auth settings on both hosted environments report phone authentication disabled, phone auto-confirm false and mailer auto-confirm false. Normal staging phone-change request returned HTTP 500 / `unexpected_failure`; exact error cause unconfirmed. Configure/enable SMS before required-phone release; validate real delivery and confirmation using an authorized number. Email-change delivery needs a controlled inbox. Neither delivery flow was verified here.
 
+## Native Find from contacts on staging - 2026-11-13
+
+Fresh `expo prebuild --clean` and Debug simulator build (iPhone 17 Pro, iOS 26.1), staging Metro, signed in as circleqa-a. For the fixture, circleqa-b had a confirmed fictional phone number, and circleqa-b plus the six personas were made discoverable. All of them were restored to undiscoverable afterwards, and circleqa-a sent no requests.
+
+- **Permission prompt:** passed. It appears only after tapping Find from contacts.
+- **Denied:** passed. The button changes to Open contact settings and shows the access-off notice.
+- **Limited, B's phone-only card:** one match, `@circleqa-b`.
+- **Limited, 9 synthetic cards:** 7 rows. B's phone card and mixed-case email card collapse to one row, and a non-user card gives no match.
+- **Returning from Settings:** clears stale matches.
+- **Selection limit:** shows "5 of 5 selected", with the remaining checkboxes disabled. Unticking one frees a slot.
+- **Logs:** no Metro errors.
+
+Bugs found are logged in BUGS.md (2026-11-13 entries). Not tested: Full Access, because this simulator's address book holds about 350 real iCloud contacts that would be hashed and sent to staging; sending the requests; and physical-device Settings deep links. Metro reloads when screenshots are written inside the project, so save them outside it while Metro runs.
+
+## Find from contacts recheck on staging - 2026-11-13
+
+Rechecked the fixes from #108 on the same iPhone 17 Pro simulator (iOS 26.1), staging Metro, signed in as circleqa-a. Limited access was granted through the real sheet with **Select Contacts Later**, so no contacts were shared and nothing was sent to staging. No friend requests were sent, and the contacts permission was reset afterwards.
+
+- **Denied:** passed. Only the "Contacts access is off" notice and Open contact settings show, with no filter, count or Send button.
+- **Limited with no matches:** passed. Find shows the empty-results notice and Hide contact matches, and no picker.
+- **Returning from Settings:** passed. The button is Find from contacts again, the "Contacts access updated" notice shows, and one tap searches.
+- **Hide:** passed. Closes the lookup and clears the notice.
+- **After the permission sheet:** failed at first. The iOS 18+ sheet backgrounds the app twice (the alert, then the contact picker), and the first return cleared the notice flag. Fixed by keeping the flag until the next Find or Hide, then passed.
+- **Settings links:** Settings crashes on this simulator; see BUGS.md. Not a fault in this app.
+- **Logs:** no Metro errors.
+
+`xcrun simctl privacy grant contacts-limited` grants **Full Access** on this simulator (TCC auth value 2, not 3). Don't use it with a simulator that holds real contacts. Use the system sheet's Select Contacts Later instead, and check `auth_value` in the simulator's TCC.db before tapping Find.
+
+Not tested: a positive match, because no account is discoverable on staging after the last cleanup.
+
 ## Short physical iPhone checks
 
 Use your existing real account and Health records on TestFlight; synthetic Health belongs only in staging.
@@ -244,4 +274,4 @@ The preview passed adding, reading and removing comments on a phase update, sing
 - The actual Settings contact component ran in a browser pointed at staging, signed in with a disposable account. Verified invalid/unchanged input handling, service-side address rejection, Cancel, restoring the pending address after reload, editing and canceling a correction, and automatic display of the new address after both links.
 - The staging auth service accepted two generated confirmation links. The old email stayed verified after the first link and changed after the second. No email was sent in this check. Real delivery is open. Phone change returned HTTP 500 with phone authentication disabled. A reserved fixture email was rejected at input validation; that probe does not diagnose a particular tester’s message. Both projects use the default restricted sender, secure email change and a localhost confirmation destination.
 - Phone-width design preview passed field entry, cancel, replacement of a pending draft, simulated confirmation, request tabs, automatic comment spacing, single-thread expansion, and member profile actions at 320 and 390 px. [New address field](../design/2026-11-13/contact-settings/change-email.png).
-- Separate on-device checks: inbox delivery to both addresses and Apple relay, SMS codes, iOS contact permissions/picker and native invite sheet, VoiceOver, large text, back gestures, Apple sign-in, HealthKit and push delivery. No iOS Simulator runtime is installed. Browser fixture interactions and component checks do not exercise these native services.
+- Separate on-device checks: inbox delivery to both addresses and Apple relay, SMS codes, physical-iPhone contact permissions and native invite sheet, VoiceOver, large text, back gestures, Apple sign-in, HealthKit and push delivery. This Mac has no installed iOS Simulator runtime or paired device. Shaan’s separate [staging simulator run](#native-find-from-contacts-on-staging---2026-11-13) passed denied and limited access, matching, deduplication and the five-choice limit. Full Access and the system Settings link still need an iPhone check. Browser fixture interactions and component checks do not exercise these native services.

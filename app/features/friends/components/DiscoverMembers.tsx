@@ -31,7 +31,6 @@ export function DiscoverMembers({
   const [found, setFound] = useState<Match[]>([]);
   const [notice, setNotice] = useState('');
   const [checking, setChecking] = useState(false);
-  const [show, setShow] = useState(false);
   const [filter, setFilter] = useState('');
   const [chosen, select] = useState<string[]>([]);
   const term = query.trim();
@@ -168,7 +167,7 @@ export function DiscoverMembers({
             ? 'Open contact settings'
             : c.isFindingContacts
               ? 'Finding contacts…'
-              : show
+              : c.isContactLookupOpen
                 ? 'Hide contact matches'
                 : 'Find from contacts'
         }
@@ -178,17 +177,23 @@ export function DiscoverMembers({
             void c.handleContactSettings();
             return;
           }
-          setShow(!show);
-          if (!show) {
-            select([]);
-            void c.handleFindContacts();
+          if (c.isContactLookupOpen) {
+            c.closeContactLookup();
+            return;
           }
+          select([]);
+          void c.handleFindContacts();
         }}
       />
       {c.contactPermission === 'limited' && (
         <TextAction label="Manage selected contacts" onPress={c.handleContactSettings} />
       )}
-      {show && (
+      {c.contactNotice && (
+        <AppText role="caption" accessibilityLiveRegion="polite">
+          {c.contactNotice}
+        </AppText>
+      )}
+      {c.isContactLookupOpen && c.contactMatches.length > 0 && (
         <>
           <TextInput
             accessibilityLabel="Filter contact matches"
@@ -198,7 +203,6 @@ export function DiscoverMembers({
             onChangeText={setFilter}
           />
           <AppText role="caption">{selection.length} of 5 selected</AppText>
-          {c.contactNotice && <AppText role="caption">{c.contactNotice}</AppText>}
           <ScrollView nestedScrollEnabled style={{ maxHeight: 260 }} keyboardShouldPersistTaps="handled">
             {matches.map((p) => {
               const checked = selection.includes(p.id);
