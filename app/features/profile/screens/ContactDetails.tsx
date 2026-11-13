@@ -22,7 +22,7 @@ export default function ContactDetails({ userId, onReady, settings = false }: Pr
   const [message, setMessage] = useState('');
   const [reload, setReload] = useState(0);
   const [loaded, setLoaded] = useState(false);
-  const ready = loaded && !editingEmail && !pendingEmail && (!EMAIL_CHANGES_ENABLED || !!verifiedEmail) && !busy;
+  const ready = loaded && !editingEmail && !pendingEmail && !!verifiedEmail && !busy;
 
   useEffect(() => {
     onReady?.(ready);
