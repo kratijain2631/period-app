@@ -1,3 +1,4 @@
+import { ActionButton } from '../../../components/ui/WidgetPrimitives';
 import { EmailChangeForm, PendingEmail } from '../components/EmailChangeForm';
 import { ContactValue } from '../components/SettingsPage';
 import { useEffect, useRef, useState } from 'react';
@@ -188,7 +189,9 @@ export default function ContactDetails({ userId, onReady, settings = false }: Pr
           {appleSignIn && verifiedEmail.toLowerCase().endsWith('@privaterelay.appleid.com') && (
             <Text>You chose to Hide My Email. Friends can't find you by your personal email address while you use this private relay address.</Text>
           )}
-          <Text>You can change this email in Settings later.</Text>
+          <ActionButton outline label="Use a different email" onPress={() => {
+            setEmail(''); setMessage(''); setEditingEmail(true);
+          }} />
         </>
       ) : (
         <EmailChangeForm

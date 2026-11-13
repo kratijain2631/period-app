@@ -6,7 +6,7 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## Unreleased
 
-- Paused account email changes in setup, Settings and Auth. The new-address code flow is retained for a future release.
+- Paused account email changes in setup, Settings and Auth. The new-address code flow is retained for a future release. Its signup action, **Use a different email**, now uses the same outlined button and type as **Add phone number**.
 
 - Phone verification focuses the SMS code field and shows the destination number. Members can resend the code or edit the number. [Code entry preview](../design/2026-11-13/contact-settings/verify-phone.png).
 
@@ -31,7 +31,7 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 - **AI guidance and notifications.** Phase Guide generates tips on demand, including things to try yourself or with a friend. Cached tips remain readable when a refresh fails. Personal phase reminders are separate from general pushes for friend requests, acceptances, reactions and boops. Notifications specifically for new personal or joint guidance were reported; their trigger and delivery are not verified on `main`.
 - **Design, rankings and comments.** Home, Feed, Circle and You use reusable widgets and the illustrated theme. Circle has **Most in sync** and **Most supportive**; the opt-in community Top 10 lists are **Largest Circle** and **Loudest Voices**. Both written and automatic updates support comments.
 - **Cycle accuracy and stale data.** A late period no longer restarts the estimated cycle. An empty Health sync preserves the last shared summary; explicitly erasing synced data clears it and stops sharing.
-- **Domain, email and SMS.** The `cadenceapp.org` domain and Microsoft 365 email plan were renewed. Account setup and Settings support email confirmation and SMS codes. A Twilio account was opened and credits were added for SMS verification. Provider setup is distinct from confirming that a text or email reaches a real recipient; end-to-end delivery is not confirmed here.
+- **Domain, email and SMS.** The `cadenceapp.org` domain and Microsoft 365 email plan were renewed. The app supports SMS verification; the email verification flow is retained, with account email changes currently paused. A Twilio account was opened and credits were added for SMS verification. Provider setup is distinct from confirming that a text or email reaches a real recipient; end-to-end delivery is not confirmed here.
 
 <sub>Contributors: Shaan — staging, security checks, discovery, AI guidance and push notifications. Krati — design, rankings, comments, cycle accuracy, domain and email renewal, and contact verification.</sub>
 
