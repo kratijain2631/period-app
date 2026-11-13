@@ -8,7 +8,7 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 - Added the [service account directory](ACCOUNTS.md) and recorded the domain and mailbox renewal terms in [Troubleshooting](TROUBLESHOOTING.md#godaddy-domain-and-mailbox-renewal-november-2026).
 
-- Paused account email changes in setup, Settings and Auth. The new-address code flow is retained for a future release.
+- Paused account email changes in setup, Settings and Auth. The new-address code flow is retained for a future release. Its signup action, **Use a different email**, now uses the same outlined button and type as **Add phone number**.
 
 - Phone verification focuses the SMS code field and shows the destination number. Members can resend the code or edit the number. [Code entry preview](../design/2026-11-13/contact-settings/verify-phone.png).
 
@@ -25,6 +25,17 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 - Removed the old Circle screen (`FriendsScreen.tsx`), which the app no longer showed, along with three helpers only it used. No change to what you see.
 - A friend's new post now appears in your feed within a few seconds, and reactions, comments and boops reach the bell right away, instead of waiting up to a minute or for a pull to refresh. Database: `20261113210000_realtime-posts-notifications.sql` adds `posts` and `notifications` to realtime delivery.
 - Two people can no longer hold friend requests to each other at the same time. Accepting one used to leave the other pending, so you could be offered Accept for someone who was already your friend. Database: `20261113231000_one-request-per-pair.sql`.
+
+### November highlights across recent builds
+
+- **Staging and security.** A separate staging environment and test accounts make it possible to exercise new flows without touching production data. Automated checks test who can read or change data on database pull requests and again before a migration reaches production.
+- **Friend discovery.** Contacts can match an opted-in member by verified phone, email, or both. When both match the same person, they appear once. Members can also search by exact email or phone.
+- **AI guidance and notifications.** Phase Guide generates tips on demand, including things to try yourself or with a friend. Cached tips remain readable when a refresh fails. Personal phase reminders are separate from general pushes for friend requests, acceptances, reactions and boops. Notifications specifically for new personal or joint guidance were reported; their trigger and delivery are not verified on `main`.
+- **Design, rankings and comments.** Home, Feed, Circle and You use reusable widgets and the illustrated theme. Circle has **Most in sync** and **Most supportive**; the opt-in community Top 10 lists are **Largest Circle** and **Loudest Voices**. Both written and automatic updates support comments.
+- **Cycle accuracy and stale data.** A late period no longer restarts the estimated cycle. An empty Health sync preserves the last shared summary; explicitly erasing synced data clears it and stops sharing.
+- **Domain, email and SMS.** The `cadenceapp.org` domain and Microsoft 365 email plan were renewed. The app supports SMS verification; the email verification flow is retained, with account email changes currently paused. A Twilio account was opened and credits were added for SMS verification. The owner reported receiving email codes. Delivery of a verification text to a real phone is not confirmed in these notes.
+
+<sub>Contributors: Shaan — staging, security checks, discovery, AI guidance and push notifications. Krati — design, rankings, comments, cycle accuracy, domain and email renewal, and contact verification.</sub>
 
 ## 2026-11-13 — TestFlight build 1.0.24 (build 46)
 
