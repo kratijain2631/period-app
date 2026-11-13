@@ -70,7 +70,7 @@ The step-by-step procedure, including preflight checks, signing in safely and re
 1. Seed, then `npm run start:staging` (add `-- --port 8082` if 8081 is taken).
 2. Launch the dev build by bundle ID: `xcrun simctl launch booted com.syncsisters.cycle`.
 3. Sign out of any account, then sign in with **Email (dev)** as a persona.
-4. Exercise the feature, take screenshots into `screenshots/<task>-<date>/` (gitignored), and check the Metro log.
+4. Exercise the feature, look at the screen as little as possible with small screenshots (see [Screenshots](TEST_ACCOUNTS.md#screenshots)), and check the Metro log.
 5. Stop Metro and confirm `.env.local` is gone.
 
 **Building the dev client for the simulator:**

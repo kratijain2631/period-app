@@ -77,7 +77,7 @@ This isn't tied to any agent or model. The hard rules are in [AGENTS.md](../AGEN
 4. **Open the dev client:** `xcrun simctl launch booted com.syncsisters.cycle`. Launch by bundle ID, because builds can share URL schemes and opening a URL may start the wrong app. If the launcher appears, choose the staging server. Confirm a bundle request appears in the Metro log. If it connected elsewhere, use the dev menu's **Go home** and choose the staging server.
 5. **Sign out of any account** from You → gear icon → Sign out. Do this only on the staging bundle, never on production Metro. On staging Metro the fake Health source refuses non-persona accounts, so no sync reaches that account's snapshot.
 6. **Sign in as a persona** with "Email (dev)":
-   - Type the email in short chunks and check it with a screenshot. Long text can drop characters or land in the wrong field when focus moves.
+   - Type the email in short chunks and check it with a small screenshot (see [Screenshots](#screenshots)). Long text can drop characters or land in the wrong field when focus moves.
    - Copy the password without printing it, paste it into the field, then clear the pasteboard:
 
      ```bash
@@ -87,10 +87,27 @@ This isn't tied to any agent or model. The hard rules are in [AGENTS.md](../AGEN
 
    - A successful login proves you're on staging, because personas don't exist on production. The STAGING pill alone doesn't prove it.
 7. **Exercise the feature** with the persona that fits it. Use the actor commands under [Everyday use](#everyday-use) to act as other accounts while you watch, then pull to refresh, because the feed doesn't update live.
-8. **Take screenshots** into `screenshots/<task>-<date>/`: `xcrun simctl io booted screenshot <path>`. Never commit them, because they can contain personal data.
+8. **Look at the screen sparingly**, following [Screenshots](#screenshots). Keep a screenshot only when it's worth having later.
 9. **Check the Metro log** for errors and red screens. Push and background-delivery warnings are normal on the simulator.
-10. **Stop Metro and confirm `.env.local` is gone:** `ls .env.local` should report no such file.
-11. **Report** the persona used, what you checked, screenshot paths, errors, and anything you couldn't test. Log unfixed bugs in `docs/BUGS.md`.
+10. **Stop Metro and confirm `.env.local` is gone:** `ls .env.local` should report no such file. Then copy any screenshots worth keeping into `screenshots/<task>-<date>/` and delete the run's temporary folder.
+11. **Report** the persona used, what you checked, kept screenshot paths, errors, and anything you couldn't test. Log unfixed bugs in `docs/BUGS.md`.
+
+### Screenshots
+
+Every image an agent looks at stays in its chat history and is sent again with each later message. Full-size simulator screenshots are about 400 KB each, and a few dozen of them have made test chats fail with connection errors. Look only as much as you need, and look small.
+
+- **Don't use a simulator tool's built-in screenshot** to see the screen, because it adds a full-size image to the chat. Save to the run's temporary folder outside the project (Metro reloads when files appear inside it), shrink, and open only the small copy:
+
+  ```bash
+  SHOTS=$(mktemp -d -t sim-shots)   # once per run
+  xcrun simctl io booted screenshot "$SHOTS/full.png"
+  sips -Z 600 -s format jpeg "$SHOTS/full.png" --out "$SHOTS/look.jpg"
+  ```
+
+  The small copy is about 30–50 KB and still readable enough to find buttons and check text.
+- **Look only when you need to:** before tapping something you haven't located yet, and to check a result. Don't look after every tap, and wait for loading to finish rather than looking twice.
+- **Most screenshots aren't worth keeping.** Keep one only if it shows a failure, a crash or new UI the report needs. Save it to disk with `simctl` and don't open it in the chat. Never commit kept screenshots, because they can contain personal data.
+- **Clean up after each run:** delete the temporary folder in step 10.
 
 ### Troubleshooting
 
