@@ -5,9 +5,12 @@ import { AppState, Button, Text, View } from 'react-native';
 import { supabase } from '../../../services/supabase/client';
 import { OptionalPhonePrompt, PhoneChangeForm } from '../components/PhoneChangeForm';
 
+const EMAIL_CHANGES_ENABLED = false;
+
 type Props = { userId: string; settings?: boolean; onReady?: (ready: boolean) => void };
 
 export default function ContactDetails({ userId, onReady, settings = false }: Props) {
+  const [appleSignIn, setAppleSignIn] = useState(false);
   const [editingPhone, setEditingPhone] = useState(false);
   const [email, setEmail] = useState('');
   const [editingEmail, setEditingEmail] = useState(false);
@@ -33,10 +36,11 @@ export default function ContactDetails({ userId, onReady, settings = false }: Pr
         if (!current) return;
         if (error || data.user?.id !== userId) throw new Error();
         const user = data.user;
+        setAppleSignIn(user.app_metadata?.provider === 'apple' || !!user.identities?.some(identity => identity.provider === 'apple'));
         const confirmed = user.phone_confirmed_at && user.phone ? '+' + user.phone.replace(/^\+/, '') : '';
         setVerifiedPhone(confirmed);
         setEmail(user.email ?? '');
-        setPendingEmail(user.new_email ?? '');
+        setPendingEmail(EMAIL_CHANGES_ENABLED ? user.new_email ?? '' : '');
         setEditingEmail(false);
         setEditingPhone(false);
         setVerifiedEmail(user.email_confirmed_at ? (user.email ?? '') : '');
@@ -80,7 +84,8 @@ export default function ContactDetails({ userId, onReady, settings = false }: Pr
     return () => { active = false; clearInterval(timer); listener.remove(); };
   }, [pendingEmail, editingEmail, userId]);
 
-  async function submit(action: 'email' | 'send' | 'verify', phone = '', token = '') {
+  async function submit(action: 'email' | 'send' | 'verify' | 'emailCode', contact = '', token = '') {
+    if (!EMAIL_CHANGES_ENABLED && (action === 'email' || action === 'emailCode')) return false;
     if (submitting.current) return false;
     submitting.current = true;
     setBusy(true);
@@ -103,11 +108,29 @@ export default function ContactDetails({ userId, onReady, settings = false }: Pr
           throw new Error('Could not start the email change. Check the address and try again.');
         }
         setEditingEmail(false);
+      } else if (action === 'emailCode') {
+        if (!pendingEmail || data.user.new_email !== pendingEmail ||
+            contact !== pendingEmail) {
+          throw new Error('This email change is no longer current. Reopen Settings.');
+        }
+        const result = await supabase.auth.verifyOtp({ type: 'email_change', email: contact, token });
+        if (result.error) throw result.error;
+        const refreshed = await supabase.auth.getUser();
+        const user = refreshed.data.user;
+        if (refreshed.error || user?.id !== userId) throw new Error('Reopen Settings to check confirmation.');
+        if (user.email_confirmed_at && user.email?.toLowerCase() === pendingEmail.toLowerCase() && !user.new_email) {
+          setEmail(user.email);
+          setVerifiedEmail(user.email);
+          setPendingEmail('');
+          setMessage('Email address updated.');
+        } else {
+          setMessage('Email change is still pending. Reopen Settings to check its status.');
+        }
       } else if (action === 'send') {
-        const response = await supabase.auth.updateUser({ phone });
+        const response = await supabase.auth.updateUser({ phone: contact });
         if (response.error) throw response.error;
       } else {
-        const response = await supabase.auth.verifyOtp({ type: 'phone_change', phone, token });
+        const response = await supabase.auth.verifyOtp({ type: 'phone_change', phone: contact, token });
         if (response.error) throw response.error;
         if (response.data.user?.id !== userId) throw new Error('Account changed. Reopen setup.');
         setReload((value) => value + 1);
@@ -135,8 +158,17 @@ export default function ContactDetails({ userId, onReady, settings = false }: Pr
 
   return (
     <View style={{ gap: 8 }}>
-      {pendingEmail && !editingEmail ? (
-        <PendingEmail address={pendingEmail} currentEmail={verifiedEmail} onEdit={() => {
+      {!EMAIL_CHANGES_ENABLED ? (
+        <View>
+          <Text style={{ fontWeight: '600' }}>{appleSignIn ? 'Email from Apple' : 'Account email'}</Text>
+          <Text selectable>{verifiedEmail || email || 'No email on this account'}</Text>
+          {appleSignIn && email.toLowerCase().endsWith('@privaterelay.appleid.com') && (
+            <Text>You chose to Hide My Email. Friends can't find you by your personal email address while you use this private relay address.</Text>
+          )}
+        </View>
+      ) : pendingEmail && !editingEmail ? (
+        <PendingEmail key={pendingEmail} address={pendingEmail} busy={busy}
+          onVerify={(inbox, token) => void submit('emailCode', inbox, token)} onEdit={() => {
           setEmail(''); setMessage(''); setEditingEmail(true);
         }} />
       ) : settings && !editingEmail ? (
@@ -151,15 +183,12 @@ export default function ContactDetails({ userId, onReady, settings = false }: Pr
         />
       ) : verifiedEmail && !editingEmail ? (
         <>
-          <Text>Account email</Text>
+          <Text style={{ fontWeight: '600' }}>{appleSignIn ? 'Email from Apple' : 'Account email'}</Text>
           <Text selectable>{verifiedEmail}</Text>
-          <Button
-            title="Use a different email"
-            onPress={() => {
-              setEditingEmail(true);
-              setEmail('');
-            }}
-          />
+          {appleSignIn && verifiedEmail.toLowerCase().endsWith('@privaterelay.appleid.com') && (
+            <Text>You chose to Hide My Email. Friends can't find you by your personal email address while you use this private relay address.</Text>
+          )}
+          <Text>You can change this email in Settings later.</Text>
         </>
       ) : (
         <EmailChangeForm
