@@ -9,7 +9,7 @@ type FieldProps = TextInputProps & {
   icon?: keyof typeof Ionicons.glyphMap;
 };
 
-export function ContactField({ label, icon, ...props }: FieldProps) {
+export function ContactField({ label, icon, style, ...props }: FieldProps) {
   const t = useWidgetTheme();
   const [focused, setFocused] = useState(false);
   return (
@@ -23,7 +23,7 @@ export function ContactField({ label, icon, ...props }: FieldProps) {
         {icon && <Ionicons name={icon} size={20} color={t.colors.secondary} />}
         <TextInput {...props} accessibilityLabel={label} placeholderTextColor={t.colors.secondary}
           onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
-          style={{ flex: 1, minWidth: 0, minHeight: 49, color: t.colors.text, fontFamily: t.type.body, fontSize: 16 }} />
+          style={[{ flex: 1, minWidth: 0, minHeight: 49, color: t.colors.text, fontFamily: t.type.body, fontSize: 16 }, style]} />
       </View>
     </View>
   );

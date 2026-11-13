@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { useWindowDimensions, View } from 'react-native';
+import { Pressable, useWindowDimensions, View } from 'react-native';
 import { parsePhoneNumberFromString } from 'libphonenumber-js/min';
 import { ActionButton, AppText } from '../../../components/ui/WidgetPrimitives';
 import { phoneFromFields } from '../../../services/contacts/phone';
+import { useWidgetTheme } from '../../../theme/widgetTheme';
 import { ContactCancel, ContactField } from './ContactFormControls';
 
 type Props = {
@@ -24,6 +25,7 @@ export function OptionalPhonePrompt({ onAdd }: { onAdd: () => void }) {
 }
 
 export function PhoneChangeForm({ currentPhone, busy, onSend, onVerify, onCancel, onEdit }: Props) {
+  const t = useWidgetTheme();
   const { fontScale } = useWindowDimensions();
   const [callingCode, setCallingCode] = useState('+1');
   const [number, setNumber] = useState('');
@@ -56,6 +58,33 @@ export function PhoneChangeForm({ currentPhone, busy, onSend, onVerify, onCancel
     }
   }
 
+  if (sentTo) {
+    const destination = parsePhoneNumberFromString(sentTo)?.formatInternational() ?? sentTo;
+    return (
+      <View style={{ gap: 12 }}>
+        <View style={{ gap: 4 }}>
+          <AppText role="heading" accessibilityRole="header">Check your texts</AppText>
+          <AppText style={{ color: t.colors.secondary }}>Enter the code we sent to {destination}.</AppText>
+        </View>
+        <ContactField label="Verification code" placeholder="Enter code" autoFocus
+          keyboardType="number-pad" textContentType="oneTimeCode" value={code}
+          editable={!busy} onChangeText={value => setCode(value.replace(/\D/g, ''))}
+          style={{ textAlign: 'center', fontSize: 22, letterSpacing: code ? 4 : 0, minHeight: 56 }} />
+        <ActionButton label="Verify code" disabled={busy || !code} onPress={() => onVerify(sentTo, code)} />
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-around' }}>
+          {[{ label: 'Resend code', action: send }, { label: 'Edit number', action: clearCode }].map(({ label, action }) => (
+            <Pressable key={label} accessibilityRole="button" disabled={busy} accessibilityState={{ disabled: busy }}
+              onPress={action} style={({ pressed }) => ({ minHeight: 44, paddingHorizontal: 8,
+                justifyContent: 'center', opacity: pressed || busy ? 0.5 : 1 })}>
+              <AppText style={{ color: t.colors.accent, fontFamily: t.type.semibold }}>{label}</AppText>
+            </Pressable>
+          ))}
+        </View>
+        <ContactCancel busy={busy} onPress={onCancel} />
+      </View>
+    );
+  }
+
   return (
     <View style={{ gap: 8 }}>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, alignItems: 'flex-end' }}>
@@ -74,18 +103,7 @@ export function PhoneChangeForm({ currentPhone, busy, onSend, onVerify, onCancel
             editable={!busy} onChangeText={changeNumber} />
         </View>
       </View>
-      {sentTo ? (
-        <>
-          <AppText>Code sent to {sentTo}</AppText>
-          <ContactField label="Confirmation code" placeholder="Enter code" keyboardType="number-pad"
-            textContentType="oneTimeCode" value={code} editable={!busy} onChangeText={setCode} />
-          <ActionButton label="Verify code" disabled={busy || !/^\d+$/.test(code.trim())}
-            onPress={() => onVerify(sentTo, code.trim())} />
-          <ActionButton outline label="Resend code" disabled={busy} onPress={send} />
-        </>
-      ) : (
-        <ActionButton label="Send confirmation code" disabled={busy || !phone || phone === currentPhone} onPress={send} />
-      )}
+      <ActionButton label="Send confirmation code" disabled={busy || !phone || phone === currentPhone} onPress={send} />
       <ContactCancel busy={busy} onPress={onCancel} />
     </View>
   );
