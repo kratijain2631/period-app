@@ -1,6 +1,6 @@
 import { View } from 'react-native';
 import Svg, { Circle, Ellipse, G, Path } from 'react-native-svg';
-import { DottieMascot } from './DottieMascot';
+import { DottieMascot, DottieFigure } from './DottieMascot';
 import { useWidgetTheme } from '../../theme/widgetTheme';
 
 // A decorative backdrop for the existing mascot family. The score and labels live in the widget.
@@ -44,22 +44,22 @@ export function GardenArt({ pair = false }: { pair?: boolean }) {
             <Circle r="1.2" fill="#D79E48" />
           </G>
         ))}
+        {!pair && (
+          <G transform="translate(249 44) scale(0.92) rotate(-5 60 60)">
+            <DottieFigure color={t.phase.menstruation.chart} mood="happy" />
+          </G>
+        )}
       </Svg>
       {pair && (
         <View style={{ position: 'absolute', right: 53, bottom: 10, transform: [{ rotate: '-8deg' }] }}>
           <DottieMascot size={76} color={t.phase.follicular.chart} mood="happy" />
         </View>
       )}
-      <View
-        style={{
-          position: 'absolute',
-          right: pair ? 11 : 14,
-          bottom: pair ? 13 : 8,
-          transform: [{ rotate: pair ? '8deg' : '-5deg' }],
-        }}
-      >
-        <DottieMascot size={pair ? 64 : 80} color={t.phase.menstruation.chart} mood={pair ? 'waving' : 'happy'} />
-      </View>
+      {pair && (
+        <View style={{ position: 'absolute', right: 11, bottom: 13, transform: [{ rotate: '8deg' }] }}>
+          <DottieMascot size={64} color={t.phase.menstruation.chart} mood="waving" />
+        </View>
+      )}
     </View>
   );
 }

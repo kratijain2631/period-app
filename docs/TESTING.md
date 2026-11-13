@@ -212,3 +212,12 @@ Install 1.0.19 (41) in TestFlight using an existing account.
 4. Under Privacy and permissions, open Post settings, return to Settings, and toggle Community rankings visibility. Confirm the preference survives navigating away and back. Sign out and Delete account sit at the bottom.
 
 The earlier core widget checks still apply. See the [v1.0 walkthrough](#design-v10-testflight-walkthrough).
+
+## Feed, setup and sent requests
+
+1. In Feed, tap **Share an update**, enter a draft and choose a mood. Go back and tap **Continue your draft**. Share it and confirm the new post appears in Feed.
+2. In first-time setup, finish email and phone verification and choose an alias. Set Community rankings and Post settings. Save, then connect Apple Health or tap **Not now**. Reopen Settings and verify the same choices.
+3. With two testers, send a friend request. On Add Friends, check the recipient under **Sent**, tap **Cancel request**, and verify it disappears from the recipient’s Notifications and can be sent again. Also try cancellation from the recipient’s profile. Once accepted, it stays a friendship.
+4. Look at the illustrated drop on You and an outward profile. Check the pointed tip, hands and feet. [Phone-width captures](../design/2026-11-12/setup-and-requests/).
+
+The browser preview passed draft/resume/share, setup-to-Settings readback, request cancellation, and mascot bounds at 320, 390 and 480 px. Two isolated staging accounts passed preferences save/readback, request profile lookup, sender-only pending cancellation, recipient inbox removal, resending, and preservation of an accepted friendship. Both test accounts were removed. All 181 app tests passed, along with type checking and an iOS bundle export. No iOS simulator runtime is installed here. Real SMS delivery and the signed-in physical iPhone walkthrough are pending.

@@ -58,11 +58,12 @@ The native app and interactive design have four bottom tabs. An outward profile 
 | You | Bottom tab | Private identity editing, cycle, monthly recap, full Phase Guide, My posts and settings |
 | Notifications | Secondary page, opened by the bell | One chronological list (oldest first) of activity and incoming requests with inline Accept/Decline. Identified senders open profiles |
 | Member profile | Secondary page, one route parameterized by member ID | Open any person from a ranking, directory, request, search result, feed author or notification. Tap your name on You to open your own outward profile. Show identity and bio, relationship actions, eligible pair sync and shared updates visible to this viewer |
-| Compose update / delete confirmation | Feed flow | Draft, mood, audience and submit. An author can remove their update |
+| Write a post | Secondary page from Share an update in Feed | Session-scoped draft and mood. Back resumes later, successful submit returns to Feed |
+| Delete confirmation | Feed author action | Confirm removal of your own update |
 | Edit profile / settings | You flows | Identity and posting preferences in the preview. Native settings also includes account actions and contact details |
-| Sign-in / profile and contact setup / introduction and permissions | Native onboarding | Gated steps before the main tabs |
+| Sign-in / profile and contact setup / introduction and permissions | Native onboarding | Verified contacts and alias → initial ranking and posting choices → optional Apple Health → Home |
 
-The wheel and full Phase Guide are sections of You. The countdown on Home opens the wheel. Add friends owns discovery and invitations. Its pending requests also appear directly in Notifications. The member profile links eligible friends to the deeper pair comparison.
+The wheel and full Phase Guide are sections of You. The countdown on Home opens the wheel. Add friends owns discovery and invitations. Sent requests support cancellation. Incoming requests also appear directly in Notifications. The member profile links eligible friends to the deeper pair comparison.
 
 ## Preliminary widget assignments
 
@@ -302,7 +303,7 @@ The page directory and widget assignments above describe the current design. Thi
 | **Home** | Cycle strip → one guide tip → upcoming estimate → top match when available → latest update. Header links to Circle and Notifications |
 | **Feed** | Full activity stream, composer, reactions, boops and entry to Notifications |
 | **Circle** | Two personal ranking tabs → friend directory (Add Friends button) → two Community rankings tabs |
-| **Add friends** | Incoming request card → member and contact discovery → share/copy invite. Reuse pending requests and relationship decisions in Notifications |
+| **Add friends** | Received and sent requests → member and contact discovery → share/copy invite. Reuse pending requests and relationship decisions in Notifications |
 | **Friend detail** | Friend identity → pair score/confidence → comparison/trends → pair guidance → boop/care → relationship actions. Access revocation takes precedence over cached content |
 | **You** | Profile identity/editor and outward profile entry → cycle/metrics → full Phase Guide → My posts, with settings accessible in the header. No duplicate Profile screen instance under Home |
 | **Notifications** | Requests + activity grouped by read state; navigation to original subject; shared badge counts. Rendering a row does not itself accept a request or clear history |

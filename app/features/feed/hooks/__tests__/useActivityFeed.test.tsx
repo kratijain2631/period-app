@@ -1,6 +1,6 @@
 import React from 'react';
 import { useActivityFeed } from '../useActivityFeed';
-import { loadActivityFeed } from '../../services/loadActivityFeed';
+import { loadActivityFeed, projectPost } from '../../services/loadActivityFeed';
 import { createPost, deletePost } from '../../../../services/supabase/posts';
 import { addPostReaction } from '../../../../services/supabase/postReactions';
 import { addEventReaction } from '../../../../services/supabase/eventReactions';
@@ -145,6 +145,19 @@ it('keeps the draft on failure, blocks offline posting, and prevents duplicate s
   await act(async () => wait.resolve(null));
   expect(current.composer.text).toBe('Keep this draft');
   expect(current.composer.error).toContain('draft');
+});
+it('only reports a completed share after the update is saved in the feed', async () => {
+  await mount();
+  await act(async () => current.composer.setText('My update'));
+  jest.mocked(createPost).mockRejectedValueOnce(new Error('offline'));
+  await act(async () => { expect(await current.composer.submit()).toBe(false); });
+  expect(current.composer.text).toBe('My update');
+  const row = { id: 'new', user_id: 'self', alias: null, body: 'My update', mood_tag: null, created_at: '2026-11-12' };
+  jest.mocked(createPost).mockResolvedValueOnce(row);
+  jest.mocked(projectPost).mockReturnValueOnce({ ...item(), target: { type: 'post', id: row.id }, body: row.body, createdAt: row.created_at });
+  await act(async () => { expect(await current.composer.submit()).toBe(true); });
+  expect(current.composer.text).toBe('');
+  expect(current.items[0].body).toBe('My update');
 });
 it('keeps queued boops distinct from delivered counts and prevents repeats', async () => {
   await mount();

@@ -6,9 +6,14 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## Unreleased
 
+- **Feed → Share an update** opens **Write a post** as a separate iPhone page. Back keeps the text and mood in the current session. **Continue your draft** reopens them. A successful share returns to Feed with the new post visible. A failed share keeps the editor open. The iPhone app and preview use the same launcher and composer.
+- **First-time setup** collects verified email and phone with the alias, then asks about **Show me in Community rankings**, period updates, first day only and phase transitions. The member saves these choices before the optional Apple Health step. Rankings start off. Saved preferences appear in Settings. The preview includes a sample first-time setup from Opening.
+- **You → bio banner.** The mascot and landscape now share one drawing area. Its tip, arms and feet fit inside the illustration. The same art appears on outward profiles. [Updated 390 px screenshot](../design/2026-11-12/setup-and-requests/you-390.png).
+- **Circle → Add Friends → Friend requests** shows received requests with Accept/Decline and a scrollable Sent list with **Request pending** and **Cancel request**. The recipient’s profile also supports cancellation. Canceling only deletes the sender’s still-pending row. Refresh removes it from the recipient’s inbox and makes the contact selectable again. A simultaneous acceptance keeps the friendship.
+
 ## 2026-11-12 — TestFlight build 1.0.19 (build 41)
 
-Expo finished the [signed build](https://expo.dev/accounts/kratijain26/projects/period-app/builds/bcd2ba31-c1d9-4719-ba5b-36f1aa63779e) and [Apple upload](https://expo.dev/accounts/kratijain26/projects/period-app/submissions/ae6609a9-6c9d-43cb-88ed-dd1498edbf9d) from `v1.0.19-build41` for internal TestFlight.
+Expo finished the [signed build](https://expo.dev/accounts/kratijain26/projects/period-app/builds/bcd2ba31-c1d9-4719-ba5b-36f1aa63779e) and [Apple upload](https://expo.dev/accounts/kratijain26/projects/period-app/submissions/ae6609a9-6c9d-43cb-88ed-dd1498edbf9d) from `v1.0.19-build41`. Apple processed build 41 and made it available to both internal groups, Team (Expo) and Dev Team.
 
 - This release adds the approved thumbnail, standalone Settings page, shared Home/opening wordmark, and the bio banner fix to the redesign in builds 39 and 40. [iPhone test steps](TESTING.md#1019-settings-and-mascot).
 

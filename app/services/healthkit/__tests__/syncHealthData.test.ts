@@ -174,6 +174,7 @@ describe('syncHealthData signal integration', () => {
     jest.useFakeTimers().setSystemTime(new Date('2026-03-15T12:00:00.000Z'));
 
     mockGetState.mockImplementation(() => ({
+      hasSeenCompanionIntro: true,
       permissions: { granted: true },
       session: { userId },
       autoPostSettings: {
@@ -267,6 +268,13 @@ describe('syncHealthData signal integration', () => {
 
   afterEach(() => {
     jest.useRealTimers();
+  });
+
+  it('waits for initial sharing choices before reading Health or posting events', async () => {
+    mockGetState.mockReturnValueOnce({ session: { userId }, permissions: { granted: true }, hasSeenCompanionIntro: false });
+    expect(await syncHealthData({ trigger: 'background' })).toBeNull();
+    expect(mockAuthorizationStatusFor).not.toHaveBeenCalled();
+    expect(mockUpsertCycleEvents).not.toHaveBeenCalled();
   });
 
   it('queries all optional HealthKit signals and persists phase-source metadata', async () => {

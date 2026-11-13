@@ -118,6 +118,13 @@ export const sendFriendRequestByEmail = async (email: string) => {
   }
 };
 
+export const cancelSentFriendRequest = async (requestId: string, senderId: string) => {
+  const { data, error } = await supabase.from('friend_requests').delete()
+    .eq('id', requestId).eq('from_user_id', senderId).eq('status', 'pending').select('id').maybeSingle();
+  if (error) throw error;
+  return Boolean(data);
+};
+
 export const respondToFriendRequest = async (requestId: string, status: 'accepted' | 'declined') => {
   if (!isSupabaseConfigured) {
     return;

@@ -29,89 +29,88 @@ const darken = (hex: string, amount: number) => {
   return `rgb(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)})`;
 };
 
-export const DottieMascot = memo(
-  ({
-    size = 120,
-    mood = 'happy',
-    color = '#C4654A',
-  }: {
-    size?: number;
-    mood?: DottieMood;
-    color?: string;
-  }) => {
-    const eyesClosed = mood === 'sleepy';
-    return (
-      <Svg width={size} height={size} viewBox="0 0 120 120" fill="none">
-        <Ellipse cx="60" cy="112" rx="22" ry="5" fill="#E8E4DE" opacity={0.5} />
-        <Path
-          d="M60 12 C60 12 30 52 30 72 C30 88.568 43.432 102 60 102 C76.568 102 90 88.568 90 72 C90 52 60 12 60 12Z"
-          fill={color}
-        />
-        <Circle cx="44" cy="78" r="4.5" fill="#FFD4C4" opacity={0.45} />
-        <Circle cx="76" cy="78" r="4.5" fill="#FFD4C4" opacity={0.45} />
+type DropProps = { mood?: DottieMood; color?: string };
 
-        {eyesClosed ? (
-          <>
-            <Path d="M49 71 Q53 74 57 71" stroke="#3D2920" strokeWidth={2.5} strokeLinecap="round" />
-            <Path d="M63 71 Q67 74 71 71" stroke="#3D2920" strokeWidth={2.5} strokeLinecap="round" />
-            <SvgText x="82" y="54" fill="#3D2920" opacity={0.35} fontSize={10} fontWeight="700">
-              z
-            </SvgText>
-            <SvgText x="88" y="46" fill="#3D2920" opacity={0.25} fontSize={8} fontWeight="700">
-              z
-            </SvgText>
-          </>
-        ) : (
-          <>
-            <Circle cx="52" cy="70" r="4.5" fill="#3D2920" />
-            <Circle cx="68" cy="70" r="4.5" fill="#3D2920" />
-            <Circle cx="54" cy="68" r="1.5" fill="#FFF" />
-            <Circle cx="70" cy="68" r="1.5" fill="#FFF" />
-          </>
-        )}
+export function DottieFigure({ mood = 'happy', color = '#C4654A' }: DropProps) {
+  const eyesClosed = mood === 'sleepy';
+  return (
+    <G fill="none">
+      <Ellipse cx="60" cy="112" rx="22" ry="5" fill="#E8E4DE" opacity={0.5} />
+      <Path
+        d="M60 12 C60 12 30 52 30 72 C30 88.568 43.432 102 60 102 C76.568 102 90 88.568 90 72 C90 52 60 12 60 12Z"
+        fill={color}
+      />
+      <Circle cx="44" cy="78" r="4.5" fill="#FFD4C4" opacity={0.45} />
+      <Circle cx="76" cy="78" r="4.5" fill="#FFD4C4" opacity={0.45} />
 
-        {mood === 'happy' || mood === 'waving' ? (
-          <Path d="M56 81 Q60 85 64 81" stroke="#3D2920" strokeWidth={2} strokeLinecap="round" />
-        ) : mood === 'cheering' ? (
-          <Path d="M55 80 Q60 87 65 80" stroke="#3D2920" strokeWidth={2} strokeLinecap="round" />
-        ) : (
-          <Path d="M57 82 Q60 84 63 82" stroke="#3D2920" strokeWidth={1.5} strokeLinecap="round" />
-        )}
+      {eyesClosed ? (
+        <>
+          <Path d="M49 71 Q53 74 57 71" stroke="#3D2920" strokeWidth={2.5} strokeLinecap="round" />
+          <Path d="M63 71 Q67 74 71 71" stroke="#3D2920" strokeWidth={2.5} strokeLinecap="round" />
+          <SvgText x="82" y="54" fill="#3D2920" opacity={0.35} fontSize={10} fontWeight="700">
+            z
+          </SvgText>
+          <SvgText x="88" y="46" fill="#3D2920" opacity={0.25} fontSize={8} fontWeight="700">
+            z
+          </SvgText>
+        </>
+      ) : (
+        <>
+          <Circle cx="52" cy="70" r="4.5" fill="#3D2920" />
+          <Circle cx="68" cy="70" r="4.5" fill="#3D2920" />
+          <Circle cx="54" cy="68" r="1.5" fill="#FFF" />
+          <Circle cx="70" cy="68" r="1.5" fill="#FFF" />
+        </>
+      )}
 
-        {mood === 'waving' ? (
-          <>
-            <Path d="M34 78 Q28 84 27 90" stroke={color} strokeWidth={4} strokeLinecap="round" />
-            <Path d="M86 74 Q92 64 96 58" stroke={color} strokeWidth={4} strokeLinecap="round" />
-            <Circle cx="96" cy="56" r="4" fill={color} />
-          </>
-        ) : null}
-        {mood === 'cheering' ? (
-          <>
-            <Path d="M34 74 Q26 62 22 54" stroke={color} strokeWidth={4} strokeLinecap="round" />
-            <Path d="M86 74 Q94 62 98 54" stroke={color} strokeWidth={4} strokeLinecap="round" />
-            <Circle cx="21" cy="52" r="4" fill={color} />
-            <Circle cx="99" cy="52" r="4" fill={color} />
-          </>
-        ) : null}
-        {mood === 'meditating' ? (
-          <>
-            <Path d="M34 82 Q28 88 32 94" stroke={color} strokeWidth={4} strokeLinecap="round" />
-            <Path d="M86 82 Q92 88 88 94" stroke={color} strokeWidth={4} strokeLinecap="round" />
-          </>
-        ) : null}
-        {mood === 'happy' ? (
-          <>
-            <Path d="M34 78 Q28 86 30 94" stroke={color} strokeWidth={4} strokeLinecap="round" />
-            <Path d="M86 78 Q92 86 90 94" stroke={color} strokeWidth={4} strokeLinecap="round" />
-          </>
-        ) : null}
+      {mood === 'happy' || mood === 'waving' ? (
+        <Path d="M56 81 Q60 85 64 81" stroke="#3D2920" strokeWidth={2} strokeLinecap="round" />
+      ) : mood === 'cheering' ? (
+        <Path d="M55 80 Q60 87 65 80" stroke="#3D2920" strokeWidth={2} strokeLinecap="round" />
+      ) : (
+        <Path d="M57 82 Q60 84 63 82" stroke="#3D2920" strokeWidth={1.5} strokeLinecap="round" />
+      )}
 
-        <Ellipse cx="52" cy="102" rx="6" ry="3" fill={darken(color, 0.15)} />
-        <Ellipse cx="68" cy="102" rx="6" ry="3" fill={darken(color, 0.15)} />
-      </Svg>
-    );
-  },
-);
+      {mood === 'waving' ? (
+        <>
+          <Path d="M34 78 Q28 84 27 90" stroke={color} strokeWidth={4} strokeLinecap="round" />
+          <Path d="M86 74 Q92 64 96 58" stroke={color} strokeWidth={4} strokeLinecap="round" />
+          <Circle cx="96" cy="56" r="4" fill={color} />
+        </>
+      ) : null}
+      {mood === 'cheering' ? (
+        <>
+          <Path d="M34 74 Q26 62 22 54" stroke={color} strokeWidth={4} strokeLinecap="round" />
+          <Path d="M86 74 Q94 62 98 54" stroke={color} strokeWidth={4} strokeLinecap="round" />
+          <Circle cx="21" cy="52" r="4" fill={color} />
+          <Circle cx="99" cy="52" r="4" fill={color} />
+        </>
+      ) : null}
+      {mood === 'meditating' ? (
+        <>
+          <Path d="M34 82 Q28 88 32 94" stroke={color} strokeWidth={4} strokeLinecap="round" />
+          <Path d="M86 82 Q92 88 88 94" stroke={color} strokeWidth={4} strokeLinecap="round" />
+        </>
+      ) : null}
+      {mood === 'happy' ? (
+        <>
+          <Path d="M34 78 Q28 86 30 94" stroke={color} strokeWidth={4} strokeLinecap="round" />
+          <Path d="M86 78 Q92 86 90 94" stroke={color} strokeWidth={4} strokeLinecap="round" />
+        </>
+      ) : null}
+
+      <Ellipse cx="52" cy="102" rx="6" ry="3" fill={darken(color, 0.15)} />
+      <Ellipse cx="68" cy="102" rx="6" ry="3" fill={darken(color, 0.15)} />
+
+    </G>
+  );
+}
+
+export const DottieMascot = memo(({ size = 120, ...props }: DropProps & { size?: number }) => (
+  <Svg width={size} height={size} viewBox="0 0 120 120">
+    <DottieFigure {...props} />
+  </Svg>
+));
 
 export const DottieThemed = memo(
   ({ theme, size = 60, color }: { theme: DottieTheme; size?: number; color: string }) => {

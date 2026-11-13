@@ -1,4 +1,4 @@
-import { fetchAcceptedFriendRequests, fetchOutboundFriendRequests } from '../../services/supabase/friendRequests';
+import { fetchAcceptedFriendRequests, fetchOutboundFriendRequests, fetchFriendRequestProfiles } from '../../services/supabase/friendRequests';
 import { fetchFriendProfiles } from '../../services/supabase/friendSharing';
 import { fetchFriendCycleSnapshots } from '../../services/supabase/cycleSnapshots';
 import { computeSyncScore } from '../friends/utils/syncScore';
@@ -12,7 +12,13 @@ export async function loadCircle(userId: string) {
     fetchFriendCycleSnapshots(),
   ]);
   const ids = [...new Set(accepted.map((r) => (r.from_user_id === userId ? r.to_user_id : r.from_user_id)))];
-  const profiles = await fetchFriendProfiles(ids);
+  const pending = outbound.filter(r => r.status === 'pending');
+  const [profiles, recipients] = await Promise.all([
+    fetchFriendProfiles(ids),
+    fetchFriendRequestProfiles(pending.map(r => r.id)),
+  ]);
+  const recipientByRequest = new Map(recipients.map(r => [r.request_id, r]));
+
   const byId = new Map(snapshots.map((r) => [r.user_id, r.snapshot]));
   const self = byId.get(userId);
   const people: CirclePerson[] = ids.map((id) => {
@@ -26,7 +32,10 @@ export async function loadCircle(userId: string) {
       score: self && snapshot ? computeSyncScore({ selfSnapshot: self, friendSnapshot: snapshot }).score : null,
     };
   });
-  return { people, outgoing: outbound.filter((r) => r.status === 'pending').map((r) => r.to_user_id) };
+  return { people, outgoing: pending.map(row => ({
+    id: row.id, memberId: row.to_user_id, createdAt: row.created_at,
+    alias: recipientByRequest.get(row.id)?.alias || '',
+  })) };
 }
 
 export type Support = { member_id: string; reactions: number; comments: number; boops: number };

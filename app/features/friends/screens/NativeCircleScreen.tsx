@@ -12,7 +12,7 @@ import { PeopleList, type CirclePerson } from '../components/CircleWidgets';
 import { CommunityRankings, PersonalRankings, type PersonalBoard } from '../components/CircleRankings';
 import { DiscoverMembers } from '../components/DiscoverMembers';
 import { APP_INVITE_URL } from '../../../config/branding';
-import { sendFriendRequest } from '../../../services/supabase/friendRequests';
+import { cancelSentFriendRequest, sendFriendRequest } from '../../../services/supabase/friendRequests';
 export default function NativeCircleScreen() {
   const nav = useNavigation<any>();
   const route = useRoute<any>();
@@ -114,7 +114,7 @@ export default function NativeCircleScreen() {
 }
 
 export function AddFriendsScreen() {
-  const { circle, notifications, refreshCircle, circleStatus, respondToRequest } = useSocial();
+  const { id: userId, circle, notifications, refreshCircle, circleStatus, respondToRequest } = useSocial();
   const t = useWidgetTheme();
   const nav = useNavigation<any>();
   const online = useConnectionStore(selectIsOnline);
@@ -140,7 +140,7 @@ export function AddFriendsScreen() {
     try {
       const wanted = [...new Set(ids)].filter(
         (id) =>
-          !circle.outgoing.includes(id) &&
+          !circle.outgoing.some(r => r.memberId === id) &&
           !circle.people.some((p) => p.id === id) &&
           !notifications.friendRequests.some((r) => r.from_user_id === id),
       );
@@ -173,6 +173,22 @@ export function AddFriendsScreen() {
       setSending(false);
     }
   };
+  const cancel = async (requestId: string) => {
+    if (lock.current || !online) return;
+    lock.current = true;
+    setSending(true);
+    report('');
+    try {
+      const cancelled = await cancelSentFriendRequest(requestId, userId);
+      await reload();
+      report(cancelled ? 'Request canceled.' : 'This request is no longer pending.');
+    } catch {
+      report('Couldn’t cancel the request. Try again.');
+    } finally {
+      setSending(false);
+      lock.current = false;
+    }
+  };
   return (
     <ScrollView
       keyboardShouldPersistTaps="handled"
@@ -181,9 +197,12 @@ export function AddFriendsScreen() {
     >
       {message && <AppText accessibilityLiveRegion="polite">{message}</AppText>}
       <FriendRequestsCard
-        requests={notifications.friendRequests}
-        names={notifications.requestProfileMap}
-        status={notifications.requestStatus}
+        incoming={notifications.friendRequests.map(r => ({
+          id: r.id, memberId: r.from_user_id, alias: notifications.requestProfileMap[r.from_user_id]?.alias || '', createdAt: r.created_at,
+        }))}
+        outgoing={circle.outgoing}
+        onCancel={cancel}
+        status={circleStatus === 'ready' ? notifications.requestStatus : circleStatus}
         onRetry={() => void reload()}
         onProfile={open}
         onRespond={respond}

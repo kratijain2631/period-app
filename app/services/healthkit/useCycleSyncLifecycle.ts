@@ -10,10 +10,11 @@ import { useSessionStore } from '../../state/sessionStore';
 
 export const useCycleSyncLifecycle = () => {
   const permissionsGranted = useSessionStore((state) => state.permissions.granted);
+  const setupComplete = useSessionStore(state => state.hasSeenCompanionIntro);
   const session = useSessionStore((state) => state.session);
 
   useEffect(() => {
-    if (!session || !permissionsGranted) {
+    if (!session || !setupComplete || !permissionsGranted) {
       clearCycleSnapshot().catch((error) =>
         console.error('[cycle-sync] Failed to clear snapshot', error),
       );
@@ -49,5 +50,5 @@ export const useCycleSyncLifecycle = () => {
     return () => {
       subscription.remove();
     };
-  }, [permissionsGranted, session]);
+  }, [permissionsGranted, session, setupComplete]);
 };
