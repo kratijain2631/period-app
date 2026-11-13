@@ -189,7 +189,7 @@ Record build, iOS version, affected control and outcome; do not publish personal
 
 ## Design v1.0 TestFlight walkthrough
 
-1. Install version **1.0.17 (38)** from the internal TestFlight group. Use an account that has already finished setup. Cold-launch the app to see the icon and illustrated opening.
+1. Install version **1.0.17 (39)** from the internal TestFlight group. Use an account that has already finished setup. Cold-launch the app to see the icon and illustrated opening.
 2. On Home, open the cycle strip and the upcoming phase to reach the wheel on You. Tap the wheel for phase ranges. Open the phase tip and tap **Refresh tips**. Use a tester with synced cycle data for refresh.
 3. In Feed, open comments, switch to another thread and tap another post body. Confirm the old thread collapses. Post a comment and delete it with the small trash icon. Look at **My posts** at the bottom of You.
 4. In **You → Settings**, open **Manage contact details** and **Post settings**. Enable **Show me in Community rankings**. Return to Circle, check **Largest Circle** and **Loudest Voices**, then turn visibility off. A tester outside the Top 10 can opt in without ranking.
