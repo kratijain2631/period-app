@@ -293,10 +293,10 @@ export const DottieSyncScene = memo(
   ({ color1 = '#C4654A', color2 = '#7BA68F', width = 380, height = 280 }: {
     color1?: string;
     color2?: string;
-    width?: number;
+    width?: number | `${number}%`;
     height?: number;
   }) => (
-    <Svg width={width} height={height} viewBox="0 0 380 280" fill="none" preserveAspectRatio="xMidYMid slice">
+    <Svg width={width} height={height} viewBox="0 100 380 175" fill="none" preserveAspectRatio="xMidYMax meet">
       <Defs>
         <LinearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
           <Stop offset="0%" stopColor="#F0F4F8" />
@@ -347,7 +347,7 @@ export const DottieSyncScene = memo(
       <Circle cx="200" cy="258" r="1" fill="#7BA68F" opacity={0.25} />
       <Circle cx="270" cy="257" r="1.5" fill="#C4654A" opacity={0.2} />
 
-      <G x={125} y={175}>
+      <G x={17} y={175}>
         <Ellipse cx="28" cy="78" rx="16" ry="3.5" fill="#D5D0C9" opacity={0.3} />
         <Path
           d="M28 5 C28 5 10 35 10 48 C10 58.493 18.507 67 28 67 C37.493 67 46 58.493 46 48 C46 35 28 5 28 5Z"
@@ -367,7 +367,7 @@ export const DottieSyncScene = memo(
         <Ellipse cx="33" cy="67" rx="4.5" ry="2" fill={darken(color1, 0.15)} />
       </G>
 
-      <G x={225} y={190}>
+      <G x={308} y={190}>
         <Ellipse cx="22" cy="60" rx="12" ry="3" fill="#D5D0C9" opacity={0.3} />
         <Path
           d="M22 4 C22 4 8 28 8 38 C8 45.732 14.268 52 22 52 C29.732 52 36 45.732 36 38 C36 28 22 4 22 4Z"
@@ -386,13 +386,13 @@ export const DottieSyncScene = memo(
         <Ellipse cx="26" cy="52" rx="3.5" ry="1.8" fill={darken(color2, 0.15)} />
       </G>
 
-      <G x={215} y={208} opacity={0.45}>
+      <G x={299} y={208} opacity={0.45}>
         <Path
           d="M5 2.5 C5 0 3 -0.6 1.5 0.6 C0 1.8 0 3.5 2.5 5.5 L5 7.5 L7.5 5.5 C10 3.5 10 1.8 8.5 0.6 C7 -0.6 5 0 5 2.5Z"
           fill="#C4654A"
         />
       </G>
-      <G x={205} y={200} opacity={0.25}>
+      <G x={290} y={200} opacity={0.25}>
         <Path
           d="M3 1.5 C3 0 1.5 -0.4 0.8 0.4 C0 1 0 2 1.5 3.2 L3 4.5 L4.5 3.2 C6 2 6 1 5.2 0.4 C4.5 -0.4 3 0 3 1.5Z"
           fill="#D4A252"

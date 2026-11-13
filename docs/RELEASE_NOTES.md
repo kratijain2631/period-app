@@ -6,7 +6,12 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## Unreleased
 
+- **One tap opens the full friend profile.** Circle rankings, the friend directory, posts and other member links use the same profile. Under identity and bio, accepted friends see the sync rings, score and confidence, both phases, latest flow gap, 28-day overlap, comparison timelines and suggestions. Boop, confirmed removal and shared updates are on the same page. Removed the “View cycle comparison” button and its separate destination.
+- Friends without paired snapshots still have a profile, friend actions and an empty history state. Pending requests, other members and your own outward profile keep their relationship-appropriate views. [Profile and history screenshots](../design/2026-11-12/friend-profile/README.md).
+
 ## 2026-11-12 — TestFlight build 1.0.21 (build 43)
+
+[Build](https://expo.dev/accounts/kratijain26/projects/period-app/builds/b02c7903-30b0-4df4-9024-d1690f902493) and [upload](https://expo.dev/accounts/kratijain26/projects/period-app/submissions/e1261422-76b6-4df3-9eb2-b2c0ed33b731) finished. Apple confirmed internal testing in Team (Expo) and Dev Team. [Database deployment](https://github.com/kratijain2631/period-app/actions/runs/43359047626) succeeded on staging and production.
 
 [Received requests](../design/2026-11-12/requests-and-comments/received.png) · [Sent requests](../design/2026-11-12/requests-and-comments/sent.png) · [Automatic update with comments](../design/2026-11-12/requests-and-comments/automatic-comments.png).
 

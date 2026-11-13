@@ -63,7 +63,7 @@ The native app and interactive design have four bottom tabs. An outward profile 
 | Edit profile / settings | You flows | Identity and posting preferences in the preview. Native settings also includes account actions and contact details |
 | Sign-in / profile and contact setup / introduction and permissions | Native onboarding | Verified contacts and alias → initial ranking and posting choices → optional Apple Health → Home |
 
-The wheel and full Phase Guide are sections of You. The countdown on Home opens the wheel. Add friends owns discovery and invitations. Received and Sent tabs share a request card. Sent requests support cancellation. Incoming requests also appear directly in Notifications. The member profile links eligible friends to the deeper pair comparison.
+The wheel and full Phase Guide are sections of You. The countdown on Home opens the wheel. Add friends owns discovery and invitations. Received and Sent tabs share a request card. Sent requests support cancellation. Incoming requests also appear directly in Notifications. The member profile renders the full pair comparison inline for accepted friends. Its parent owns navigation and scrolling.
 
 ## Preliminary widget assignments
 
@@ -86,7 +86,7 @@ Each product widget has one primary page. Home reads a small selection from thos
 | Feed | **Notification inbox** · unread indicator, activity and links to subjects | Header bell → secondary Notifications page. Friend requests themselves belong to Circle |
 | Circle | **Most in sync** · top five eligible friends, each shown in the same numbered row format. Friends without scores still appear in the directory | Home top match → Most in sync tab in Circle rankings; each leaderboard row → that person's outward profile |
 | Circle | **Friend directory and identity row** · name, alias, search and available score; more than four matching friends scroll inside the list, with search above it | People shortcut → Circle. Each user row → outward profile |
-| Circle | **Outward profile and pair sync** · shared identity, relationship, available score and shared updates. Native friend detail also has trends, comparisons, suggestions, friend-directed boops and removal | Same member ID from every entry. The viewer's private cycle and settings stay on You |
+| Circle | **Outward profile and pair sync** · shared identity, relationship, available score and shared updates. Accepted friends see trends, comparisons, suggestions, friend-directed boops and confirmed removal directly on this profile | Same member ID from every entry. The viewer's private cycle and settings stay on You |
 | Circle | **Most supportive** · recipient-only ranking of friends’ saved reactions, comments and boops in the last 30 days | Second personal tab beside Most in sync |
 | Circle | **Community rankings** · opt-in global Top 10, shown in four-row scroll areas. Largest Circle counts accepted friends; Loudest Voices counts extant manual posts this UTC month. Aliases open outward profiles | Circle only |
 | Circle | **Friend requests** · scrollable incoming list with Accept/Decline | Add friends and Notifications share the same requests and decisions |
@@ -157,7 +157,7 @@ This table preserves the original design review. The implemented screen boundari
 |---|---|---|
 | [`HomeScreen.tsx`](../app/features/home/screens/HomeScreen.tsx) | Cycle summary, composer/mood tags, combined posts/events feed, reactions/boops, refresh and notification entry | `CycleStatus`, `PostComposer`, `ActivityFeed`, `ActivityItem`, `ReactionBar`, `BoopAction`; move loaders and optimistic mutations into feature controllers |
 | [`FriendsScreen.tsx`](../app/features/friends/screens/FriendsScreen.tsx) | Search, contact discovery, incoming requests, top-five sync ranking, friend list, invite flow | `FriendDiscovery`, `FriendRequestList`, `SyncLeaderboard`, `FriendSummary`, `InviteCircle`; retain a single friend graph owner |
-| [`FriendSyncScreen.tsx`](../app/features/friends/screens/FriendSyncScreen.tsx) | Pair score/confidence, comparison, trends, recommendations, boop, confirmed removal | `PairSyncSummary`, `CycleComparison`, `PairGuidance`, `RelationshipActions`; route owns friend identity, controller owns access |
+| [`PairComparison.tsx`](../app/features/friends/components/PairComparison.tsx) | Pair score/confidence, comparison, trends, recommendations, boop, confirmed removal | `PairSyncSummary`, `CycleComparison`, `PairGuidance`, `RelationshipActions`; route owns friend identity, controller owns access |
 | [`ProfileScreen.tsx`](../app/features/profile/screens/ProfileScreen.tsx) | Avatar/bio editing, cycle details, monthly metrics, guidance, friends-in-sync and settings | `ProfileIdentity`, `CycleStatus`, `CycleMetrics`, `PhaseGuidance`, `CircleSummary`, `SettingsMenu`; keep one canonical You screen |
 | [`PhaseGuide.tsx`](../app/features/profile/components/PhaseGuide.tsx) | Props-based rendering, readable complete advice, title/detail parsing | Good first widget seed; separate hardcoded colors from semantic dos/don’ts roles; keep generation/cache ownership outside it |
 | [`CycleRing.tsx`](../app/components/brand/CycleRing.tsx) | Reusable ring, `SyncRings`, `PhaseAvatar`, `PhaseIndicator` | Separate cycle model from geometry, phase semantics from palette, and semantic widgets from illustration; today this file contains all three |
@@ -269,7 +269,7 @@ Names below describe stable capabilities, not prescribed visible labels or files
 |---|---|---|---|
 | `CircleSummary` / `FriendSummary` | Permitted identity/phase, relationship status, open friend | Home preview, Circle, You | Existing list/profile pieces |
 | `SyncLeaderboard` | Ranked eligible friends, score, confidence/coverage, open pair | Circle; optional compact Home preview | Existing ranking in Friends screen |
-| `PairSyncSummary` / `CycleComparison` | Score/confidence, explanatory metrics, permitted timelines/trends | Friend detail; compact ranking row | Existing Friend Sync screen and algorithm |
+| `PairSyncSummary` / `CycleComparison` | Score/confidence, explanatory metrics, permitted timelines/trends | Friend detail; compact ranking row | Shared comparison presenter and sync score algorithm |
 | `PairGuidance` | Suggestions involving the chosen friend, context/source and appropriate actions | Friend detail, future planning | Existing recommendation service and fallback |
 | `ActivityFeed` / `ActivityItem` | Typed post or published cycle event, actor/date/content, reactions/boops, author actions | Feed with one latest-update preview on Home | Existing Home feed; preserve it through redesign |
 | `PostComposer` / `PostEditor` | Social audience, text/mood draft, validation, submit status; edited marker when supported | Feed composer | Composer exists; editing is planned |
@@ -304,7 +304,7 @@ The page directory and widget assignments above describe the current design. Thi
 | **Feed** | Full activity stream, composer, reactions, boops and entry to Notifications |
 | **Circle** | Two personal ranking tabs → friend directory (Add Friends button) → two Community rankings tabs |
 | **Add friends** | Received and sent requests → member and contact discovery → share/copy invite. Reuse pending requests and relationship decisions in Notifications |
-| **Friend detail** | Friend identity → pair score/confidence → comparison/trends → pair guidance → boop/care → relationship actions. Access revocation takes precedence over cached content |
+| **Member profile (accepted friend)** | Friend identity → pair score/confidence → comparison/trends → pair guidance → boop/care → relationship actions. Access revocation takes precedence over cached content |
 | **You** | Profile identity/editor and outward profile entry → cycle/metrics → full Phase Guide → My posts, with settings accessible in the header. No duplicate Profile screen instance under Home |
 | **Notifications** | Requests + activity grouped by read state; navigation to original subject; shared badge counts. Rendering a row does not itself accept a request or clear history |
 | **Auth / Alias / Intro** | Separate gated workflows using shared fields/buttons/status components. Onboarding owns progression; individual permission steps own explanation and outcome, not global navigation |

@@ -332,13 +332,13 @@ export function InviteCircle() {
 export function OutwardProfile({
   identity,
   relation,
-  score,
+  comparison,
   updates,
   action,
 }: {
   identity: ProfileIdentityModel;
   relation: string;
-  score: number | null;
+  comparison?: ReactNode;
   updates: ReactNode;
   action?: ReactNode;
 }) {
@@ -351,14 +351,7 @@ export function OutwardProfile({
       <ProfileIdentity profile={identity} />
       <AppText style={{ color: t.colors.secondary }}>{relation}</AppText>
       {action}
-      {score !== null && (
-        <Surface style={{ gap: 5, backgroundColor: t.phase.follicular.surface }}>
-          <AppText role="caption">YOUR SYNC WITH {identity.name.toUpperCase()}</AppText>
-          <AppText role="heading" style={{ color: t.colors.success }}>
-            {score}% in sync
-          </AppText>
-        </Surface>
-      )}
+      {comparison}
       {updates && (
         <>
           <AppText role="heading" accessibilityRole="header">

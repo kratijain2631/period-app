@@ -87,10 +87,10 @@ const FeedScreen = () => {
     }
   };
 
-  const navigateToFriendSync = useCallback(
+  const openMemberProfile = useCallback(
     (friendUserId: string) => {
-      (navigation.navigate as (name: string, params?: object) => void)('FriendSync', {
-        friendId: friendUserId,
+      (navigation.navigate as (name: string, params?: object) => void)('MemberProfile', {
+        memberId: friendUserId,
       });
     },
     [navigation],
@@ -167,8 +167,8 @@ const FeedScreen = () => {
             <View style={styles.card}>
               <View style={styles.cardHeader}>
                 <TouchableOpacity
-                  onPress={() => navigateToFriendSync(item.user_id)}
-                  accessibilityLabel={`View sync with ${friendLabel}`}
+                  onPress={() => openMemberProfile(item.user_id)}
+                  accessibilityLabel={`View ${friendLabel}'s profile`}
                 >
                   <Text style={styles.cardTitle}>{friendLabel}</Text>
                   <Text style={styles.cardSubtitle}>

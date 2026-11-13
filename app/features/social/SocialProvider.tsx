@@ -8,7 +8,7 @@ import { loadCircle } from './CircleData';
 function useSocialResources(id: string, alias: string | null) {
   const feed = useActivityFeed(id, alias);
   const notifications = useNotifications();
-  const [circle, setCircle] = useState<Awaited<ReturnType<typeof loadCircle>>>({ people: [], outgoing: [] });
+  const [circle, setCircle] = useState<Awaited<ReturnType<typeof loadCircle>>>({ people: [], snapshots: new Map(), outgoing: [] });
   const [circleStatus, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   const generation = useRef(0);
   const refreshCircle = useCallback(async () => {
@@ -22,7 +22,7 @@ function useSocialResources(id: string, alias: string | null) {
       }
     } catch {
       if (active()) {
-        setCircle({ people: [], outgoing: [] });
+        setCircle({ people: [], snapshots: new Map(), outgoing: [] });
         setStatus('error');
       }
     }

@@ -32,7 +32,7 @@ export async function loadCircle(userId: string) {
       score: self && snapshot ? computeSyncScore({ selfSnapshot: self, friendSnapshot: snapshot }).score : null,
     };
   });
-  return { people, outgoing: pending.map(row => ({
+  return { people, snapshots: byId, outgoing: pending.map(row => ({
     id: row.id, memberId: row.to_user_id, createdAt: row.created_at,
     alias: recipientByRequest.get(row.id)?.alias || '', name: recipientByRequest.get(row.id)?.full_name,
   })) };
