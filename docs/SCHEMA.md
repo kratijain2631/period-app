@@ -32,7 +32,7 @@ The app's Notifications and Add friends screens query the same pending inbound `
 | `cycle_events` | Menstrual/cycle events synced from Apple Health (event type, phase, symptoms, start time). |
 | `cycle_snapshots` | A rolled-up snapshot of the user's current cycle state (whole snapshot as jsonb, incl. predicted `nextPhaseStart`/`nextPhase`). Also a `last_reminded_phase_start` column for the server-side phase reminder dedupe. |
 | `friend_requests` | Friend requests between users (from / to / status). A pair holds at most one: a request is refused if the other person already requested you or is already your friend, and accepting deletes any pending request the other way (`20261113231000_one-request-per-pair.sql`). In the `supabase_realtime` publication so the app gets instant updates. |
-| `friend_sharing` | **Legacy, controls nothing since 20261111180000.** A `has_shared` flag per direction, kept in step with accepted requests (`ensure_friend_sharing`, `remove_friend`) only because older app builds read it for the friends list. |
+| `friend_sharing` | **Legacy, controls nothing since 20261111180000.** A `has_shared` flag per direction, kept in step with accepted requests (`ensure_friend_sharing`, and a trigger that deletes the pair's rows when an accepted request is deleted or un-accepted, `20261114010000`) because older app builds, the `friend-recommendations` job and `notifications-handler` still read it. |
 | `posts` | Feed posts (alias, body, mood tag). In the `supabase_realtime` publication so friends' new posts reach the feed right away. |
 | `post_reactions` | Emoji reactions to posts. |
 | `event_reactions` | Emoji reactions to cycle events. |

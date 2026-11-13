@@ -6,6 +6,7 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## Unreleased
 
+- Ending a friendship now always clears the pair's sharing and paired recommendations, however it ends. Before, deleting the request directly or setting it back to pending left them, so the nightly job kept writing advice about an ex-friend's cycle, and old recommendations stayed readable even after Remove friend. Database: `20261114010000_friendship-end-cleanup.sql`.
 - Paused account email changes in setup, Settings and Auth. The new-address code flow is retained for a future release.
 
 - Phone verification focuses the SMS code field and shows the destination number. Members can resend the code or edit the number. [Code entry preview](../design/2026-11-13/contact-settings/verify-phone.png).
