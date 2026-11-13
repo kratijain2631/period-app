@@ -27,6 +27,8 @@ Open items, roughly in priority order, with completed items retained as a decisi
 
 ## Widget rollout and follow-ups
 
+- [~] Open a dedicated Write a post page from Share an update in the iPhone Feed. 🚧 (WIP — Codex, 2026-11-12)
+
 - [x] Move Settings to its own page, group email/phone change actions under Personal info, put Post settings and ranking visibility under Privacy and permissions, and finish with Sign out and Delete account. Allow enough headroom for the bio mascot at every preview width.
 
 - [x] Preview a thumbnail using Home’s actual waving mascot and match the opening wordmark to Home.
