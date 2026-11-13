@@ -1,9 +1,9 @@
 import { EmailChangeForm, PendingEmail } from '../components/EmailChangeForm';
 import { ContactValue } from '../components/SettingsPage';
 import { useEffect, useRef, useState } from 'react';
-import { AppState, Button, Text, TextInput, View } from 'react-native';
+import { AppState, Button, Text, View } from 'react-native';
 import { supabase } from '../../../services/supabase/client';
-import { normalizeContactPhone } from '../../../services/contacts/phone';
+import { PhoneChangeForm } from '../components/PhoneChangeForm';
 
 type Props = { userId: string; settings?: boolean; onReady?: (ready: boolean) => void };
 
@@ -14,16 +14,12 @@ export default function ContactDetails({ userId, onReady, settings = false }: Pr
   const [verifiedEmail, setVerifiedEmail] = useState('');
   const [pendingEmail, setPendingEmail] = useState('');
   const submitting = useRef(false);
-  const [phone, setPhone] = useState('');
   const [verifiedPhone, setVerifiedPhone] = useState('');
-  const [sentTo, setSentTo] = useState('');
-  const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const [reload, setReload] = useState(0);
   const [loaded, setLoaded] = useState(false);
-  const normalized = normalizeContactPhone(phone);
-  const ready = loaded && !editingEmail && !pendingEmail && !!verifiedEmail && !!normalized && normalized === verifiedPhone;
+  const ready = loaded && !editingEmail && !pendingEmail && !!verifiedEmail && !editingPhone && !!verifiedPhone;
 
   useEffect(() => {
     onReady?.(ready);
@@ -38,12 +34,11 @@ export default function ContactDetails({ userId, onReady, settings = false }: Pr
         if (error || data.user?.id !== userId) throw new Error();
         const user = data.user;
         const confirmed = user.phone_confirmed_at && user.phone ? '+' + user.phone.replace(/^\+/, '') : '';
-        setPhone(confirmed);
         setVerifiedPhone(confirmed);
         setEmail(user.email ?? '');
         setPendingEmail(user.new_email ?? '');
         setEditingEmail(false);
-        setEditingPhone(false);
+        setEditingPhone(!settings && !confirmed);
         setVerifiedEmail(user.email_confirmed_at ? (user.email ?? '') : '');
         setLoaded(true);
         setMessage('');
@@ -54,7 +49,7 @@ export default function ContactDetails({ userId, onReady, settings = false }: Pr
     return () => {
       current = false;
     };
-  }, [userId, reload]);
+  }, [userId, reload, settings]);
 
   useEffect(() => {
     if (!pendingEmail || editingEmail) return;
@@ -85,8 +80,8 @@ export default function ContactDetails({ userId, onReady, settings = false }: Pr
     return () => { active = false; clearInterval(timer); listener.remove(); };
   }, [pendingEmail, editingEmail, userId]);
 
-  async function submit(action: 'email' | 'send' | 'verify') {
-    if (submitting.current) return;
+  async function submit(action: 'email' | 'send' | 'verify', phone = '', token = '') {
+    if (submitting.current) return false;
     submitting.current = true;
     setBusy(true);
     setMessage('');
@@ -108,28 +103,22 @@ export default function ContactDetails({ userId, onReady, settings = false }: Pr
           throw new Error('Could not start the email change. Check the address and try again.');
         }
         setEditingEmail(false);
-      } else if (normalized && action === 'send') {
-        const response = await supabase.auth.updateUser({ phone: normalized });
+      } else if (action === 'send') {
+        const response = await supabase.auth.updateUser({ phone });
         if (response.error) throw response.error;
-        setCode('');
-        setSentTo(normalized);
-        setMessage('Enter the code sent to your phone.');
-      } else if (normalized && sentTo === normalized) {
-        const response = await supabase.auth.verifyOtp({
-          type: 'phone_change',
-          phone: normalized,
-          token: code.trim(),
-        });
+      } else {
+        const response = await supabase.auth.verifyOtp({ type: 'phone_change', phone, token });
         if (response.error) throw response.error;
         if (response.data.user?.id !== userId) throw new Error('Account changed. Reopen setup.');
-        setSentTo('');
         setReload((value) => value + 1);
       }
+      return true;
     } catch (err) {
       const code = err && typeof err === 'object' && 'code' in err ? err.code : null;
       setMessage(code === 'email_address_not_authorized'
         ? 'Email delivery is unavailable for this address right now. Your current email is unchanged.'
         : err instanceof Error ? err.message : 'Could not verify details. Try again.');
+      return false;
     } finally {
       submitting.current = false;
       setBusy(false);
@@ -182,66 +171,14 @@ export default function ContactDetails({ userId, onReady, settings = false }: Pr
           } : undefined}
         />
       )}
-      {settings && !editingPhone ? (
-        <ContactValue
-          label="Phone number"
-          value={verifiedPhone}
-          onChange={() => {
-            setEditingPhone(true);
-            setPhone('');
-            setSentTo('');
-            setCode('');
-            setMessage('');
-          }}
-        />
+      {editingPhone ? (
+        <PhoneChangeForm currentPhone={verifiedPhone} busy={busy}
+          onEdit={() => setMessage('')} onSend={phone => submit('send', phone)}
+          onVerify={(phone, code) => void submit('verify', phone, code)}
+          onCancel={() => { setEditingPhone(false); setMessage(''); }} />
       ) : (
-        <>
-          <Text>Phone number with country code</Text>
-          <TextInput
-            accessibilityLabel="Phone number with country code"
-            placeholder="+1 212 555 0123"
-            keyboardType="phone-pad"
-            value={phone}
-            editable={!busy}
-            onChangeText={(value) => {
-              setPhone(value);
-              setSentTo('');
-              setMessage('');
-            }}
-          />
-          {normalized && normalized === verifiedPhone ? (
-            <Text>Phone verified</Text>
-          ) : (
-            <>
-              <Button
-                title={sentTo ? 'Resend text' : 'Text me a code'}
-                disabled={busy || !normalized}
-                onPress={() => submit('send')}
-              />
-              {sentTo ? (
-                <>
-                  <TextInput
-                    accessibilityLabel="Verification code"
-                    placeholder="Verification code"
-                    keyboardType="number-pad"
-                    textContentType="oneTimeCode"
-                    value={code}
-                    onChangeText={setCode}
-                    editable={!busy}
-                  />
-                  <Button
-                    title="Verify code"
-                    disabled={busy || !code.trim()}
-                    onPress={() => submit('verify')}
-                  />
-                </>
-              ) : null}
-            </>
-          )}
-          {settings && editingPhone && (
-            <Button disabled={busy} title="Cancel phone change" onPress={() => setReload((v) => v + 1)} />
-          )}
-        </>
+        <ContactValue label="Phone number" value={verifiedPhone}
+          onChange={() => { setEditingPhone(true); setMessage(''); }} />
       )}
       {message ? <Text accessibilityLiveRegion="polite">{message}</Text> : null}
     </View>

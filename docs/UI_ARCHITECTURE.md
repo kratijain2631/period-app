@@ -54,7 +54,7 @@ The native app and interactive design have four bottom tabs. An outward profile 
 | Feed | Bottom tab | Updates, publishing and responses to updates |
 | Circle | Bottom tab | Personal rankings, searchable friend directory and opt-in community rankings |
 | Add friends | Secondary page, only from the Add Friends button beside Friends | Friend requests, Discover friends and Grow your circle |
-| Settings | Secondary page from You | Personal info contains email and phone with individual change actions. Privacy and permissions contains Post settings, Community rankings visibility and cycle data erasure/reconnection. Sign out and Delete account follow. |
+| Settings | Secondary page from You | Personal info contains email and phone with individual change actions. The shared phone editor has separate boxes for the calling code (default +1) and national number. Privacy and permissions contains Post settings, Community rankings visibility and cycle data erasure/reconnection. Sign out and Delete account follow. |
 | You | Bottom tab | Private identity editing, cycle, monthly recap, full Phase Guide, My posts and settings |
 | Notifications | Secondary page, opened by the bell | One chronological list (oldest first) of activity and incoming requests with inline Accept/Decline. Identified senders open profiles |
 | Member profile | Secondary page, one route parameterized by member ID | Open any person from a ranking, directory, request, search result, feed author or notification. Tap your name on You to open your own outward profile. Show identity and bio, relationship actions, eligible pair sync and shared updates visible to this viewer |
