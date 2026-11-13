@@ -6,9 +6,13 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## Unreleased
 
+## 2026-11-13 — TestFlight build 1.0.23 (build 45)
+
+The [database deployment](https://github.com/kratijain2631/period-app/actions/runs/43467339668) applied the author lookup to staging, passed 76 staging access checks and applied it to production. All 186 app tests, native and preview type checks and the iOS bundle export passed. [Staging and remaining iPhone checks](TESTING.md#staging-qa-2026-11-13).
+
 **Design and member identity**
 
-- Feed, Home and member updates resolve each author by the member ID that opens their profile. Written and automatic updates show the friend’s current name, alias fallback and visible avatar. Your posts retain “You” and use your name’s initial when there is no photo. The comparison ring uses the same signed-in identity.
+- Feed, Home and member updates resolve each author by the member ID that opens their profile. Written and automatic updates show the friend’s current name, alias fallback and visible avatar. Your posts retain “You” and use your name’s initial when there is no photo. The comparison ring uses the same signed-in identity. Two staging accounts verified the feed initials, profile destinations and revocation after removing a friend.
 
 **Email, phone and verification**
 
@@ -22,7 +26,7 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 **Friend discovery and requests**
 
 - **Find from contacts** goes back to its normal label when matches are cleared, for example after returning from Settings. One tap now searches again; before, the first tap only hid an empty panel. The filter, selection count and Send button appear only when there are matches, so denied access shows just the notice. "Contacts access updated" appears only after returning from Settings or the permission sheet, not on every return to the app, and now also after the two-step iOS contacts sheet.
-- Real staging sessions matched an opted-in test account by confirmed email, by a preverified fictional phone number and by both together with one result. Opting out hid the match. Sending, canceling, resending and accepting requests updated both accounts.
+- Real staging sessions matched an opted-in test account by confirmed email, by a preverified fictional phone number and by both together with one result. Opting out hid the match. After both email confirmations, the new address replaced the old one in discovery. Sending, canceling, resending and accepting requests updated both accounts.
 
 **Posting, comments and rankings**
 

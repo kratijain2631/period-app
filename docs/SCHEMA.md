@@ -105,3 +105,5 @@ Raw `cycle_snapshots` and `cycle_events` rows are owner-only. Friends must use t
 - Whether another project (e.g. the original collaborator's) matches is only guaranteed if it was built from these same migrations with no out-of-band dashboard changes — see [LEARNINGS.md](LEARNINGS.md).
 
 **Nightly guidance retirement applied to staging and production (2026-11-12):** `20261111211000_retire-nightly-cycle-guidance.sql` removes only the named cron job. Owner confirms 1.0.15 adoption and refresh success; older-client loss of fresh advice is accepted. Tables, saved guidance, RPCs/functions and the daily reminder remain. [Database deploy run 43274996960](https://github.com/kratijain2631/period-app/actions/runs/43274996960) applied `20261111211000` to staging, passed all 75 staging access checks, then applied production. Post-deploy read-only metadata confirms nightly guidance absent and `daily-phase-change-reminder` active at 15:00 UTC in both projects.
+
+Migration `20261113120100` was applied on staging and production by [Database deploy](https://github.com/kratijain2631/period-app/actions/runs/43467339668) after 76 staging checks passed.
