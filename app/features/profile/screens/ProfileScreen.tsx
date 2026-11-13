@@ -27,6 +27,7 @@ import { selectAlias, selectSession, useSessionStore } from '../../../state/sess
 import { fetchCurrentUserProfile, updateCurrentUserProfile } from '../../../services/supabase/users';
 import { usePhaseGuidance } from '../hooks/usePhaseGuidance';
 import { guidanceMatchesPhase, resolvePhaseGuidance } from '../../../../packages/domain/cycles/guidance';
+import { countPeriods } from '../../../../packages/domain/cycles/models';
 import { useCycleSnapshot } from '../../feed/hooks/useCycleSnapshot';
 import { generateAvatarImage, uploadAvatarBlob } from '../../../services/supabase/avatars';
 import { brand, brandType } from '../../../theme/brand';
@@ -391,7 +392,10 @@ const ProfileScreen = () => {
             <CycleMetrics
               month={new Date().toLocaleDateString(undefined, { month: 'long' })}
               metrics={[
-                { label: 'Cycle length', value: overview.cycleLength ? overview.cycleLength + 'd' : '—' },
+                {
+                  label: 'Cycle length',
+                  value: overview.cycleLength && countPeriods(snapshot.samples) >= 2 ? overview.cycleLength + 'd' : '—',
+                },
                 {
                   label: 'Period length',
                   value: snapshot.periodLengthDays ? snapshot.periodLengthDays + 'd' : '—',

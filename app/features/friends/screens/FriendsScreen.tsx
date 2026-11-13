@@ -140,7 +140,7 @@ const FriendsScreen = () => {
                 selfSnapshot: selfSnapshotValue,
                 friendSnapshot,
               });
-              return [friendId, summary.score] as const;
+              return [friendId, summary?.score ?? null] as const;
             } catch (error) {
               console.warn('[friends] Failed to compute sync score', error);
               return [friendId, null] as const;

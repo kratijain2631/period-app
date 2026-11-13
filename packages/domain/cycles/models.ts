@@ -525,6 +525,10 @@ type CycleDaySnapshot = Partial<
   Pick<CycleSnapshot, 'samples' | 'latestSampleStart' | 'cycleLengthDays'>
 >;
 
+// Number of separate periods (runs of consecutive flow days) in the samples.
+// Cycle length is only measured from two or more; with fewer it's the default.
+export const countPeriods = (samples: readonly CycleSample[]) => buildFlowRuns(samples).length;
+
 // First flow day of the most recent period. `latestSampleStart` is the *last* flow
 // sample, so it's only a fallback for snapshots that carry no samples.
 export const getLatestPeriodStart = (snapshot?: CycleDaySnapshot | null): Date | null => {
