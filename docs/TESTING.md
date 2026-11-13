@@ -142,3 +142,9 @@ Use the staging development client for repeatable checks. Start it with `npm run
 Record build, iOS version, tester aliases, and observed outcomes. Leave phone numbers and verification codes out of GitHub.
 
 2026-11-12 — [1.0.17 release run](https://github.com/kratijain2631/period-app/actions/runs/43318041600) passed TypeScript and all 155 Jest tests. The two dedicated staging accounts signed in and passed phone-only, email-only, combined/deduplicated, caller independence and opt-out lookups. The release job stopped before starting EAS because the GitHub Actions repository secret `EXPO_TOKEN` was missing. After configuring the secret, re-run failed jobs on that run. SMS delivery and physical-device checks remain pending.
+
+## Owner feedback and offline feed — 2026-11-12
+
+Owner confirms 1.0.16 install and successful force-close/offline alias retest; DSA declaration reported resolved. Home’s empty-feed presentation now prioritizes the existing offline state over loading/empty copy. Code review confirms already loaded feed items remain visible; 155 Jest tests, TypeScript and the iOS JavaScript/Hermes export pass. No new low-impact copy-only unit test was added. Native feed rendering still requires a device check because no simulator runtime is installed locally.
+
+A separate isolated staging check used two temporary real-JWT accounts with the exact build-37 email RPC, confirming matches before friendship, while accepted and after removal, wrong-email exclusion and opt-out. Both accounts/data were deleted. No real contacts or production test writes. Owner’s Full Access positive-match case with Shaan remains open until his account email and discovery preference are confirmed.

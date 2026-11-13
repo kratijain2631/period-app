@@ -6,6 +6,15 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## Unreleased
 
+### Fixed
+
+- **Offline empty feed has an offline state.** When disconnected and there are no visible updates, Home shows “You’re offline” and reconnect guidance instead of “No updates yet” or an indefinite loading message. Existing feed items remain visible. Uses the current connection store; no backend or queue behavior changes. 155 Jest tests, TypeScript and the iOS JavaScript export pass. Requires the next native build; not in installed 1.0.16.
+
+### Verification
+
+- **Owner confirms 1.0.16 installed, force-close/offline alias retest passes, and DSA is resolved (2026-11-12).** Closed those follow-ups while retaining the future EU launch reassessment and extended phone checks.
+- **Contact mismatch narrowed, not closed.** Shaan’s card originally contained only a phone number; adding an email and relaunching with Full Access still gives no match on 1.0.16. Exact account-email equality and his discovery opt-in are unconfirmed. Two isolated staging accounts verified the legacy email lookup before friendship, while accepted and after removal, plus wrong-email/opt-out exclusion; accounts/data removed. Phone/email support is already documented under the separate 1.0.17 candidate, whose build/SMS gates remain open.
+
 ### Verification and work in progress
 
 - **Owner feedback (2026-11-12, 1.0.16 installed):** force-close/offline alias retest passes and DSA declaration is reported resolved. Offline empty-feed copy is being corrected; missing contact match for Shaan remains under investigation. Phone/email support is documented in the separate 1.0.17 candidate, not in installed 1.0.16.
