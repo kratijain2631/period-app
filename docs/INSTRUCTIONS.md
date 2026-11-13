@@ -30,6 +30,7 @@ Before working on this project, read the docs linked from the [README](../README
 - **[UI_ARCHITECTURE.md](UI_ARCHITECTURE.md)** — before changing a screen, identify its widgets, primary destination and actions in the [page directory](UI_ARCHITECTURE.md#page-directory). Keep data and behavior, widget contracts, screen composition and theme separate. Consult the [v1.0 screen index](../design/2026-11-12/v1.0/README.md) for the dated visual reference. Home links to compact previews; change the presentation or shared tokens without duplicating the underlying logic. Update the directory when moving a widget or adding a page.
 - **[FEATURES.md](FEATURES.md)** — the product/feature backlog.
 - **[BUGS.md](BUGS.md)** — known open bugs.
+- **[LAUNCH_AUDIT.md](LAUNCH_AUDIT.md)** — what remains before a public App Store release (tracker).
 - **[RELEASE_NOTES.md](RELEASE_NOTES.md)** — what shipped in each build.
 - **[TODO.md](TODO.md)** — operational/shipping tasks.
 - **[TESTING.md](TESTING.md)** — how to test a change: which backend each run mode uses, staging, the test personas and the simulator.

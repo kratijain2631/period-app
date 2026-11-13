@@ -4,7 +4,7 @@ import {
   deriveSnapshot,
   type CycleSample,
 } from '../../../../../packages/domain/cycles/models';
-import { selectCycleOverview } from '../cycleOverview';
+import { lateLabel, selectCycleOverview } from '../cycleOverview';
 
 const sample = (day: number, month = 2): CycleSample => ({
   id: `${month}-${day}`,
@@ -65,4 +65,20 @@ it('qualifies retained data when a refresh read fails', () => {
     stale: true,
     upcoming: null,
   });
+});
+it('shows an overdue cycle past its length with the marker held on the last day', () => {
+  const lateNow = new Date(2026, 3, 2, 12); // 32 days after the period started on March 1
+  const model = selectCycleOverview({ snapshot: deriveSnapshot(samples, lateNow.toISOString()), now: lateNow });
+  expect(model).toMatchObject({
+    state: 'ready',
+    phase: 'pms',
+    currentDay: 33,
+    cycleLength: 28,
+    daysLate: 4,
+    markerMatchesPhase: true,
+    upcoming: null,
+  });
+  expect(lateLabel(model.daysLate)).toBe('Period expected 4 days ago');
+  expect(lateLabel(0)).toBe('Period expected today');
+  expect(lateLabel(null)).toBeNull();
 });
