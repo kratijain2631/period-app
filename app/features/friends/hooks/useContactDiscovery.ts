@@ -21,15 +21,20 @@ export const useContactDiscovery = (userId: string | undefined, isFocused: boole
   const [contactMatches, setContactMatches] = useState<ContactMatch[]>([]);
   const [contactNotice, setContactNotice] = useState<string | null>(null);
   const [isFindingContacts, setFindingContacts] = useState(false);
+  // Open from a Find tap until matches are invalidated, so the UI never offers to hide stale results.
+  const [isContactLookupOpen, setContactLookupOpen] = useState(false);
   const [isContactDiscoverable, setContactDiscoverable] = useState(false);
   const [isUpdatingDiscoverability, setUpdatingDiscoverability] = useState(false);
   const lookupVersion = useRef(0);
   const preferenceVersion = useRef(0);
+  // Set while Settings or the permission sheet may background the app, so the return explains itself.
+  const leftForAccessChange = useRef(false);
 
   const invalidateLookup = useCallback(() => {
     lookupVersion.current += 1;
     setContactMatches([]);
     setFindingContacts(false);
+    setContactLookupOpen(false);
   }, []);
 
   useEffect(() => {
@@ -43,6 +48,7 @@ export const useContactDiscovery = (userId: string | undefined, isFocused: boole
 
     const refreshPermission = async (returningFromSettings = false) => {
       invalidateLookup();
+      leftForAccessChange.current = false;
       const version = lookupVersion.current;
       try {
         const permission = await withDeadline(getContactDiscoveryPermission());
@@ -67,7 +73,7 @@ export const useContactDiscovery = (userId: string | undefined, isFocused: boole
       }
     });
     const subscription = AppState.addEventListener('change', (state) => {
-      if (state === 'active') void refreshPermission(true);
+      if (state === 'active') void refreshPermission(leftForAccessChange.current);
       else invalidateLookup();
     });
     return () => {
@@ -81,6 +87,7 @@ export const useContactDiscovery = (userId: string | undefined, isFocused: boole
     if (!userId || !isFocused || isFindingContacts) return;
     invalidateLookup();
     const version = lookupVersion.current;
+    setContactLookupOpen(true);
     setFindingContacts(true);
     setContactNotice('Checking the contacts you have allowed…');
     try {
@@ -88,7 +95,9 @@ export const useContactDiscovery = (userId: string | undefined, isFocused: boole
       if (version !== lookupVersion.current) return;
       if (permission === 'undetermined') {
         // The native sheet can background the app; require a fresh explicit lookup afterward.
+        leftForAccessChange.current = true;
         permission = await withDeadline(requestContactDiscoveryPermission());
+        if (version === lookupVersion.current) leftForAccessChange.current = false;
       }
       if (version !== lookupVersion.current) return;
       setContactPermission(permission);
@@ -112,10 +121,16 @@ export const useContactDiscovery = (userId: string | undefined, isFocused: boole
     }
   }, [invalidateLookup, isFindingContacts, isFocused, userId]);
 
+  const closeContactLookup = useCallback(() => {
+    invalidateLookup();
+    setContactNotice(null);
+  }, [invalidateLookup]);
+
   const handleContactSettings = useCallback(async () => {
     invalidateLookup();
     const version = lookupVersion.current;
     setContactNotice('Choose Contacts access in Settings, then return and tap Find Contacts.');
+    leftForAccessChange.current = true;
     try {
       // iOS contactAccessPicker can present an invisible sheet and swallow taps:
       // https://github.com/expo/expo/issues/46977. Settings works for limited and denied access.
@@ -145,8 +160,8 @@ export const useContactDiscovery = (userId: string | undefined, isFocused: boole
   }, [isFocused, isUpdatingDiscoverability, userId]);
 
   return {
-    contactPermission, contactMatches, contactNotice, isFindingContacts,
+    contactPermission, contactMatches, contactNotice, isFindingContacts, isContactLookupOpen,
     isContactDiscoverable, isUpdatingDiscoverability,
-    handleFindContacts, handleContactSettings, handleDiscoverabilityChange,
+    handleFindContacts, closeContactLookup, handleContactSettings, handleDiscoverabilityChange,
   };
 };
