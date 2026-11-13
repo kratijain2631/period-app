@@ -40,6 +40,7 @@ const config: ExpoConfig = {
   name: APP_NAME,
   slug: SLUG,
   version: '1.0.17',
+  icon: './app/components/brand/assets/app-icon.png',
   orientation: 'portrait',
   userInterfaceStyle: 'light',
   scheme: SCHEME,

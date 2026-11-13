@@ -73,6 +73,11 @@ const rows: Row[] = [
   { name: 'a friend sees the victim\'s shared cycle events', as: 'friend', op: 'rpc', fn: 'shared_cycle_events', args: { max_rows: 200 }, field: 'user_id', expect: 'allowed' },
   { name: 'a stranger sees none of the victim\'s shared cycle events', as: 'stranger', op: 'rpc', fn: 'shared_cycle_events', args: { max_rows: 200 }, field: 'user_id', expect: 'hidden' },
 
+  { name: 'a stranger cannot see private post comments', as: 'stranger', op: 'select', table: 'post_comments', owner:'user_id', expect:'hidden' },
+  { name: 'a friend can comment on a visible post', as:'friend', op:'insert',table:'post_comments',row:{post_id:{rowOf:'posts'},body:'Matrix friend comment'},expect:'allowed' },
+  { name: 'a stranger cannot comment on a private post', as:'stranger',op:'insert',table:'post_comments',row:{post_id:{rowOf:'posts'},body:'Matrix denied comment'},expect:'denied' },
+  { name: 'a friend cannot remove another author’s comment', as:'friend',op:'delete',table:'post_comments',setup:{post_id:{rowOf:'posts'},user_id:'victim',body:'Matrix protected comment'},where:{body:'Matrix protected comment'},expect:'hidden' },
+
   // profiles and search
   { name: 'a friend can read the victim\'s name', as: 'friend', op: 'rpc', fn: 'friend_profiles', args: { friend_ids: ['victim'] }, field: 'friend_id', expect: 'allowed' },
   { name: 'a stranger cannot read the victim\'s name', as: 'stranger', op: 'rpc', fn: 'friend_profiles', args: { friend_ids: ['victim'] }, field: 'friend_id', expect: 'hidden' },

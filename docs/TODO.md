@@ -25,6 +25,23 @@ Open items, roughly in priority order, with completed items retained as a decisi
   - [x] Owner confirms 1.0.15 is installed, all important users updated, successful Refresh tips and in-session airplane-mode refresh retains advice (2026-11-12). This confirms availability to the tested group, not every external tester.
   - [ ] Complete remaining phone checks: account/phase changes, VoiceOver/Dynamic Type, HealthKit and two-device concurrency. Cold-start offline testing found the separate alias bug above. Owner reports DSA resolved; no simulator runtime is installed.
 
+## Widget rollout and follow-ups
+
+- [x] Record every design request in the [release notes](RELEASE_NOTES.md) and [widget inventory](UI_ARCHITECTURE.md#page-directory). The [versioned design gallery](../design/2026-11-12/v1.0/README.md) includes the 1024 px thumbnail, opening page, every preview page, sample profiles and button destinations.
+- [x] Put the small cycle preview on Home, the full wheel and Phase Guide on You, and link Home previews to their owners. Show phase ranges on press/hover, keep the ring legible at 320 px, retain guidance refresh and use the two-line mixed-font tagline.
+- [x] Finish You with My posts. Keep contact details and posting preferences in Settings, add the Community rankings visibility switch, and remove duplicate Circle, upcoming, check-in and profile callouts.
+- [x] Add post comments, compact own-comment deletion, automatic collapse on another post and refreshed support/post ranking counts after deletion.
+- [x] Give friends a four-row scrolling list, incoming requests their own scroll box, matched contacts checkboxes and five-person batches, pending/accepted states and stacked invite actions. Add Friends, Notifications and outward profiles open outside the bottom tabs.
+- [x] Give both Circle rankings consistent numbered rows and tabs. Link the Home match to Most in sync, use a scrolling Top 10 for both Community rankings, and refresh relevant boards when friendships change.
+
+- [ ] **Settings: update and re-verify contact information.** Exercise changes to email and phone from You → Settings → Manage contact details on a staging iPhone: confirmation links, SMS, resend/expiry, cancelled changes, the new verified match and retirement of the old match. Add an explicit re-verification flow for an unchanged contact if needed; today the form verifies replacements.
+
+- [x] Implement the illustrated four-tab app and extract reusable theme-independent cycle, feed, profile and Circle widgets. Record primary owners and secondary destinations in the [widget directory](UI_ARCHITECTURE.md#page-directory).
+- [x] Implement recipient-only support rankings, opt-in global Top 10 rankings, request handling in Notifications and the Add friends flow. Refresh affected scores on post deletion.
+- [ ] Run the [widget smoke check](TESTING.md#widget-and-circle-smoke-check) on a signed-in staging iPhone before release. Verify the new RPCs, visible changes across two accounts, VoiceOver, large type, narrow screens, contacts permissions and invite sharing.
+- [ ] **Instagram Stories:** prototype the explicit export from your own written post; test preview, missing Instagram, cancellation, return and image saving on iPhone. See [feature scope](FEATURES.md#sharing-and-community-recognition).
+- [ ] Pilot Top 10 with testers. Try private rank/milestones and distinct posting days; evaluate unwanted requests and whether a newcomer can reach the board. Verify post commenting and deletion from Feed and member profiles on-device; confirm both accounts see updated friendship counts.
+
 ## 🎯 Phase Guide — implementation/backend complete; finish native rollout
 - [~] **Redesign how the "You" page do's/don'ts (cycle guidance) get generated.** 🚧 (WIP — Codex, 2026-11-03; content/cards complete; SQL + function deployed, 1.0.15 (36) built and uploaded; important users confirmed updated; extended device verification pending). Fixes the "No guidance yet" bug ([BUGS.md](BUGS.md)) at the design level, not just by babysitting a cron.
   - **2026-11-03 implementation:** immediate local fallback for every phase (including no Health data); authenticated `request-cycle-guidance` generates on page focus, caches against phase + `currentPhaseStart`, and uses caller-scoped claim/complete RPCs with a two-minute lease. Old-phase/old-cycle guidance is hidden, overlapping client calls coalesce, and account changes/late responses cannot replace the current user's tips. AI failures leave fallback visible and are not cached as AI results.

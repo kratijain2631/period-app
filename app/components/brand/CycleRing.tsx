@@ -2,6 +2,7 @@ import { memo, useEffect, useMemo, useRef } from 'react';
 import { Animated, Easing, Image, StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle, Path } from 'react-native-svg';
 import { useIsFocused } from '@react-navigation/native';
+import { resolvePhaseTone } from '../../theme/brand';
 
 export const PHASES = [
   { name: 'menstruation', label: 'Menstruation', color: '#C4654A', lightBg: '#FFF0EB', days: 5 },
@@ -16,10 +17,10 @@ const AnimatedPath = Animated.createAnimatedComponent(Path);
 const normalizePhase = (value?: string | null) => (value ?? 'unknown').toLowerCase();
 
 export const getPhaseColor = (phase?: string | null) =>
-  PHASES.find((item) => item.name === normalizePhase(phase))?.color ?? '#6B8DB5';
+  resolvePhaseTone(phase).color;
 
 export const getPhaseBg = (phase?: string | null) =>
-  PHASES.find((item) => item.name === normalizePhase(phase))?.lightBg ?? '#EEF3F8';
+  resolvePhaseTone(phase).background;
 
 const polarToCartesian = (cx: number, cy: number, radius: number, angleDeg: number) => {
   const rad = ((angleDeg - 90) * Math.PI) / 180;
@@ -574,7 +575,7 @@ export const SyncRings = memo(
 
 export const PhaseIndicator = memo(({ phase }: { phase?: string | null }) => {
   const color = getPhaseColor(phase);
-  const label = PHASES.find((item) => item.name === normalizePhase(phase))?.label ?? 'Unknown';
+  const label = resolvePhaseTone(phase).label;
 
   return (
     <View style={[styles.phasePill, { backgroundColor: `${color}12` }]}> 

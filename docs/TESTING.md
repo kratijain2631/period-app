@@ -149,6 +149,24 @@ Owner confirms 1.0.16 install and successful force-close/offline alias retest; D
 
 A separate isolated staging check used two temporary real-JWT accounts with the exact build-37 email RPC, confirming matches before friendship, while accepted and after removal, wrong-email exclusion and opt-out. Both accounts/data were deleted. No real contacts or production test writes. Owner’s Full Access positive-match case with Shaan remains open until his account email and discovery preference are confirmed.
 
+
+## Widget and Circle smoke check
+
+Use two staging accounts and a third unrelated viewer after applying the migration. The local [four-tab fixture preview](../design-mocks/home-widgets/README.md) exercises navigation, responsive states and appearance without sending anything to the backend.
+
+1. Request a friendship. Open the recipient’s bell, then tap Add Friends beside the friend directory. Confirm the same request appears in both; accept in one, then verify it disappears from both and from contact suggestions. Repeat with Decline. Background and reopen the app during a request.
+2. Select up to five permitted contact matches, including a pending or incoming match. Check that only eligible selections can be sent and the remaining rows still work after a partial failure. Test limited contacts permission, exact phone and email lookup, Share and Copy on iPhone.
+3. Opt in to the community boards. Create a post and react, comment and boop from a second accepted account. Delete a comment; check the 30-day support count drops by one. Remove/re-accept the friend and check personal eligibility and Largest Circle without changing post totals. Delete the qualifying post and revisit both personal and global boards: the post and its associated support disappear, friendship and cycle sync do not change. Opt out and confirm the alias leaves the boards for the other viewer. Repeat with an empty board.
+4. Follow Home previews to Feed, the inline guide/wheel in You and Circle rankings. Open a profile as self, friend and stranger, and revisit after unfriending. Confirm a stranger cannot see the bio, updates or health information. Test 320 px, large text, VoiceOver, tab focus and the posting keyboard.
+
+Local verification (2026-11-12): all 179 app tests passed; TypeScript passed for native and preview, and the iOS JavaScript bundle exported. The preview confirmed accepting a sample request in Notifications adds the sender to Friends and removes the request from Add friends. No iPhone simulator runtime was installed.
+
+Automated coverage includes cycle range/empty-state selectors, request subscriptions and response races, shared feed mutation failures and deletion, and the transaction in `supabase/tests/circle-rankings.sql` exercised in the disposable database security checks. The iOS JavaScript export does not replace a signed-in device run.
+
+## Illustrated preview · 2026-11-12
+
+[Design v1.0](../design/2026-11-12/v1.0/README.md) records 118 browser screenshots with local sample accounts. Checked contact-setting screens and simulated email/SMS confirmation, Community rankings visibility off and on, scrollable lists to rank ten, one open comment thread, small comment deletion, composer, notifications and guidance refresh. The iOS JavaScript bundle exported locally. Signed-in device testing and real contact confirmation remain pending.
+
 ## Requested contact QA results - 2026-11-12
 
 Baseline `8b8bb8e6`: two new isolated staging accounts signed in with real JWTs. v2 tests passed for phone only, email only, both returning one row, default-off/target opt-in, caller searching while undiscoverable, target opt-out/persisted readback, and changed confirmed phone/email invalidating old matches. Normal current-user Auth readback returned the changed details. **Confirmation and identifier changes were simulated with the Admin API.** This proves matching/readback after changes, not native contact-detail updates or SMS/email delivery. Both accounts/data deleted; shared personas and circleqa pair untouched. No actual contacts, Health data or production test writes.
@@ -168,3 +186,14 @@ Use your existing real account and Health records on TestFlight; synthetic Healt
 | Real Health sync | Health > profile picture > Privacy > Apps > this app; enable the cycle categories you want it to read. Return to this app, open You and compare the sync status and cycle data with your existing Health records. | Recent sync status and period-derived dates/day count agree with existing records. Phase labels remain this app's estimates. [Apple Health permissions](https://support.apple.com/en-us/108779). |
 
 Record build, iOS version, affected control and outcome; do not publish personal Health records, contact addresses, numbers or codes.
+
+## Design v1.0 TestFlight walkthrough
+
+1. Install version **1.0.17 (38)** from the internal TestFlight group. Use an account that has already finished setup. Cold-launch the app to see the icon and illustrated opening.
+2. On Home, open the cycle strip and the upcoming phase to reach the wheel on You. Tap the wheel for phase ranges. Open the phase tip and tap **Refresh tips**. Use a tester with synced cycle data for refresh.
+3. In Feed, open comments, switch to another thread and tap another post body. Confirm the old thread collapses. Post a comment and delete it with the small trash icon. Look at **My posts** at the bottom of You.
+4. In **You → Settings**, open **Manage contact details** and **Post settings**. Enable **Show me in Community rankings**. Return to Circle, check **Largest Circle** and **Loudest Voices**, then turn visibility off. A tester outside the Top 10 can opt in without ranking.
+5. With a second existing account, send a friend request, accept it from Notifications and open the sender’s profile. On Circle, scroll past four friends, switch personal ranking tabs, and scroll the community boards to tenth place when enough testers opt in. Verify relevant scores after a comment, post deletion or friendship change.
+6. Try larger text and VoiceOver. Report the screen, action, expected result, actual result, iOS version and build number. Keep any private health or contact data out of shared screenshots.
+
+Live SMS verification, new-account setup and Shaan’s contact match have separate follow-up work. Browser verification uses synthetic contacts.

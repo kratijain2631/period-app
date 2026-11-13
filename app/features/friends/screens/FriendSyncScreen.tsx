@@ -1,3 +1,4 @@
+import {useSocial} from '../../social/SocialProvider';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
@@ -105,6 +106,7 @@ const FlowGapSparkline = ({
 const FriendSyncScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
+  const {refreshCircle,feed}=useSocial();
   const session = useSessionStore(selectSession);
   const isOnline = useConnectionStore(selectIsOnline);
   const [syncScore, setSyncScore] = useState<SyncScoreSummary | null>(null);
@@ -546,6 +548,7 @@ const FriendSyncScreen = () => {
             setRemoving(true);
             try {
               await removeFriend(friendId);
+              await Promise.all([refreshCircle(),feed.reload()]);
               (navigation as any).goBack();
             } catch (error) {
               console.warn('[friend-sync] Failed to remove friend', error);
@@ -556,7 +559,7 @@ const FriendSyncScreen = () => {
         },
       ],
     );
-  }, [displayFriendName, friendId, isRemoving, navigation]);
+  }, [displayFriendName, friendId, isRemoving, navigation, refreshCircle, feed.reload]);
 
   const latestGapDays = syncScore?.metrics.daysApart ?? null;
   const overlapDays = syncScore?.metrics.overlapDays ?? 0;

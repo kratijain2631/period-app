@@ -23,11 +23,13 @@ app/
 ├── features/              # Feature-based UI code
 │   ├── auth/             # Sign in with Apple
 │   ├── companion/        # Onboarding & HealthKit permissions
+│   ├── cycle/            # Cycle status, wheel, upcoming phase and guide preview
 │   ├── feed/             # Daily summary card & feed screen
 │   ├── friends/          # Friend list, sync screen, requests
 │   ├── home/             # Home screen
 │   ├── notifications/    # Notification bell & sheet
-│   └── profile/          # User profile & alias
+│   ├── profile/          # Private You workspace and member profiles
+│   └── social/           # Shared feed, notifications and Circle membership
 │
 ├── components/           # Shared components (error boundary, dev badge, brand)
 ├── config/               # App constants (branding.ts: links, names)

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { NotificationRow } from '../../../services/supabase/notifications';
 import {
@@ -19,6 +19,7 @@ import { useSessionStore } from '../../../state/sessionStore';
 export type AcceptanceNotification = {
   id: string;
   requestId: string;
+  actorId: string;
   name: string;
   createdAt: string;
 };
@@ -40,10 +41,9 @@ const formatAcceptanceName = (alias?: string | null, fullName?: string | null) =
 export const useNotifications = () => {
   const session = useSessionStore((state) => state.session);
   const [notifications, setNotifications] = useState<NotificationRow[]>([]);
+  const [friendshipRevision, invalidateFriendships] = useState(0);
   const [friendRequests, setFriendRequests] = useState<FriendRequestRow[]>([]);
-  const [requestProfileMap, setRequestProfileMap] = useState<
-    Record<string, { alias?: string | null }>
-  >({});
+  const [requestProfileMap, setRequestProfileMap] = useState<Record<string, { alias?: string | null }>>({});
   const [acceptances, setAcceptances] = useState<AcceptanceNotification[]>([]);
   // Acceptances that have been viewed on the notifications page this session —
   // kept visible (styled as read) rather than cleared, so the page shows history.
@@ -85,6 +85,7 @@ export const useNotifications = () => {
         unseen.map((row) => ({
           id: `accept-${row.id}`,
           requestId: row.id,
+          actorId: row.to_user_id,
           name: nameByRequestId.get(row.id) ?? 'A friend',
           createdAt: row.updated_at,
         })),
@@ -110,7 +111,10 @@ export const useNotifications = () => {
     setAcceptances([]);
   }, [acceptances, session?.userId]);
 
+  const [requestStatus, setRequestStatus] = useState<'loading' | 'ready' | 'error'>('loading');
+  const requestRead = useRef(0);
   const loadFriendRequests = useCallback(async () => {
+    const version = ++requestRead.current;
     if (!session) {
       setFriendRequests([]);
       setRequestProfileMap({});
@@ -118,7 +122,9 @@ export const useNotifications = () => {
     }
     try {
       const inbound = await fetchInboundFriendRequests();
+      if (version !== requestRead.current) return;
       setFriendRequests(inbound);
+      setRequestStatus('ready');
       const requestIds = inbound.map((row) => row.id);
       if (requestIds.length === 0) {
         setRequestProfileMap({});
@@ -131,8 +137,9 @@ export const useNotifications = () => {
           alias: profile.alias ?? null,
         };
       });
-      setRequestProfileMap(nextMap);
+      if (version === requestRead.current) setRequestProfileMap(nextMap);
     } catch (error) {
+      if (version === requestRead.current) setRequestStatus('error');
       console.warn('[notifications] Failed to load friend requests', error);
     }
   }, [session]);
@@ -179,6 +186,7 @@ export const useNotifications = () => {
     // Sub-second refresh on friend-request changes (new inbound request, or your
     // outbound one accepted) instead of waiting for the 60s poll.
     const requestsChannel = subscribeToFriendRequests(() => {
+      invalidateFriendships((value) => value + 1);
       loadFriendRequests();
       loadAcceptances();
     });
@@ -228,12 +236,11 @@ export const useNotifications = () => {
 
   const handleRespond = useCallback(
     async (requestId: string, status: 'accepted' | 'declined') => {
-      try {
-        await respondToFriendRequest(requestId, status);
-        await loadFriendRequests();
-      } catch (error) {
-        console.warn('[notifications] Failed to respond to request', error);
-      }
+      await respondToFriendRequest(requestId, status);
+      // A read that started before the decision must not resurrect the pending row.
+      requestRead.current++;
+      setFriendRequests((rows) => rows.filter((row) => row.id !== requestId));
+      await loadFriendRequests();
     },
     [loadFriendRequests],
   );
@@ -243,6 +250,8 @@ export const useNotifications = () => {
     unreadCount,
     friendRequests,
     requestProfileMap,
+    requestStatus,
+    friendshipRevision,
     acceptances,
     readAcceptanceIds,
     markAcceptancesSeen,

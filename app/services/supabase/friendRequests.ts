@@ -122,25 +122,13 @@ export const respondToFriendRequest = async (requestId: string, status: 'accepte
   if (!isSupabaseConfigured) {
     return;
   }
-  if (status === 'declined') {
-    const { error: deleteError } = await supabase
-      .from('friend_requests')
-      .delete()
-      .eq('id', requestId);
-    if (deleteError) {
-      throw deleteError;
-    }
-    return;
-  }
-
-  const { error: updateError } = await supabase
-    .from('friend_requests')
-    .update({ status })
-    .eq('id', requestId);
-  if (updateError) {
-    throw updateError;
-  }
-
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) throw authError ?? new Error('Sign in to respond to this request.');
+  const table = supabase.from('friend_requests');
+  const mutation = status === 'declined' ? table.delete() : table.update({ status });
+  const { error } = await mutation.eq('id', requestId).eq('to_user_id', user.id)
+    .eq('status', 'pending').select('id').single();
+  if (error) throw error;
   if (status === 'accepted') {
     await ensureFriendSharingForRequests([requestId]);
   }

@@ -72,6 +72,8 @@ For **UI mockups with legible text**, the image models rank roughly:
 
 ## Status
 
+- Implemented the illustrated widget design on all four native tabs (unreleased). The [directory](UI_ARCHITECTURE.md#page-directory) records full and preview placements; the [interactive preview](../design-mocks/home-widgets/README.md) demonstrates both themes. The supplied illustration influences visual treatment; actual activity, phase ranges, and permissions come from the app.
+
 - ✅ Palette/type foundation (`app/theme/brand.ts`, `app/config/branding.ts`), imported by ~8 screens.
 - ✅ Branded animated launch/intro overlay (`BrandSplash.tsx`, tagline "Cadence — where your cycle meets your circle").
 - ✅ Haptics on Home-feed boops/reactions.
@@ -83,3 +85,7 @@ For **UI mockups with legible text**, the image models rank roughly:
 - [FEATURES.md](FEATURES.md) → "Design & aesthetics", "usable vs. likeable" teardown, "Profiles & identity" (avatars).
 - [PITCH.md](PITCH.md) → the red-drop / "Sisters by Blood" origin for the branding motif.
 - [TODO.md](TODO.md) → the actionable design task points here.
+
+## Design v1.0 · November 12, 2026
+
+The [screen index](../design/2026-11-12/v1.0/README.md) and [visual gallery](../design/2026-11-12/v1.0/index.html) record this version of the illustrated preview. The thumbnail, animated opening and signed-out page share the smiling drop and five phase colors.

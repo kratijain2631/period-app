@@ -3,6 +3,7 @@ import Constants from 'expo-constants';
 import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
+  ScrollView,
   SafeAreaView,
   StyleSheet,
   Text,
@@ -13,7 +14,8 @@ import {
 import { signInWithApple } from '../../../services/auth/appleAuth';
 import { signInWithPassword } from '../../../services/supabase/auth';
 import { useSessionStore } from '../../../state/sessionStore';
-import { APP_NAME } from '../../../config/branding';
+import { OpeningIdentity } from '../../../components/brand/OpeningIdentity';
+import { illustratedTheme } from '../../../theme/widgetTheme';
 
 const AuthScreen = () => {
   const setSession = useSessionStore((state) => state.setSession);
@@ -90,11 +92,9 @@ const AuthScreen = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.card}>
-        <Text style={styles.title}>Welcome to {APP_NAME}</Text>
-        <Text style={styles.description}>
-          Sign in to sync your menstrual health data. We never write back to Apple Health.
-        </Text>
+      <ScrollView contentContainerStyle={styles.card} keyboardShouldPersistTaps="handled">
+        <OpeningIdentity />
+        <Text style={styles.description}>Sign in to connect Apple Health and find your circle.</Text>
         {isAvailable === false && (
           <Text style={styles.notice}>Sign in with Apple is not available on this device.</Text>
         )}
@@ -104,7 +104,7 @@ const AuthScreen = () => {
           </Text>
         )}
 
-        <View style={styles.selector}>
+        {showDevAuth && <View style={styles.selector}>
           <Text style={styles.selectorLabel}>Sign-in method</Text>
           <TouchableOpacity
             style={styles.selectorButton}
@@ -153,7 +153,7 @@ const AuthScreen = () => {
               </TouchableOpacity>
             </View>
           ) : null}
-        </View>
+        </View>}
 
         {showAppleButton ? (
           <AppleAuthentication.AppleAuthenticationButton
@@ -199,7 +199,7 @@ const AuthScreen = () => {
 
         {isLoading ? <ActivityIndicator /> : null}
         {error ? <Text style={styles.error}>{error}</Text> : null}
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 };
@@ -207,30 +207,10 @@ const AuthScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    paddingHorizontal: 24,
-    backgroundColor: '#fafafa',
+    backgroundColor: illustratedTheme.colors.canvas,
   },
-  card: {
-    borderRadius: 16,
-    backgroundColor: '#fff',
-    padding: 24,
-    gap: 16,
-    shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 4,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '600',
-  },
-  description: {
-    fontSize: 16,
-    color: '#555',
-    lineHeight: 22,
-  },
+  card: { flexGrow: 1, justifyContent: 'center', padding: 28, gap: 16 },
+  description: { textAlign: 'center', fontSize: 15, lineHeight: 22, color: illustratedTheme.colors.secondary, marginTop: 12 },
   notice: {
     fontSize: 14,
     color: '#b3261e',

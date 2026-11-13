@@ -15,7 +15,7 @@ type Props = {
 };
 
 export const PhaseGuide = ({ dos, donts, personalized, phaseLabel, onRefresh, refreshing = false, refreshDisabled = false, message }: Props) => (
-  <View style={styles.section}>
+  <View>
     <View style={styles.heading}>
       <Text accessibilityRole="header" style={styles.title}>Phase Guide</Text>
       <View style={styles.badge}>
@@ -46,8 +46,8 @@ export const PhaseGuide = ({ dos, donts, personalized, phaseLabel, onRefresh, re
     {([
       { label: 'Dos', note: 'Make room for', tips: dos, icon: 'add' as const, tone: '#3F6B55', fill: '#EDF5F0' },
       { label: 'Don’ts', note: 'Go easy on', tips: donts, icon: 'remove' as const, tone: '#994B35', fill: '#FFF0EB' },
-    ]).map((group) => (
-      <View key={group.label} style={styles.group}>
+    ]).map((group, index) => (
+      <View key={group.label} style={index > 0 ? styles.nextGroup : undefined}>
         <View style={styles.groupHeading}>
           <Text accessibilityRole="header" style={[styles.groupLabel, { color: group.tone }]}>{group.label}</Text>
           <Text style={styles.groupNote}>{group.note}</Text>
@@ -78,13 +78,12 @@ const styles = StyleSheet.create({
   refreshButton: { flexDirection: 'row', alignItems: 'center', gap: 7, minHeight: 44, paddingHorizontal: 14, paddingVertical: 10, borderRadius: 99, backgroundColor: brand.colors.accentSoft },
   refreshText: { fontSize: 13, color: brand.colors.accent, ...brandType.semibold },
   message: { fontSize: 13, lineHeight: 20, color: '#5A564F', marginBottom: 12, ...brandType.body },
-  section: { marginBottom: 24 },
   heading: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 10, marginBottom: 6 },
   title: { fontSize: 28, color: brand.colors.primaryText, ...brandType.display },
   badge: { borderRadius: 99, backgroundColor: brand.colors.mutedFill, paddingHorizontal: 10, paddingVertical: 5 },
   badgeText: { fontSize: 11, color: '#5A564F', ...brandType.semibold },
   subtitle: { fontSize: 13, lineHeight: 20, color: '#6F6961', marginBottom: 18, ...brandType.body },
-  group: { marginBottom: 14 },
+  nextGroup: { marginTop: 14 },
   groupHeading: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'baseline', gap: 8, marginBottom: 8 },
   groupLabel: { fontSize: 13, ...brandType.semibold },
   groupNote: { fontSize: 12, color: '#6F6961', ...brandType.body },

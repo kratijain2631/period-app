@@ -6,6 +6,11 @@ Known bugs to fix. This is for **open** bugs; problems we already diagnosed and 
 
 - [ ] **Hosted SMS setup blocks required phone onboarding (verified 2026-11-12).** Public Auth settings report phone auth disabled on staging and production. A normal JWT phone-change request on an isolated staging user returned HTTP 500 / `unexpected_failure`; the exact 500 cause is not established. Enable/configure SMS and verify delivery, wrong code, resend and valid confirmation before distributing required-phone onboarding. Admin-simulated verification in lookup tests does not complete this requirement. No production writes or configuration changes.
 
+### Cycle widgets
+
+- [ ] The pair comparison still draws its rings against a fixed 28-day template. The full wheel on You uses the member’s cycle ranges, so the two views can differ.
+- [ ] Feed period-day labels use the last 40 visible cycle events. If that window starts in the middle of a period, its first visible day can appear as day one. See the [widget architecture](UI_ARCHITECTURE.md).
+
 ### Contacts rollout (owner testing and source review, 2026-11-03)
 
 - [x] **Offline empty feed says “No updates yet” instead of offline — FIXED in source 2026-11-12; next native build required.** Owner reproduced on 1.0.16. Home now prioritizes “You’re offline” and reconnect guidance before loading/empty copy when no items are available. Already loaded items remain visible. Existing connection state is reused; no fetch, queue, database or permissions change. 155 Jest tests and TypeScript pass; native rendering still needs a device check.
@@ -137,4 +142,3 @@ When adding a bug, note: what happens, steps to reproduce, and where it seems to
 ## Fixed
 
 Fixed bugs move to [RELEASE_NOTES.md](RELEASE_NOTES.md) under the build that fixed them.
-

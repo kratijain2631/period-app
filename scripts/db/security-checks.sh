@@ -19,3 +19,5 @@ npm run --silent test-accounts:rls
 
 # Exercise verified-phone matching in the disposable database.
 psql "$DB_URL" -v ON_ERROR_STOP=1 -f supabase/tests/phone-contact-discovery.sql
+
+psql "$DB_URL" -v ON_ERROR_STOP=1 -f supabase/tests/circle-rankings.sql

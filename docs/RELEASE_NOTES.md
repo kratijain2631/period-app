@@ -6,16 +6,61 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## Unreleased
 
+## 2026-11-12 — TestFlight build 1.0.17 (build 38)
+
+Internal design beta for testers with an existing account. [iPhone walkthrough](TESTING.md#design-v10-testflight-walkthrough). Build and Apple upload status are recorded below after verification.
+
+### Added
+
+- Design v1.0 includes a 1024 × 1024 app thumbnail and an illustrated opening identity. The smiling terracotta drop sits inside the five-color cycle ring. The app icon, animated launch, signed-out sign-in screen and browser preview use that identity. The preview opens from the welcome page or directly to a requested tab.
+- The [dated gallery of 118 screenshots](../design/2026-11-12/v1.0/index.html) records the four main pages, secondary pages, every sample member profile, scroll positions, dialogs, comment interactions, contact settings, ranking tabs and sample data states. The [file index](../design/2026-11-12/v1.0/README.md) links directly to the PNGs.
+
+- Home, Feed, Circle and You now use reusable widgets. Home previews a cycle, a phase tip, the next estimated transition, a top sync match and the latest update; each opens its full destination. Feed has its own tab for posting, reactions, boops and deleting your own posts.
+- Circle has two personal ranking tabs: **Most in sync** and **Most supportive**. The first compares eligible friends’ shared cycles; the second counts friends’ saved reactions, comments and boops to you over the last 30 days. Numbered rows use the same format and open the member’s profile. Home’s top match opens the sync ranking.
+- Members can read and write comments on posts they can see in Feed, My posts or a member profile, and delete their own comments. A deleted post also removes its comments. Comments on your posts count toward Most supportive.
+- **Community rankings** (formerly **Cycle Community**) shows two opt-in, scrollable Top 10 lists: **Largest Circle** counts distinct accepted friends; **Loudest Voices** counts still-published manual posts in the current UTC month. Each shows aliases and counts. Cycle details and post contents stay private.
+- **Add Friends** is a labeled button beside the Friends list in Circle. It opens a page with a scrollable Friend requests card, Discover friends, and Grow your circle with **Copy invite link** in a matching button directly below **Share invite link**. The directory is labeled **Friends**. More than four matching friends scroll inside the list with search above it. Friend requests have their own card with an independently scrolling list.
+- Discover by name or alias, match an exact verified email or phone where the other member allows it, or select up to five contact matches with checkboxes in a scrolling list and tap **Send friend requests**. Sent requests stay gray and marked **Request pending**. Incoming matches offer **Accept** and **Decline**. Accepted friends leave contact suggestions.
+- **Notifications** is one list in arrival order, oldest first. Friend requests appear between other notifications, with the sender’s profile and inline Accept/Decline; there is no separate activity link. Notifications and Add friends use the same pending list; pending requests count toward the bell until answered.
+- Members have an outward profile reached from names in the feed, directory, rankings, requests and notifications with an identified sender. You can open your own by tapping your name on You. Profiles, Notifications and Add friends are secondary pages outside the bottom bar.
+
+### Changed
+
+- Open **You → Settings → Show me in Community rankings** to opt in or out. The preference controls both global boards. Anyone signed in can browse the boards. Each board scrolls to tenth place with four rows visible at once.
+- **You → Settings** includes **Manage contact details**, **Post settings**, sign-out and account deletion. The preview now includes sample email replacement and confirmation, phone change and verification code, plus all three automatic posting preferences.
+- **You → Phase Guide → Refresh tips** is visible in the preview and native app. The preview cycles through sample ideas. The app retains its phase-based refresh and cooldown. **Try something new** on Home opens the guide.
+- Opening comments on another post collapses the previous thread. Tapping another post body, reaction, boop or author also dismisses it. The small trash icon next to your own comment keeps a 44-point touch target. Comment drafts survive collapsing a thread while its row remains mounted.
+
+- You now owns the full cycle wheel, monthly recap and Phase Guide. **Try something new** opens the guide; **Coming up** on Home opens the wheel. Tap the wheel (or hover in the web preview) for phase ranges. The example shows Menstruation, days 1–5; Follicular, days 6–12; Ovulation, days 13–15; Luteal, days 16–23; and PMS, days 24–28. Real estimates use cycle history.
+- You ends with **My posts** (formerly **My updates**), close beneath the guide. It shows the signed-in member’s posts, newest first. Removed **Your circle**, the duplicate upcoming-phase widget, **View my outward profile**, **See what this means**, and the check-in subtext. Existing profile, Health sync, guidance refresh, contact and account settings remain available.
+- Home’s tagline uses two lines, with “your cycle” and “your circle” in a light serif italic.
+- The widget architecture separates data and behavior, widget contracts, screen composition and presentation. Home uses compact previews of widgets owned by Feed, Circle or You. Detailed presenters share actions and data with the compact versions. The illustrated theme uses shared tokens. The [widget inventory and page directory](UI_ARCHITECTURE.md#page-directory) cover live and proposed widgets. Both the original HTML concept and the interactive four-screen preview are included; the latter supports a neutral theme, 320/390/480 px widths and simulated data states.
+
 ### Verification and known blockers
 
 - **Requested phone/email QA (2026-11-12).** Two disposable staging JWT accounts passed phone/email/combined matching, deduplication, opt-in/out, caller independence and changed confirmed identifier/readback checks. Verification was Admin-simulated; accounts/data removed, shared accounts untouched. Thirty contact service/controller tests pass with mocked permissions. Real SMS/email confirmation, native contact-detail screens and iOS permission/selection flows remain unverified.
-- **Required-phone onboarding blocked by hosted SMS setup.** Read-only settings show phone auth disabled on staging and production; normal staging phone change failed HTTP 500, exact cause unconfirmed. Configure/enable and validate SMS before distribution. No production tests/configuration writes. TESTING now has short VoiceOver, larger-text and real Health-sync instructions.
+- **Required-phone onboarding blocked by hosted SMS setup.** Read-only settings show phone auth disabled on staging and production; normal staging phone change failed HTTP 500, exact cause unconfirmed. Enable and validate SMS before inviting testers who need new account setup. No production tests/configuration writes. TESTING now has short VoiceOver, larger-text and real Health-sync instructions.
 
 ### Fixed
 
+- Accepting or removing a friend refreshes the directory, personal rankings and community boards on the same account; changes on another device are picked up on friendship updates, refresh or foreground. Friendship changes affect Largest Circle and eligible personal rankings; they do not change post totals.
+- The Home cycle widget uses the small phase-strip design previously explored on You. Home’s upcoming-phase card opens the full wheel on You. The compact-width cycle wheel keeps its phase and day visible at 320 px. Empty or unknown history is labeled rather than filled with invented values.
+- Deleting a post updates the shared feeds, Loudest Voices and the related support score. Failed deletion leaves the post and counts intact. Post deletion does not affect friendships or cycle sync.
+
 - **Offline empty feed has an offline state.** When disconnected and there are no visible updates, Home shows “You’re offline” and reconnect guidance instead of “No updates yet” or an indefinite loading message. Existing feed items remain visible. Uses the current connection store; no backend or queue behavior changes. 155 Jest tests, TypeScript and the iOS JavaScript export pass. Requires the next native build; not in installed 1.0.16.
 
+### Known / not yet done
+
+- Instagram Stories export for an author’s own posts is recorded in [Features](FEATURES.md#sharing-and-community-recognition) and [Todo](TODO.md#widget-rollout-and-follow-ups). Quests, XP and streaks in the illustration are design concepts.
+- Settings verifies a replacement email by confirmation link and a replacement phone number by SMS. Re-verifying an unchanged contact remains on the [roadmap](FEATURES.md#sharing-and-community-recognition).
+- The signed-in [iPhone checks](TESTING.md#widget-and-circle-smoke-check) are pending. New account setup and live phone changes depend on the hosted SMS provider.
+
 ### Verification
+
+- Design v1.0 passed all 179 app tests, type checks for the app and preview, and the iOS JavaScript export. Browser checks opened every preview page and all 17 sample profiles, scrolled the friend directory and both Top 10 boards, switched ranking visibility, refreshed guidance, and exercised comment posting, removal and automatic collapse. The [gallery file index](../design/2026-11-12/v1.0/README.md) records each captured path.
+
+- The native widget implementation passed all 179 app tests, the database access checks, CircleCI and the release-notes check. TypeScript passed for the native app and preview, and the iOS JavaScript bundle exported locally. [Implementation and check results](https://github.com/kratijain2631/period-app/pull/97/checks).
+- The [original design branch](https://github.com/kratijain2631/period-app/tree/design/widget-preview-history) preserves the interactive mock, source artwork and iteration notes. The [widget directory](UI_ARCHITECTURE.md#page-directory) describes the implemented app.
 
 - **Owner confirms 1.0.16 installed, force-close/offline alias retest passes, and DSA is resolved (2026-11-12).** Closed those follow-ups while retaining the future EU launch reassessment and extended phone checks.
 - **Contact mismatch narrowed, not closed.** Shaan’s card originally contained only a phone number; adding an email and relaunching with Full Access still gives no match on 1.0.16. Exact account-email equality and his discovery opt-in are unconfirmed. Two isolated staging accounts verified the legacy email lookup before friendship, while accepted and after removal, plus wrong-email/opt-out exclusion; accounts/data removed. Phone/email support is already documented under the separate 1.0.17 candidate, whose build/SMS gates remain open.
@@ -24,11 +69,12 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 - **Owner feedback (2026-11-12, 1.0.16 installed):** force-close/offline alias retest passes and DSA declaration is reported resolved. Offline empty-feed copy is being corrected; missing contact match for Shaan remains under investigation. Phone/email support is documented in the separate 1.0.17 candidate, not in installed 1.0.16.
 
-## 2026-11-12 — 1.0.17 iOS release candidate
+
+### Earlier 1.0.17 candidate verification
 
 2026-11-12 — [1.0.17 release run](https://github.com/kratijain2631/period-app/actions/runs/43318041600) passed TypeScript and all 155 Jest tests. The two dedicated staging accounts signed in and passed phone-only, email-only, combined/deduplicated, caller independence and opt-out lookups. The release job stopped before starting EAS because the GitHub Actions repository secret `EXPO_TOKEN` was missing. After configuring the secret, re-run failed jobs on that run. SMS delivery and physical-device checks remain pending.
 
-Prepared for internal TestFlight. Build number and Apple upload are pending verification. [What to test](TESTING.md#1017-iphone-checklist).
+Earlier candidate preparation is included in this build. [Contact checks](TESTING.md#1017-iphone-checklist).
 - Added a startup check of recent GitHub work and an offer to review colleagues’ changes since the previous session.
 
 - 2026-11-12 — Phone/email discovery migration applied to staging and production in [Database deploy](https://github.com/kratijain2631/period-app/actions/runs/43298960603). The 76 staging access checks, 155 Jest tests, TypeScript and local SQL contract checks passed. Hosted SMS delivery and native onboarding/contact checks remain pending. First iOS candidate with these changes: 1.0.17.
