@@ -412,7 +412,7 @@ function Preview() {
         break;
       case 'setup':
         content = <Surface style={{ gap: 12 }}>
-          <AppText role="heading">Personal info</AppText>
+          <AppText role="heading">Set up your account</AppText>
           <SampleContactDetails setup details={contactDetails} save={setContactDetails} />
           <ActionButton label="Continue" onPress={() => navigate('Home', 'sharing')} />
         </Surface>;
