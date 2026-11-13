@@ -177,6 +177,9 @@ it('says access was updated after the permission sheet backgrounds the app, but 
   mockContacts.requestContactDiscoveryPermission.mockReturnValue(sheet.promise);
   let lookup!: Promise<void>;
   await act(async () => { lookup = current.handleFindContacts(); });
+  // iOS 18+ backgrounds the app for the alert and again for the contact picker.
+  await act(async () => onAppState('inactive'));
+  await act(async () => onAppState('active'));
   await act(async () => onAppState('inactive'));
   mockContacts.getContactDiscoveryPermission.mockResolvedValue('limited');
   await act(async () => onAppState('active'));
