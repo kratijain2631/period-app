@@ -6,6 +6,8 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## Unreleased
 
+- Added the [service account directory](ACCOUNTS.md) and recorded the domain and mailbox renewal terms in [Troubleshooting](TROUBLESHOOTING.md#godaddy-domain-and-mailbox-renewal-november-2026).
+
 - Paused account email changes in setup, Settings and Auth. The new-address code flow is retained for a future release.
 
 - Phone verification focuses the SMS code field and shows the destination number. Members can resend the code or edit the number. [Code entry preview](../design/2026-11-13/contact-settings/verify-phone.png).

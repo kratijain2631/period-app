@@ -139,6 +139,19 @@ To install a build directly from an `.ipa` file (outside TestFlight or the EAS i
 | Metro tunnel URL (`…exp.direct`) | changes when Metro restarts | Dev client can't connect | Re-enter the new URL in the dev client |
 | Supabase publishable key | if rotated | Auth/API calls fail | Update `.env` **and** the EAS env var |
 
+### GoDaddy domain and mailbox renewal (November 2026)
+
+Krati bought the domain and Microsoft 365 Email Essentials on November 13, 2025 (New York time), for $10.19 and $11.88 respectively, plus $1.05 tax ($23.12 total). GoDaddy provisioned `krati@cadenceapp.org` on that order.
+
+On November 13, 2026, Krati paid **$37.12** ($36.07 plus $1.05 tax), superseding the plan to let the services expire.
+
+| Product | Price before tax | Renewal terms |
+| --- | ---: | --- |
+| `cadenceapp.org` .ORG domain renewal | $24.19 | One year. The receipt does not specify automatic renewal or next year's price. |
+| Microsoft 365 Email Essentials for `cadenceapp.org` | $11.88 | One year. Auto-renews November 13, 2027 for $107.88 before tax. |
+
+The receipt identifies the email plan’s domain but does not confirm which mailbox or aliases were provisioned. Purchasing it does not configure the requested `info@cadenceapp.org` sender.
+
 ## Issues we hit — and the fixes
 
 1. **EAS "Entity not authorized" on build.** Logged into EAS as `kratijain26`, but the app.json still pointed at the collaborator's EAS project (`04bd3a64…`). → Removed the old `projectId` and ran `eas init --force` to create `@kratijain26/period-app`.
