@@ -158,6 +158,7 @@ This design's [page and widget inventory](UI_ARCHITECTURE.md#page-directory) and
 - [x] **Dedicated post editor.** Feed opens Write a post from Share an update, resumes a session draft and returns after successful sharing.
 - [x] **First-time sharing choices.** After contact verification, choose ranking visibility and all three automatic posting preferences before optional Apple Health access. These are the same account preferences shown later in Settings.
 - [x] **Sent friend requests.** See outgoing pending requests alongside incoming requests on Add Friends. Cancel a pending request there or from its member profile. Contacts and the recipient’s request list reflect the change.
+- [~] **One friend profile.** Integrate the full cycle comparison and relationship actions directly into the outward profile. 🚧 (WIP — Codex, 2026-11-12)
 - [x] **Profile mascot.** The entire drop, including its pointed tip, fits in the landscape on You and outward profiles.
 - [x] **Comments on automatic updates.** Period and phase updates support the same threads as written posts. Comments have extra space before each divider.
 - [x] **Request list design.** Received and Sent tabs show counts, profile identities, and compact actions.
