@@ -16,7 +16,7 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 - Searching for a friend by email or phone is easier to notice. After a full address or number, a caption says to tap Find, the button is filled and names what it will look up, and the keyboard's Search key runs it too. Lookups still run only when you ask, so only the exact address you typed is checked.
 - Removed the old Circle screen (`FriendsScreen.tsx`), which the app no longer showed, along with three helpers only it used. No change to what you see.
 - A friend's new post now appears in your feed within a few seconds, and reactions, comments and boops reach the bell right away, instead of waiting up to a minute or for a pull to refresh. Database: `20261113210000_realtime-posts-notifications.sql` adds `posts` and `notifications` to realtime delivery.
-- Two people can no longer hold friend requests to each other at the same time. Accepting one used to leave the other pending, so you could be offered Accept for someone who was already your friend. Database: `20261113220000_one-request-per-pair.sql`.
+- Two people can no longer hold friend requests to each other at the same time. Accepting one used to leave the other pending, so you could be offered Accept for someone who was already your friend. Database: `20261113231000_one-request-per-pair.sql`.
 
 ## 2026-11-13 — TestFlight build 1.0.24 (build 46)
 
