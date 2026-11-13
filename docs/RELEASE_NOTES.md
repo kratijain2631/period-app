@@ -6,6 +6,8 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## Unreleased
 
+- **Find from contacts** goes back to its normal label when matches are cleared, for example after returning from Settings. One tap now searches again; before, the first tap only hid an empty panel. The filter, selection count and Send button appear only when there are matches, so denied access shows just the notice. "Contacts access updated" appears only after returning from Settings or the permission sheet, not on every return to the app.
+
 ## 2026-11-12 — TestFlight build 1.0.20 (build 42)
 
 Apple processed 1.0.20 (42) and enabled it for **Dev Team** and **Team (Expo)** internal testers. The [signed iOS build](https://expo.dev/accounts/kratijain26/projects/period-app/builds/683c5961-86d2-4f1b-950b-c54d076b1ff3) and [Apple upload](https://expo.dev/accounts/kratijain26/projects/period-app/submissions/ed9624dd-1f7d-4316-ab53-fdf028975bc2) both finished. This build carries forward the approved mascot icon, opening font and standalone Settings from 1.0.19 (41). [iPhone walkthrough](TESTING.md#feed-setup-and-sent-requests) · [Updated screenshots](../design/2026-11-12/v1.0/README.md#later-testflight-revisions).
