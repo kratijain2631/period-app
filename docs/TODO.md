@@ -202,6 +202,7 @@ Structural cleanups — not user-facing, but they make everything after them che
 - [ ] App Privacy "nutrition labels" + age rating in App Store Connect (declare health-data collection)
 
 ## Nice to have
+- [ ] **Polish layouts at the largest accessibility text sizes (future; non-blocking).** Owner tested very large text on 2026-11-13 and found the appearance awkward but acceptable for now. Review wrapping, spacing, scrolling and reachable controls while keeping text scaling enabled. Deferred by owner; this does not close the broader accessibility checks.
 - [ ] Set up EAS Update (`expo-updates`) for instant over-the-air JS updates during the beta (no rebuild)
 - [ ] Cosmetic: clean up leftover "Cycle Companion" references in docs (`thoughts/`, `prompts/`, `implementation-docs/`, `overall/`)
 
