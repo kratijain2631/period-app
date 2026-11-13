@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View } from 'react-native';
+import { useWindowDimensions, View } from 'react-native';
 import { parsePhoneNumberFromString } from 'libphonenumber-js/min';
 import { ActionButton, AppText } from '../../../components/ui/WidgetPrimitives';
 import { phoneFromFields } from '../../../services/contacts/phone';
@@ -15,6 +15,7 @@ type Props = {
 };
 
 export function PhoneChangeForm({ currentPhone, busy, onSend, onVerify, onCancel, onEdit }: Props) {
+  const { fontScale } = useWindowDimensions();
   const [callingCode, setCallingCode] = useState('+1');
   const [number, setNumber] = useState('');
   const [sentTo, setSentTo] = useState('');
@@ -49,8 +50,8 @@ export function PhoneChangeForm({ currentPhone, busy, onSend, onVerify, onCancel
   return (
     <View style={{ gap: 8 }}>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, alignItems: 'flex-end' }}>
-        <View style={{ flexBasis: 100, flexGrow: 1 }}>
-          <ContactField label="Country code" value={callingCode} placeholder="+1"
+        <View style={{ width: 28 + 44 * Math.max(1, fontScale) }}>
+          <ContactField label="Country code" value={callingCode} placeholder="+1" maxLength={4}
             keyboardType="phone-pad" editable={!busy}
             onChangeText={value => {
               clearCode();
@@ -58,7 +59,7 @@ export function PhoneChangeForm({ currentPhone, busy, onSend, onVerify, onCancel
               setCallingCode('+' + digits);
             }} />
         </View>
-        <View style={{ flexBasis: 132, flexGrow: 3 }}>
+        <View style={{ flexBasis: 132, flexGrow: 1 }}>
           <ContactField label={currentPhone ? 'New phone number' : 'Phone number'} icon="call-outline"
             value={number} placeholder="Number" keyboardType="phone-pad" autoComplete="tel-national"
             editable={!busy} onChangeText={changeNumber} />
