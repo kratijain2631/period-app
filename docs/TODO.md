@@ -25,6 +25,11 @@ Open items, roughly in priority order, with completed items retained as a decisi
   - [x] Owner confirms 1.0.15 is installed, all important users updated, successful Refresh tips and in-session airplane-mode refresh retains advice (2026-11-12). This confirms availability to the tested group, not every external tester.
   - [ ] Complete remaining phone checks: account/phase changes, VoiceOver/Dynamic Type, HealthKit and two-device concurrency. Cold-start offline testing found the separate alias bug above. Owner reports DSA resolved; no simulator runtime is installed.
 
+## Verification delivery and staging guidance
+
+- [ ] Configure a transactional email sender and a reachable confirmation destination. Verify both links with controlled inboxes, including an Apple relay address. See [the delivery runbook](TROUBLESHOOTING.md#contact-verification-delivery-and-guidance-on-staging-2026-11-13).
+- [ ] For a live generation test, supply a designated staging key with a spending limit and repeat with a staging persona. The usual staging setup intentionally omits this key. Cached guidance and refresh limits passed on November 13.
+
 ## Widget rollout and follow-ups
 
 - [x] Redesign Received and Sent friend requests with tab counts, compact member rows, distinct actions and accessible touch targets.

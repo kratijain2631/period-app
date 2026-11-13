@@ -28,7 +28,7 @@ export const example: CycleOverview = {
 const initialItem: ActivityItemModel = {
   target: { type: 'post', id: 'example' },
   actorId: 'example-friend',
-  actorName: 'Maya',
+  actorName: 'Maya', actorInitial: 'M',
   avatarUrl: null,
   isSelf: false,
   createdAt: '2026-11-03T14:00:00Z',
@@ -58,14 +58,14 @@ export const initialProfile: ProfileIdentityModel = {
 export const activity: ActivityItemModel[] = [
   { ...initialItem, actorId: 'maya' },
   {
-    ...initialItem, actorId: 'nina', actorName: 'Nina', target: { type: 'cycle', id: 'phase-nina' },
+    ...initialItem, actorId: 'nina', actorName: 'Nina', actorInitial: 'N', target: { type: 'cycle', id: 'phase-nina' },
     label: 'Entered Follicular', body: null, phase: 'follicular',
     createdAt: '2026-11-03T12:00:00Z', reactions: [], boopCount: 0,
   },
   {
     ...initialItem,
     actorId: 'jules',
-    actorName: 'Jules',
+    actorName: 'Jules', actorInitial: 'J',
     target: { type: 'post', id: 'walk' },
     label: 'Amazing',
     body: 'Found a new trail by the river. Anyone up for a walk this weekend?',
@@ -77,7 +77,7 @@ export const activity: ActivityItemModel[] = [
     ...initialItem,
     target: { type: 'post', id: 'sunday-walk' },
     actorId: 'self',
-    actorName: initialProfile.name,
+    actorName: 'You', actorInitial: 'A',
     isSelf: true,
     createdAt: '2026-11-01T15:00:00Z',
     label: 'Circle update',

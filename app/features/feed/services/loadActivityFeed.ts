@@ -8,7 +8,8 @@ import {
   fetchEventBoops,
   fetchEventBoopsByUser,
 } from '../../../services/supabase/boops';
-import { fetchUserProfilesByIds } from '../../../services/supabase/users';
+import { fetchActivityAuthors } from '../../../services/supabase/activityAuthors';
+import { memberName, memberInitial, type MemberIdentity } from '../../social/memberIdentity';
 import { listPendingBoops } from '../../../storage/sqlite/boopQueueStore';
 import { type ActivityItemModel, sortActivity } from '../models/activity';
 import { periodEventDays } from '../models/periodEventDays';
@@ -24,6 +25,7 @@ export const projectPost = (post: PostRow, userId: string): ActivityItemModel =>
   target: { type: 'post', id: post.id },
   actorId: post.user_id,
   actorName: post.user_id === userId ? 'You' : post.alias || 'A friend',
+  actorInitial: memberInitial(post.alias ?? ''),
   avatarUrl: null,
   isSelf: post.user_id === userId,
   createdAt: post.created_at,
@@ -40,6 +42,7 @@ const projectEvent = (event: CycleEventRow, userId: string): ActivityItemModel =
   target: { type: 'cycle', id: event.id },
   actorId: event.user_id,
   actorName: event.user_id === userId ? 'You' : 'A friend',
+  actorInitial: memberInitial(''),
   avatarUrl: null,
   isSelf: event.user_id === userId,
   createdAt: event.starts_at,
@@ -129,19 +132,23 @@ export const loadActivityFeed = async (userId: string) => {
       item.boopStatus = 'queued';
     } else if (queued.status === 'rejected') item.boopsAvailable = false;
   });
+  let selfIdentity: MemberIdentity | null = null;
   try {
-    const profiles = await fetchUserProfilesByIds([...new Set(items.map((i) => i.actorId))]);
-    items.forEach((item) => {
-      const profile = profiles.find((p) => p.id === item.actorId);
-      if (profile) {
-        item.actorName = item.isSelf
-          ? 'You'
-          : profile.full_name?.trim() || profile.alias?.trim() || item.actorName;
-        item.avatarUrl = profile.avatar_url ?? null;
+    const profiles = await fetchActivityAuthors([...new Set([userId, ...items.map(item => item.actorId)])]);
+    const byId = new Map(profiles.map(profile => [profile.member_id, profile]));
+    selfIdentity = byId.get(userId) ?? null;
+    for (const item of items) {
+      const identity = byId.get(item.actorId);
+      if (!identity) continue;
+      const name = memberName(identity.full_name, identity.alias);
+      if (name) {
+        if (!item.isSelf) item.actorName = name;
+        item.actorInitial = memberInitial(name);
       }
-    });
+      item.avatarUrl = identity.avatar_url;
+    }
   } catch {
     partial = true;
   }
-  return { items: sortActivity(items), failedKinds, partial: partial || failedKinds.length > 0 };
+  return { selfIdentity, items: sortActivity(items), failedKinds, partial: partial || failedKinds.length > 0 };
 };

@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { memberName, memberInitial, type MemberIdentity } from '../../social/memberIdentity';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
 import { createPost, deletePost } from '../../../services/supabase/posts';
@@ -21,6 +22,13 @@ import {
 export const useActivityFeed = (userId: string, alias: string | null) => {
   const [rankingsRevision, invalidateRankings] = useState(0);
   const [items, setItems] = useState<ActivityItemModel[]>([]);
+  const [selfIdentity, setSelfIdentity] = useState<MemberIdentity | null>(null);
+  const selfName = memberName(selfIdentity?.full_name, selfIdentity?.alias || alias);
+  const visibleItems = useMemo(() => items.map(item => item.isSelf ? {
+    ...item,
+    actorInitial: selfName ? memberInitial(selfName) : item.actorInitial,
+    avatarUrl: selfIdentity?.avatar_url ?? item.avatarUrl,
+  } : item), [items, selfName, selfIdentity]);
   const itemRef = useRef(items);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -72,6 +80,7 @@ export const useActivityFeed = (userId: string, alias: string | null) => {
       try {
         const result = await loadActivityFeed(userId);
         if (!active() || revision.current !== startedAt) return;
+        if (result.selfIdentity) setSelfIdentity(result.selfIdentity);
         // Retain stale rows for a failed branch, but prevent actions on unknown state.
         update((previous) =>
           sortActivity([
@@ -205,7 +214,9 @@ export const useActivityFeed = (userId: string, alias: string | null) => {
   };
   return {
     rankingsRevision,
-    items,
+    selfName,
+    selfAvatar: selfIdentity?.avatar_url ?? null,
+    items: visibleItems,
     loading,
     error,
     reload,

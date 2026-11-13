@@ -42,7 +42,7 @@ const Harness = ({ userId = 'self' }: { userId?: string }) => {
 const item = (type: 'post' | 'cycle' = 'post'): ActivityItemModel => ({
   target: { type, id: 'same-id' },
   actorId: 'friend',
-  actorName: 'Friend',
+  actorName: 'Friend', actorInitial: 'F',
   avatarUrl: null,
   isSelf: false,
   createdAt: '2026-03-09',
@@ -62,7 +62,7 @@ const deferred = <T,>() => {
   });
   return { resolve, promise };
 };
-const loaded = (items = [item(), item('cycle')]) => ({ items, partial: false, failedKinds: [] });
+const loaded = (items = [item(), item('cycle')]) => ({ selfIdentity: null, items, partial: false, failedKinds: [] });
 const mount = async () => {
   await act(async () => {
     root = create(<Harness />);
@@ -146,7 +146,8 @@ it('keeps the draft on failure, blocks offline posting, and prevents duplicate s
   expect(current.composer.text).toBe('Keep this draft');
   expect(current.composer.error).toContain('draft');
 });
-it('only reports a completed share after the update is saved in the feed', async () => {
+it('shows the signed-in name initial on a successfully shared post', async () => {
+  jest.mocked(loadActivityFeed).mockResolvedValue({ ...loaded(), selfIdentity: { member_id: 'self', full_name: 'Krati', alias: 'other', avatar_url: null } });
   await mount();
   await act(async () => current.composer.setText('My update'));
   jest.mocked(createPost).mockRejectedValueOnce(new Error('offline'));
@@ -154,10 +155,10 @@ it('only reports a completed share after the update is saved in the feed', async
   expect(current.composer.text).toBe('My update');
   const row = { id: 'new', user_id: 'self', alias: null, body: 'My update', mood_tag: null, created_at: '2026-11-12' };
   jest.mocked(createPost).mockResolvedValueOnce(row);
-  jest.mocked(projectPost).mockReturnValueOnce({ ...item(), target: { type: 'post', id: row.id }, body: row.body, createdAt: row.created_at });
+  jest.mocked(projectPost).mockReturnValueOnce({ ...item(), isSelf: true, actorId: 'self', actorName: 'You', target: { type: 'post', id: row.id }, body: row.body, createdAt: row.created_at });
   await act(async () => { expect(await current.composer.submit()).toBe(true); });
   expect(current.composer.text).toBe('');
-  expect(current.items[0].body).toBe('My update');
+  expect(current.items[0]).toMatchObject({ body: 'My update', actorName: 'You', actorInitial: 'K' });
 });
 it('keeps queued boops distinct from delivered counts and prevents repeats', async () => {
   await mount();

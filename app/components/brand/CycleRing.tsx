@@ -307,7 +307,7 @@ type SyncRingsProps = {
   theirDay?: number | null;
   theirPhase?: string | null;
   syncPercent: number;
-  yourInitial?: string;
+  yourInitial: string;
   friendInitial?: string;
   yourAvatarUrl?: string | null;
   friendAvatarUrl?: string | null;
@@ -321,7 +321,7 @@ export const SyncRings = memo(
     theirDay = 1,
     theirPhase,
     syncPercent,
-    yourInitial = 'Y',
+    yourInitial,
     friendInitial = 'F',
     yourAvatarUrl = null,
     friendAvatarUrl = null,

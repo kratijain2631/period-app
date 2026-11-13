@@ -3,6 +3,10 @@
 The full schema — tables, functions, RLS policies, indexes — is defined in `supabase/migrations/*.sql`, which is the source of truth. Running those migrations recreates the database from scratch; staging (`rntqwmptuavqnbjovnae`) was built that way, and production (`mmomoyszozclfjdvjbeb`) matches it. Merging a migration applies it to staging, then production ([DB_PUSH.md](DB_PUSH.md)). Real user data lives only in the database, never in the repo. The old `seed-posts.sql` demo data was retired on 2026-11-06; test data now comes from the staging personas ([TESTING.md](TESTING.md)).
 
 
+## Activity author identity
+
+`activity_author_profiles(member_ids uuid[])` returns only member ID, full name, alias and avatar for the caller and accepted friends in the requested set. Feed and the signed-in comparison avatar use it. Private account emails and phones stay outside the return type. Migration `20261113120100_activity_author_profiles.sql` adds the function alongside existing profile APIs.
+
 ## Circle rankings and outward profiles
 
 The [November 12 database deployment](https://github.com/kratijain2631/period-app/actions/runs/43349281208) applied `20261113000000_circle_rankings.sql` to staging and production after staging security checks passed. The migration adds `users.community_rankings_enabled` (default false). Only a member chooses whether to join the two global boards. The authenticated functions compute scores from current rows; no materialized counters need repair on delete, unfriend or opt-out.

@@ -1,3 +1,4 @@
+import { memberName, memberInitial } from '../../app/features/social/memberIdentity';
 import { PreviewPair } from './PreviewPair';
 import { PostSettingsRows } from '../../app/features/profile/components/PostSettingsRows';
 import { SharingPreferences } from '../../app/features/profile/components/SharingPreferences';
@@ -273,7 +274,7 @@ function Preview() {
       target: { type: 'post', id: now.toISOString() },
       isSelf: true,
       actorId: 'self',
-      actorName: profile.name,
+      actorInitial: memberInitial(memberName(profile.name, profile.alias)), actorName: 'You',
       body: text.trim() || null,
       label: mood ?? 'Circle update',
       createdAt: now.toISOString(),
@@ -300,7 +301,7 @@ function Preview() {
     return (
       <ActivityItem
         key={key}
-        model={item.isSelf ? { ...item, actorName: profile.name } : item}
+        model={item.isSelf ? { ...item, actorInitial: memberInitial(memberName(profile.name, profile.alias)), actorName: 'You' } : item}
         onOpenProfile={
           detail === 'profile'
             ? undefined
@@ -446,7 +447,7 @@ function Preview() {
                       ? 'Friend request sent'
                       : 'Member'
             }
-            comparison={!self && member ? <PreviewPair key={person.id} person={person} offline={offline} onRemove={() => remove(person.id)} /> : undefined}
+            comparison={!self && member ? <PreviewPair key={person.id} person={person} yourName={memberName(profile.name, profile.alias)} offline={offline} onRemove={() => remove(person.id)} /> : undefined}
             updates={
               self || member ? (
                 posts.length ? (
@@ -625,7 +626,7 @@ function Preview() {
           ) : visibleItems.length ? (
             <>
               <TextAction
-                label={visibleItems[0].isSelf ? profile.name : visibleItems[0].actorName}
+                label={visibleItems[0].isSelf ? 'You' : visibleItems[0].actorName}
                 onPress={() => {
                   const p = personById(visibleItems[0].actorId);
                   if (p) openFriend(p);

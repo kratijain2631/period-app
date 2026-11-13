@@ -6,6 +6,7 @@ export type ActivityItemModel = {
   target: ActivityTarget;
   actorId: string;
   actorName: string;
+  actorInitial: string;
   avatarUrl: string | null;
   isSelf: boolean;
   createdAt: string;
