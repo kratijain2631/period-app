@@ -10,6 +10,7 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 - Paused new TestFlight builds at the owner’s request to reserve the two remaining builds. Build 1.0.24 (46) is available for internal testing.
 - Searching for a friend by email or phone is easier to notice. After a full address or number, a caption says to tap Find, the button is filled and names what it will look up, and the keyboard's Search key runs it too. Lookups still run only when you ask, so only the exact address you typed is checked.
+- Removed the old Circle screen (`FriendsScreen.tsx`), which the app no longer showed, along with three helpers only it used. No change to what you see.
 
 ## 2026-11-13 — TestFlight build 1.0.24 (build 46)
 
