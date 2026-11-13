@@ -16,7 +16,7 @@ The [November 12 database deployment](https://github.com/kratijain2631/period-ap
 
 `post_comments` belongs to a post (cascade on deletion), stores the authenticated author, server-stamped alias, creation time and 1–1,000 characters of text. Its audience is checked against the parent post. Only the author can remove a comment.
 
-`event_comments` stores the same comment fields against `cycle_events.id`. Its read/insert policies use `cycle_event_visible`, the existing visibility check for automatic updates. Authors may delete their own comments. Deleting the event removes its comments. The 30-day `my_circle_support` ranking includes comments on both parent types. Migration `20261113001000_cycle_event_comments.sql` is additive.
+`event_comments` stores the same comment fields against `cycle_events.id`. Its read/insert policies use `cycle_event_visible`, the existing visibility check for automatic updates. Authors may delete their own comments. Deleting the event removes its comments. The 30-day `my_circle_support` ranking includes comments on both parent types. The additive migration `20261113001000_cycle_event_comments.sql` [deployed to staging and production](https://github.com/kratijain2631/period-app/actions/runs/43359047626).
 
 The app's Notifications and Add friends screens query the same pending inbound `friend_requests` rows. Responding changes the relationship itself; it does not create a duplicate notification or introduce a second approval state.
 

@@ -145,7 +145,7 @@ More than one person may work on this repo at once, each pushing to `main`. To s
 4. **Re-check after the rebase.** If the item is already `[~]`/`[x]` when you sync, it's taken — pick a different one. When done, flip `[~]` → `[x]` with the fix + release-notes line, and push.
 
 **Reduce the collision surface:**
-5. **Coordinate lanes** — avoid two people editing the same file at once, *especially* the large screens (`HomeScreen.tsx`, `ProfileScreen.tsx`, `FriendsScreen.tsx`, `FriendSyncScreen.tsx`), which are the worst merge-conflict magnets. Split by feature area (e.g. one on friends, one on cycle) rather than both in one file.
+5. **Coordinate lanes** — avoid two people editing the same file at once, *especially* the large screens (`HomeScreen.tsx`, `ProfileScreen.tsx`, `FriendsScreen.tsx`, `MemberProfileScreen.tsx`), which are the worst merge-conflict magnets. Split by feature area (e.g. one on friends, one on cycle) rather than both in one file.
 6. **RELEASE_NOTES is the shared source of truth** for what shipped — always add your line under `## Unreleased` in the same commit, so the other person sees what changed. Whoever cuts a build blocks `## Unreleased` into a version (§2) and pushes the build; the other syncs before continuing.
 
 **Keep up with colleagues’ changes:**

@@ -1,3 +1,4 @@
+import { PreviewPair } from './PreviewPair';
 import { PostSettingsRows } from '../../app/features/profile/components/PostSettingsRows';
 import { SharingPreferences } from '../../app/features/profile/components/SharingPreferences';
 import { DEFAULT_AUTO_POST_SETTINGS } from '../../app/services/healthkit/autoPostSettings';
@@ -170,6 +171,11 @@ function Preview() {
     ari: 'incoming',
     lou: 'outgoing',
   });
+  const [removedIds, setRemovedIds] = useState<string[]>([]);
+  const remove = (id: string) => {
+    setRemovedIds(prev => [...prev, id]);
+    setRelations(prev => ({ ...prev, [id]: 'available' }));
+  };
   const [ranked, setRanked] = useState(false);
   const [postSettings, setPostSettings] = useState(DEFAULT_AUTO_POST_SETTINGS);
   const [contactDetails, setContactDetails] = useState({ email: 'alex@example.com', phone: '+12025550120' });
@@ -184,7 +190,7 @@ function Preview() {
     setRelations((prev) => {
       const next = { ...prev };
       for (const id of ids) {
-        if (sampleContacts.some((p) => p.id === id) && !next[id]) next[id] = 'outgoing';
+        if ((sampleContacts.some(p => p.id === id) || removedIds.includes(id)) && (!next[id] || next[id] === 'available')) next[id] = 'outgoing';
       }
       return next;
     });
@@ -204,11 +210,12 @@ function Preview() {
       );
   };
   const visiblePeople = [
-    ...(state === 'Empty' ? [] : people),
+    ...(state === 'Empty' ? [] : people.filter(p => !removedIds.includes(p.id) || relations[p.id] === 'friends')),
     ...sampleContacts.filter((p) => relations[p.id] === 'friends'),
   ];
+  const availableItems = items.filter(item => !removedIds.includes(item.actorId) || relations[item.actorId] === 'friends');
   const visibleItems =
-    state === 'Empty' ? items.filter((p) => !sampleItemKeys.has(activityKey(p.target))) : items;
+    state === 'Empty' ? availableItems.filter((p) => !sampleItemKeys.has(activityKey(p.target))) : availableItems;
   const ownItems = visibleItems.filter((p) => p.isSelf);
   const ownPosts = ownItems.filter((i) => i.target.type === 'post');
   const topFriend = rankSync(visiblePeople)[0];
@@ -424,9 +431,9 @@ function Preview() {
         content = (
           <OutwardProfile
             identity={{
-              name: person.name,
+              name: self || member ? person.name : person.alias,
               alias: person.alias,
-              bio: self ? profile.bio : (bios[person.id] ?? ''),
+              bio: self ? profile.bio : member ? (bios[person.id] ?? '') : '',
             }}
             relation={
               self
@@ -439,7 +446,7 @@ function Preview() {
                       ? 'Friend request sent'
                       : 'Member'
             }
-            score={member ? person.score : null}
+            comparison={!self && member ? <PreviewPair key={person.id} person={person} offline={offline} onRemove={() => remove(person.id)} /> : undefined}
             updates={
               self || member ? (
                 posts.length ? (
@@ -452,7 +459,7 @@ function Preview() {
               ) : null
             }
             action={
-              sampleContacts.some((p) => p.id === person.id) &&
+              (sampleContacts.some((p) => p.id === person.id) || removedIds.includes(person.id)) &&
               !member &&
               !incoming &&
               relations[person.id] !== 'dismissed' ? (
@@ -662,7 +669,7 @@ function Preview() {
           ...communityExamples.map((row) => ({
             ...row,
             friends:
-              row.friends +
+              row.friends - (removedIds.includes(row.person.id) && people.some(p => p.id === row.person.id) && relations[row.person.id] !== 'friends' ? 1 : 0) +
               (relations[row.person.id] === 'friends' && !people.some((p) => p.id === row.person.id) ? 1 : 0),
           })),
           ...(ranked

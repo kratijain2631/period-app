@@ -355,12 +355,9 @@ const FriendsScreen = () => {
     return { label: 'Needs care', color: '#FF3B30', background: '#FFE8E7' };
   }, []);
 
-  const navigateToFriendSync = useCallback(
-    (friendUserId?: string, preview?: boolean) => {
-      (navigation as any).navigate('FriendSync', {
-        friendId: friendUserId ?? '',
-        preview: preview ?? false,
-      });
+  const openMemberProfile = useCallback(
+    (memberId: string) => {
+      (navigation as any).navigate('MemberProfile', { memberId });
     },
     [navigation],
   );
@@ -553,7 +550,7 @@ const FriendsScreen = () => {
                         {isFriend ? (
                           <TouchableOpacity
                             style={styles.secondaryButton}
-                            onPress={() => navigateToFriendSync(result.id)}
+                            onPress={() => openMemberProfile(result.id)}
                           >
                             <Text style={styles.secondaryButtonText}>View Sync</Text>
                           </TouchableOpacity>
@@ -708,7 +705,7 @@ const FriendsScreen = () => {
                 <TouchableOpacity
                   key={entry.userId}
                   style={styles.leaderboardRow}
-                  onPress={() => navigateToFriendSync(entry.userId)}
+                  onPress={() => openMemberProfile(entry.userId)}
                   activeOpacity={0.9}
                 >
                   <Text style={styles.leaderboardRank}>{badge}</Text>
@@ -731,14 +728,6 @@ const FriendsScreen = () => {
           {friendSnapshots.length === 0 ? (
             <View style={styles.emptyState}>
               <Text style={styles.mutedText}>No friends yet.</Text>
-              {__DEV__ ? (
-                <TouchableOpacity
-                  style={styles.primaryButton}
-                  onPress={() => navigateToFriendSync(undefined, true)}
-                >
-                  <Text style={styles.primaryButtonText}>Preview Friend Sync</Text>
-                </TouchableOpacity>
-              ) : null}
             </View>
           ) : (
             <View style={styles.friendsList}>
@@ -761,7 +750,7 @@ const FriendsScreen = () => {
                   <TouchableOpacity
                     key={row.user_id}
                     style={styles.friendCard}
-                    onPress={() => navigateToFriendSync(row.user_id)}
+                    onPress={() => openMemberProfile(row.user_id)}
                     activeOpacity={0.93}
                   >
                     <View style={styles.friendCardRow}>
