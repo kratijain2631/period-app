@@ -78,6 +78,9 @@ export function DiscoverMembers({
       if (token === sequence.current) setChecking(false);
     }
   };
+  const findMatch = () => {
+    if ((email || phone) && !checking) void lookup(term, ++sequence.current);
+  };
   useEffect(() => {
     const token = ++sequence.current;
     setFound([]);
@@ -120,15 +123,22 @@ export function DiscoverMembers({
         style={input}
         autoCapitalize="none"
         autoCorrect={false}
+        returnKeyType="search"
         value={query}
         onChangeText={setQuery}
+        onSubmitEditing={findMatch}
       />
+      {/* Exact lookups wait for a tap, so say so until one has run. */}
+      {(email || phone) && !checking && !notice && !found.length && (
+        <AppText role="caption">Tap Find to look up this {email ? 'email' : 'number'}.</AppText>
+      )}
       {(email || phone) && (
         <ActionButton
-          outline
-          label="Find match"
+          outline={!!notice || found.length > 0}
+          label={'Find ' + term}
+          accessibilityLabel={'Find a match for ' + term}
           disabled={checking}
-          onPress={() => void lookup(term, ++sequence.current)}
+          onPress={findMatch}
         />
       )}
       {checking && <AppText>Searching…</AppText>}
