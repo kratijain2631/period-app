@@ -1,3 +1,4 @@
+import { SettingsPage, ContactValue } from '../../app/features/profile/components/SettingsPage';
 import { useState } from 'react';
 import { Switch, TextInput, View } from 'react-native';
 import { normalizeContactPhone } from '../../app/services/contacts/phone';
@@ -9,30 +10,26 @@ export type Preferences = { period: boolean; first: boolean; phase: boolean };
 export type Details = { email: string; phone: string };
 
 export function SettingsMenu({
-  email,
+  details,
+  save,
   ranked,
   onRanked,
   onOpen,
 }: {
-  email: string;
+  details: Details;
+  save: (next: Details) => void;
   ranked: boolean;
   onRanked: (next: boolean) => void;
-  onOpen: (page: 'contacts' | 'posting' | 'sign-out' | 'delete-account') => void;
+  onOpen: (page: 'posting' | 'sign-out' | 'delete-account') => void;
 }) {
   return (
-    <>
-      <AppText role="heading">Settings</AppText>
-      <Surface style={{ gap: 12 }}>
-        <AppText>{email}</AppText>
-        <ActionButton outline label="Manage contact details" onPress={() => onOpen('contacts')} />
-        <ActionButton outline label="Post settings" onPress={() => onOpen('posting')} />
-      </Surface>
-      <Surface>
-        <RankingVisibilityRow enabled={ranked} busy={false} onChange={onRanked} />
-      </Surface>
-      <ActionButton outline label="Sign out" onPress={() => onOpen('sign-out')} />
-      <ActionButton outline label="Delete account" onPress={() => onOpen('delete-account')} />
-    </>
+    <SettingsPage
+      contacts={<SampleContactDetails details={details} save={save} />}
+      visibility={<RankingVisibilityRow enabled={ranked} busy={false} onChange={onRanked} />}
+      onPosting={() => onOpen('posting')}
+      onSignOut={() => onOpen('sign-out')}
+      onDelete={() => onOpen('delete-account')}
+    />
   );
 }
 
@@ -62,10 +59,11 @@ export function PostingSettings({ value, change }: { value: Preferences; change:
   );
 }
 
-export function SampleContactDetails({ details, save }: { details: Details; save: (next: Details) => void }) {
+function SampleContactDetails({ details, save }: { details: Details; save: (next: Details) => void }) {
   const t = useWidgetTheme();
   const [email, setEmail] = useState<string | null>(null);
   const [confirm, setConfirm] = useState(false);
+  const [editingPhone, setEditingPhone] = useState(false);
   const [phone, setPhone] = useState(details.phone);
   const [code, setCode] = useState('');
   const [sent, setSent] = useState(false);
@@ -81,16 +79,19 @@ export function SampleContactDetails({ details, save }: { details: Details; save
   };
   return (
     <>
-      <AppText role="heading">Manage contact details</AppText>
-      <Surface style={{ gap: 10 }}>
-        <AppText role="heading">Account email</AppText>
+      <View style={{ gap: 8 }}>
         {email === null ? (
-          <>
-            <AppText>{details.email}</AppText>
-            <ActionButton outline label="Use a different email" onPress={() => setEmail('')} />
-          </>
+          <ContactValue
+            label="Email"
+            value={details.email}
+            onChange={() => {
+              setEmail('');
+              report('');
+            }}
+          />
         ) : (
           <>
+            <AppText>New email address</AppText>
             <TextInput
               accessibilityLabel="Account email"
               placeholder="Email address"
@@ -123,55 +124,91 @@ export function SampleContactDetails({ details, save }: { details: Details; save
             )}
           </>
         )}
-      </Surface>
-      <Surface style={{ gap: 10 }}>
-        <AppText role="heading">Phone number</AppText>
-        <TextInput
-          accessibilityLabel="Phone number with country code"
-          style={input}
-          value={phone}
-          onChangeText={(v) => {
-            setPhone(v);
-            setSent(false);
-            setCode('');
-            report('');
-          }}
-        />
-        {normalized === details.phone ? (
-          <AppText role="caption">Phone verified</AppText>
-        ) : (
+        {email !== null && (
           <ActionButton
             outline
-            label={sent ? 'Resend text' : 'Text me a code'}
-            disabled={!normalized}
+            label="Cancel email change"
             onPress={() => {
-              setSent(true);
-              report('Preview code: 123456');
+              setEmail(null);
+              setConfirm(false);
+              report('');
             }}
           />
         )}
-        {sent && (
+      </View>
+      <View style={{ gap: 8, borderTopWidth: 1, borderColor: t.colors.border }}>
+        {!editingPhone ? (
+          <ContactValue
+            label="Phone number"
+            value={details.phone}
+            onChange={() => {
+              setEditingPhone(true);
+              setPhone('');
+              report('');
+            }}
+          />
+        ) : (
           <>
+            <AppText>Phone number with country code</AppText>
             <TextInput
-              accessibilityLabel="Verification code"
+              accessibilityLabel="Phone number with country code"
               style={input}
-              value={code}
-              placeholder="6-digit code"
-              onChangeText={setCode}
-            />
-            <ActionButton
-              label="Verify code"
-              disabled={code.length !== 6}
-              onPress={() => {
-                if (code !== '123456' || !normalized) return report('Try the sample code 123456.');
-                save({ ...details, phone: normalized });
+              value={phone}
+              onChangeText={(v) => {
+                setPhone(v);
                 setSent(false);
-                report('Sample phone verified.');
+                setCode('');
+                report('');
+              }}
+            />
+            {normalized === details.phone ? (
+              <AppText role="caption">Phone verified</AppText>
+            ) : (
+              <ActionButton
+                outline
+                label={sent ? 'Resend text' : 'Text me a code'}
+                disabled={!normalized}
+                onPress={() => {
+                  setSent(true);
+                  report('Preview code: 123456');
+                }}
+              />
+            )}
+            {sent && (
+              <>
+                <TextInput
+                  accessibilityLabel="Verification code"
+                  style={input}
+                  value={code}
+                  placeholder="6-digit code"
+                  onChangeText={setCode}
+                />
+                <ActionButton
+                  label="Verify code"
+                  disabled={code.length !== 6}
+                  onPress={() => {
+                    if (code !== '123456' || !normalized) return report('Try the sample code 123456.');
+                    save({ ...details, phone: normalized });
+                    setEditingPhone(false);
+                    setSent(false);
+                    report('Sample phone verified.');
+                  }}
+                />
+              </>
+            )}
+            <ActionButton
+              outline
+              label="Cancel phone change"
+              onPress={() => {
+                setEditingPhone(false);
+                setSent(false);
+                setCode('');
+                report('');
               }}
             />
           </>
         )}
-      </Surface>
+      </View>
       {message && <AppText accessibilityLiveRegion="polite">{message}</AppText>}
     </>
   );

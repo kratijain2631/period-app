@@ -35,7 +35,7 @@ export function ProfileIdentity({
   return (
     <Surface style={{ padding: 0, overflow: 'hidden' }}>
       <View
-        style={{ padding: 17, minHeight: 112, justifyContent: 'center', backgroundColor: t.colors.profileCover }}
+        style={{ padding: 17, minHeight: 124, justifyContent: 'center', backgroundColor: t.colors.profileCover }}
       >
         {t.illustrated && <GardenArt />}
         {onOpen ? (

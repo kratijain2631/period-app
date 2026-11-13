@@ -189,7 +189,7 @@ Record build, iOS version, affected control and outcome; do not publish personal
 
 ## Design v1.0 TestFlight walkthrough
 
-1. Install **1.0.18 (40)** from the internal TestFlight group. The same walkthrough applies to the preceding **1.0.17 (39)** redesign. Use an account that has already finished setup. Cold-launch the app to see the icon and illustrated opening.
+1. Install **1.0.18 (40)** from TestFlight. Apple confirmed it is available to both existing internal groups, **Dev Team** and **Team (Expo)**. The same walkthrough applies to the preceding **1.0.17 (39)** redesign. Use an account that has already finished setup. Cold-launch the app to see the icon and illustrated opening.
 2. On Home, open the cycle strip and the upcoming phase to reach the wheel on You. Tap the wheel for phase ranges. Open the phase tip and tap **Refresh tips**. Use a tester with synced cycle data for refresh.
 3. In Feed, open comments, switch to another thread and tap another post body. Confirm the old thread collapses. Post a comment and delete it with the small trash icon. Look at **My posts** at the bottom of You.
 4. In **You → Settings**, open **Manage contact details** and **Post settings**. Enable **Show me in Community rankings**. Return to Circle, check **Largest Circle** and **Loudest Voices**, then turn visibility off. A tester outside the Top 10 can opt in without ranking.
@@ -197,3 +197,7 @@ Record build, iOS version, affected control and outcome; do not publish personal
 6. Try larger text and VoiceOver. Report the screen, action, expected result, actual result, iOS version and build number. Keep any private health or contact data out of shared screenshots.
 
 Live SMS verification, new-account setup and Shaan’s contact match have separate follow-up work. Browser verification uses synthetic contacts.
+
+### Standalone Settings and approved thumbnail
+
+Browser checks followed You → Settings → Post settings and back, changed the sample email and phone with confirmation, and verified ranking visibility survives leaving and returning. The full bio mascot fits at 320, 390 and 480 px. All 179 app tests, native and preview type checks, and the local iOS bundle export passed. Hosted SMS delivery is pending the owner’s provider setup. [Current Settings screenshot](../design/2026-11-12/settings/settings.png).

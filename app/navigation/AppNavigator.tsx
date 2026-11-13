@@ -1,3 +1,4 @@
+import SettingsScreen from '../features/profile/screens/SettingsScreen';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -157,6 +158,8 @@ const FriendsStackScreen = () => (
 const ProfileStackScreen = () => (
   <ProfileStack.Navigator screenOptions={{ headerShown: false, gestureEnabled: true }}>
     <ProfileStack.Screen name="ProfileRoot" component={ProfileScreen} />
+    <ProfileStack.Screen name="Settings" component={SettingsScreen}
+      options={{ headerShown: true, title: '', headerBackTitle: 'You', headerShadowVisible: false }} />
     <ProfileStack.Screen
       name="ManageContactDetails"
       component={ManageContactDetailsScreen}

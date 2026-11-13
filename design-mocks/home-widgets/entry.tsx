@@ -1,6 +1,6 @@
 import { CommentThreads } from '../../app/features/feed/components/CommentThreads';
 import { OpeningIdentity } from '../../app/components/brand/OpeningIdentity';
-import { SettingsMenu, SampleContactDetails, PostingSettings } from './PreviewPreferences';
+import { SettingsMenu, PostingSettings } from './PreviewPreferences';
 import { PostComments } from '../../app/features/feed/components/PostComments';
 import type { PostComment } from '../../app/services/supabase/postComments';
 import { NotificationItem } from '../../app/features/notifications/components/NotificationItem';
@@ -64,7 +64,6 @@ const states = ['Ready', 'Empty', 'Loading', 'Error', 'Stale', 'Offline'] as con
 const pageIcons = { Home: 'home', Feed: 'chatbubbles', Circle: 'people', You: 'person-circle' } as const;
 type Detail =
   | 'opening'
-  | 'contacts'
   | 'posting'
   | 'sign-out'
   | 'delete-account'
@@ -110,13 +109,13 @@ function Preview() {
   });
   const [detail, setDetail] = useState<Detail>(() => {
     const screen = screenParam();
+    if (screen === 'contacts') return 'settings';
     if (!screen || screen === 'opening') return 'opening';
     if (
       screen === 'profile' ||
       screen === 'notifications' ||
       screen === 'add-friends' ||
       screen === 'settings' ||
-      screen === 'contacts' ||
       screen === 'posting' ||
       screen === 'edit' ||
       screen === 'write' ||
@@ -170,7 +169,7 @@ function Preview() {
   const [postSettings, setPostSettings] = useState({ period: false, first: true, phase: false });
   const [contactDetails, setContactDetails] = useState({ email: 'alex@example.com', phone: '+12025550120' });
   const settingsChild =
-    detail === 'contacts' || detail === 'posting' || detail === 'sign-out' || detail === 'delete-account';
+    detail === 'posting' || detail === 'sign-out' || detail === 'delete-account';
   const theme = neutral ? neutralTheme : illustratedTheme;
   const offline = state === 'Offline';
   const incomingRequests =
@@ -451,11 +450,8 @@ function Preview() {
       }
       case 'settings':
         content = (
-          <SettingsMenu email={contactDetails.email} ranked={ranked} onRanked={setRanked} onOpen={setDetail} />
+          <SettingsMenu details={contactDetails} save={setContactDetails} ranked={ranked} onRanked={setRanked} onOpen={setDetail} />
         );
-        break;
-      case 'contacts':
-        content = <SampleContactDetails details={contactDetails} save={setContactDetails} />;
         break;
       case 'posting':
         content = <PostingSettings value={postSettings} change={setPostSettings} />;

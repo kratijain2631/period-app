@@ -1,8 +1,9 @@
+import { Wordmark } from '../../../components/brand/Wordmark';
 import { Platform, Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { AppText } from '../../../components/ui/WidgetPrimitives';
 import { DottieMascot } from '../../../components/brand/DottieMascot';
-import { APP_NAME, APP_TAGLINE, TAGLINE_LINES } from '../../../config/branding';
+import { APP_TAGLINE, TAGLINE_LINES } from '../../../config/branding';
 import { useWidgetTheme } from '../../../theme/widgetTheme';
 import NotificationsBell from '../../notifications/components/NotificationsBell';
 
@@ -30,17 +31,7 @@ export const HomeHeader = ({
         }}
       >
         <View style={{ flex: 1, minWidth: 160 }}>
-          <AppText
-            style={{
-              fontFamily: t.type.display,
-              fontSize: 34,
-              lineHeight: 43,
-              letterSpacing: -1,
-              color: t.colors.accent,
-            }}
-          >
-            {APP_NAME.toLowerCase()}
-          </AppText>
+          <Wordmark />
           <AppText
             accessibilityLabel={APP_TAGLINE}
             style={{ color: t.colors.secondary, fontSize: 14, lineHeight: 19 }}

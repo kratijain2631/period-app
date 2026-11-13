@@ -6,7 +6,14 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## Unreleased
 
+- The opening page and Home use the same lowercase Nunito ExtraBold wordmark, including its size, spacing and terracotta color. The approved app thumbnail now uses Home’s actual waving mascot inside the five-color ring. [Opening preview](../design/2026-11-12/mascot-thumbnail/opening.png) and [1024 px thumbnail](../app/components/brand/assets/app-icon.png).
+- Settings now opens as a full page from You. **Personal info** displays each email and phone number once, with individual change actions. A replacement email uses confirmation links and a replacement phone uses an SMS code. The owner is setting up hosted SMS separately. **Privacy and permissions** contains Post settings and Community rankings visibility. Sign out and Delete account are at the bottom. [Settings screenshot](../design/2026-11-12/settings/settings.png).
+- The You bio banner gives the drop more headroom and anchors its landscape within the cover. The shared profile banner keeps the full mascot visible at 320, 390 and 480 px.
+
+
 ## 2026-11-12 — TestFlight build 1.0.18 (build 40)
+
+Apple processed and enabled build 40 for the existing **Dev Team** and **Team (Expo)** internal testing groups. The [signed build](https://expo.dev/accounts/kratijain26/projects/period-app/builds/61ece33d-37d1-40af-9282-5eab64127444) and [Apple upload](https://expo.dev/accounts/kratijain26/projects/period-app/submissions/b222dec8-171a-4d65-a450-b4dc3a44b9b7) both finished. Build 39 also passed Apple processing and is available to the same groups.
 
 - **1.0.18 (40) and 1.0.17 (39) contain the same screens, features and fixes.** It gives the redesign its own TestFlight version. The numbered feature list and [design v1.0 gallery](../design/2026-11-12/v1.0/README.md) apply to both builds.
 - Use an existing account for the [iPhone walkthrough](TESTING.md#design-v10-testflight-walkthrough). The production database already contains the comments and rankings migration. SMS setup, real-device checks, unchanged-contact re-verification and Instagram Stories retain the status recorded below.
