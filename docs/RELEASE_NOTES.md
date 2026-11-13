@@ -6,6 +6,10 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## Unreleased
 
+## 2026-11-12 — TestFlight build 1.0.17 (build 38)
+
+Internal design beta for testers with an existing account. [iPhone walkthrough](TESTING.md#design-v10-testflight-walkthrough). Build and Apple upload status are recorded below after verification.
+
 ### Added
 
 - Design v1.0 includes a 1024 × 1024 app thumbnail and an illustrated opening identity. The smiling terracotta drop sits inside the five-color cycle ring. The app icon, animated launch, signed-out sign-in screen and browser preview use that identity. The preview opens from the welcome page or directly to a requested tab.
@@ -35,7 +39,7 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 ### Verification and known blockers
 
 - **Requested phone/email QA (2026-11-12).** Two disposable staging JWT accounts passed phone/email/combined matching, deduplication, opt-in/out, caller independence and changed confirmed identifier/readback checks. Verification was Admin-simulated; accounts/data removed, shared accounts untouched. Thirty contact service/controller tests pass with mocked permissions. Real SMS/email confirmation, native contact-detail screens and iOS permission/selection flows remain unverified.
-- **Required-phone onboarding blocked by hosted SMS setup.** Read-only settings show phone auth disabled on staging and production; normal staging phone change failed HTTP 500, exact cause unconfirmed. Configure/enable and validate SMS before distribution. No production tests/configuration writes. TESTING now has short VoiceOver, larger-text and real Health-sync instructions.
+- **Required-phone onboarding blocked by hosted SMS setup.** Read-only settings show phone auth disabled on staging and production; normal staging phone change failed HTTP 500, exact cause unconfirmed. Enable and validate SMS before inviting testers who need new account setup. No production tests/configuration writes. TESTING now has short VoiceOver, larger-text and real Health-sync instructions.
 
 ### Fixed
 
@@ -49,7 +53,7 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 - Instagram Stories export for an author’s own posts is recorded in [Features](FEATURES.md#sharing-and-community-recognition) and [Todo](TODO.md#widget-rollout-and-follow-ups). Quests, XP and streaks in the illustration are design concepts.
 - Settings verifies a replacement email by confirmation link and a replacement phone number by SMS. Re-verifying an unchanged contact remains on the [roadmap](FEATURES.md#sharing-and-community-recognition).
-- These changes have not been released to TestFlight. Apply the additive database migration before releasing the client and complete the [signed-in iPhone checks](TESTING.md#widget-and-circle-smoke-check).
+- The signed-in [iPhone checks](TESTING.md#widget-and-circle-smoke-check) are pending. New account setup and live phone changes depend on the hosted SMS provider.
 
 ### Verification
 
@@ -66,11 +70,11 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 - **Owner feedback (2026-11-12, 1.0.16 installed):** force-close/offline alias retest passes and DSA declaration is reported resolved. Offline empty-feed copy is being corrected; missing contact match for Shaan remains under investigation. Phone/email support is documented in the separate 1.0.17 candidate, not in installed 1.0.16.
 
 
-## 2026-11-12 — 1.0.17 iOS release candidate
+### Earlier 1.0.17 candidate verification
 
 2026-11-12 — [1.0.17 release run](https://github.com/kratijain2631/period-app/actions/runs/43318041600) passed TypeScript and all 155 Jest tests. The two dedicated staging accounts signed in and passed phone-only, email-only, combined/deduplicated, caller independence and opt-out lookups. The release job stopped before starting EAS because the GitHub Actions repository secret `EXPO_TOKEN` was missing. After configuring the secret, re-run failed jobs on that run. SMS delivery and physical-device checks remain pending.
 
-Prepared for internal TestFlight. Build number and Apple upload are pending verification. [What to test](TESTING.md#1017-iphone-checklist).
+Earlier candidate preparation is included in this build. [Contact checks](TESTING.md#1017-iphone-checklist).
 - Added a startup check of recent GitHub work and an offer to review colleagues’ changes since the previous session.
 
 - 2026-11-12 — Phone/email discovery migration applied to staging and production in [Database deploy](https://github.com/kratijain2631/period-app/actions/runs/43298960603). The 76 staging access checks, 155 Jest tests, TypeScript and local SQL contract checks passed. Hosted SMS delivery and native onboarding/contact checks remain pending. First iOS candidate with these changes: 1.0.17.

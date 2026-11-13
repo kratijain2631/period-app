@@ -186,3 +186,14 @@ Use your existing real account and Health records on TestFlight; synthetic Healt
 | Real Health sync | Health > profile picture > Privacy > Apps > this app; enable the cycle categories you want it to read. Return to this app, open You and compare the sync status and cycle data with your existing Health records. | Recent sync status and period-derived dates/day count agree with existing records. Phase labels remain this app's estimates. [Apple Health permissions](https://support.apple.com/en-us/108779). |
 
 Record build, iOS version, affected control and outcome; do not publish personal Health records, contact addresses, numbers or codes.
+
+## Design v1.0 TestFlight walkthrough
+
+1. Install version **1.0.17 (38)** from the internal TestFlight group. Use an account that has already finished setup. Cold-launch the app to see the icon and illustrated opening.
+2. On Home, open the cycle strip and the upcoming phase to reach the wheel on You. Tap the wheel for phase ranges. Open the phase tip and tap **Refresh tips**. Use a tester with synced cycle data for refresh.
+3. In Feed, open comments, switch to another thread and tap another post body. Confirm the old thread collapses. Post a comment and delete it with the small trash icon. Look at **My posts** at the bottom of You.
+4. In **You → Settings**, open **Manage contact details** and **Post settings**. Enable **Show me in Community rankings**. Return to Circle, check **Largest Circle** and **Loudest Voices**, then turn visibility off. A tester outside the Top 10 can opt in without ranking.
+5. With a second existing account, send a friend request, accept it from Notifications and open the sender’s profile. On Circle, scroll past four friends, switch personal ranking tabs, and scroll the community boards to tenth place when enough testers opt in. Verify relevant scores after a comment, post deletion or friendship change.
+6. Try larger text and VoiceOver. Report the screen, action, expected result, actual result, iOS version and build number. Keep any private health or contact data out of shared screenshots.
+
+Live SMS verification, new-account setup and Shaan’s contact match have separate follow-up work. Browser verification uses synthetic contacts.
