@@ -582,29 +582,6 @@ export const PhaseIndicator = memo(({ phase }: { phase?: string | null }) => {
   );
 });
 
-export const PhaseAvatar = memo(
-  ({ initial, phase, size = 44 }: { initial: string; phase?: string | null; size?: number }) => {
-    const bg = getPhaseBg(phase);
-    const color = getPhaseColor(phase);
-
-    return (
-      <View
-        style={[
-          styles.avatar,
-          {
-            width: size,
-            height: size,
-            borderRadius: size / 2,
-            backgroundColor: bg,
-          },
-        ]}
-      >
-        <Text style={[styles.avatarText, { color, fontSize: size * 0.36 }]}>{initial}</Text>
-      </View>
-    );
-  },
-);
-
 const styles = StyleSheet.create({
   centerLabel: {
     position: 'absolute',
@@ -685,19 +662,5 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     letterSpacing: 0.1,
-  },
-  avatar: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: '#FFFFFF',
-    shadowColor: '#000',
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 1 },
-    elevation: 1,
-  },
-  avatarText: {
-    fontWeight: '700',
   },
 });

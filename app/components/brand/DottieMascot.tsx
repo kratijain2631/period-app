@@ -234,61 +234,6 @@ export const DottieThemed = memo(
   },
 );
 
-export const DottieAndFriend = memo(
-  ({
-    size = 160,
-    color1 = '#C4654A',
-    color2 = '#7BA68F',
-  }: {
-    size?: number;
-    color1?: string;
-    color2?: string;
-  }) => (
-    <Svg width={size} height={size * 0.75} viewBox="0 0 160 120" fill="none">
-      <Ellipse cx="80" cy="112" rx="50" ry="6" fill="#E8E4DE" opacity={0.5} />
-      <G x={30} y={8}>
-        <Path
-          d="M35 8 C35 8 12 40 12 56 C12 68.703 22.297 79 35 79 C47.703 79 58 68.703 58 56 C58 40 35 8 35 8Z"
-          fill={color1}
-        />
-        <Circle cx="29" cy="55" r="3" fill="#3D2920" />
-        <Circle cx="41" cy="55" r="3" fill="#3D2920" />
-        <Circle cx="30.5" cy="53.5" r="1" fill="#FFF" />
-        <Circle cx="42.5" cy="53.5" r="1" fill="#FFF" />
-        <Path d="M32 62 Q35 65 38 62" stroke="#3D2920" strokeWidth={1.5} strokeLinecap="round" />
-        <Circle cx="24" cy="59" r="3.5" fill="#FFD4C4" opacity={0.4} />
-        <Circle cx="46" cy="59" r="3.5" fill="#FFD4C4" opacity={0.4} />
-        <Path d="M54 58 Q62 54 66 50" stroke={color1} strokeWidth={3} strokeLinecap="round" />
-        <Ellipse cx="30" cy="79" rx="4.5" ry="2.5" fill={darken(color1, 0.15)} />
-        <Ellipse cx="40" cy="79" rx="4.5" ry="2.5" fill={darken(color1, 0.15)} />
-      </G>
-      <G x={90} y={22}>
-        <Path
-          d="M25 6 C25 6 8 30 8 42 C8 51.389 15.611 59 25 59 C34.389 59 42 51.389 42 42 C42 30 25 6 25 6Z"
-          fill={color2}
-        />
-        <Circle cx="21" cy="41" r="2.5" fill="#3D2920" />
-        <Circle cx="30" cy="41" r="2.5" fill="#3D2920" />
-        <Circle cx="22" cy="39.5" r="0.8" fill="#FFF" />
-        <Circle cx="31" cy="39.5" r="0.8" fill="#FFF" />
-        <Path d="M23 46 Q25.5 49 28 46" stroke="#3D2920" strokeWidth={1.2} strokeLinecap="round" />
-        <Circle cx="17" cy="44" r="2.5" fill="#FFD4C4" opacity={0.4} />
-        <Circle cx="34" cy="44" r="2.5" fill="#FFD4C4" opacity={0.4} />
-        <Path d="M10 44 Q4 42 0 38" stroke={color2} strokeWidth={2.5} strokeLinecap="round" />
-        <Ellipse cx="21" cy="59" rx="3.5" ry="2" fill={darken(color2, 0.15)} />
-        <Ellipse cx="29" cy="59" rx="3.5" ry="2" fill={darken(color2, 0.15)} />
-      </G>
-      <G x={72} y={42}>
-        <Path
-          d="M8 4 C8 0 4 -1 2 1 C0 3 0 6 4 9 L8 12 L12 9 C16 6 16 3 14 1 C12 -1 8 0 8 4Z"
-          fill="#C4654A"
-          opacity={0.6}
-        />
-      </G>
-    </Svg>
-  ),
-);
-
 export const DottieSyncScene = memo(
   ({ color1 = '#C4654A', color2 = '#7BA68F', width = 380, height = 280 }: {
     color1?: string;

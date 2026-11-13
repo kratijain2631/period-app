@@ -33,12 +33,6 @@ export type UserProfileRow = {
   auto_post_phase_transitions?: boolean | null;
 };
 
-export type UserSearchResult = {
-  id: string;
-  full_name?: string | null;
-  alias?: string | null;
-};
-
 const PROFILE_SELECT_BASE =
   'id, full_name, email, alias, bio, avatar_url, avatar_style, avatar_prompt';
 const PROFILE_SELECT_WITH_AUTO_POST = `${PROFILE_SELECT_BASE}, auto_post_period_days, auto_post_period_start_only, auto_post_phase_transitions`;
@@ -325,30 +319,6 @@ export const saveCurrentUserAutoPostSettings = async (
     }
   }
   return settings;
-};
-
-export const searchUsersByAliasOrEmail = async (
-  query: string,
-  limit = 5,
-): Promise<UserSearchResult[]> => {
-  if (!isSupabaseConfigured) {
-    return [];
-  }
-  const trimmed = query.trim();
-  if (!trimmed) {
-    return [];
-  }
-  if (/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(trimmed)) {
-    return [];
-  }
-  const { data, error } = await supabase.rpc('search_users', {
-    search: trimmed,
-    max_results: limit,
-  });
-  if (error) {
-    throw new Error(`[search_users] ${error.message}`);
-  }
-  return (data as UserSearchResult[]) ?? [];
 };
 
 export const updateUserAlias = async (alias: string, expectedUserId?: string) => {
