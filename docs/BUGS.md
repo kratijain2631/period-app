@@ -4,6 +4,8 @@ Known bugs to fix. This is for **open** bugs; problems we already diagnosed and 
 
 ## Open
 
+- [~] Own activity and sync rings show Y, and a friend’s automatic update can show “A friend” while opening their named profile. 🚧 (WIP — Codex, 2026-11-13)
+
 - [ ] **Hosted SMS setup blocks required phone onboarding (verified 2026-11-12).** Public Auth settings report phone auth disabled on staging and production. A normal JWT phone-change request on an isolated staging user returned HTTP 500 / `unexpected_failure`; the exact 500 cause is not established. Enable/configure SMS and verify delivery, wrong code, resend and valid confirmation before distributing required-phone onboarding. Admin-simulated verification in lookup tests does not complete this requirement. No production writes or configuration changes.
 
 ### Cycle widgets
