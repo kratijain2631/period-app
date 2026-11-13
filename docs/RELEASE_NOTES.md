@@ -14,6 +14,8 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## 2026-11-13 — TestFlight build 1.0.23 (build 45)
 
+Apple processed the [signed iOS build](https://expo.dev/accounts/kratijain26/projects/period-app/builds/20a87dc4-bda4-4e2a-95c9-0eb48f716143) and [upload](https://expo.dev/accounts/kratijain26/projects/period-app/submissions/0ca1b910-467b-4dac-b938-06c1e6242f04). Build 45 is in internal beta testing and assigned to **Dev Team** and **Team (Expo)**.
+
 The [database deployment](https://github.com/kratijain2631/period-app/actions/runs/43467339668) applied the author lookup to staging, passed 76 staging access checks and applied it to production. All 186 app tests, native and preview type checks and the iOS bundle export passed. [Staging and remaining iPhone checks](TESTING.md#staging-qa-2026-11-13).
 
 **Design and member identity**
@@ -32,11 +34,11 @@ The [database deployment](https://github.com/kratijain2631/period-app/actions/ru
 **Friend discovery and requests**
 
 - **Find from contacts** goes back to its normal label when matches are cleared, for example after returning from Settings. One tap now searches again; before, the first tap only hid an empty panel. The filter, selection count and Send button appear only when there are matches, so denied access shows just the notice. "Contacts access updated" appears only after returning from Settings or the permission sheet, not on every return to the app, and now also after the two-step iOS contacts sheet.
-- Real staging sessions matched an opted-in test account by confirmed email, by a preverified fictional phone number and by both together with one result. Opting out hid the match. After both email confirmations, the new address replaced the old one in discovery. Sending, canceling, resending and accepting requests updated both accounts.
+- Real staging sessions matched an opted-in test account by confirmed email, by a preverified fictional phone number and by both together with one result. Opting out hid the match. After both email confirmations, the new address replaced the old one in discovery. Six eligible test contacts produced five requests and five recipient inbox entries. Duplicate requests were prevented. Cancel, decline, resend and accept updated both accounts.
 
 **Posting, comments and rankings**
 
-- Staging checks covered written posts, automatic period and phase updates, comment ownership, Boops, friendship changes, and their effects on Most supportive, Largest Circle and Loudest Voices. [QA record](TESTING.md#staging-qa-2026-11-13).
+- Staging checks covered written posts, automatic period and phase updates, comment ownership, Boops, friendship changes, and their effects on Most supportive, Largest Circle and Loudest Voices. Most in sync scores agreed with the friend profile and removing the top friend promoted the next eligible friend. [QA record](TESTING.md#staging-qa-2026-11-13).
 
 ## 2026-11-12 — TestFlight build 1.0.22 (build 44)
 
