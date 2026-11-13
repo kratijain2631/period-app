@@ -259,3 +259,5 @@ _(Add new ideas under the theme they fit, and pull them into "The plan" when pri
 **Offline onboarding fix (2026-11-12):** built and uploaded in 1.0.16 (37), preserving the existing account’s cached alias on profile-fetch failure and offering retry when no profile is cached. Automated/staging checks pass; physical cold-start retest remains open in TODO.
 
 **Owner verification (2026-11-12):** 1.0.16 installed and offline force-close alias recovery passes; current DSA declaration resolved per owner. Offline feed copy fixed in source for a later build. Contacts positive matching remains open: Shaan is absent despite an added email and Full Access; his exact account email and discoverability remain to be confirmed. Phone/email matching is a separate unreleased 1.0.17 candidate, not in 1.0.16.
+
+Account email changes are paused pending server-enforced reauthentication. See [the pause and rollout instructions](TROUBLESHOOTING.md#account-email-changes-are-paused).
