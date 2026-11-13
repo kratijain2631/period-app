@@ -6,6 +6,8 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## Unreleased
 
+- **Push notifications, phase 1.** Friend requests, accepted requests, reactions and boops now send a push to the other person's phone once the `send-push` edge function is deployed. Lock-screen text names who did something and never mentions anyone's cycle. A re-sent friend request within a day, or boops within 10 minutes, don't push again. Fixes a privacy bug: signing out now removes the phone's push token first, and a token belongs only to the last account that registered it, so a shared phone no longer receives the previous account's pushes. Database: `20261113230000_push-notifications.sql` adds `push_outbox` (server-only queue), `notification_preferences` (defaults; settings screen comes in phase 2), the triggers, a 5-minute retry job and a daily cleanup. [Design](design/push-notifications.md).
+
 - The owner confirmed Phase Guide refresh on their production phone. Staging still needs an OpenAI key for fresh tips and can use the existing production key. [Staging setup](TROUBLESHOOTING.md#contact-verification-delivery-and-guidance-on-staging-2026-11-13).
 
 - Paused new TestFlight builds at the owner’s request to reserve the two remaining builds. Build 1.0.24 (46) is available for internal testing.

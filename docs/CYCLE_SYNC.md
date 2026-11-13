@@ -77,6 +77,8 @@ When a `background` sync (HealthKit delivery) detects an actual phase change, it
 **Who can run the scheduled functions (since 2026-11-07).** `phase-change-reminder`, `cycle-guidance` and `friend-recommendations` reject any caller without the `x-cron-secret` header. The cron jobs read the secret from Vault (`cron_secret`) and send it; it's never stored anywhere else ([`_shared/cronAuth.ts`](../supabase/functions/_shared/cronAuth.ts), `20261107013000_scheduled-function-secret.sql`). Current job metadata (2026-11-12): `daily-phase-change-reminder` remains active at 15:00 UTC; `nightly-cycle-guidance` was retired by `20261111211000`, and `nightly-friend-recommendations` is deliberately off.
 
 ### (d) In-app notifications (a separate system) — friends' activity
+Since 2026-11-13 the same reactions and boops, plus friend requests and acceptances, also queue a lock-screen push through `push_outbox` and the `send-push` function. See [design/push-notifications.md](design/push-notifications.md).
+
 The bell / [`NotificationsScreen`](../app/features/notifications/screens/NotificationsScreen.tsx) with a new/read distinction (`notifications.read_at`). Populated by:
 - **DB triggers** ([`20260730130000`](../supabase/migrations/20260730130000_notification-triggers-engagement.sql)) that insert a `notifications` row when someone reacts to your post/event or boops you.
 - A **realtime subscription** on `friend_requests` (instant friend-request/acceptance updates) + client-derived acceptances.

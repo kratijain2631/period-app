@@ -39,6 +39,20 @@ const rows: Row[] = [
     setup: { user_id: 'victim', token: 'ExponentPushToken[security-matrix]', platform: 'ios' },
     where: { user_id: 'victim', token: 'ExponentPushToken[security-matrix]' }, expect: 'hidden' },
 
+  // notification_preferences: each user's own push choices
+  { name: 'nobody can set push preferences for someone else', as: 'stranger', op: 'insert', table: 'notification_preferences',
+    row: { user_id: 'victim', boops: false }, expect: 'denied' },
+  { name: 'a friend cannot read the victim\'s push preferences', as: 'friend', op: 'select', table: 'notification_preferences', owner: 'user_id', expect: 'hidden' },
+  { name: 'a friend cannot change the victim\'s push preferences', as: 'friend', op: 'update', table: 'notification_preferences',
+    setup: { user_id: 'victim' }, where: { user_id: 'victim' }, set: { friend_requests: false }, expect: 'hidden' },
+  { name: 'the owner cannot move their push preferences to someone else', as: 'owner', op: 'update', table: 'notification_preferences',
+    setup: { user_id: 'victim' }, where: { user_id: 'victim' }, set: { user_id: 'stranger' }, expect: 'hidden' },
+
+  // push_outbox: the server's delivery queue, which no app user can read
+  { name: 'the owner cannot read their queued pushes', as: 'owner', op: 'select', table: 'push_outbox', owner: 'user_id', expect: 'hidden' },
+  { name: 'nobody can queue a push for someone else', as: 'friend', op: 'insert', table: 'push_outbox',
+    row: { user_id: 'victim', actor_id: 'self', type: 'security-matrix' }, expect: 'denied' },
+
   // notifications: created by the server, read and updated by their owner
   { name: 'the owner sees their notifications', as: 'owner', op: 'select', table: 'notifications', owner: 'user_id', expect: 'allowed' },
   { name: 'a friend cannot read the victim\'s notifications', as: 'friend', op: 'select', table: 'notifications', owner: 'user_id', expect: 'hidden' },
