@@ -41,7 +41,7 @@ Use this as the launch tracker. Claim an item the same way as in [BUGS.md](BUGS.
 - [x] Email friend request shows no confirmation (`FriendsScreen.tsx`, notice only renders for non-email queries). _(Already fixed in the live screen, `DiscoverMembers`; the unused old `FriendsScreen.tsx` has been removed. Confirmed on staging 2026-11-13; see BUGS.md.)_
 - [x] Circle doesn't refresh after an accept; new posts need pull-to-refresh; the bell can lag about a minute. _(2026-11-13: the Circle part was already fixed. Posts and notifications now arrive over realtime, verified on staging after the migration deployed; see BUGS.md.)_
 - [x] Two-way pending requests leave a stale row. _(Fixed 2026-11-13 and verified on staging after deploy; see BUGS.md.)_
-- [ ] Re-check "Deleting an accepted request directly leaves sharing on" against the 2026-11-11 friend-rule migration; it may be fixed.
+- [x] Re-check "Deleting an accepted request directly leaves sharing on" against the 2026-11-11 friend-rule migration; it may be fixed. _(Still open on re-check, now fixed in source 2026-11-13; see BUGS.md.)_
 - [ ] "Check Incoming Requests" points to a screen that doesn't exist.
 - [ ] An expired session shows "Choose your alias" instead of sign-in.
 - [ ] Contacts: Limited Access fails; owner can't find Shaan with Full Access. Physical iPhone checks in [CONTACT_DISCOVERY_ROLLOUT.md](CONTACT_DISCOVERY_ROLLOUT.md).
