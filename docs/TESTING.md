@@ -91,8 +91,7 @@ The step-by-step procedure, including preflight checks, signing in safely and re
 
 - **Real HealthKit, background delivery, push notifications and haptics** need a real phone on a TestFlight or dev build. The on-device checklist is in [TODO.md](TODO.md).
 - **Scheduled phase reminders** at 15:00 UTC run on their own schedule. Nightly guidance was retired on 2026-11-12. Changing the simulator's date is the practical way to test reminders.
-- **AI text**: staging has no `OPENAI_API_KEY`, so recommendations use their free fallback text.
-- **`request-cycle-guidance`** is deployed on staging and production (2026-11-11). Staging has `PROJECT_PUBLISHABLE_KEY` configured but no `OPENAI_API_KEY`; cached requests and refresh claim/save/cooldown can be verified without paid generation. Actual AI generation still needs separate verification in an appropriately configured staging environment.
+- **`request-cycle-guidance`** is deployed on staging and production (2026-11-11). Staging has both `PROJECT_PUBLISHABLE_KEY` and `OPENAI_API_KEY`. Cached requests and refresh limits passed. A fresh generation attempt on November 13 reached OpenAI and returned HTTP 429.
 
 ## Guidance verification — 2026-11-11
 
@@ -132,7 +131,7 @@ On staging, use two synthetic accounts. Complete fresh alias setup with a verifi
 
 Use the staging development client for repeatable checks. Start it with `npm run start:staging`. Sign in with Email (dev) as circleqa-a or circleqa-b from the [persona guide](TEST_ACCOUNTS.md). These staging accounts have no production access. TestFlight uses production and Apple sign-in; use two consenting developers on physical phones for the final pass.
 
-1. On a new account, keep the verified Apple email or confirm an alternative. Enter a phone number with country code. Try an incorrect code, then enter the delivered code and finish setup. Record actual delivery separately from the automated fixture.
+1. On a new account, keep the verified Apple email or confirm an alternative. Enter the national number in its own box and check the country code in the adjacent box (initially +1). Try an incorrect code, then enter the delivered code and finish setup. Record actual delivery separately from the automated fixture.
 2. On an existing developer account open **You → Settings → Manage contact details**, verify the displayed account, update a number and navigate back. Check the setting persists after relaunch.
 3. On B, enable **Circle → Let contacts find me**. On A, leave the switch off. Save B's verified number in a dedicated contact with no email. Open Circle and check that permission is first requested after tapping Find Contacts.
 4. Test denied access, then return directly from Settings with Limited Access. Select B and search (one match). Deselect B (zero matches and no stale name). Switch to Full (B returns). Repeat with B's verified email alone, then both identifiers (one row).
@@ -301,3 +300,8 @@ An additional browser session rendered the app’s reaction list and privacy con
 ## Owner large-text feedback - 2026-11-13
 
 Owner tried very large accessibility text and reported an awkward appearance, acceptable for now. Layout polish is deferred as a non-blocking future item in [TODO.md](TODO.md). Build, iOS version and affected screens were not supplied. This is feedback on appearance, not a full Dynamic Type or VoiceOver pass.
+
+## Phone editor and staging Phase Guide, 2026-11-13
+
+- In the Settings component, a disposable account signed in on staging. Checked the +1 default, invalid input, a UK national number with its trunk prefix, the outgoing international number and Cancel/reopen. The browser intercepted the SMS request to simulate a delivery error. The account was removed. Real SMS delivery and an iOS walkthrough remain open. This Mac has no installed simulator runtime.
+- The Settings preview showed distinct bordered inputs at 320 and 390 px. The [phone editor capture](../design/2026-11-13/contact-settings/change-phone.png) shows the default +1. The preview passed international paste, resend, invalid and correct sample codes, unchanged-number validation and cancel at a 320 px width. All 210 app tests and native and preview type checks passed.

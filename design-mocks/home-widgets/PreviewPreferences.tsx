@@ -2,8 +2,8 @@ import { CyclePrivacyControl } from '../../app/features/profile/components/Cycle
 import { EmailChangeForm, PendingEmail } from '../../app/features/profile/components/EmailChangeForm';
 import { SettingsPage, ContactValue } from '../../app/features/profile/components/SettingsPage';
 import { useState } from 'react';
-import { TextInput, View } from 'react-native';
-import { normalizeContactPhone } from '../../app/services/contacts/phone';
+import { View } from 'react-native';
+import { PhoneChangeForm } from '../../app/features/profile/components/PhoneChangeForm';
 import { AppText, ActionButton } from '../../app/components/ui/WidgetPrimitives';
 import { useWidgetTheme } from '../../app/theme/widgetTheme';
 import { RankingVisibilityRow } from '../../app/features/profile/components/RankingVisibilityRow';
@@ -41,20 +41,11 @@ export function SampleContactDetails({ details, save }: { details: Details; save
   const t = useWidgetTheme();
   const [email, setEmail] = useState<string | null>(null);
   const [pendingEmail, setPendingEmail] = useState('');
-  const [editingPhone, setEditingPhone] = useState(false);
-  const [phone, setPhone] = useState(details.phone);
-  const [code, setCode] = useState('');
-  const [sent, setSent] = useState(false);
+  const [editingPhone, setEditingPhone] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('screen') === 'settings' && params.get('edit') === 'phone';
+  });
   const [message, report] = useState('');
-  const normalized = normalizeContactPhone(phone);
-  const input = {
-    minHeight: 46,
-    borderWidth: 1,
-    borderColor: t.colors.border,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    color: t.colors.text,
-  };
   return (
     <>
       <View style={{ gap: 8 }}>
@@ -89,70 +80,20 @@ export function SampleContactDetails({ details, save }: { details: Details; save
             value={details.phone}
             onChange={() => {
               setEditingPhone(true);
-              setPhone('');
               report('');
             }}
           />
         ) : (
-          <>
-            <AppText>Phone number with country code</AppText>
-            <TextInput
-              accessibilityLabel="Phone number with country code"
-              style={input}
-              value={phone}
-              onChangeText={(v) => {
-                setPhone(v);
-                setSent(false);
-                setCode('');
-                report('');
-              }}
-            />
-            {normalized === details.phone ? (
-              <AppText role="caption">Phone verified</AppText>
-            ) : (
-              <ActionButton
-                outline
-                label={sent ? 'Resend text' : 'Text me a code'}
-                disabled={!normalized}
-                onPress={() => {
-                  setSent(true);
-                  report('Preview code: 123456');
-                }}
-              />
-            )}
-            {sent && (
-              <>
-                <TextInput
-                  accessibilityLabel="Verification code"
-                  style={input}
-                  value={code}
-                  placeholder="6-digit code"
-                  onChangeText={setCode}
-                />
-                <ActionButton
-                  label="Verify code"
-                  disabled={code.length !== 6}
-                  onPress={() => {
-                    if (code !== '123456' || !normalized) return report('Try the sample code 123456.');
-                    save({ ...details, phone: normalized });
-                    setEditingPhone(false);
-                    setSent(false);
-                    report('Sample phone verified.');
-                  }}
-                />
-              </>
-            )}
-            <ActionButton
-              outline
-              label="Cancel phone change"
-              onPress={() => {
-                setEditingPhone(false);
-                setSent(false);
-                setCode('');
-                report('');
-              }}
-            />
-          </>
+          <PhoneChangeForm currentPhone={details.phone} busy={false}
+            onEdit={() => report('')}
+            onSend={async () => { report('Preview code: 123456'); return true; }}
+            onVerify={(phone, code) => {
+              if (code !== '123456') return report('Try the sample code 123456.');
+              save({ ...details, phone });
+              setEditingPhone(false);
+              report('Sample phone verified.');
+            }}
+            onCancel={() => { setEditingPhone(false); report(''); }} />
         )}
       </View>
       {message && <AppText accessibilityLiveRegion="polite">{message}</AppText>}
