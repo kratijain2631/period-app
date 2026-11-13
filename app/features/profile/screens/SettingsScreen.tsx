@@ -5,6 +5,7 @@ import { selectSession, useSessionStore } from '../../../state/sessionStore';
 import { deleteCurrentAccount, signOut } from '../../../services/supabase/auth';
 import { useWidgetTheme } from '../../../theme/widgetTheme';
 import { RankingVisibility } from '../components/RankingVisibility';
+import { CyclePrivacySettings } from '../components/CyclePrivacySettings';
 import { SettingsPage } from '../components/SettingsPage';
 import ContactDetails from './ContactDetails';
 
@@ -68,6 +69,7 @@ export default function SettingsScreen() {
       <SettingsPage
         contacts={<ContactDetails key={session.userId} userId={session.userId} settings />}
         visibility={<RankingVisibility key={session.userId} userId={session.userId} />}
+        cyclePrivacy={<CyclePrivacySettings key={session.userId} userId={session.userId} />}
         onPosting={() => navigation.navigate('AutoPostSettings')}
         onSignOut={handleSignOut}
         onDelete={confirmDeleteAccount}

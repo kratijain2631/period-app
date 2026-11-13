@@ -1,3 +1,4 @@
+import { CyclePrivacyControl } from '../../app/features/profile/components/CyclePrivacyControl';
 import { EmailChangeForm, PendingEmail } from '../../app/features/profile/components/EmailChangeForm';
 import { SettingsPage, ContactValue } from '../../app/features/profile/components/SettingsPage';
 import { useState } from 'react';
@@ -15,7 +16,9 @@ export function SettingsMenu({
   ranked,
   onRanked,
   onOpen,
+  cycleSharing, onCycleSharing,
 }: {
+  cycleSharing: boolean; onCycleSharing: (enabled: boolean) => void;
   details: Details;
   save: (next: Details) => void;
   ranked: boolean;
@@ -26,6 +29,7 @@ export function SettingsMenu({
     <SettingsPage
       contacts={<SampleContactDetails details={details} save={save} />}
       visibility={<RankingVisibilityRow enabled={ranked} busy={false} onChange={onRanked} />}
+      cyclePrivacy={<CyclePrivacyControl enabled={cycleSharing} onRetry={() => {}} onChange={async value => onCycleSharing(value)} />}
       onPosting={() => onOpen('posting')}
       onSignOut={() => onOpen('sign-out')}
       onDelete={() => onOpen('delete-account')}

@@ -137,6 +137,7 @@ function Preview() {
   const [profile, setProfile] = useState(initialProfile);
   const [text, setText] = useState('');
   const [mood, setMood] = useState<string | null>(null);
+  const [cycleSharing, setCycleSharing] = useState(true);
   const [items, setItems] = useState(activity);
   const [comments, setComments] = useState<Record<string, PostComment[]>>({
     'post:sunday-walk': [
@@ -213,7 +214,7 @@ function Preview() {
   const visiblePeople = [
     ...(state === 'Empty' ? [] : people.filter(p => !removedIds.includes(p.id) || relations[p.id] === 'friends')),
     ...sampleContacts.filter((p) => relations[p.id] === 'friends'),
-  ];
+  ].map(p => cycleSharing ? p : { ...p, score: null });
   const availableItems = items.filter(item => !removedIds.includes(item.actorId) || relations[item.actorId] === 'friends');
   const visibleItems =
     state === 'Empty' ? availableItems.filter((p) => !sampleItemKeys.has(activityKey(p.target))) : availableItems;
@@ -222,10 +223,11 @@ function Preview() {
   const topFriend = rankSync(visiblePeople)[0];
   const unavailable = state === 'Loading' || state === 'Error';
   const model: CycleOverview =
-    state === 'Empty' || unavailable
+    !cycleSharing || state === 'Empty' || unavailable
       ? {
           ...example,
-          state: state === 'Empty' ? 'empty' : state === 'Loading' ? 'loading' : 'error',
+          state: !cycleSharing || state === 'Empty' ? 'empty' : state === 'Loading' ? 'loading' : 'error',
+          daysLate: null,
           phase: 'unknown',
           source: 'unknown',
           currentDay: null,
@@ -300,7 +302,17 @@ function Preview() {
     const key = activityKey(item.target);
     return (
       <ActivityItem
-        key={key}
+        key={key} self="self" onMember={id => { const p = personById(id); if (p) openFriend(p); }}
+        readEngagement={async (filter, offset) => {
+          const pool = [...people.filter(p => p.id !== item.actorId), me];
+          return pool.flatMap((p, index) => {
+            const self = p.id === 'self';
+            const booped = self ? item.boopStatus === 'sent' : index < item.boopCount - Number(item.boopStatus === 'sent');
+            const emojis = item.reactions.filter(r => self ? r.selected : index < r.count - Number(r.selected)).map(r => r.emoji);
+            if (!(booped || emojis.length) || (filter === 'boop' && !booped) || (filter && filter !== 'boop' && !emojis.includes(filter))) return [];
+            return [{ member_id: p.id, display_name: p.name, alias: p.alias, emojis: filter === 'boop' ? [] : filter ? [filter] : emojis, booped: booped && (!filter || filter === 'boop') }];
+          }).slice(offset, offset + 40);
+        }}
         model={item.isSelf ? { ...item, actorInitial: memberInitial(memberName(profile.name, profile.alias)), actorName: 'You' } : item}
         onOpenProfile={
           detail === 'profile'
@@ -447,7 +459,7 @@ function Preview() {
                       ? 'Friend request sent'
                       : 'Member'
             }
-            comparison={!self && member ? <PreviewPair key={person.id} person={person} yourName={memberName(profile.name, profile.alias)} offline={offline} onRemove={() => remove(person.id)} /> : undefined}
+            comparison={!self && member ? <PreviewPair key={person.id} person={cycleSharing ? person : { ...person, score: null }} yourName={memberName(profile.name, profile.alias)} offline={offline} onRemove={() => remove(person.id)} /> : undefined}
             updates={
               self || member ? (
                 posts.length ? (
@@ -483,7 +495,10 @@ function Preview() {
       }
       case 'settings':
         content = (
-          <SettingsMenu details={contactDetails} save={setContactDetails} ranked={ranked} onRanked={setRanked} onOpen={setDetail} />
+          <SettingsMenu cycleSharing={cycleSharing} onCycleSharing={enabled => {
+            setCycleSharing(enabled);
+            if (!enabled) setItems(rows => rows.filter(row => !(row.isSelf && row.target.type === 'cycle')));
+          }} details={contactDetails} save={setContactDetails} ranked={ranked} onRanked={setRanked} onOpen={setDetail} />
         );
         break;
       case 'posting':

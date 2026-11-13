@@ -8,11 +8,13 @@ export const ReactionBar = ({
   disabled,
   onReact,
   onChoose,
+  onInspect,
 }: {
   reactions: ActivityItemModel['reactions'];
   disabled: boolean;
   onReact: (emoji: string) => void;
   onChoose: () => void;
+  onInspect: (value: string | null) => void;
 }) => {
   const t = useWidgetTheme();
   return (
@@ -22,11 +24,14 @@ export const ReactionBar = ({
         .map((r) => (
           <Pressable
             key={r.emoji}
-            disabled={disabled}
-            onPress={() => onReact(r.emoji)}
+            onLongPress={() => onInspect(r.emoji)}
+            accessibilityHint="Hold to see who reacted"
+            accessibilityActions={[{ name: 'showPeople', label: 'Show who reacted' }]}
+            onAccessibilityAction={e => { if (e.nativeEvent.actionName === 'showPeople') onInspect(r.emoji); }}
+            onPress={() => { if (!disabled) onReact(r.emoji); }}
             accessibilityRole="button"
             accessibilityLabel={`${r.emoji}, ${r.count} reactions`}
-            accessibilityState={{ selected: r.selected, disabled }}
+            accessibilityState={{ selected: r.selected }}
             style={{
               minHeight: 44,
               minWidth: 44,
@@ -44,11 +49,13 @@ export const ReactionBar = ({
           </Pressable>
         ))}
       <Pressable
-        disabled={disabled}
-        onPress={onChoose}
+        onLongPress={() => onInspect(null)}
+        accessibilityHint="Hold to see all reactions and boops"
+        accessibilityActions={[{ name: 'showPeople', label: 'Show reactions and boops' }]}
+        onAccessibilityAction={e => { if (e.nativeEvent.actionName === 'showPeople') onInspect(null); }}
+        onPress={() => { if (!disabled) onChoose(); }}
         accessibilityRole="button"
         accessibilityLabel="Choose a reaction"
-        accessibilityState={{ disabled }}
         style={{ minHeight: 44, paddingHorizontal: 12, justifyContent: 'center', opacity: disabled ? 0.5 : 1 }}
       >
         <AppText style={{ color: t.colors.accent, fontFamily: t.type.semibold }}>♡ React</AppText>
@@ -62,11 +69,13 @@ export const BoopAction = ({
   status,
   disabled,
   onBoop,
+  onInspect,
 }: {
   count: number;
   status: ActivityItemModel['boopStatus'];
   disabled: boolean;
   onBoop: () => void;
+  onInspect: () => void;
 }) => {
   const t = useWidgetTheme();
   const label =
@@ -81,9 +90,11 @@ export const BoopAction = ({
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={`${label}${count ? `, ${count} boops` : ''}`}
-      accessibilityState={{ disabled: disabled || status !== 'idle' }}
-      onPress={onBoop}
-      disabled={disabled || status !== 'idle'}
+      accessibilityHint="Hold to see who booped"
+      accessibilityActions={[{ name: 'showPeople', label: 'Show who booped' }]}
+      onAccessibilityAction={e => { if (e.nativeEvent.actionName === 'showPeople') onInspect(); }}
+      onLongPress={onInspect}
+      onPress={() => { if (status === 'idle' && !disabled) onBoop(); else onInspect(); }}
       style={{ minHeight: 44, justifyContent: 'center', paddingHorizontal: 12 }}
     >
       <AppText style={{ color: status === 'sent' ? t.colors.success : t.colors.secondary }}>

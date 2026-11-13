@@ -53,6 +53,8 @@ Open items, roughly in priority order, with completed items retained as a decisi
 - [x] Record every design request in the [release notes](RELEASE_NOTES.md) and [widget inventory](UI_ARCHITECTURE.md#page-directory). The [versioned design gallery](../design/2026-11-12/v1.0/README.md) includes the 1024 px thumbnail, opening page, every preview page, sample profiles and button destinations.
 - [x] Put the small cycle preview on Home, the full wheel and Phase Guide on You, and link Home previews to their owners. Show phase ranges on press/hover, keep the ring legible at 320 px, retain guidance refresh and use the two-line mixed-font tagline.
 - [x] Finish You with My posts. Keep contact details and posting preferences in Settings, add the Community rankings visibility switch, and remove duplicate Circle, upcoming, check-in and profile callouts.
+- [x] Add explicit cycle erasure and reconnection under Privacy and permissions, and preserve the empty-sync safeguard for people who keep sharing.
+- [x] Show who reacted or booped a written or automatic update when someone holds its reaction controls.
 - [x] Add post comments, compact own-comment deletion, automatic collapse on another post and refreshed support/post ranking counts after deletion.
 - [x] Merge the separate cycle comparison into the outward friend profile in the app and preview, including friend actions and shared updates.
 - [x] Give friends a four-row scrolling list, incoming requests their own scroll box, matched contacts checkboxes and five-person batches, pending/accepted states and stacked invite actions. Add Friends, Notifications and outward profiles open outside the bottom tabs.

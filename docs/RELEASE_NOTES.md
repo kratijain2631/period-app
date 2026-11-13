@@ -6,6 +6,17 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## Unreleased
 
+**Cycle privacy**
+
+- You → Settings → Privacy and permissions → Erase synced cycle data clears the saved cycle summary, automatic updates, their interactions and notifications, guidance and paired recommendations. Confirmation turns off cycle sync for the account across devices. Friends, written posts and the original Apple Health records are kept. Reconnect and share explicitly enables importing again.
+- A temporary empty Health read still preserves the last shared summary. Delete account removes it with the account. A deleted cycle event now removes linked inbox notices and boops.
+
+**Feed interactions**
+
+- Hold an emoji count to see its members, hold React for the combined list, or hold Boop to see who sent one. You can inspect your own updates and open a member’s profile. The same controls apply to written and automatic updates across the app.
+
+**Accessibility**
+
 - Recorded owner feedback on very large accessibility text; layout polish is a future, non-blocking todo. No UI behavior changed.
 
 **Cycle accuracy**

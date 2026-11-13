@@ -35,6 +35,7 @@ export function ContactValue({
 export function SettingsPage({
   contacts,
   visibility,
+  cyclePrivacy,
   onPosting,
   onSignOut,
   onDelete,
@@ -43,6 +44,7 @@ export function SettingsPage({
 }: {
   contacts: ReactNode;
   visibility: ReactNode;
+  cyclePrivacy: ReactNode;
   onPosting: () => void;
   onSignOut: () => void;
   onDelete: () => void;
@@ -75,6 +77,7 @@ export function SettingsPage({
           <Ionicons name="chevron-forward" size={16} color={t.colors.secondary} />
         </Pressable>
         <View style={{ borderTopWidth: 1, borderColor: t.colors.border }}>{visibility}</View>
+        {cyclePrivacy}
       </Surface>
       <Surface style={{ paddingVertical: 4 }}>
         <Pressable

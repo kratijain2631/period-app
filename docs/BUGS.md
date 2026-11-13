@@ -4,6 +4,8 @@ Known bugs to fix. This is for **open** bugs; problems we already diagnosed and 
 
 ## Open
 
+- [x] Explicit cycle erasure removes the saved snapshot, related automatic posts and cycle notices, and blocks future uploads until reconnection. See Cycle privacy in the release notes.
+
 - [ ] General email-change delivery needs a verified custom sender and a reachable confirmation landing URL. Both hosted environments currently use the default team-restricted sender, secure email change and a localhost redirect. Verify receipt at both addresses, including Apple relay, after configuration.
 - [ ] Staging fresh guidance returns HTTP 503. The generation key is absent there. Configure a staging-scoped key and test a fresh result before marking live generation verified.
 
