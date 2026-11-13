@@ -5,7 +5,7 @@ import { ProfileIdentity } from '../components/ProfileWidgets';
 import { AppText, ActionButton, Surface } from '../../../components/ui/WidgetPrimitives';
 import { useWidgetTheme } from '../../../theme/widgetTheme';
 import { supabase } from '../../../services/supabase/client';
-import { sendFriendRequest } from '../../../services/supabase/friendRequests';
+import { cancelSentFriendRequest, sendFriendRequest } from '../../../services/supabase/friendRequests';
 import { MemberUpdates } from '../../feed/components/SharedActivity';
 import { useSocial } from '../../social/SocialProvider';
 
@@ -28,6 +28,7 @@ export default function MemberProfileScreen() {
   const [busy, setBusy] = useState(false);
   const [version, retry] = useState(0);
   const person = circle.people.find((p) => p.id === id);
+  const outgoing = circle.outgoing.find(r => r.memberId === id);
   const incoming = notifications.friendRequests.find((r) => r.from_user_id === id);
   useFocusEffect(
     useCallback(() => {
@@ -56,7 +57,8 @@ export default function MemberProfileScreen() {
     try {
       if (incoming) await respondToRequest(incoming.id, 'accepted');
       else {
-        await sendFriendRequest(id);
+        if (outgoing) await cancelSentFriendRequest(outgoing.id, self);
+        else await sendFriendRequest(id);
         await refreshCircle();
       }
       retry((v) => v + 1);
@@ -103,12 +105,12 @@ export default function MemberProfileScreen() {
               label={
                 incoming
                   ? 'Accept request'
-                  : circle.outgoing.includes(id)
-                    ? 'Request pending'
+                  : outgoing
+                    ? 'Cancel request'
                     : 'Send friend request'
               }
               onPress={action}
-              disabled={busy || circle.outgoing.includes(id)}
+              disabled={busy}
             />
           )}
           {profile.has_access && (self === id || !!person) && (

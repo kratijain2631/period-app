@@ -41,7 +41,7 @@ export function DiscoverMembers({
     .resolvedOptions()
     .locale.match(/[-_]([A-Z]{2})(?:-|$)/)?.[1];
   const friends = new Set(circle.people.map((p) => p.id));
-  const pending = new Set(circle.outgoing);
+  const pending = new Set(circle.outgoing.map(r => r.memberId));
   const inbound = new Map(notifications.friendRequests.map((r) => [r.from_user_id, r.id]));
   const eligible = (key: string) => !friends.has(key) && !pending.has(key) && !inbound.has(key);
   const selection = chosen.filter((key) => eligible(key) && c.contactMatches.some((p) => p.id === key));

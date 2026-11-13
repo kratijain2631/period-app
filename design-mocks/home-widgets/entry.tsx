@@ -1,6 +1,9 @@
+import { PostSettingsRows } from '../../app/features/profile/components/PostSettingsRows';
+import { SharingPreferences } from '../../app/features/profile/components/SharingPreferences';
+import { DEFAULT_AUTO_POST_SETTINGS } from '../../app/services/healthkit/autoPostSettings';
 import { CommentThreads } from '../../app/features/feed/components/CommentThreads';
 import { OpeningIdentity } from '../../app/components/brand/OpeningIdentity';
-import { SettingsMenu, PostingSettings } from './PreviewPreferences';
+import { SettingsMenu, SampleContactDetails } from './PreviewPreferences';
 import { PostComments } from '../../app/features/feed/components/PostComments';
 import type { PostComment } from '../../app/services/supabase/postComments';
 import { NotificationItem } from '../../app/features/notifications/components/NotificationItem';
@@ -64,6 +67,8 @@ const states = ['Ready', 'Empty', 'Loading', 'Error', 'Stale', 'Offline'] as con
 const pageIcons = { Home: 'home', Feed: 'chatbubbles', Circle: 'people', You: 'person-circle' } as const;
 type Detail =
   | 'opening'
+  | 'setup'
+  | 'sharing'
   | 'posting'
   | 'sign-out'
   | 'delete-account'
@@ -112,7 +117,7 @@ function Preview() {
     if (screen === 'contacts') return 'settings';
     if (!screen || screen === 'opening') return 'opening';
     if (
-      screen === 'profile' ||
+      screen === 'setup' || screen === 'sharing' || screen === 'profile' ||
       screen === 'notifications' ||
       screen === 'add-friends' ||
       screen === 'settings' ||
@@ -166,7 +171,7 @@ function Preview() {
     lou: 'outgoing',
   });
   const [ranked, setRanked] = useState(false);
-  const [postSettings, setPostSettings] = useState({ period: false, first: true, phase: false });
+  const [postSettings, setPostSettings] = useState(DEFAULT_AUTO_POST_SETTINGS);
   const [contactDetails, setContactDetails] = useState({ email: 'alex@example.com', phone: '+12025550120' });
   const settingsChild =
     detail === 'posting' || detail === 'sign-out' || detail === 'delete-account';
@@ -181,6 +186,14 @@ function Preview() {
       for (const id of ids) {
         if (sampleContacts.some((p) => p.id === id) && !next[id]) next[id] = 'outgoing';
       }
+      return next;
+    });
+  };
+  const cancelRequest = (id: string) => {
+    if (!offline) setRelations(prev => {
+      if (prev[id] !== 'outgoing') return prev;
+      const next = { ...prev };
+      delete next[id];
       return next;
     });
   };
@@ -369,9 +382,23 @@ function Preview() {
         content = (
           <View style={{ flexGrow: 1, justifyContent: 'center', paddingHorizontal: 14, gap: 54 }}>
             <OpeningIdentity />
-            <ActionButton label="Enter preview" onPress={() => navigate('Home')} />
+            <View style={{ gap: 6 }}>
+              <ActionButton label="Enter preview" onPress={() => navigate('Home')} />
+              <TextAction label="Preview first-time setup" onPress={() => navigate('Home', 'setup')} />
+            </View>
           </View>
         );
+        break;
+      case 'setup':
+        content = <Surface style={{ gap: 12 }}>
+          <AppText role="heading">Personal info</AppText>
+          <SampleContactDetails details={contactDetails} save={setContactDetails} />
+          <ActionButton label="Continue" onPress={() => navigate('Home', 'sharing')} />
+        </Surface>;
+        break;
+      case 'sharing':
+        content = <SharingPreferences ranked={ranked} onRanked={setRanked} posts={postSettings} onPosts={setPostSettings}
+          busy={false} onContinue={() => navigate('Home')} />;
         break;
       case 'write':
         content = composer;
@@ -432,9 +459,9 @@ function Preview() {
               !incoming &&
               relations[person.id] !== 'dismissed' ? (
                 <ActionButton
-                  label={relations[person.id] === 'outgoing' ? 'Request pending' : 'Send friend request'}
-                  disabled={relations[person.id] === 'outgoing' || offline}
-                  onPress={() => sendRequests([person.id])}
+                  label={relations[person.id] === 'outgoing' ? 'Cancel request' : 'Send friend request'}
+                  disabled={offline}
+                  onPress={() => relations[person.id] === 'outgoing' ? cancelRequest(person.id) : sendRequests([person.id])}
                 />
               ) : incoming ? (
                 <ActionButton
@@ -454,7 +481,7 @@ function Preview() {
         );
         break;
       case 'posting':
-        content = <PostingSettings value={postSettings} change={setPostSettings} />;
+        content = <PostSettingsRows value={postSettings} onChange={setPostSettings} />;
         break;
       case 'sign-out':
       case 'delete-account':
@@ -483,6 +510,7 @@ function Preview() {
             onPerson={openFriend}
             onSend={sendRequests}
             onRequest={respond}
+            onCancel={cancelRequest}
           />
         );
         break;
@@ -789,7 +817,7 @@ function Preview() {
               keyboardShouldPersistTaps="handled"
               contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 28, flexGrow: 1 }}
             >
-              {!!detail && detail !== 'opening' && (
+              {!!detail && !['opening','setup','sharing'].includes(detail) && (
                 <TextAction
                   label={
                     '‹ Back to ' +
@@ -812,7 +840,7 @@ function Preview() {
               )}
               <CommentThreads key={page + '-' + detail}>{content}</CommentThreads>
             </ScrollView>
-            {detail !== 'opening' && (
+            {!['opening', 'setup', 'sharing', 'write'].includes(detail ?? '') && (
               <View
                 accessibilityRole="tablist"
                 style={{

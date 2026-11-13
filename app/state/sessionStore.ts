@@ -129,6 +129,7 @@ export const useSessionStore = create<SessionState>()(
         ? { session }
         : {
             session, alias: null, autoPostSettings: initialAutoPostSettings,
+            hasSeenCompanionIntro: false, permissions: initialPermissions,
             profileLoadError: null, isProfileHydrating: Boolean(session),
           }),
       markCompanionIntroSeen: () => set({ hasSeenCompanionIntro: true }),

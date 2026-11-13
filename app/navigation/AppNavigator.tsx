@@ -30,6 +30,7 @@ import {
 import { brand } from '../theme/brand';
 
 import { SocialProvider } from '../features/social/SocialProvider';
+import WritePostScreen from '../features/feed/screens/WritePostScreen';
 import CircleFeedScreen from '../features/feed/screens/CircleFeedScreen';
 import MemberProfileScreen from '../features/profile/screens/MemberProfileScreen';
 const Stack = createNativeStackNavigator();
@@ -92,6 +93,13 @@ const AppNavigator = () => {
               <Stack.Screen name="CompanionIntro" component={CompanionIntroScreen} />
             )}
             {!isHydrating && readyForHome && <Stack.Screen name="MainTabs" component={MainTabs} />}
+            {!isHydrating && readyForHome && (
+              <Stack.Screen
+                name="WritePost"
+                component={WritePostScreen}
+                options={{ headerShown: true, title: 'Write a post', headerBackButtonDisplayMode: 'minimal' }}
+              />
+            )}
             {!isHydrating && readyForHome && (
               <Stack.Screen
                 name="AddFriends"

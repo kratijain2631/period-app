@@ -174,7 +174,8 @@ export const clearCycleSnapshot = async () => {
 export const syncHealthData = async ({
   trigger = 'manual',
 }: { trigger?: SyncTrigger } = {}): Promise<CycleSnapshot | null> => {
-  const { permissions, session } = useSessionStore.getState();
+  const { permissions, session, hasSeenCompanionIntro } = useSessionStore.getState();
+  if (!hasSeenCompanionIntro) return null;
   if (!session) {
     console.log('[cycle-sync] Skip: no session');
     return null;

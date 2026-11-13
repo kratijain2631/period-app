@@ -7,7 +7,7 @@ import { PageHeading } from '../../../components/ui/ScreenControls';
 import { AppText } from '../../../components/ui/WidgetPrimitives';
 import { useWidgetTheme } from '../../../theme/widgetTheme';
 import { SharedActivity } from '../components/SharedActivity';
-import { PostComposer } from '../components/PostComposer';
+import { ShareUpdateButton } from '../components/ShareUpdateButton';
 import { activityKey } from '../models/activity';
 import { useSocial } from '../../social/SocialProvider';
 import { useConnectionStore, selectIsOnline } from '../../../state/connectionStore';
@@ -48,15 +48,9 @@ export default function CircleFeedScreen() {
                 action="Notifications"
                 onPress={() => nav.navigate('Notifications')}
               />
-              <PostComposer
-                text={c.text}
-                mood={c.mood}
-                posting={c.posting}
-                offline={offline}
-                error={c.error}
-                onChangeText={c.setText}
-                onChangeMood={c.setMood}
-                onSubmit={c.submit}
+              <ShareUpdateButton
+                draft={Boolean(c.text || c.mood)}
+                onPress={() => nav.navigate('WritePost')}
               />
               <AppText role="heading" accessibilityRole="header">
                 Latest activity

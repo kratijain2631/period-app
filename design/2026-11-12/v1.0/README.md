@@ -6,6 +6,11 @@ November 12, 2026 · Illustrated browser preview · Sample accounts
 
 Each image is a capture of the running preview. The default device is 390 CSS pixels wide. Numbered continuations follow the main scroll. Nested lists have separate captures. Settings and account actions use local sample data.
 
+### Later TestFlight revisions
+
+- **1.0.19 (41)** includes the [approved waving thumbnail](../mascot-thumbnail/thumbnail.png), [opening wordmark](../mascot-thumbnail/opening.png) and [standalone Settings page](../settings/settings.png).
+- **1.0.20 (42)** includes [Write a post](../setup-and-requests/write-post.png), [setup contact details](../setup-and-requests/personal-info.png), [initial sharing preferences](../setup-and-requests/sharing-preferences.png), [sent and received requests](../setup-and-requests/sent-requests.png) and the complete profile drop at [320 px](../setup-and-requests/you-320.png), [390 px](../setup-and-requests/you-390.png) and [480 px](../setup-and-requests/you-480.png).
+
 ## Screens and dialogs
 
 - [Opening page](pages/01-opening.png) · Open preview or Controls → Opening page

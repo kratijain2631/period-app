@@ -1,7 +1,9 @@
 import { useState, type ReactNode } from 'react';
-import { Pressable, ScrollView, TextInput, View } from 'react-native';
+import { ScrollView, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { AppText, Surface, ActionButton } from '../../app/components/ui/WidgetPrimitives';
+import { FriendRequestsCard } from '../../app/features/friends/components/FriendRequestsCard';
+import { ShareUpdateButton } from '../../app/features/feed/components/ShareUpdateButton';
 import { RankingTabs } from '../../app/components/ui/RankingTabs';
 import { PageHeading, TextAction } from '../../app/components/ui/ScreenControls';
 import { useWidgetTheme } from '../../app/theme/widgetTheme';
@@ -18,7 +20,7 @@ import { phaseLabels } from '../../app/features/cycle/models/phaseLabels';
 import { fallbackPhaseGuidance } from '../../packages/domain/cycles/guidance';
 import { CommunityLeaderboard } from './CommunityLeaderboard';
 import { DiscoverFriends, InviteCircle } from './PreviewDetails';
-import { communityExamples, supportExamples, type ContactRelation, type PreviewState } from './fixtures';
+import { communityExamples, supportExamples, sampleContacts, type ContactRelation, type PreviewState } from './fixtures';
 
 export function FeedPage({
   state,
@@ -35,7 +37,6 @@ export function FeedPage({
   onNotifications: () => void;
   onRetry: () => void;
 }) {
-  const t = useWidgetTheme();
   return (
     <>
       <PageHeading title="Feed" icon="notifications-outline" action="Notifications" onPress={onNotifications} />
@@ -44,28 +45,7 @@ export function FeedPage({
           {state === 'Offline' ? 'Offline · Showing saved activity' : 'Showing your last feed update'}
         </AppText>
       ) : null}
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={draft ? 'Continue your draft' : 'Share an update'}
-        onPress={onWrite}
-        style={{
-          minHeight: 52,
-          borderWidth: 1,
-          borderColor: t.colors.border,
-          borderRadius: 18,
-          backgroundColor: t.colors.surface,
-          paddingHorizontal: 15,
-          flexDirection: 'row',
-          alignItems: 'center',
-          gap: 10,
-        }}
-      >
-        <Ionicons name="create-outline" size={21} color={t.colors.accent} />
-        <AppText style={{ flex: 1, color: t.colors.secondary }}>
-          {draft ? 'Continue your draft' : 'Share an update…'}
-        </AppText>
-        <Ionicons name="chevron-forward" size={15} color={t.colors.secondary} />
-      </Pressable>
+      <ShareUpdateButton draft={draft} onPress={onWrite} />
       <AppText role="heading" accessibilityRole="header">
         Latest activity
       </AppText>
@@ -283,65 +263,11 @@ export function YouPage({
 
 type RequestProps = {
   incomingRequests: CirclePerson[];
+  onCancel: (id: string) => void;
   onPerson: (p: CirclePerson) => void;
   onRequest: (id: string, accept: boolean) => void;
   state: PreviewState;
 };
-export function IncomingRequests({ incomingRequests, onPerson, onRequest, state }: RequestProps) {
-  const t = useWidgetTheme();
-  return (
-    <View nativeID="requests" tabIndex={-1}>
-      <Surface style={{ gap: 10 }}>
-        <AppText role="heading" accessibilityRole="header">
-          Friend requests
-        </AppText>
-        {incomingRequests.length ? (
-          <ScrollView
-            nestedScrollEnabled
-            keyboardShouldPersistTaps="handled"
-            style={{
-              maxHeight: 232,
-              borderWidth: 1,
-              borderColor: t.colors.border,
-              borderRadius: t.radius.control,
-            }}
-          >
-            {incomingRequests.map((p) => (
-              <View
-                key={p.id}
-                style={{
-                  paddingHorizontal: 12,
-                  paddingBottom: 10,
-                  borderBottomWidth: 1,
-                  borderColor: t.colors.border,
-                }}
-              >
-                <TextAction label={p.name + ' · @' + p.alias} onPress={() => onPerson(p)} />
-                <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
-                  <ActionButton
-                    label="Accept"
-                    accessibilityLabel={`Accept ${p.name}`}
-                    onPress={() => onRequest(p.id, true)}
-                    disabled={state === 'Offline'}
-                  />
-                  <ActionButton
-                    outline
-                    label="Decline"
-                    accessibilityLabel={`Decline ${p.name}`}
-                    onPress={() => onRequest(p.id, false)}
-                    disabled={state === 'Offline'}
-                  />
-                </View>
-              </View>
-            ))}
-          </ScrollView>
-        ) : (
-          <AppText>No pending requests.</AppText>
-        )}
-      </Surface>
-    </View>
-  );
-}
 export function AddFriendsPage(
   props: RequestProps & { relations: Record<string, ContactRelation>; onSend: (ids: readonly string[]) => void },
 ) {
@@ -351,7 +277,15 @@ export function AddFriendsPage(
       <AppText role="heading" accessibilityRole="header">
         Add friends
       </AppText>
-      <IncomingRequests {...props} />{' '}
+      <View nativeID="requests" tabIndex={-1}>
+        <FriendRequestsCard
+          incoming={props.incomingRequests.map(p => ({ id: p.id, memberId: p.id, alias: p.alias }))}
+          outgoing={sampleContacts.filter(p => relations[p.id] === 'outgoing').map(p => ({ id: p.id, memberId: p.id, alias: p.alias }))}
+          busy={state === 'Offline'} status="ready" onRetry={() => {}}
+          onProfile={id => { const p = sampleContacts.find(c => c.id === id); if (p) onPerson(p); }}
+          onRespond={onRequest} onCancel={props.onCancel}
+        />
+      </View>
       <View nativeID="discover" tabIndex={-1}>
         <DiscoverFriends
           onPerson={onPerson}

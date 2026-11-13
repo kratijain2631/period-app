@@ -1,12 +1,11 @@
 import { SettingsPage, ContactValue } from '../../app/features/profile/components/SettingsPage';
 import { useState } from 'react';
-import { Switch, TextInput, View } from 'react-native';
+import {  TextInput, View } from 'react-native';
 import { normalizeContactPhone } from '../../app/services/contacts/phone';
-import { AppText, Surface, ActionButton } from '../../app/components/ui/WidgetPrimitives';
+import { AppText,  ActionButton } from '../../app/components/ui/WidgetPrimitives';
 import { useWidgetTheme } from '../../app/theme/widgetTheme';
 import { RankingVisibilityRow } from '../../app/features/profile/components/RankingVisibilityRow';
 
-export type Preferences = { period: boolean; first: boolean; phase: boolean };
 export type Details = { email: string; phone: string };
 
 export function SettingsMenu({
@@ -33,33 +32,7 @@ export function SettingsMenu({
   );
 }
 
-export function PostingSettings({ value, change }: { value: Preferences; change: (v: Preferences) => void }) {
-  const rows = [
-    ['period', 'Post period updates'],
-    ['first', 'First day only'],
-    ['phase', 'Post phase transitions'],
-  ] as const;
-  return (
-    <>
-      <AppText role="heading">Post settings</AppText>
-      <Surface style={{ gap: 12 }}>
-        {rows.map(([key, label]) => (
-          <View key={key} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 44 }}>
-            <AppText style={{ flex: 1 }}>{label}</AppText>
-            <Switch
-              accessibilityLabel={label}
-              value={value[key]}
-              disabled={key === 'first' && !value.period}
-              onValueChange={(next) => change({ ...value, [key]: next })}
-            />
-          </View>
-        ))}
-      </Surface>
-    </>
-  );
-}
-
-function SampleContactDetails({ details, save }: { details: Details; save: (next: Details) => void }) {
+export function SampleContactDetails({ details, save }: { details: Details; save: (next: Details) => void }) {
   const t = useWidgetTheme();
   const [email, setEmail] = useState<string | null>(null);
   const [confirm, setConfirm] = useState(false);

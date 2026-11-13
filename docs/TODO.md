@@ -27,6 +27,12 @@ Open items, roughly in priority order, with completed items retained as a decisi
 
 ## Widget rollout and follow-ups
 
+- [x] Open a dedicated Write a post page from Share an update in the iPhone Feed, retain unfinished drafts when backing out, and return to Feed after successful sharing.
+- [x] Ask about contact details, ranking visibility and post settings during first-time setup.
+- [x] Fix the flat, clipped tip on the illustrated drop in the You bio banner and check the shared profile artwork at 320, 390 and 480 px.
+- [x] Show received and sent pending requests under Friend requests. Allow the sender to cancel there or from the recipient’s profile, and return the contact to the selectable list.
+- [ ] Run the new flows on an iPhone, including real contact confirmation after the hosted SMS provider is enabled. [Walkthrough](TESTING.md#feed-setup-and-sent-requests).
+
 - [x] Move Settings to its own page, group email/phone change actions under Personal info, put Post settings and ranking visibility under Privacy and permissions, and finish with Sign out and Delete account. Allow enough headroom for the bio mascot at every preview width.
 
 - [x] Preview a thumbnail using Home’s actual waving mascot and match the opening wordmark to Home.

@@ -168,20 +168,21 @@ export const useActivityFeed = (userId: string, alias: string | null) => {
     }
   };
   const submit = async () => {
-    if ((!text.trim() && !mood) || !selectIsOnline(useConnectionStore.getState()) || !begin('composer')) return;
+    if ((!text.trim() && !mood) || !selectIsOnline(useConnectionStore.getState()) || !begin('composer')) return false;
     setPosting(true);
     setPostError(null);
     try {
       const created = await createPost({ body: text.trim(), moodTag: mood ?? undefined, alias });
       if (!created) throw new Error('Post unavailable');
-      if (active()) invalidateRankings((v) => v + 1);
+      if (!active()) return false;
+      invalidateRankings((v) => v + 1);
       update((previous) => sortActivity([projectPost(created, userId), ...previous]));
-      if (active()) {
-        setText('');
-        setMood(null);
-      }
+      setText('');
+      setMood(null);
+      return true;
     } catch {
       if (active()) setPostError('Your post couldn’t send. Your draft is still here.');
+      return false;
     } finally {
       end('composer');
       if (active()) setPosting(false);
