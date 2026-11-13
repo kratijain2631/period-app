@@ -6,6 +6,10 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## Unreleased
 
+## 2026-11-13 — TestFlight build 1.0.24 (build 46)
+
+The features passed [staging tests with disposable accounts](TESTING.md#explicit-erasure-and-engagement), phone-width gesture checks and 208 app tests. [Database deployment](https://github.com/kratijain2631/period-app/actions/runs/43480982106).
+
 **Cycle privacy**
 
 - You → Settings → Privacy and permissions → Erase synced cycle data clears the saved cycle summary, automatic updates, their interactions and notifications, guidance and paired recommendations. Confirmation turns off cycle sync for the account across devices. Friends, written posts and the original Apple Health records are kept. Reconnect and share explicitly enables importing again.
