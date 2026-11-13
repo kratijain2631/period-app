@@ -21,3 +21,4 @@ npm run --silent test-accounts:rls
 psql "$DB_URL" -v ON_ERROR_STOP=1 -f supabase/tests/phone-contact-discovery.sql
 
 psql "$DB_URL" -v ON_ERROR_STOP=1 -f supabase/tests/circle-rankings.sql
+psql "$DB_URL" -v ON_ERROR_STOP=1 -f supabase/tests/one-request-per-pair.sql

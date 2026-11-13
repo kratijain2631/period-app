@@ -31,13 +31,13 @@ The app's Notifications and Add friends screens query the same pending inbound `
 | `users` | User profile — email, Apple user id, name, alias, and the default-off `discoverable_by_contacts` preference. Created automatically on signup by the `handle_new_auth_user` trigger. |
 | `cycle_events` | Menstrual/cycle events synced from Apple Health (event type, phase, symptoms, start time). |
 | `cycle_snapshots` | A rolled-up snapshot of the user's current cycle state (whole snapshot as jsonb, incl. predicted `nextPhaseStart`/`nextPhase`). Also a `last_reminded_phase_start` column for the server-side phase reminder dedupe. |
-| `friend_requests` | Friend requests between users (from / to / status). In the `supabase_realtime` publication so the app gets instant updates. |
+| `friend_requests` | Friend requests between users (from / to / status). A pair holds at most one: a request is refused if the other person already requested you or is already your friend, and accepting deletes any pending request the other way (`20261113231000_one-request-per-pair.sql`). In the `supabase_realtime` publication so the app gets instant updates. |
 | `friend_sharing` | **Legacy, controls nothing since 20261111180000.** A `has_shared` flag per direction, kept in step with accepted requests (`ensure_friend_sharing`, `remove_friend`) only because older app builds read it for the friends list. |
-| `posts` | Feed posts (alias, body, mood tag). |
+| `posts` | Feed posts (alias, body, mood tag). In the `supabase_realtime` publication so friends' new posts reach the feed right away. |
 | `post_reactions` | Emoji reactions to posts. |
 | `event_reactions` | Emoji reactions to cycle events. |
 | `boops` | Friend "boop" nudges (from / to / optional cycle event). |
-| `notifications` | In-app notifications, with a `read_at` column (null = unread) for the notifications page's new/read state. Populated by engagement triggers (reactions/boops) and, once deployed, the notifications-handler. |
+| `notifications` | In-app notifications, with a `read_at` column (null = unread) for the notifications page's new/read state. Populated by engagement triggers (reactions/boops) and, once deployed, the notifications-handler. In the `supabase_realtime` publication so the bell updates right away. |
 | `cycle_guidance` | Owner-readable AI dos/don’ts and friend suggestions, cached by phase plus nullable `phase_started_at`; caller-scoped completion RPC writes the new on-demand path. |
 | `friend_recommendations` | Pair recommendations/score cache used by the friend detail screen; separate from personal Phase Guide. |
 | `cycle_guidance_requests` | Applied 2026-11-03: caller-scoped two-minute generation leases; auth-user deletion cascades. No direct anon/authenticated table access. |
