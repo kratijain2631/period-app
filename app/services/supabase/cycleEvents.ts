@@ -32,6 +32,24 @@ export const fetchCycleEvents = async (limit = 40): Promise<CycleEventRow[]> => 
   return (data as CycleEventRow[]) ?? [];
 };
 
+// Whether the user's shared snapshot already holds period history. Reads the
+// owner's own row (owner-only RLS); throws on query errors.
+export const remoteSnapshotHasSamples = async (userId: string): Promise<boolean> => {
+  if (!isSupabaseConfigured) {
+    return false;
+  }
+  const { data, error } = await supabase
+    .from('cycle_snapshots')
+    .select('snapshot')
+    .eq('user_id', userId)
+    .maybeSingle();
+  if (error) {
+    throw error;
+  }
+  const samples = (data?.snapshot as Partial<CycleSnapshot> | null | undefined)?.samples;
+  return Array.isArray(samples) && samples.length > 0;
+};
+
 export const upsertCycleSnapshotRemote = async (userId: string, snapshot: CycleSnapshot) => {
   if (!isSupabaseConfigured) {
     return;

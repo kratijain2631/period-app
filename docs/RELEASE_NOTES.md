@@ -9,6 +9,7 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 **Cycle accuracy**
 
 - A late period no longer starts a new estimated cycle. Before, a few days past your usual length showed "period, day 3" and could post "Entered menstruation" to friends with no period logged. Now the day keeps counting, the phase stays PMS with "Period expected N days ago", no phase reminder is scheduled while overdue, and after 60 days with no period the phase becomes unknown without posting.
+- A sync that reads no Apple Health data (a new phone, Health access turned off) no longer replaces the cycle your friends see with "Unknown". A first snapshot is still shared for new accounts.
 - Added [LAUNCH_AUDIT.md](LAUNCH_AUDIT.md), the tracker for what remains before a public App Store release.
 
 ## 2026-11-13 — TestFlight build 1.0.23 (build 45)

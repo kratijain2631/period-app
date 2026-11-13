@@ -45,7 +45,7 @@ The sync ([`syncHealthData`](../app/services/healthkit/syncHealthData.ts)) is th
 In order (`syncHealthData`):
 1. Read menstrual-flow + signal samples from HealthKit.
 2. `deriveSnapshot` → current phase + predictions. Compare to the **last snapshot** (local SQLite) → `phaseChanged`.
-3. Save the snapshot locally (SQLite) and remotely (`cycle_snapshots` on Supabase — the whole snapshot as jsonb, so `nextPhaseStart`/`nextPhase` land server-side for the server reminder).
+3. Save the snapshot locally (SQLite) and remotely (`cycle_snapshots` on Supabase — the whole snapshot as jsonb, so `nextPhaseStart`/`nextPhase` land server-side for the server reminder). A sync that reads no flow samples skips the remote write when the user's row already has period history, so an empty read can't replace what friends see.
 4. **Auto-post** to the feed (`cycle_events`), gated by the user's auto-post settings:
    - New **`menstrual_flow`** events for period samples **on/after account creation** (never backfills history).
    - A **`phase_transition`** event when `phaseChanged` and `postPhaseTransitions` is on — **dated at `currentPhaseStart`** (the real transition day), not app-open time.

@@ -79,12 +79,15 @@ jest.mock('../../../storage/sqlite/cycleSnapshotStore', () => {
 });
 
 jest.mock('../../supabase/cycleEvents', () => {
+  const remoteSnapshotHasSamples = jest.fn();
   const upsertCycleEvents = jest.fn();
   const upsertCycleSnapshotRemote = jest.fn();
   return {
+    remoteSnapshotHasSamples,
     upsertCycleEvents,
     upsertCycleSnapshotRemote,
     __mocks: {
+      remoteSnapshotHasSamples,
       upsertCycleEvents,
       upsertCycleSnapshotRemote,
     },
@@ -141,6 +144,7 @@ const { __mocks: storeMocks } = jest.requireMock('../../../storage/sqlite/cycleS
 };
 const { __mocks: cycleEventMocks } = jest.requireMock('../../supabase/cycleEvents') as {
   __mocks: {
+    remoteSnapshotHasSamples: jest.Mock;
     upsertCycleEvents: jest.Mock;
     upsertCycleSnapshotRemote: jest.Mock;
   };
@@ -163,6 +167,7 @@ const mockGetLatestCycleSnapshot = storeMocks.getLatestCycleSnapshot;
 const mockUpsertCycleSnapshot = storeMocks.upsertCycleSnapshot;
 const mockUpsertCycleSnapshotRemote = cycleEventMocks.upsertCycleSnapshotRemote;
 const mockUpsertCycleEvents = cycleEventMocks.upsertCycleEvents;
+const mockRemoteSnapshotHasSamples = cycleEventMocks.remoteSnapshotHasSamples;
 const mockFetchCurrentAutoPostSettings = usersMocks.fetchCurrentAutoPostSettings;
 const mockSelectAutoPostedPeriodSamples = autoPostMocks.selectAutoPostedPeriodSamples;
 
@@ -195,6 +200,7 @@ describe('syncHealthData signal integration', () => {
     mockUpsertCycleSnapshot.mockResolvedValue(undefined);
     mockUpsertCycleSnapshotRemote.mockResolvedValue(undefined);
     mockUpsertCycleEvents.mockResolvedValue(undefined);
+    mockRemoteSnapshotHasSamples.mockResolvedValue(false);
 
     mockQueryCategorySamples.mockImplementation((identifier: string) => {
       if (identifier === 'HKCategoryTypeIdentifierMenstrualFlow') {
@@ -322,6 +328,42 @@ describe('syncHealthData signal integration', () => {
     expect(flowEvent?.phase).toBe('menstruation');
     // The phase-transition post still carries the real current phase.
     expect(transitionEvent?.phase).toBe(snapshot?.currentPhase);
+  });
+
+  describe('when Health returns no flow samples', () => {
+    beforeEach(() => {
+      mockQueryCategorySamples.mockResolvedValue([]);
+      mockQueryQuantitySamples.mockResolvedValue([]);
+    });
+
+    it('keeps an existing shared snapshot that has period history', async () => {
+      mockRemoteSnapshotHasSamples.mockResolvedValue(true);
+      const snapshot = await syncHealthData({ trigger: 'manual' });
+
+      expect(snapshot?.currentPhase).toBe('unknown');
+      expect(mockRemoteSnapshotHasSamples).toHaveBeenCalledWith(userId);
+      expect(mockUpsertCycleSnapshotRemote).not.toHaveBeenCalled();
+    });
+
+    it('still writes a first snapshot for a user with no shared history', async () => {
+      await syncHealthData({ trigger: 'manual' });
+
+      expect(mockUpsertCycleSnapshotRemote).toHaveBeenCalledTimes(1);
+    });
+
+    it('leaves the shared snapshot unchanged when the check fails', async () => {
+      mockRemoteSnapshotHasSamples.mockRejectedValue(new Error('offline'));
+      await syncHealthData({ trigger: 'manual' });
+
+      expect(mockUpsertCycleSnapshotRemote).not.toHaveBeenCalled();
+    });
+  });
+
+  it('uploads without checking the shared snapshot when samples were read', async () => {
+    await syncHealthData({ trigger: 'manual' });
+
+    expect(mockRemoteSnapshotHasSamples).not.toHaveBeenCalled();
+    expect(mockUpsertCycleSnapshotRemote).toHaveBeenCalledTimes(1);
   });
 
   it('does not post a transition when the phase can no longer be estimated', async () => {
