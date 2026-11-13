@@ -5,6 +5,10 @@ jest.mock('../users', () => ({
   upsertCurrentUserProfile: jest.fn(),
 }));
 
+jest.mock('../deviceTokens', () => ({
+  releaseStoredDeviceToken: jest.fn().mockResolvedValue(undefined),
+}));
+
 jest.mock('../client', () => ({
   isSupabaseConfigured: true,
   supabase: {
@@ -51,5 +55,18 @@ describe('signOut', () => {
 
     expect(supabase.auth.signOut).toHaveBeenNthCalledWith(1, { scope: 'local' });
     expect(supabase.auth.signOut).toHaveBeenNthCalledWith(2, { scope: 'global' });
+  });
+
+  it('releases the push token before the session ends', async () => {
+    const { releaseStoredDeviceToken } = jest.requireMock('../deviceTokens');
+    releaseStoredDeviceToken.mockClear();
+    supabase.auth.signOut.mockClear();
+    supabase.auth.signOut.mockResolvedValue({ error: null });
+
+    await signOut();
+
+    expect(releaseStoredDeviceToken.mock.invocationCallOrder[0]).toBeLessThan(
+      supabase.auth.signOut.mock.invocationCallOrder[0],
+    );
   });
 });
