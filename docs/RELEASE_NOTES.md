@@ -6,6 +6,53 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## Unreleased
 
+This branch preserves the original HTML mock, interactive preview and design history. The [native app review](https://github.com/kratijain2631/period-app/pull/97) contains the four-tab implementation and its [release notes](https://github.com/kratijain2631/period-app/blob/feature/native-circle-widgets/docs/RELEASE_NOTES.md).
+
+- The final preview includes the two-line italic tagline, a labeled Add Friends button, post comments, Circle rankings and one Notifications list with friend requests in arrival order.
+- The preview checkout now includes the shared comment type and the member ID used to open an acceptance notification’s sender profile.
+
+### Changed
+
+- Circle rankings now switches between Most in sync and Most supportive in one card. Both Cycle Community boards show a scrollable Top 10 with four rows visible.
+
+- On You, tapping your name opens your profile. Removed the separate “View my outward profile” link and tightened the space between Phase Guide and My updates.
+
+- In the Circle preview, the Friends list scrolls when more than four friends match the search. Largest Circle now labels its count “Circle size.”
+
+- The design preview links the Home sync widget to Circle’s consistently numbered leaderboard, adds My updates at the bottom of You, and displays sample Largest Circle and Loudest Voices boards.
+- Friend requests now sit inside a card with a scrolling list. A personal Most supportive ranking beside Most in sync shows sample reactions, comments and boops received over 30 days.
+- The Circle preview includes searchable, scrolling contact matches. Select up to five, see outgoing requests in gray, and accept or decline incoming requests. Share and Copy invite links appear as stacked matching buttons.
+- Added Instagram Stories sharing and global Circle rankings for accepted friendships and posting activity to the feature roadmap and near-term TODOs. Neither is shipped.
+
+- Simplified the Home greeting to a single personalized line.
+- The upcoming phase countdown appears only on Home and opens the cycle wheel on You.
+- Home now previews the compact cycle strip and a guide tip. In You, the wheel reveals phase ranges on hover or press and the tip links to the full inline Phase Guide.
+- The preview has four tabs, with Notifications and outward member profiles as secondary pages. Circle includes a ranked sync leaderboard, friend requests, directory, contact and account lookup, and invite-link sharing. The page directory and widget assignments are in UI_ARCHITECTURE.md.
+
+- **Home uses reusable widgets in the illustrated theme.** Cream surfaces, terracotta identity, the cycle summary, mascot and illustrated guidance/transition cards now compose the live Home screen alongside the social composer and virtualized activity feed. Theme tokens and presentation props are independent of cycle/feed controllers; existing Home/Circle/You routes remain available.
+
+### Fixed
+
+- At 320 px, the full cycle wheel keeps the phase and cycle day in its center. Supporting copy moves below the wheel when space is tight.
+- **Home cycle-day and phase semantics.** The wheel now uses all five domain phase ranges and counts from the start of the latest period; unknown data has no invented day, stale data stays qualified, and observed/estimated mismatches are explained. Shared PMS indicator labels/colors are corrected; legacy Profile/SyncRings geometry remains a follow-up.
+- **Home social action consistency.** Reactions use saved counts/selections, repeated in-flight taps are guarded, late refresh/account responses cannot overwrite current feed state, queued boops survive refresh, and failed posts keep their draft. Offline posts no longer promise an unsupported send queue.
+
+### Known / not yet done
+
+- **Home redesign is local and unreleased.** TypeScript, 118 automated tests (one existing skip) and the iOS JS bundle pass; fixture preview exercises the actual components in two themes and hero/compact layouts. Authenticated physical-device, VoiceOver, Dynamic Type and keyboard smoke checks remain before release. Screenshot XP/streak/quest controls remain future features.
+
+### Added
+
+- Added interactive Circle and You designs to the local Home preview. Circle includes Activity and People. You includes an editable profile, a compact cycle summary, monthly recap and phase guide. All three tabs share sample state.
+
+- Added a shared testing guide and instructions for recording code, database, staging, and test-account changes in GitHub.
+
+- **Reusable-widget preview.** `design-mocks/home-widgets/` renders the production presenters with sample state, theme and width controls; no live account or production writes.
+
+- **Theme-independent UI architecture documented.** The working instructions link to the four-layer screen model in `UI_ARCHITECTURE.md`. Its Cycle Status example shows how to reuse the same data and actions across screens, change theme tokens, and swap a wheel for a compact card or timeline.
+
+- **Screenshot-inspired home design prototype.** Added a standalone, local HTML mock in `design-mocks/home/` with a segmented cycle wheel, illustrated rewards, daily quest and sample check-in interactions; includes bundled fonts and works independently of the native app.
+
 ## 2026-11-03 — TestFlight build 1.0.14 (build 35)
 
 **Native build finished; automatic submission queued on EAS.** [EAS build](https://expo.dev/accounts/kratijain26/projects/period-app/builds/bf9a1168-1a04-430f-b342-bc6128d92fd8), with [automatic submission](https://expo.dev/accounts/kratijain26/projects/period-app/submissions/dbea0ad5-7488-4cef-a16d-cb238d5050a6) queued (`IN_QUEUE`; no upload logs yet). Source tag: `v1.0.14-build35` (`a67b00dd`). TestFlight availability is not yet confirmed.

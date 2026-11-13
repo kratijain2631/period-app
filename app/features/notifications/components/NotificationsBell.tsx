@@ -1,16 +1,20 @@
 import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { brand, brandType } from '../../../theme/brand';
+import { useWidgetTheme } from '../../../theme/widgetTheme';
 
 type NotificationsBellProps = {
   count: number;
   onPress: () => void;
+  appearance?: 'default' | 'widget';
 };
 
-const NotificationsBell = ({ count, onPress }: NotificationsBellProps) => {
+const NotificationsBell = ({ count, onPress, appearance = 'default' }: NotificationsBellProps) => {
+  const t = useWidgetTheme();
+  const widget = appearance === 'widget';
   return (
-    <TouchableOpacity style={styles.container} onPress={onPress}>
-      <Ionicons name="notifications-outline" size={18} color={brand.colors.secondaryText} />
+    <TouchableOpacity accessibilityRole="button" accessibilityLabel={`Open notifications${count ? `, ${count} unread` : ''}`} style={[styles.container, widget && { width: 46, height: 46, backgroundColor: t.colors.canvas, borderColor: t.colors.border, borderRadius: t.radius.control, shadowOpacity: 0 }]} onPress={onPress}>
+      <Ionicons name={widget ? 'notifications' : 'notifications-outline'} size={widget ? 23 : 18} color={widget ? t.colors.text : brand.colors.secondaryText} />
       {count > 0 ? (
         <View style={styles.badge}>
           <Text style={styles.badgeText}>{count > 99 ? '99+' : `${count}`}</Text>

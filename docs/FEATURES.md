@@ -27,6 +27,7 @@ The sequencing below **is** the plan; the category sections after it are a refer
 - **User notifications**, permission-gated (§ Engagement)
 
 ### Next — the moat
+- Prototype [Instagram Stories sharing and a global Circle leaderboard](#sharing-and-community-recognition) with testers.
 - **Richer cycle/calendar view** on Apple's data + predictions (§ Cycle)
 - **Phase-based recommendations** (§ Cycle) — Phase Guide implemented; backend deployed and live-tested 2026-11-03; 1.0.13 (34) built; EAS submission still queued as of 2026-11-03, 4:28 p.m. ET, with TestFlight availability and device verification pending.
 - **Friends overview + calendar-of-friends + a real sync score** (§ Social)
@@ -143,6 +144,25 @@ First-run flow is make-or-break for a social health app:
 - **Calendar app sync** *(later)* — reflect cycle phases into a personal calendar.
 
 ## Social & support — the differentiator
+
+### Sharing and community recognition
+
+- [~] **Settings contact changes and re-verification.** In the [native app review](https://github.com/kratijain2631/period-app/pull/97), You → Settings → Manage contact details supports verifying a changed email by link and phone by SMS. Test both replacements and add a repeat verification of unchanged details as a follow-up.
+- [x] **Post comments and live Circle rankings** are implemented in the native review. Comments are limited to posts visible to the viewer, removable by their authors, and contribute to Most supportive. Friendship and post changes refresh the relevant boards.
+
+- [ ] **Share to Instagram Stories** (planned, iPhone first). From one of your own manually written posts in Feed or My updates, preview a portrait card containing your post and open it in Instagram’s story composer. You decide whether and with whom to publish there. Leave out other members, reactions and automatically attached cycle information. Offer to save the image if Instagram is unavailable.
+- [ ] **Cycle Community** (working name; proposed global section under Circle, separate from personal “Most in sync”). Recognize people who make it easier to find support and talk about periods. Participation is opt-in. Show only a chosen public alias and aggregate score; joining a ranking does not make posts, friends or cycle details public.
+
+| Working name | What counts | Why someone might come back |
+| --- | --- | --- |
+| **Largest Circle** | Number of distinct, currently accepted friends across the app. Pending requests and invite links do not count. | See your network grow; compare your standing with other participating members. |
+| **Loudest Voices** | Test “most posts this month” against “days you shared this month.” Count only manually authored, still-shared posts. For the days version, several posts in one day earn one day. | A fresh start each month gives newcomers a shot. People can contribute without sharing cycle details. |
+
+Pilot a Top 10 plus a private “your rank” row even when outside it. Test whether a reachable next milestone (for example, “one more sharing day to tie for tenth”) brings people back. Compare participation, repeat posting, and unwanted requests before choosing a metric; avoid rewarding bulk invitations or filler posts. Circle’s local design preview demonstrates two scrollable Top 10 lists with fictional aggregates. No global rankings are live.
+
+- [ ] **Most supportive** (personal Circle leaderboard). In a second tab alongside Most in sync, rank friends by reactions, comments and boops they gave *you* in the last 30 days. The preview shows fictional counts with an equal weight per interaction and a visible breakdown; production needs recipient-scoped counts, and comments require a commenting feature.
+
+### Friends and groups
 
 - **Friends & groups** — friend/de-friend by Apple ID or phone; also **group** relations you can join/leave like an individual friend.
 - [~] **Find friends from contacts.** _(Native integration shipped in 1.0.12 (33); live migration/privacy checks passed 2026-11-03. Limited Access failed owner testing on iOS 26.6.2; recovery changes and the physical permission/toggle matrix remain pending. See [rollout evidence](CONTACT_DISCOVERY_ROLLOUT.md).)_ Your Circle now requests Contacts access only after a user taps the feature, supports iOS limited/full access, matches normalized email hashes instead of uploading raw address-book emails, and keeps “read my contacts” separate from the default-off “let contacts find me” setting. Phone matching remains a follow-up once accounts support verified phone numbers.

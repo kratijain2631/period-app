@@ -153,3 +153,8 @@ To install a build directly from an `.ipa` file (outside TestFlight or the EAS i
 - **Privacy policy:** hosted as a Claude artifact (not in the repo).
 - **`@expo/ngrok`:** installed with `--no-save` for tunneling, so it's in `node_modules` but not `package.json` (reinstall if tunneling and it's missing).
 - **Installed builds** (dev client + TestFlight) on the physical test phone.
+
+
+## Home widget preview: use one origin for HTML, bundle and fonts (2026-11-03)
+
+The actual-component preview lives at `design-mocks/home-widgets/entry.tsx`, served through `public/home-widgets.html` by Metro. Start the repository’s Expo server on port 8084 and open `http://localhost:8084/home-widgets.html`; see the preview README. Serving the HTML from a separate Python server while loading its bundle from Metro left the screen blank: Expo’s generated font URLs are relative, and cross-origin font loading did not complete. Serving HTML, fonts and bundle on Metro’s origin resolves it. A blank preview is not evidence of a native Home startup failure. The preview is fixture-only and must not import the native account/HealthKit/feed controllers.

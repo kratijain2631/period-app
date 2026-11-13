@@ -19,6 +19,7 @@ import { useSessionStore } from '../../../state/sessionStore';
 export type AcceptanceNotification = {
   id: string;
   requestId: string;
+  actorId: string;
   name: string;
   createdAt: string;
 };
@@ -85,6 +86,7 @@ export const useNotifications = () => {
         unseen.map((row) => ({
           id: `accept-${row.id}`,
           requestId: row.id,
+          actorId: row.to_user_id,
           name: nameByRequestId.get(row.id) ?? 'A friend',
           createdAt: row.updated_at,
         })),

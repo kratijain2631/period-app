@@ -1,5 +1,7 @@
 # Design
 
+**Component structure:** read [UI_ARCHITECTURE.md](UI_ARCHITECTURE.md) before implementing a design. It defines reusable product widgets independently of their visual theme, inventories current screens and roadmap capabilities, and maps the supplied illustrated Home reference onto those widgets. This document owns visual direction; UI_ARCHITECTURE owns behavior/presentation boundaries and incremental adoption.
+
 The design / branding / visual-identity track for this app. This is the "make it **premium, delightful, and beautiful**" work — the single biggest multiplier on whether people *love* the app (not just use it). It pulls from the design notes scattered in [FEATURES.md](FEATURES.md) (§ "Design & aesthetics", the "usable vs. likeable" teardown) and centralizes the **vision + the how**.
 
 ## The goal
@@ -76,7 +78,8 @@ For **UI mockups with legible text**, the image models rank roughly:
 - ✅ Branded animated launch/intro overlay (`BrandSplash.tsx`, tagline "Cadence — where your cycle meets your circle").
 - ✅ Haptics on Home-feed boops/reactions.
 - ✅ Phase Guide advice cards implemented for 1.0.13 (34): visible title/detail, full-width layout, no truncation or flip requirement; actual component checked at 320px browser width. Native accessibility verification remains open. See [GUIDANCE.md](GUIDANCE.md).
-- ⬜ Remaining visual-identity, Home, avatar and broader design-system work above is open. **This is the top "likeable" priority** per the [FEATURES.md](FEATURES.md) teardown.
+- ✅ Home illustrated widgets implemented locally (unreleased): cream/terracotta surfaces, canonical five-phase wheel, mascot and guidance/upcoming art, with the social feed preserved. Actual-component neutral/illustrated preview: `design-mocks/home-widgets/`. See UI_ARCHITECTURE for contracts and pending device checks.
+- ⬜ Remaining visual-identity, other screens, avatar and broader design-system work above is open. **This is the top "likeable" priority** per the [FEATURES.md](FEATURES.md) teardown.
 
 ## Related
 

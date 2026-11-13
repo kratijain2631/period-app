@@ -18,7 +18,7 @@ import {
 } from 'react-native';
 import { Buffer } from 'buffer';
 import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation, useRoute, type NavigationProp, type RouteProp } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
 import { selectAlias, selectSession, useSessionStore } from '../../../state/sessionStore';
 import {
@@ -34,8 +34,9 @@ import { useCycleSnapshot } from '../../feed/hooks/useCycleSnapshot';
 import { generateAvatarImage, uploadAvatarBlob } from '../../../services/supabase/avatars';
 import { deleteCurrentAccount, signOut } from '../../../services/supabase/auth';
 import { brand, brandType } from '../../../theme/brand';
-import { CycleRing, PhaseAvatar, PhaseIndicator, getPhaseBg, getPhaseColor } from '../../../components/brand/CycleRing';
-import { DottieMascot } from '../../../components/brand/DottieMascot';
+import { PhaseAvatar, getPhaseColor } from '../../../components/brand/CycleRing';
+import { CycleStatus } from '../../cycle/components/CycleStatus';
+import { selectCycleOverview } from '../../cycle/models/cycleOverview';
 import { PhaseGuide } from '../components/PhaseGuide';
 import { useStaggeredEntrance } from '../../../components/brand/useStaggeredEntrance';
 
@@ -68,11 +69,28 @@ const AVATAR_GLAM_PROMPT = [
 const AVATAR_GLAM_STYLE_LABEL = 'Maximum Glam';
 const AVATAR_GENERATION_TIMEOUT_MS = 90000;
 
+type ProfileSections = { ProfileRoot: { section?: 'cycle' | 'guide' } | undefined };
 const ProfileScreen = () => {
   const session = useSessionStore(selectSession);
   const alias = useSessionStore(selectAlias);
-  const navigation = useNavigation();
-  const { snapshot, isStale, lastSyncedAt } = useCycleSnapshot();
+  const navigation = useNavigation<NavigationProp<ProfileSections>>();
+  const route = useRoute<RouteProp<ProfileSections, 'ProfileRoot'>>();
+  const scroll = useRef<ScrollView>(null);
+  const [cycleY, setCycleY] = useState<number | null>(null);
+  const [guideY, setGuideY] = useState<number | null>(null);
+  const section = route.params?.section;
+  const sectionY = section === 'guide' ? guideY : cycleY;
+  useFocusEffect(useCallback(() => {
+    if (!section || sectionY === null) return;
+    const frame = requestAnimationFrame(() => {
+      scroll.current?.scrollTo({y: sectionY, animated: false});
+      navigation.setParams({section: undefined});
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [section, sectionY, navigation]));
+  const cycle = useCycleSnapshot();
+  const { snapshot, isStale, lastSyncedAt } = cycle;
+  const overview = selectCycleOverview(cycle);
   const cyclePhaseKey = snapshot?.currentPhase ?? 'unknown';
   const cyclePhaseStart = snapshot?.currentPhaseStart ?? null;
   const [profileName, setProfileName] = useState('');
@@ -587,7 +605,7 @@ const ProfileScreen = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView ref={scroll} contentContainerStyle={styles.content}>
         <Animated.View style={entranceStyles[0]}>
           <View style={styles.headerRow}>
           <View style={styles.headerIdentity}>
@@ -632,23 +650,8 @@ const ProfileScreen = () => {
           </View>
         </Animated.View>
 
-        <Animated.View style={entranceStyles[1]}>
-          <View style={[styles.heroCard, { backgroundColor: getPhaseBg(cyclePhaseKey) }]}>
-            <CycleRing
-              currentDay={cycleDayNumber ?? 1}
-              currentPhase={cyclePhaseKey}
-              cycleLengthDays={snapshot?.cycleLengthDays ?? null}
-              lutealLengthDays={snapshot?.lutealLengthDays ?? null}
-              periodLengthDays={snapshot?.periodLengthDays ?? null}
-              size={180}
-            />
-            <View style={styles.heroPhaseWrap}>
-              <PhaseIndicator phase={cyclePhaseKey} />
-            </View>
-            <View style={styles.heroMascot}>
-              <DottieMascot size={64} mood="meditating" color={getPhaseColor(cyclePhaseKey)} />
-            </View>
-          </View>
+        <Animated.View style={[entranceStyles[1], { marginBottom: 16 }]} onLayout={e => setCycleY(e.nativeEvent.layout.y)}>
+          <CycleStatus model={overview} />
         </Animated.View>
 
         <Animated.View style={entranceStyles[2]}>
@@ -684,12 +687,14 @@ const ProfileScreen = () => {
           </View>
         </Animated.View>
 
-        <PhaseGuide
-          dos={phaseDos}
-          donts={phaseDonts}
-          personalized={currentGuidance}
-          phaseLabel={cyclePhaseKey === 'unknown' ? null : formatPhaseLabel(cyclePhaseKey)}
-        />
+        <View style={{ marginBottom: 38 }} onLayout={e => setGuideY(e.nativeEvent.layout.y)}>
+          <PhaseGuide
+            dos={phaseDos}
+            donts={phaseDonts}
+            personalized={currentGuidance}
+            phaseLabel={cyclePhaseKey === 'unknown' ? null : formatPhaseLabel(cyclePhaseKey)}
+          />
+        </View>
 
         <Text style={styles.sectionTitle}>Friends In Sync</Text>
         <View style={styles.friendsCard}>
@@ -903,23 +908,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#C4654A',
     ...brandType.body,
-  },
-  heroCard: {
-    borderRadius: 28,
-    paddingVertical: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 18,
-    overflow: 'hidden',
-  },
-  heroPhaseWrap: {
-    marginTop: 10,
-  },
-  heroMascot: {
-    position: 'absolute',
-    right: -4,
-    bottom: -2,
-    opacity: 0.32,
   },
   recapBlock: {
     marginBottom: 18,

@@ -1,5 +1,19 @@
 # Working instructions
 
+## Keep project instructions and change history in GitHub
+
+I want all instructions and notes to be in GitHub instead of stored at the agent level.
+
+Read this file and [TESTING.md](TESTING.md) before starting work. Keep shared instructions, decisions, and handoff notes in this repository so any contributor can pick up the work from GitHub.
+
+Before starting any task, catch up on GitHub. Read recent commits and merged pull requests, release notes, and relevant documentation changes since the last commit you worked on. If that commit is unknown, start with the latest documented handoff or release.
+
+If colleagues contributed in that interval, summarize their changes and ask the user whether they want you to double-check that work. Continue the requested task while the user decides.
+
+Before finishing, record what changed in [RELEASE_NOTES.md](RELEASE_NOTES.md) under `Unreleased` and update the relevant docs in the same commit. This includes work done outside the codebase. For example, record a database migration in [SCHEMA.md](SCHEMA.md) and say where it was applied. Update [FEATURES.md](FEATURES.md) when feature status changes and [TODO.md](TODO.md) when follow-up work opens or closes.
+
+Keep [TESTING.md](TESTING.md) and the runbooks it links current whenever staging setup, test accounts, or verification steps change. Record which environment and accounts were used, what passed or failed, and what still needs checking. Keep passwords, tokens, and private user data out of these records.
+
 Conventions for anyone — human or AI agent — working in this repo.
 
 ## Start here — read the docs first
@@ -14,6 +28,8 @@ Before working on this project, read the docs linked from the [README](../README
 - **[SCHEMA.md](SCHEMA.md)** — the Supabase database (tables, functions, how it works).
 - **[CYCLE_SYNC.md](CYCLE_SYNC.md)** — how cycle phases are derived, when sync runs, and every posting/notification/background mechanism (the phase-update system end to end).
 - **[FEATURES.md](FEATURES.md)** — the product/feature backlog.
+- **[UI_ARCHITECTURE.md](UI_ARCHITECTURE.md)** — theme-independent widgets, state/action ownership, screen composition, roadmap extension points, and mapping to the illustrated reference. Read before any UI, component, screen, or theme work.
+- **[DESIGN.md](DESIGN.md)** — visual direction and design exploration; apply it through the component boundaries above.
 - **[BUGS.md](BUGS.md)** — known open bugs.
 - **[RELEASE_NOTES.md](RELEASE_NOTES.md)** — what shipped in each build.
 - **[TODO.md](TODO.md)** — operational/shipping tasks.
@@ -128,9 +144,9 @@ More than one person may work on this repo at once, each pushing to `main`. To s
 5. **Coordinate lanes** — avoid two people editing the same file at once, *especially* the large screens (`HomeScreen.tsx`, `ProfileScreen.tsx`, `FriendsScreen.tsx`, `FriendSyncScreen.tsx`), which are the worst merge-conflict magnets. Split by feature area (e.g. one on friends, one on cycle) rather than both in one file.
 6. **RELEASE_NOTES is the shared source of truth** for what shipped — always add your line under `## Unreleased` in the same commit, so the other person sees what changed. Whoever cuts a build blocks `## Unreleased` into a version (§2) and pushes the build; the other syncs before continuing.
 
-**Review what you pull, and relay it (the mutual check — do this every time):**
+**Keep up with colleagues’ changes:**
 7. **Pull other people's changes often** — many times a day, not once. Frequent small syncs prevent conflicts *and* keep each **build scoped to one person's work**: sync, then cut the build right after, so a build carries a single author's changes rather than a tangle of several (easier to reason about, review, and roll back). Don't let `main` drift far ahead of what you've actually looked at.
-8. **Never rubber-stamp someone else's commits.** Whenever you pull in work from another person, **read the actual diff** (`git log <last-seen-sha>..origin/main`, then `git show <sha>` / `git diff --stat`), confirm it **matches our understanding** of what they said they were doing, and **describe the new changes back to the current user in plain terms** — what changed, why, any risk, and anything that needs action (e.g. a migration to apply, a min-version requirement). If the diff *doesn't* match the description, or looks wrong or unsafe, **flag it before building on top of it**. Everyone verifying everyone else's incoming work is how we keep each other in check and catch mistakes early — treat it as required, not optional.
+8. Inspect incoming diffs that affect your task. Flag discrepancies before relying on the changed behavior. When the user requests a broader review, check colleagues’ changes against their stated intent and test results, then report the findings.
 
 _(If a conflict does happen, it'll almost always be in the append-only docs — resolve by keeping both entries.)_
 
@@ -147,3 +163,15 @@ On top of that, hold these rules:
 3. **A fast smoke test must stay runnable** (see [TODO.md](TODO.md)) — a tiny, fast test that boots the core domain (cycle model, `syncScore`, reactions) so a "gutting" regression is caught before a build. The full `jest-expo` suite is too slow to run every change; the fast smoke set is the practical safety net.
 4. **Every build is a tagged rollback point** (§2). If a build regresses, `git checkout v<prev>-build<n>` and rebuild — atomic rollback.
 5. **Flag every breaking / non-backward-compatible change explicitly in the release notes — no exceptions.** The rules above mean breaking changes should be *rare and deliberate*; when one is genuinely justified (e.g. closing a security/privacy hole that can't wait), it must be **called out loudly in [RELEASE_NOTES.md](RELEASE_NOTES.md)**, never buried in prose. Start the line with a **`⚠️ BREAKING / not backward-compatible`** marker and state: **what breaks**, **who is affected** (which older builds / users), the **required minimum build** going forward, and the **action needed** (migration to apply, "all testers must update", etc.). Prefer expand/contract to avoid the break entirely (add the new path, ship the client, then remove the old path once adopted — see the friend-cycle RPC example in [LEARNINGS.md](LEARNINGS.md)); only break early for a security fix, and even then ship the fixed client *before* removing the old path. If in doubt whether a change is breaking, assume it is and flag it.
+
+## 13. Build product widgets independently of visual themes
+
+Start new screens and redesigns with the [four layers of a screen](UI_ARCHITECTURE.md#four-layers-of-a-screen). Use the [page directory](UI_ARCHITECTURE.md#page-directory) and [preliminary widget assignments](UI_ARCHITECTURE.md#preliminary-widget-assignments) when adding pages, moving widgets or wiring Home previews. Home implements the first widget extraction. Use the actual-component preview in `design-mocks/home-widgets/` when changing shared presenters or themes.
+
+- **Define the capability first:** name the widget's purpose, permitted input data, states, actions, controller owner and meaningful compact/full variants before choosing its outward design.
+- **Keep boundaries explicit:** domain rules and service/controller state → typed widget models/actions → presentations composed by screens. Presenters must not fetch data, derive their own cycle model, or decide sharing permissions.
+- **Separate theme, presentation, and product composition:** shared semantic tokens/assets control the visual language; changing a ring into a calendar may need a new interaction contract; adding tabs, logging, quests or rewards is feature/navigation work, not a theme setting.
+- **Reuse state as well as visuals:** placing a widget on another screen must not duplicate polling, AI generation, mutations, or private caches. Preserve account/subject isolation, draft continuity and permission checks.
+- **Treat mockups as visual references:** sample cycle ranges/counts and illustrative rewards are not production facts. Keep existing social/navigation capabilities reachable and follow [GUIDANCE.md](GUIDANCE.md) for advice copy.
+- **Extract incrementally:** preserve current behavior and service contracts, prove one widget in multiple appropriate placements/presentations, then apply the theme. Avoid a generic widget engine or a sweeping screen rewrite.
+- **Maintain the architecture document:** when a new feature introduces a capability or changes ownership/composition, update its relevant inventory/contract in UI_ARCHITECTURE alongside the normal release notes; keep delivery status in FEATURES/TODO/RELEASE_NOTES.

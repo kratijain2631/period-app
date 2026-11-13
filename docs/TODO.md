@@ -2,6 +2,15 @@
 
 Open items, roughly in priority order, with completed items retained as a decision and delivery record.
 
+## Next social prototypes
+
+- [ ] **Update and re-verify contact information in Settings.** In the [native app review](https://github.com/kratijain2631/period-app/pull/97), verify changed email/phone end-to-end, including resend and expiry, prior identifiers no longer matching, and the explicit repeat-verification follow-up.
+
+- [ ] **Most supportive:** validate the 30-day personal ranking using received reactions and boops; enable comments once supported. Count each saved interaction once, exclude self, and check removals and ties.
+
+- [ ] **Share a post to Instagram Stories (iPhone).** Add the action to the shared presenter for own manual posts in Feed and My updates. Preview and render the same portrait card; try opening Instagram, cancelling, returning, and saving instead on a real iPhone. See [feature scope](FEATURES.md#sharing-and-community-recognition).
+- [ ] **Prototype Cycle Community in Circle.** Show opt-in global Top 10 lists and a private “your rank” row. Try **Largest Circle** (distinct accepted friends) and **Loudest Voices** (monthly post count versus distinct posting days). Test near-cutoff motivation with newcomers, tied ranks, unfriend/delete and opt-out; decide the metric before building global rankings. Keep personal sync scores separate. See [ranking options](FEATURES.md#sharing-and-community-recognition).
+
 ## 🎯 Phase Guide — implementation/backend complete; finish native rollout
 - [~] **Redesign how the "You" page do's/don'ts (cycle guidance) get generated.** 🚧 (WIP — Codex, 2026-11-03; content/cards complete; SQL + function deployed, 1.0.13 (34) built; submission/device verification pending). Fixes the "No guidance yet" bug ([BUGS.md](BUGS.md)) at the design level, not just by babysitting a cron.
   - **2026-11-03 implementation:** immediate local fallback for every phase (including no Health data); authenticated `request-cycle-guidance` generates on page focus, caches against phase + `currentPhaseStart`, and uses caller-scoped claim/complete RPCs with a two-minute lease. Old-phase/old-cycle guidance is hidden, overlapping client calls coalesce, and account changes/late responses cannot replace the current user's tips. AI failures leave fallback visible and are not cached as AI results.
@@ -107,6 +116,8 @@ Larger asks that need their own design + PRs (not part of the composer/reaction 
 - [ ] Make naming consistent, or change the name. The display name is "Cadence" but the internal identifiers are mixed — iOS bundle id `com.syncsisters.cycle`, and slug / npm name / repo all `period-app`. Decide whether to align them to one namespace (e.g. cadence) or rename the app entirely. Best done **pre-launch**. Weigh the change-costs in [IDENTIFIERS.md](IDENTIFIERS.md): the bundle id is costly to change and invisible to users; the slug must match the EAS server; scheme / npm name / repo are cheap.
 
 ## Design / branding — top "likeable" priority
+- [x] **Home widget extraction + illustrated theme.** Implemented locally 2026-11-03: reusable cycle/guidance/upcoming/composer/activity widgets, independent theme tokens and account-scoped feed controller; tests, TypeScript, iOS JS bundle and actual-component browser preview pass. See UI_ARCHITECTURE for boundaries. Not yet published.
+- [ ] **Home redesign device smoke check before release.** Verify authenticated posting/deletion/reactions/boops, queue flush, pull-to-refresh, unread notifications and navigation on iOS; check VoiceOver reading order/modal focus, large Dynamic Type, small screens and the composer keyboard. The browser fixture preview does not replace these checks.
 - [ ] **Premium design + branding pass.** Make the app polished, premium, delightful (design system, branding, avatars, cycle-wheel hero, micro-interactions). Full vision + the AI-mockup → pixel-for-pixel replication approach lives in **[DESIGN.md](DESIGN.md)**. Highest-leverage work on "likeable" per the [FEATURES.md](FEATURES.md) teardown.
 
 ## Rollout blockers (before the friends beta / wider rollout)
