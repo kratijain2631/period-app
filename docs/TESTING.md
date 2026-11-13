@@ -175,6 +175,20 @@ The two contact suites passed **30/30** service/controller tests using mocked OS
 
 Read-only public Auth settings on both hosted environments report phone authentication disabled, phone auto-confirm false and mailer auto-confirm false. Normal staging phone-change request returned HTTP 500 / `unexpected_failure`; exact error cause unconfirmed. Configure/enable SMS before required-phone release; validate real delivery and confirmation using an authorized number. Email-change delivery needs a controlled inbox. Neither delivery flow was verified here.
 
+## Native Find from contacts on staging - 2026-11-13
+
+Fresh `expo prebuild --clean` and Debug simulator build (iPhone 17 Pro, iOS 26.1), staging Metro, signed in as circleqa-a. For the fixture, circleqa-b had a confirmed fictional phone number, and circleqa-b plus the six personas were made discoverable. All of them were restored to undiscoverable afterwards, and circleqa-a sent no requests.
+
+- **Permission prompt:** passed. It appears only after tapping Find from contacts.
+- **Denied:** passed. The button changes to Open contact settings and shows the access-off notice.
+- **Limited, B's phone-only card:** one match, `@circleqa-b`.
+- **Limited, 9 synthetic cards:** 7 rows. B's phone card and mixed-case email card collapse to one row, and a non-user card gives no match.
+- **Returning from Settings:** clears stale matches.
+- **Selection limit:** shows "5 of 5 selected", with the remaining checkboxes disabled. Unticking one frees a slot.
+- **Logs:** no Metro errors.
+
+Bugs found are logged in BUGS.md (2026-11-13 entries). Not tested: Full Access, because this simulator's address book holds about 350 real iCloud contacts that would be hashed and sent to staging; sending the requests; and physical-device Settings deep links. Metro reloads when screenshots are written inside the project, so save them outside it while Metro runs.
+
 ## Short physical iPhone checks
 
 Use your existing real account and Health records on TestFlight; synthetic Health belongs only in staging.
