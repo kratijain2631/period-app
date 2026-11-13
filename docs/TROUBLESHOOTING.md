@@ -247,4 +247,6 @@ Fresh guidance generation returned HTTP 503 with an isolated staging JWT. At tha
 
 Setup and Settings display the account email read-only. The code-entry form and email template are retained. Once deployed, the `pause_account_email_changes` trigger on `auth.users` rejects new requests and changes to the stored address, including confirmations started before deployment. Initial account creation and phone verification remain available. Older builds may still display Change and receive an Auth error.
 
+The [November 13 account setup mockups](../design/2026-11-13/account-setup/) predate this pause and show the earlier proposed Settings copy.
+
 Before restoring this feature, require fresh account-owner authentication on the server and test requests from an older client on staging. Remove the trigger in a new migration and enable `EMAIL_CHANGES_ENABLED` in ContactDetails only as part of that rollout. Verify delivery and code entry with a controlled new inbox.
