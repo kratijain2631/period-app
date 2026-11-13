@@ -41,7 +41,9 @@ The app's Notifications and Add friends screens query the same pending inbound `
 | `cycle_guidance` | Owner-readable AI dos/don’ts and friend suggestions, cached by phase plus nullable `phase_started_at`; caller-scoped completion RPC writes the new on-demand path. |
 | `friend_recommendations` | Pair recommendations/score cache used by the friend detail screen; separate from personal Phase Guide. |
 | `cycle_guidance_requests` | Applied 2026-11-03: caller-scoped two-minute generation leases; auth-user deletion cascades. No direct anon/authenticated table access. |
-| `device_tokens` | Push-notification (Expo) tokens per device. |
+| `device_tokens` | Push-notification (Expo) tokens per device. Each token belongs only to the account that registered it last. |
+| `notification_preferences` | One row per user: which push categories are on. No row means the defaults (all on except friends' cycle updates). |
+| `push_outbox` | Server-only queue of pushes for `send-push`, with each one's outcome. No app access. See [design/push-notifications.md](design/push-notifications.md). |
 | `cycle_guidance` | One row per user: the AI do's/don'ts for their current phase, with `phase_started_at` so it's regenerated when the phase changes. Written by the `cycle-guidance` edge function. |
 | `cycle_guidance_requests` | Server-only bookkeeping for on-demand guidance requests (`claim_cycle_guidance` / `complete_cycle_guidance`). Clients have no access. |
 | `friend_recommendations` | Per friend pair: suggestions and a score from the `friend-recommendations` edge function. |
