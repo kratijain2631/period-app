@@ -6,6 +6,15 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## Unreleased
 
+**Cycle privacy**
+
+- You → Settings → Privacy and permissions → Erase synced cycle data clears the saved cycle summary, automatic updates, their interactions and notifications, guidance and paired recommendations. Confirmation turns off cycle sync for the account across devices. Friends, written posts and the original Apple Health records are kept. Reconnect and share explicitly enables importing again.
+- A temporary empty Health read still preserves the last shared summary. Delete account removes it with the account. A deleted cycle event now removes linked inbox notices and boops.
+
+**Feed interactions**
+
+- Hold an emoji count to see its members, hold React for the combined list, or hold Boop to see who sent one. You can inspect your own updates and open a member’s profile. The same controls apply to written and automatic updates across the app.
+
 **Cycle accuracy**
 
 - A late period no longer starts a new estimated cycle. Before, a few days past your usual length showed "period, day 3" and could post "Entered menstruation" to friends with no period logged. Now the day keeps counting, the phase stays PMS with "Period expected N days ago", no phase reminder is scheduled while overdue, and after 60 days with no period the phase becomes unknown without posting.

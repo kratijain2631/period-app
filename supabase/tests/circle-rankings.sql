@@ -28,6 +28,38 @@ do $$begin
  assert exists(select 1 from my_circle_support() where member_id='cd110000-0000-4000-8000-000000000002' and reactions=1 and boops=1 and comments=2);
 end$$;
 reset role;
+-- The post and event share an ID. An erasure must only remove cycle activity.
+savepoint before_withdrawal;
+insert into public.cycle_snapshots(user_id,last_synced_at,snapshot)
+values ('cd110000-0000-4000-8000-000000000001',now(),'{"currentPhase":"follicular"}');
+insert into public.event_reactions(event_id,user_id,emoji)
+values ('cd110000-0000-4000-8000-000000000011','cd110000-0000-4000-8000-000000000002','👏');
+set local role authenticated;
+do $$
+declare
+  target uuid := 'cd110000-0000-4000-8000-000000000011';
+  sender uuid := 'cd110000-0000-4000-8000-000000000002';
+begin
+  assert exists(select from update_engagement_members('post',target) where member_id=sender and booped and emojis=array['❤️']);
+  assert exists(select from update_engagement_members('post',target,'boop') where member_id=sender and booped);
+  assert exists(select from update_engagement_members('cycle',target,'👏') where member_id=sender and not booped);
+  assert not exists(select from update_engagement_members('cycle',target,'❤️'));
+  perform set_cycle_sync_enabled(auth.uid(),false);
+  assert not cycle_sync_enabled();
+  assert not exists(select from public.cycle_snapshots where user_id=auth.uid());
+  assert not exists(select from public.cycle_events where id=target);
+  assert not exists(select from update_engagement_members('cycle',target));
+  assert exists(select from update_engagement_members('post',target) where member_id=sender and booped);
+  assert is_friend(sender);
+  begin
+    insert into public.cycle_snapshots(user_id,last_synced_at,snapshot) values (auth.uid(),now(),'{}');
+    raise exception 'A withdrawn account re-uploaded its snapshot';
+  exception when insufficient_privilege then null; end;
+  perform set_cycle_sync_enabled(auth.uid(),true);
+  assert cycle_sync_enabled();
+  insert into public.cycle_snapshots(user_id,last_synced_at,snapshot) values (auth.uid(),now(),'{}');
+end$$;
+rollback to before_withdrawal;
 -- A removed friendship changes the private boards and Largest Circle immediately; posts are independent.
 savepoint before_removal;
 delete from public.friend_requests where from_user_id='cd110000-0000-4000-8000-000000000001' and to_user_id='cd110000-0000-4000-8000-000000000002';

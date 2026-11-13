@@ -1,3 +1,7 @@
+jest.mock('../../supabase/cyclePrivacy', () => ({
+  readCycleSyncEnabled: jest.fn().mockResolvedValue(true),
+  saveCycleSyncEnabled: jest.fn().mockResolvedValue(undefined),
+}));
 jest.mock('@kingstinct/react-native-healthkit', () => ({
   CategoryValueMenstrualFlow: {
     none: 5,
@@ -174,6 +178,28 @@ const mockSelectAutoPostedPeriodSamples = autoPostMocks.selectAutoPostedPeriodSa
 const userId = 'test-user-id';
 
 describe('syncHealthData signal integration', () => {
+  it('does not let a Health read in flight refill an explicitly erased account', async () => {
+    let release!: (data: never[]) => void;
+    const held = new Promise<never[]>(resolve => { release = resolve; });
+    mockQueryCategorySamples.mockReturnValueOnce(held);
+    const running = syncHealthData();
+    await Promise.resolve();
+    const { eraseSyncedCycleData } = jest.requireActual('../syncHealthData');
+    const removal = eraseSyncedCycleData(userId);
+    release([]);
+    await Promise.all([running, removal]);
+    expect(mockUpsertCycleSnapshot).not.toHaveBeenCalled();
+    expect(mockUpsertCycleSnapshotRemote).not.toHaveBeenCalled();
+    expect(storeMocks.clearCycleSnapshots).toHaveBeenCalledWith(userId);
+  });
+  it('clears this account and skips Health reads when another device withdrew consent', async () => {
+    jest.requireMock('../../supabase/cyclePrivacy').readCycleSyncEnabled.mockResolvedValueOnce(false);
+    expect(await syncHealthData({ trigger: 'background' })).toBeNull();
+    expect(storeMocks.clearCycleSnapshots).toHaveBeenCalledWith(userId);
+    expect(mockQueryCategorySamples).not.toHaveBeenCalled();
+    expect(mockUpsertCycleSnapshotRemote).not.toHaveBeenCalled();
+  });
+
   beforeEach(() => {
     jest.clearAllMocks();
     jest.useFakeTimers().setSystemTime(new Date('2026-03-15T12:00:00.000Z'));

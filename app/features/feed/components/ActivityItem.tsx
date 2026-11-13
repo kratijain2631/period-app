@@ -1,5 +1,7 @@
 import { useCommentThreads } from './CommentThreads';
-import { useRef } from 'react';
+import { EngagementSheet } from './EngagementSheet';
+import type { ReadEngagement } from '../../../services/supabase/engagement';
+import { useRef, useState } from 'react';
 import { Image, Pressable, View } from 'react-native';
 import { AppText, Surface } from '../../../components/ui/WidgetPrimitives';
 import { useWidgetTheme } from '../../../theme/widgetTheme';
@@ -18,7 +20,13 @@ export const ActivityItem = ({
   onDelete,
   onOpenProfile,
   comments,
+  readEngagement,
+  self,
+  onMember,
 }: {
+  readEngagement: ReadEngagement;
+  self: string;
+  onMember: (id: string) => void;
   comments?: import('react').ReactNode;
   model: ActivityItemModel;
   pending: boolean;
@@ -31,6 +39,7 @@ export const ActivityItem = ({
   onOpenProfile?: () => void;
 }) => {
   const t = useWidgetTheme();
+  const [inspection, inspect] = useState<{ interaction: string | null } | null>(null);
   const threads = useCommentThreads();
   const focusPost = () =>
     threads?.setCurrent((id) => (id === activityKey(model.target) ? id : null));
@@ -134,6 +143,7 @@ export const ActivityItem = ({
         <ReactionBar
           reactions={model.reactions}
           disabled={pending || offline || !model.reactionsAvailable}
+          onInspect={act(interaction => inspect({ interaction }))}
           onReact={act(onReact)}
           onChoose={act(onChooseReaction)}
         />
@@ -143,14 +153,24 @@ export const ActivityItem = ({
               count={model.boopCount}
               status={model.boopStatus}
               disabled={pending || !model.boopsAvailable}
+              onInspect={act(() => inspect({ interaction: 'boop' }))}
               onBoop={act(onBoop)}
             />
           </View>
         ) : model.boopCount > 0 ? (
-          <AppText role="caption" style={{ color: t.colors.secondary }}>
-            {model.boopCount} {model.boopCount === 1 ? 'boop' : 'boops'} from your circle
-          </AppText>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Show who booped"
+            onPress={act(() => inspect({ interaction: 'boop' }))}
+            onLongPress={act(() => inspect({ interaction: 'boop' }))}
+            style={{ minHeight: 44, justifyContent: 'center' }}
+          >
+            <AppText role="caption" style={{ color: t.colors.secondary }}>
+              {model.boopCount} {model.boopCount === 1 ? 'boop' : 'boops'} from your circle
+            </AppText>
+          </Pressable>
         ) : null}
+        {inspection && <EngagementSheet key={activityKey(model.target)} interaction={inspection.interaction} read={readEngagement} self={self} onMember={onMember} onClose={() => inspect(null)} />}
         {comments}
       </View>
     </Surface>

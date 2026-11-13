@@ -27,7 +27,7 @@ export const checkCyclePermissions = async (): Promise<PermissionResult> => {
   }
 };
 
-export const requestCyclePermissions = async (): Promise<PermissionResult> => {
+export const requestCyclePermissions = async (activate = true): Promise<PermissionResult> => {
   const setHealthPermissions = useSessionStore.getState().setHealthPermissions;
   const lastPromptedAt = new Date().toISOString();
 
@@ -41,7 +41,7 @@ export const requestCyclePermissions = async (): Promise<PermissionResult> => {
     // Confirm the system recorded the authorization; occasionally returns notDetermined briefly.
     const status = await healthkitClient.authorizationStatusFor(MENSTRUAL_FLOW_IDENTIFIER);
     const authorized = granted || status === AuthorizationStatus.sharingAuthorized;
-    setHealthPermissions({ granted: authorized, lastPromptedAt });
+    if (activate) setHealthPermissions({ granted: authorized, lastPromptedAt });
     if (!authorized) {
       console.log('[permissions] requestAuthorization returned', granted, 'status', status);
       return {

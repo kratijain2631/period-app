@@ -87,6 +87,7 @@ const rows: Row[] = [
     setup: { event_id: { rowOf: 'cycle_events' }, user_id: 'victim', body: 'Protected cycle reply' },
     where: { body: 'Protected cycle reply' }, expect: 'hidden' },
 
+  { name: 'reaction lists require login', as: 'anon', op: 'rpc', fn: 'update_engagement_members', args: { target_kind: 'post', target_id: { rowOf: 'posts' } }, expect: 'denied' },
   // profiles and search
   { name: 'feed authors include accepted friends', as: 'friend', op: 'rpc', fn: 'activity_author_profiles', args: { member_ids: ['victim'] }, field: 'member_id', expect: 'allowed' },
   { name: 'a stranger cannot resolve a feed author', as: 'stranger', op: 'rpc', fn: 'activity_author_profiles', args: { member_ids: ['victim'] }, field: 'member_id', expect: 'hidden' },

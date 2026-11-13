@@ -124,3 +124,7 @@ The new path needs **no cron or service-role key**. Live metadata on both projec
 - 🚫 **Deliberately not built:** silent server-side auto-posting of predictions (see §5).
 
 **Nightly retirement rollout (2026-11-12):** PR #83 completed Database deploy run 43274996960 after owner confirmation that important users are on 1.0.15 and refresh works. Only the nightly guidance job is removed; the daily notification job remains. Older builds <=1.0.12 keep saved advice but cannot request replacements. Both projects’ metadata confirms removal; 75 staging access checks passed before production.
+
+## Explicit removal
+
+You → Settings → Privacy and permissions → Erase synced cycle data withdraws consent on the server and erases the account’s cycle snapshots, automatic events and interactions, event notifications, guidance, outstanding guidance requests and pair recommendations. All of this happens in one transaction. The phone drains active sync work, clears its account-scoped local snapshot and cancels its predicted reminder. Other current clients check consent before the next Health read. If consent cannot be checked, the existing offline view is available and fresh imports wait. Older clients are subject to the same server write guard. Turning Health access off in iOS alone is ambiguous. Use the explicit removal action to erase the shared copy. Reconnecting confirms that previously recorded Apple Health history can be imported again.

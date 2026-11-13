@@ -1,3 +1,4 @@
+import { readEngagement } from '../../../services/supabase/engagement';
 import { CommentThreads } from './CommentThreads';
 import { PostComments } from './PostComments';
 import { readComments, addComment, deleteComment } from '../../../services/supabase/postComments';
@@ -39,7 +40,8 @@ export function SharedActivity({ item, link = true }: { item: ActivityItemModel;
   return (
     <>
       <ActivityItem
-        model={item}
+        model={item} self={id} onMember={memberId => nav.navigate('MemberProfile', { memberId })}
+        readEngagement={(filter, offset) => readEngagement(item.target, filter, offset)}
         comments={
           <PostComments
             threadKey={activityKey(item.target)}

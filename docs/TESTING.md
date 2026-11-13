@@ -287,3 +287,9 @@ The preview passed adding, reading and removing comments on a phase update, sing
 - As `ava`: Circle showed Bea, Cleo and Eli with percentages in Most in sync, and Dev (no cycle data) in Friends with no percentage and not ranked. Dev's profile showed "Once you both have cycle data, your sync score will appear here", "No phase shared" and general suggestions. Ava's recap still showed a measured 28d cycle length.
 - As `cleo` (one period): the You recap showed "—" for cycle length, 3d period length and 1 month tracked.
 - Metro log had no errors, only the usual simulator warnings for push and background delivery. Screenshots are in the local, uncommitted `screenshots/no-data-states-2026-11-13/`.
+
+## Explicit erasure and engagement
+
+At phone width, the browser preview passed holding a heart, a Boop and React, opening the member profile, tapping to send once, opening an empty automatic update, and canceling, erasing and reconnecting in Settings. [Reaction list](../design/2026-11-13/cycle-privacy-and-reactions/who-reacted.png) · [Erasure confirmation](../design/2026-11-13/cycle-privacy-and-reactions/confirm-cycle-erasure.png).
+
+Two disposable staging accounts verified that Settings’ Delete account endpoint removed the cycle snapshot, automatic event and access from the accepted friend. For the separate cycle erasure, test a saved snapshot, event and event notification, written post and friendship. After withdrawal, check the account and friend still see the written post, the shared cycle is gone, and an old client cannot upload another snapshot. Reconnect and confirm a deliberate import succeeds. Hold a heart or Boop on the same written or automatic update from both accounts. Verify names, a single tap's original behavior, and denied access for an unrelated account.

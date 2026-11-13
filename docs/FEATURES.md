@@ -2,6 +2,9 @@
 
 The product roadmap. Vision and philosophy live in [PITCH.md](PITCH.md). Pull an item into a build, then record what shipped in [RELEASE_NOTES.md](RELEASE_NOTES.md). Operational/shipping tasks live in [TODO.md](TODO.md); open bugs in [BUGS.md](BUGS.md).
 
+- [x] Erase synced cycle history and stop sharing while keeping the account and friends. Explicit reconnection is available in Settings.
+- [x] Inspect the people behind reactions and boops by holding the controls on any visible feed update.
+
 ## Guiding idea
 
 A period tracker that's **social** — going through your cycle *with* the friends you choose, and planning your life around it. Every feature should either (a) make personal cycle tracking genuinely useful, (b) deepen the supportive social layer, or (c) help you organize life around your cycle — and all of it in service of the mission: **women's empowerment**, making a hidden monthly experience visible, shared, and celebrated (see [PITCH.md](PITCH.md)). Keep it **warm, private, consent-first — and serious, not fluffy**.

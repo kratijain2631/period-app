@@ -1,6 +1,6 @@
+import { readCycleSyncEnabled, saveCycleSyncEnabled } from '../supabase/cyclePrivacy';
 import { DeviceEventEmitter } from 'react-native';
 import {
-  AuthorizationStatus,
   BASAL_BODY_TEMPERATURE_IDENTIFIER,
   CERVICAL_MUCUS_IDENTIFIER,
   healthkitClient,
@@ -170,27 +170,59 @@ const notify = (snapshot: CycleSnapshot | null) => {
   DeviceEventEmitter.emit(CYCLE_SNAPSHOT_UPDATED, snapshot);
 };
 
-export const clearCycleSnapshot = async () => {
-  await clearCycleSnapshots();
+export const clearCycleSnapshot = async (userId?: string) => {
+  await clearCycleSnapshots(userId);
   notify(null);
 };
 
-export const syncHealthData = async ({
-  trigger = 'manual',
-}: { trigger?: SyncTrigger } = {}): Promise<CycleSnapshot | null> => {
-  const { permissions, session, hasSeenCompanionIntro } = useSessionStore.getState();
-  if (!hasSeenCompanionIntro) return null;
-  if (!session) {
-    console.log('[cycle-sync] Skip: no session');
-    return null;
-  }
-  if (!permissions.granted) {
-    console.log('[cycle-sync] Skip: permissions not granted');
-    return null;
-  }
+// Drain any local write or reminder already underway before confirming erasure.
+const syncs = new Map<string, Promise<CycleSnapshot | null>>();
+const withdrawing = new Set<string>();
 
-  const status = await healthkitClient.authorizationStatusFor(MENSTRUAL_FLOW_IDENTIFIER);
-  console.log('[cycle-sync] authorizationStatus', status);
+async function clearHealthOnDevice(userId: string) {
+  await clearCycleSnapshot(userId);
+  if (useSessionStore.getState().session?.userId === userId) {
+    await scheduleUpcomingPhaseReminder(null, null);
+    useSessionStore.getState().setHealthPermissions({ granted: false });
+  }
+}
+
+export async function eraseSyncedCycleData(userId: string) {
+  withdrawing.add(userId);
+  try {
+    await saveCycleSyncEnabled(userId, false);
+    await syncs.get(userId)?.catch(() => {});
+    await clearHealthOnDevice(userId);
+  } finally {
+    withdrawing.delete(userId);
+  }
+}
+
+export function syncHealthData({ trigger = 'manual' }: { trigger?: SyncTrigger } = {}): Promise<CycleSnapshot | null> {
+  const { session, permissions, hasSeenCompanionIntro } = useSessionStore.getState();
+  const userId = session?.userId;
+  if (!userId || !permissions.granted || !hasSeenCompanionIntro || withdrawing.has(userId)) return Promise.resolve(null);
+  const running = syncs.get(userId);
+  if (running) return running;
+  const request = runHealthSync(session, trigger).finally(() => syncs.delete(userId));
+  syncs.set(userId, request);
+  return request;
+}
+
+const runHealthSync = async (session: import('../../state/sessionStore').Session, trigger: SyncTrigger): Promise<CycleSnapshot | null> => {
+  const userId = session.userId;
+  const active = () => useSessionStore.getState().session?.userId === userId && !withdrawing.has(userId);
+  try {
+    const enabled = await readCycleSyncEnabled();
+    if (!active()) return null;
+    if (!enabled) {
+      await clearHealthOnDevice(userId);
+      return null;
+    }
+  } catch {
+    // Keep the offline view. Defer importing more Health data until consent can be read.
+    return null;
+  }
 
   const now = new Date();
   const startDate = new Date(now.getTime() - LOOKBACK_MS);
@@ -210,11 +242,13 @@ export const syncHealthData = async ({
       seen.add(s.id);
       return true;
     });
+    if (!active()) return null;
     const previousSnapshot = await getLatestCycleSnapshot(session.userId);
     const snapshot = deriveSnapshot(samples, now.toISOString(), signalSamples);
     const previousPhase = previousSnapshot?.snapshot.currentPhase ?? null;
     const phaseChanged = previousPhase && previousPhase !== snapshot.currentPhase;
 
+    if (!active()) return null;
     await upsertCycleSnapshot(session.userId, snapshot);
     try {
       let autoPostSettings = useSessionStore.getState().autoPostSettings ?? DEFAULT_AUTO_POST_SETTINGS;
@@ -229,6 +263,7 @@ export const syncHealthData = async ({
       }
       // Only auto-post period events that occur on/after account creation — a
       // fresh account must not flood the feed with backdated cycle history.
+      if (!active()) return null;
       const accountCreatedAtMs = session.createdAt ? new Date(session.createdAt).getTime() : null;
       const autoPostedSamples = selectAutoPostedPeriodSamples(
         samples,
@@ -285,16 +320,17 @@ export const syncHealthData = async ({
         // HealthKit background delivery), also nudge the user with a local
         // notification — foreground syncs skip it since they're already looking.
         if (trigger === 'background') {
-          schedulePhaseChangeNotification(snapshot.currentPhase).catch(() => {});
+          await schedulePhaseChangeNotification(snapshot.currentPhase).catch(() => {});
         }
       }
       await upsertCycleEvents(events);
     } catch (error) {
       console.warn('[cycle-sync] Supabase sync failed', error);
     }
+    if (!active()) return null;
     notify(snapshot);
     // Keep the predicted "your phase is changing, open to share" reminder current.
-    scheduleUpcomingPhaseReminder(snapshot.nextPhaseStart, snapshot.nextPhase).catch(() => {});
+    await scheduleUpcomingPhaseReminder(snapshot.nextPhaseStart, snapshot.nextPhase).catch(() => {});
     console.log(
       `[cycle-sync] Completed (${trigger}) with ${samples.length} flow samples and ${signalSamples.length} signal samples from ${startDate.toISOString()} to ${now.toISOString()}`,
     );
