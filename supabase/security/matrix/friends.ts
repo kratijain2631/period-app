@@ -88,6 +88,10 @@ const rows: Row[] = [
     where: { body: 'Protected cycle reply' }, expect: 'hidden' },
 
   // profiles and search
+  { name: 'feed authors include accepted friends', as: 'friend', op: 'rpc', fn: 'activity_author_profiles', args: { member_ids: ['victim'] }, field: 'member_id', expect: 'allowed' },
+  { name: 'a stranger cannot resolve a feed author', as: 'stranger', op: 'rpc', fn: 'activity_author_profiles', args: { member_ids: ['victim'] }, field: 'member_id', expect: 'hidden' },
+  { name: 'feed authors include the signed-in member', as: 'owner', op: 'rpc', fn: 'activity_author_profiles', args: { member_ids: ['victim'] }, field: 'member_id', expect: 'allowed' },
+  { name: 'feed author identities require login', as: 'anon', op: 'rpc', fn: 'activity_author_profiles', args: { member_ids: ['victim'] }, expect: 'denied' },
   { name: 'a friend can read the victim\'s name', as: 'friend', op: 'rpc', fn: 'friend_profiles', args: { friend_ids: ['victim'] }, field: 'friend_id', expect: 'allowed' },
   { name: 'a stranger cannot read the victim\'s name', as: 'stranger', op: 'rpc', fn: 'friend_profiles', args: { friend_ids: ['victim'] }, field: 'friend_id', expect: 'hidden' },
   { name: 'a friend cannot read the victim\'s users row', as: 'friend', op: 'select', table: 'users', owner: 'id', expect: 'hidden' },

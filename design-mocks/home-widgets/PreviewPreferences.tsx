@@ -1,8 +1,9 @@
+import { EmailChangeForm, PendingEmail } from '../../app/features/profile/components/EmailChangeForm';
 import { SettingsPage, ContactValue } from '../../app/features/profile/components/SettingsPage';
 import { useState } from 'react';
-import {  TextInput, View } from 'react-native';
+import { TextInput, View } from 'react-native';
 import { normalizeContactPhone } from '../../app/services/contacts/phone';
-import { AppText,  ActionButton } from '../../app/components/ui/WidgetPrimitives';
+import { AppText, ActionButton } from '../../app/components/ui/WidgetPrimitives';
 import { useWidgetTheme } from '../../app/theme/widgetTheme';
 import { RankingVisibilityRow } from '../../app/features/profile/components/RankingVisibilityRow';
 
@@ -35,7 +36,7 @@ export function SettingsMenu({
 export function SampleContactDetails({ details, save }: { details: Details; save: (next: Details) => void }) {
   const t = useWidgetTheme();
   const [email, setEmail] = useState<string | null>(null);
-  const [confirm, setConfirm] = useState(false);
+  const [pendingEmail, setPendingEmail] = useState('');
   const [editingPhone, setEditingPhone] = useState(false);
   const [phone, setPhone] = useState(details.phone);
   const [code, setCode] = useState('');
@@ -53,7 +54,16 @@ export function SampleContactDetails({ details, save }: { details: Details; save
   return (
     <>
       <View style={{ gap: 8 }}>
-        {email === null ? (
+        {pendingEmail && email === null ? (
+          <>
+            <PendingEmail address={pendingEmail} currentEmail={details.email} onEdit={() => { setEmail(''); report(''); }} />
+            <ActionButton outline label="Simulate opening the email link" onPress={() => {
+              save({ ...details, email: pendingEmail });
+              setPendingEmail('');
+              report('Sample email verified.');
+            }} />
+          </>
+        ) : email === null ? (
           <ContactValue
             label="Email"
             value={details.email}
@@ -63,50 +73,9 @@ export function SampleContactDetails({ details, save }: { details: Details; save
             }}
           />
         ) : (
-          <>
-            <AppText>New email address</AppText>
-            <TextInput
-              accessibilityLabel="Account email"
-              placeholder="Email address"
-              style={input}
-              value={email}
-              onChangeText={(v) => {
-                setEmail(v);
-                setConfirm(false);
-              }}
-            />
-            <ActionButton
-              label="Verify email"
-              disabled={!/^\S+@\S+\.\S+$/.test(email)}
-              onPress={() => {
-                setConfirm(true);
-                report('Sample confirmation link ready.');
-              }}
-            />
-            {confirm && (
-              <ActionButton
-                outline
-                label="Check confirmation"
-                onPress={() => {
-                  save({ ...details, email: email.trim() });
-                  setEmail(null);
-                  setConfirm(false);
-                  report('Sample email verified.');
-                }}
-              />
-            )}
-          </>
-        )}
-        {email !== null && (
-          <ActionButton
-            outline
-            label="Cancel email change"
-            onPress={() => {
-              setEmail(null);
-              setConfirm(false);
-              report('');
-            }}
-          />
+          <EmailChangeForm email={email} currentEmail={details.email} busy={false}
+            onChange={setEmail} onSend={() => { setPendingEmail(email.trim()); setEmail(null); report(''); }}
+            onCancel={() => { setEmail(null); report(''); }} />
         )}
       </View>
       <View style={{ gap: 8, borderTopWidth: 1, borderColor: t.colors.border }}>

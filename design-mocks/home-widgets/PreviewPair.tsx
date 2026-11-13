@@ -12,7 +12,7 @@ function snapshot(offset: number, phase: CycleSnapshot['currentPhase']): CycleSn
   });
   return { syncedAt: asOf.toISOString(), currentPhase: phase, cycleLengthDays: 28, samples };
 }
-export function PreviewPair({ person, offline, onRemove }: { person: CirclePerson; offline: boolean; onRemove: () => void }) {
+export function PreviewPair({ person, yourName, offline, onRemove }: { person: CirclePerson; yourName: string; offline: boolean; onRemove: () => void }) {
   const model = useMemo(() => {
     const yours = snapshot(0, 'follicular');
     const theirs = person.score === null ? undefined : snapshot(person.id === 'maya' ? 1 : person.id === 'sam' ? 4 : 3, 'follicular');
@@ -20,7 +20,7 @@ export function PreviewPair({ person, offline, onRemove }: { person: CirclePerso
   }, [person.id, person.score]);
   return (
     <>
-      <PairComparison name={person.name} model={model} />
+      <PairComparison name={person.name} yourName={yourName} model={model} />
       <PairActions name={person.name} onBoop={async () => offline ? 'queued' : 'sent'} onRemove={async () => {
         if (offline) throw Error('Offline');
         onRemove();

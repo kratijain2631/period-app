@@ -1,3 +1,4 @@
+import { memberInitial } from '../../social/memberIdentity';
 import { useMemo, useRef, useState } from 'react';
 import { View } from 'react-native';
 import { getCycleDay, type CyclePhase, type CycleSnapshot } from '../../../../packages/domain/cycles/models';
@@ -87,8 +88,8 @@ function HistoryRow({ row, name }: { row: SyncScoreSummary['cycleTrend'][number]
   );
 }
 
-export function PairComparison({ name, model, yourAvatar, theirAvatar }: {
-  name: string; model: PairComparisonModel; yourAvatar?: string | null; theirAvatar?: string | null;
+export function PairComparison({ name, model, yourName, yourAvatar, theirAvatar }: {
+  name: string; model: PairComparisonModel; yourName: string; yourAvatar?: string | null; theirAvatar?: string | null;
 }) {
   const t = useWidgetTheme();
   const { summary } = model;
@@ -107,7 +108,7 @@ export function PairComparison({ name, model, yourAvatar, theirAvatar }: {
               </View>
             )}
             <SyncRings size={148} syncPercent={summary.score} yourPhase={model.yourPhase} theirPhase={model.theirPhase}
-              yourDay={model.yourDay} theirDay={model.theirDay} friendInitial={name.charAt(0).toUpperCase()}
+              yourDay={model.yourDay} theirDay={model.theirDay} yourInitial={memberInitial(yourName)} friendInitial={memberInitial(name)}
               yourAvatarUrl={yourAvatar} friendAvatarUrl={theirAvatar} />
             <AppText style={{ fontFamily: t.type.semibold }}>In sync</AppText>
             <AppText role="caption" style={{ color: t.colors.secondary }}>

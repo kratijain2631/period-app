@@ -62,7 +62,7 @@ export const ActivityItem = ({
           <Image source={{ uri: model.avatarUrl }} style={{ width: 42, height: 42 }} />
         ) : (
           <AppText role="heading" style={{ color: t.phase[model.phase].text }}>
-            {model.actorName.slice(0, 1).toUpperCase()}
+            {model.actorInitial}
           </AppText>
         )}
       </View>

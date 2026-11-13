@@ -230,30 +230,6 @@ export const fetchCurrentUserProfile = async (): Promise<UserProfileRow | null> 
   };
 };
 
-export const fetchUserProfilesByIds = async (ids: string[]): Promise<UserProfileRow[]> => {
-  if (!isSupabaseConfigured || ids.length === 0) {
-    return [];
-  }
-  const { data: withAutoPostData, error: withAutoPostError } = await supabase
-    .from('users')
-    .select(PROFILE_SELECT_WITH_AUTO_POST)
-    .in('id', ids);
-  if (withAutoPostError) {
-    if (!isMissingAutoPostColumnError(withAutoPostError)) {
-      throw withAutoPostError;
-    }
-    const { data: legacyData, error: legacyError } = await supabase
-      .from('users')
-      .select(PROFILE_SELECT_BASE)
-      .in('id', ids);
-    if (legacyError) {
-      throw legacyError;
-    }
-    return ((legacyData as UserProfileRow[]) ?? []).map(withDefaultAutoPostSettings);
-  }
-  return ((withAutoPostData as UserProfileRow[]) ?? []).map(withDefaultAutoPostSettings);
-};
-
 export type UserProfileUpdate = {
   fullName?: string | null;
   alias?: string | null;

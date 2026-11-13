@@ -6,9 +6,32 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## Unreleased
 
+**Design and member identity**
+
+- Feed, Home and member updates resolve each author by the member ID that opens their profile. Written and automatic updates show the friend’s current name, alias fallback and visible avatar. Your posts retain “You” and use your name’s initial when there is no photo. The comparison ring uses the same signed-in identity.
+
+**Email, phone and verification**
+
+- Settings and initial email verification have a labeled, outlined address field, a Send confirmation email action and a compact Cancel action for unsubmitted edits. A pending address is kept separate from the verified address. The app rechecks confirmation when you return and while Settings is open. A pending change identifies both inboxes and lets you correct the replacement address. [Updated Settings design](../design/2026-11-13/contact-settings/change-email.png).
+- Staging and production have secure two-address confirmation enabled, the default restricted email sender, a local confirmation redirect and phone authentication disabled. General email delivery needs a configured sender and a reachable confirmation destination. Sign in with Apple is enabled in production. [Setup and blockers](TROUBLESHOOTING.md#contact-verification-delivery-and-guidance-on-staging-2026-11-13).
+
+**Phase guidance**
+
+- Staging served cached tips and enforced refresh cooldown and account access. A fresh generation attempt returned HTTP 503. Staging lacks the generation service key. This check used synthetic cycle data.
+
+**Friend discovery and requests**
+
+- Real staging sessions matched an opted-in test account by confirmed email, by a preverified fictional phone number and by both together with one result. Opting out hid the match. Sending, canceling, resending and accepting requests updated both accounts.
+
+**Posting, comments and rankings**
+
+- Staging checks covered written posts, automatic period and phase updates, comment ownership, Boops, friendship changes, and their effects on Most supportive, Largest Circle and Loudest Voices. [QA record](TESTING.md#staging-qa-2026-11-13).
+
 ## 2026-11-12 — TestFlight build 1.0.22 (build 44)
 
 Apple confirmed internal testing for **Dev Team** and **Team (Expo)**. The [signed iOS build](https://expo.dev/accounts/kratijain26/projects/period-app/builds/8e71b4af-a9af-4ad9-8998-0569763de558) and [Apple upload](https://expo.dev/accounts/kratijain26/projects/period-app/submissions/69f6c154-a17d-4471-888d-f9120646d824) finished. [iPhone checks](TESTING.md#friend-profile-and-automatic-comment-checks-2026-11-12).
+
+**Design and friend profiles**
 
 - **One tap opens the full friend profile.** Circle rankings, the friend directory, posts and other member links use the same profile. Under identity and bio, accepted friends see the sync rings, score and confidence, both phases, latest flow gap, 28-day overlap, comparison timelines and suggestions. Boop, confirmed removal and shared updates are on the same page. Removed the “View cycle comparison” button and its separate destination.
 - Friends without paired snapshots still have a profile, friend actions and an empty history state. Pending requests, other members and your own outward profile keep their relationship-appropriate views. [Profile and history screenshots](../design/2026-11-12/friend-profile/README.md).
@@ -19,22 +42,40 @@ Apple confirmed internal testing for **Dev Team** and **Team (Expo)**. The [sign
 
 [Received requests](../design/2026-11-12/requests-and-comments/received.png) · [Sent requests](../design/2026-11-12/requests-and-comments/sent.png) · [Automatic update with comments](../design/2026-11-12/requests-and-comments/automatic-comments.png).
 
+**Posting and comments**
+
 - **Comments on every feed update.** Written posts, automatic period updates and phase transitions have the same Comments action in Feed and on member profiles. Anyone who can see the parent update can read and reply. Authors can delete their own comments. Each update keeps its own conversation and opening another collapses the previous thread. Comments on an automatic update count toward its author’s Most supportive ranking.
 - Comment rows leave 18 points between the end of the text and the following divider, including multi-line replies.
+
+**Friend discovery and requests**
+
 - **Friend requests** has Received and Sent tabs with counts and scrollable lists. Rows show member identity beside Accept and Decline or a clock, Pending status and Cancel request. Actions move below the identity on narrow screens or with larger text. Opening a name still leads to its profile.
 
 ## 2026-11-12 — TestFlight build 1.0.20 (build 42)
 
 Apple processed 1.0.20 (42) and enabled it for **Dev Team** and **Team (Expo)** internal testers. The [signed iOS build](https://expo.dev/accounts/kratijain26/projects/period-app/builds/683c5961-86d2-4f1b-950b-c54d076b1ff3) and [Apple upload](https://expo.dev/accounts/kratijain26/projects/period-app/submissions/ed9624dd-1f7d-4316-ab53-fdf028975bc2) both finished. This build carries forward the approved mascot icon, opening font and standalone Settings from 1.0.19 (41). [iPhone walkthrough](TESTING.md#feed-setup-and-sent-requests) · [Updated screenshots](../design/2026-11-12/v1.0/README.md#later-testflight-revisions).
 
+**Posting and comments**
+
 - **Feed → Share an update** opens **Write a post** as a separate iPhone page. Back keeps the text and mood in the current session. **Continue your draft** reopens them. A successful share returns to Feed with the new post visible. A failed share keeps the editor open. The iPhone app and preview use the same launcher and composer.
+
+**Email, phone and verification**
+
 - **First-time setup** collects verified email and phone with the alias, then asks about **Show me in Community rankings**, period updates, first day only and phase transitions. The member saves these choices before the optional Apple Health step. Rankings start off. Saved preferences appear in Settings. The preview includes a sample first-time setup from Opening.
+
+**Design**
+
 - **You → bio banner.** The mascot and landscape now share one drawing area. Its tip, arms and feet fit inside the illustration. The same art appears on outward profiles. [Updated 390 px screenshot](../design/2026-11-12/setup-and-requests/you-390.png).
+
+**Friend discovery and requests**
+
 - **Circle → Add Friends → Friend requests** shows received requests with Accept/Decline and a scrollable Sent list with **Request pending** and **Cancel request**. The recipient’s profile also supports cancellation. Canceling only deletes the sender’s still-pending row. Refresh removes it from the recipient’s inbox and makes the contact selectable again. A simultaneous acceptance keeps the friendship.
 
 ## 2026-11-12 — TestFlight build 1.0.19 (build 41)
 
 Expo finished the [signed build](https://expo.dev/accounts/kratijain26/projects/period-app/builds/bcd2ba31-c1d9-4719-ba5b-36f1aa63779e) and [Apple upload](https://expo.dev/accounts/kratijain26/projects/period-app/submissions/ae6609a9-6c9d-43cb-88ed-dd1498edbf9d) from `v1.0.19-build41`. Apple processed build 41 and made it available to both internal groups, Team (Expo) and Dev Team.
+
+**Design and Settings**
 
 - This release adds the approved thumbnail, standalone Settings page, shared Home/opening wordmark, and the bio banner fix to the redesign in builds 39 and 40. [iPhone test steps](TESTING.md#1019-settings-and-mascot).
 
@@ -58,24 +99,44 @@ Internal design beta for testers with an existing account. [iPhone walkthrough](
 
 ### Added
 
+**Design and navigation**
+
 - Design v1.0 includes a 1024 × 1024 app thumbnail and an illustrated opening identity. The smiling terracotta drop sits inside the five-color cycle ring. The app icon, animated launch, signed-out sign-in screen and browser preview use that identity. The preview opens from the welcome page or directly to a requested tab.
 - The [dated gallery of 118 screenshots](../design/2026-11-12/v1.0/index.html) records the four main pages, secondary pages, every sample member profile, scroll positions, dialogs, comment interactions, contact settings, ranking tabs and sample data states. The [file index](../design/2026-11-12/v1.0/README.md) links directly to the PNGs.
-
 - Home, Feed, Circle and You now use reusable widgets. Home previews a cycle, a phase tip, the next estimated transition, a top sync match and the latest update; each opens its full destination. Feed has its own tab for posting, reactions, boops and deleting your own posts.
-- Circle has two personal ranking tabs: **Most in sync** and **Most supportive**. The first compares eligible friends’ shared cycles; the second counts friends’ saved reactions, comments and boops to you over the last 30 days. Numbered rows use the same format and open the member’s profile. Home’s top match opens the sync ranking.
-- Members can read and write comments on posts they can see in Feed, My posts or a member profile, and delete their own comments. A deleted post also removes its comments. Comments on your posts count toward Most supportive.
-- **Community rankings** (formerly **Cycle Community**) shows two opt-in, scrollable Top 10 lists: **Largest Circle** counts distinct accepted friends; **Loudest Voices** counts still-published manual posts in the current UTC month. Each shows aliases and counts. Cycle details and post contents stay private.
-- **Add Friends** is a labeled button beside the Friends list in Circle. It opens a page with a scrollable Friend requests card, Discover friends, and Grow your circle with **Copy invite link** in a matching button directly below **Share invite link**. The directory is labeled **Friends**. More than four matching friends scroll inside the list with search above it. Friend requests have their own card with an independently scrolling list.
-- Discover by name or alias, match an exact verified email or phone where the other member allows it, or select up to five contact matches with checkboxes in a scrolling list and tap **Send friend requests**. Sent requests stay gray and marked **Request pending**. Incoming matches offer **Accept** and **Decline**. Accepted friends leave contact suggestions.
 - **Notifications** is one list in arrival order, oldest first. Friend requests appear between other notifications, with the sender’s profile and inline Accept/Decline; there is no separate activity link. Notifications and Add friends use the same pending list; pending requests count toward the bell until answered.
 - Members have an outward profile reached from names in the feed, directory, rankings, requests and notifications with an identified sender. You can open your own by tapping your name on You. Profiles, Notifications and Add friends are secondary pages outside the bottom bar.
 
+**Circle and community rankings**
+
+- Circle has two personal ranking tabs: **Most in sync** and **Most supportive**. The first compares eligible friends’ shared cycles; the second counts friends’ saved reactions, comments and boops to you over the last 30 days. Numbered rows use the same format and open the member’s profile. Home’s top match opens the sync ranking.
+- **Community rankings** (formerly **Cycle Community**) shows two opt-in, scrollable Top 10 lists: **Largest Circle** counts distinct accepted friends; **Loudest Voices** counts still-published manual posts in the current UTC month. Each shows aliases and counts. Cycle details and post contents stay private.
+
+**Friend discovery and requests**
+
+- **Add Friends** is a labeled button beside the Friends list in Circle. It opens a page with a scrollable Friend requests card, Discover friends, and Grow your circle with **Copy invite link** in a matching button directly below **Share invite link**. The directory is labeled **Friends**. More than four matching friends scroll inside the list with search above it. Friend requests have their own card with an independently scrolling list.
+- Discover by name or alias, match an exact verified email or phone where the other member allows it, or select up to five contact matches with checkboxes in a scrolling list and tap **Send friend requests**. Sent requests stay gray and marked **Request pending**. Incoming matches offer **Accept** and **Decline**. Accepted friends leave contact suggestions.
+
 ### Changed
 
+**Circle and community rankings**
+
 - Open **You → Settings → Show me in Community rankings** to opt in or out. The preference controls both global boards. Anyone signed in can browse the boards. Each board scrolls to tenth place with four rows visible at once.
+
+**Email, phone and verification**
+
 - **You → Settings** includes **Manage contact details**, **Post settings**, sign-out and account deletion. The preview now includes sample email replacement and confirmation, phone change and verification code, plus all three automatic posting preferences.
+
+**Phase guidance**
+
 - **You → Phase Guide → Refresh tips** is visible in the preview and native app. The preview cycles through sample ideas. The app retains its phase-based refresh and cooldown. **Try something new** on Home opens the guide.
+
+**Posting and comments**
+
+- Members can read and write comments on posts they can see in Feed, My posts or a member profile, and delete their own comments. A deleted post also removes its comments. Comments on your posts count toward Most supportive.
 - Opening comments on another post collapses the previous thread. Tapping another post body, reaction, boop or author also dismisses it. The small trash icon next to your own comment keeps a 44-point touch target. Comment drafts survive collapsing a thread while its row remains mounted.
+
+**Design and navigation**
 
 - You now owns the full cycle wheel, monthly recap and Phase Guide. **Try something new** opens the guide; **Coming up** on Home opens the wheel. Tap the wheel (or hover in the web preview) for phase ranges. The example shows Menstruation, days 1–5; Follicular, days 6–12; Ovulation, days 13–15; Luteal, days 16–23; and PMS, days 24–28. Real estimates use cycle history.
 - You ends with **My posts** (formerly **My updates**), close beneath the guide. It shows the signed-in member’s posts, newest first. Removed **Your circle**, the duplicate upcoming-phase widget, **View my outward profile**, **See what this means**, and the check-in subtext. Existing profile, Health sync, guidance refresh, contact and account settings remain available.
@@ -83,6 +144,8 @@ Internal design beta for testers with an existing account. [iPhone walkthrough](
 - The widget architecture separates data and behavior, widget contracts, screen composition and presentation. Home uses compact previews of widgets owned by Feed, Circle or You. Detailed presenters share actions and data with the compact versions. The illustrated theme uses shared tokens. The [widget inventory and page directory](UI_ARCHITECTURE.md#page-directory) cover live and proposed widgets. Both the original HTML concept and the interactive four-screen preview are included; the latter supports a neutral theme, 320/390/480 px widths and simulated data states.
 
 ### Verification and known blockers
+
+**Friend discovery and contact verification**
 
 - **Requested phone/email QA (2026-11-12).** Two disposable staging JWT accounts passed phone/email/combined matching, deduplication, opt-in/out, caller independence and changed confirmed identifier/readback checks. Verification was Admin-simulated; accounts/data removed, shared accounts untouched. Thirty contact service/controller tests pass with mocked permissions. Real SMS/email confirmation, native contact-detail screens and iOS permission/selection flows remain unverified.
 - **Required-phone onboarding blocked by hosted SMS setup.** Read-only settings show phone auth disabled on staging and production; normal staging phone change failed HTTP 500, exact cause unconfirmed. Enable and validate SMS before inviting testers who need new account setup. No production tests/configuration writes. TESTING now has short VoiceOver, larger-text and real Health-sync instructions.
@@ -139,6 +202,8 @@ Earlier candidate preparation is included in this build. [Contact checks](TESTIN
 - **Security rules lint (`scripts/security/lint.js`, `supabase/security/allowlist.json`).** `npm run test:security`, and so the required Security checks, now also check the database catalog. Every table must have RLS on, and no function can be run without a login. Functions logged-in users can run must check who is calling. SECURITY DEFINER functions must set `search_path`. Every policy must check the caller, and UPDATE policies must pin ownership and consent columns. Exceptions live in the allowlist with a reason, and entries that stop matching fail the lint. It found one real gap, fixed by `20261112190000_new-user-trigger-search-path.sql`: the sign-up trigger didn't pin its `search_path`. Testing (2026-11-12, local Docker): passes on the repo; planted holes each fail with the object named, including a recipient able to rewrite a request's sender, a table with RLS off and a no-login function. `scripts/db/start-local.sh` now retries starting Supabase once, because a GitHub runner failed with "address already in use" on the database port before any check ran.
 
 ### Infrastructure & release setup
+
+**Phase guidance**
 
 - **Nightly guidance retired, verified on both projects (2026-11-12).** PR #83 merged at `0765324f`. [Database deploy run 43274996960](https://github.com/kratijain2631/period-app/actions/runs/43274996960) applied `20261111211000` to staging, passed all 75 staging access checks, then applied production. Post-deploy read-only metadata confirms nightly guidance absent and `daily-phase-change-reminder` active at 15:00 UTC in both projects. Cached tips, all user tables, functions and RPCs remain. No new production test users or AI calls were made.
 - **Offline alias build registered and compiled.** 1.0.16 (37), [EAS build](https://expo.dev/accounts/kratijain26/projects/period-app/builds/41c1a64e-ac8a-480f-a72a-5ff377edce5e), source/tag `781bf582` / `v1.0.16-build37`, is `FINISHED`. [Automatic Apple upload](https://expo.dev/accounts/kratijain26/projects/period-app/submissions/35b18e69-b469-498b-bf5a-f8a0797d2f7a) finished successfully (rechecked 2026-11-12); TestFlight install visibility and physical cold-start retest remain unverified.

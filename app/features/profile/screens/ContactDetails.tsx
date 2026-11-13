@@ -1,6 +1,7 @@
+import { EmailChangeForm, PendingEmail } from '../components/EmailChangeForm';
 import { ContactValue } from '../components/SettingsPage';
-import { useEffect, useState } from 'react';
-import { Button, Text, TextInput, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { AppState, Button, Text, TextInput, View } from 'react-native';
 import { supabase } from '../../../services/supabase/client';
 import { normalizeContactPhone } from '../../../services/contacts/phone';
 
@@ -11,6 +12,8 @@ export default function ContactDetails({ userId, onReady, settings = false }: Pr
   const [email, setEmail] = useState('');
   const [editingEmail, setEditingEmail] = useState(false);
   const [verifiedEmail, setVerifiedEmail] = useState('');
+  const [pendingEmail, setPendingEmail] = useState('');
+  const submitting = useRef(false);
   const [phone, setPhone] = useState('');
   const [verifiedPhone, setVerifiedPhone] = useState('');
   const [sentTo, setSentTo] = useState('');
@@ -20,7 +23,7 @@ export default function ContactDetails({ userId, onReady, settings = false }: Pr
   const [reload, setReload] = useState(0);
   const [loaded, setLoaded] = useState(false);
   const normalized = normalizeContactPhone(phone);
-  const ready = loaded && !editingEmail && !!verifiedEmail && !!normalized && normalized === verifiedPhone;
+  const ready = loaded && !editingEmail && !pendingEmail && !!verifiedEmail && !!normalized && normalized === verifiedPhone;
 
   useEffect(() => {
     onReady?.(ready);
@@ -38,6 +41,7 @@ export default function ContactDetails({ userId, onReady, settings = false }: Pr
         setPhone(confirmed);
         setVerifiedPhone(confirmed);
         setEmail(user.email ?? '');
+        setPendingEmail(user.new_email ?? '');
         setEditingEmail(false);
         setEditingPhone(false);
         setVerifiedEmail(user.email_confirmed_at ? (user.email ?? '') : '');
@@ -52,8 +56,38 @@ export default function ContactDetails({ userId, onReady, settings = false }: Pr
     };
   }, [userId, reload]);
 
+  useEffect(() => {
+    if (!pendingEmail || editingEmail) return;
+    let active = true;
+    let reading = false;
+    const check = async () => {
+      if (!active || reading || AppState.currentState !== 'active') return;
+      reading = true;
+      try {
+        const { data, error } = await supabase.auth.getUser();
+        const user = data.user;
+        if (!active || error || user?.id !== userId) return;
+        if (!user.new_email && user.email_confirmed_at && user.email) {
+          setVerifiedEmail(user.email);
+          setEmail(user.email);
+          setEditingEmail(false);
+          setPendingEmail('');
+          setMessage(user.email.toLowerCase() === pendingEmail.toLowerCase() ? 'Email address updated.' : '');
+        }
+      } catch {
+        // The next active check retries a temporary connection failure.
+      } finally {
+        reading = false;
+      }
+    };
+    const timer = setInterval(() => void check(), 12000);
+    const listener = AppState.addEventListener('change', state => { if (state === 'active') void check(); });
+    return () => { active = false; clearInterval(timer); listener.remove(); };
+  }, [pendingEmail, editingEmail, userId]);
+
   async function submit(action: 'email' | 'send' | 'verify') {
-    if (busy) return;
+    if (submitting.current) return;
+    submitting.current = true;
     setBusy(true);
     setMessage('');
     try {
@@ -62,7 +96,18 @@ export default function ContactDetails({ userId, onReady, settings = false }: Pr
       if (action === 'email') {
         const response = await supabase.auth.updateUser({ email: email.trim() });
         if (response.error) throw response.error;
-        setMessage('Follow the confirmation links sent to your email, then tap Check confirmation.');
+        const updated = response.data.user;
+        if (updated?.id !== userId) throw new Error('Account changed. Reopen Settings.');
+        if (updated.email_confirmed_at && updated.email?.toLowerCase() === email.trim().toLowerCase() && !updated.new_email) {
+          setVerifiedEmail(updated.email);
+          setPendingEmail('');
+          setMessage('Email address updated.');
+        } else if (updated.new_email?.toLowerCase() === email.trim().toLowerCase()) {
+          setPendingEmail(updated.new_email);
+        } else {
+          throw new Error('Could not start the email change. Check the address and try again.');
+        }
+        setEditingEmail(false);
       } else if (normalized && action === 'send') {
         const response = await supabase.auth.updateUser({ phone: normalized });
         if (response.error) throw response.error;
@@ -81,8 +126,12 @@ export default function ContactDetails({ userId, onReady, settings = false }: Pr
         setReload((value) => value + 1);
       }
     } catch (err) {
-      setMessage(err instanceof Error ? err.message : 'Could not verify details. Try again.');
+      const code = err && typeof err === 'object' && 'code' in err ? err.code : null;
+      setMessage(code === 'email_address_not_authorized'
+        ? 'Email delivery is unavailable for this address right now. Your current email is unchanged.'
+        : err instanceof Error ? err.message : 'Could not verify details. Try again.');
     } finally {
+      submitting.current = false;
       setBusy(false);
     }
   }
@@ -97,7 +146,11 @@ export default function ContactDetails({ userId, onReady, settings = false }: Pr
 
   return (
     <View style={{ gap: 8 }}>
-      {settings && !editingEmail ? (
+      {pendingEmail && !editingEmail ? (
+        <PendingEmail address={pendingEmail} currentEmail={verifiedEmail} onEdit={() => {
+          setEmail(''); setMessage(''); setEditingEmail(true);
+        }} />
+      ) : settings && !editingEmail ? (
         <ContactValue
           label="Email"
           value={verifiedEmail || email}
@@ -120,22 +173,14 @@ export default function ContactDetails({ userId, onReady, settings = false }: Pr
           />
         </>
       ) : (
-        <>
-          <Text>Verify the email friends have saved. Changing it updates your account email.</Text>
-          <TextInput
-            accessibilityLabel="Account email"
-            value={email}
-            onChangeText={setEmail}
-            autoCapitalize="none"
-            keyboardType="email-address"
-            editable={!busy}
-          />
-          <Button title="Verify email" disabled={busy || !email.trim()} onPress={() => submit('email')} />
-          <Button title="Check confirmation" disabled={busy} onPress={() => setReload((value) => value + 1)} />
-        </>
-      )}
-      {settings && editingEmail && (
-        <Button disabled={busy} title="Cancel email change" onPress={() => setReload((v) => v + 1)} />
+        <EmailChangeForm
+          email={email} currentEmail={verifiedEmail} busy={busy}
+          onChange={value => { setEmail(value); setMessage(''); }}
+          onSend={() => void submit('email')}
+          onCancel={settings || verifiedEmail || pendingEmail ? () => {
+            setEmail(verifiedEmail); setEditingEmail(false); setMessage('');
+          } : undefined}
+        />
       )}
       {settings && !editingPhone ? (
         <ContactValue
