@@ -148,3 +148,23 @@ Record build, iOS version, tester aliases, and observed outcomes. Leave phone nu
 Owner confirms 1.0.16 install and successful force-close/offline alias retest; DSA declaration reported resolved. Home’s empty-feed presentation now prioritizes the existing offline state over loading/empty copy. Code review confirms already loaded feed items remain visible; 155 Jest tests, TypeScript and the iOS JavaScript/Hermes export pass. No new low-impact copy-only unit test was added. Native feed rendering still requires a device check because no simulator runtime is installed locally.
 
 A separate isolated staging check used two temporary real-JWT accounts with the exact build-37 email RPC, confirming matches before friendship, while accepted and after removal, wrong-email exclusion and opt-out. Both accounts/data were deleted. No real contacts or production test writes. Owner’s Full Access positive-match case with Shaan remains open until his account email and discovery preference are confirmed.
+
+## Requested contact QA results - 2026-11-12
+
+Baseline `8b8bb8e6`: two new isolated staging accounts signed in with real JWTs. v2 tests passed for phone only, email only, both returning one row, default-off/target opt-in, caller searching while undiscoverable, target opt-out/persisted readback, and changed confirmed phone/email invalidating old matches. Normal current-user Auth readback returned the changed details. **Confirmation and identifier changes were simulated with the Admin API.** This proves matching/readback after changes, not native contact-detail updates or SMS/email delivery. Both accounts/data deleted; shared personas and circleqa pair untouched. No actual contacts, Health data or production test writes.
+
+The two contact suites passed **30/30** service/controller tests using mocked OS permission responses. Native iOS denied/limited/full prompts and Settings selections remain untested. `simctl list runtimes` returned no runtime.
+
+Read-only public Auth settings on both hosted environments report phone authentication disabled, phone auto-confirm false and mailer auto-confirm false. Normal staging phone-change request returned HTTP 500 / `unexpected_failure`; exact error cause unconfirmed. Configure/enable SMS before required-phone release; validate real delivery and confirmation using an authorized number. Email-change delivery needs a controlled inbox. Neither delivery flow was verified here.
+
+## Short physical iPhone checks
+
+Use your existing real account and Health records on TestFlight; synthetic Health belongs only in staging.
+
+| Check | Steps | Pass condition |
+| --- | --- | --- |
+| VoiceOver | Settings > Accessibility > VoiceOver; enable it or ask Siri. Swipe right/left to move focus and double-tap to activate. Read You tips and try Refresh tips and Circle discovery. Ask Siri to turn VoiceOver off afterward. | Understandable labels, full readable tips, sensible focus order and announced loading/errors. [Apple](https://support.apple.com/guide/iphone/iph3e2e415f/ios). |
+| Larger text | Settings > Accessibility > Display & Text Size > Larger Text. Enable Larger Accessibility Sizes, increase the slider, then open You/Circle and scroll through cards/controls. | Text wraps without overlap/cutoff and controls remain reachable. [Apple](https://support.apple.com/guide/iphone/make-text-easier-to-read-iph3c076905a/ios). |
+| Real Health sync | Health > profile picture > Privacy > Apps > this app; enable the cycle categories you want it to read. Return to this app, open You and compare the sync status and cycle data with your existing Health records. | Recent sync status and period-derived dates/day count agree with existing records. Phase labels remain this app's estimates. [Apple Health permissions](https://support.apple.com/en-us/108779). |
+
+Record build, iOS version, affected control and outcome; do not publish personal Health records, contact addresses, numbers or codes.
