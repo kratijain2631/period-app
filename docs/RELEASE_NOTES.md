@@ -6,9 +6,9 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## Unreleased
 
-## 2026-11-12 — TestFlight build 1.0.17 (build 38)
+## 2026-11-12 — TestFlight build 1.0.17 (build 39)
 
-Internal design beta for testers with an existing account. [iPhone walkthrough](TESTING.md#design-v10-testflight-walkthrough). Build and Apple upload status are recorded below after verification.
+Internal design beta for testers with an existing account. [iPhone walkthrough](TESTING.md#design-v10-testflight-walkthrough). Expo registered [build 39](https://expo.dev/accounts/kratijain26/projects/period-app/builds/55777766-0fc5-4d67-9dc9-a08f3d21e7c9) from tag `v1.0.17-build39` and scheduled the [Apple upload](https://expo.dev/accounts/kratijain26/projects/period-app/submissions/4fcec060-2c3d-48bb-b42f-7a47a9abb5e0). Build 38 is a separate candidate.
 
 ### Added
 
@@ -56,6 +56,8 @@ Internal design beta for testers with an existing account. [iPhone walkthrough](
 - The signed-in [iPhone checks](TESTING.md#widget-and-circle-smoke-check) are pending. New account setup and live phone changes depend on the hosted SMS provider.
 
 ### Verification
+
+- [App review #97](https://github.com/kratijain2631/period-app/pull/97) merged after all four checks passed. The [database deployment](https://github.com/kratijain2631/period-app/actions/runs/43349281208) applied the comment and ranking migration to staging and production.
 
 - Design v1.0 passed all 179 app tests, type checks for the app and preview, and the iOS JavaScript export. Browser checks opened every preview page and all 17 sample profiles, scrolled the friend directory and both Top 10 boards, switched ranking visibility, refreshed guidance, and exercised comment posting, removal and automatic collapse. The [gallery file index](../design/2026-11-12/v1.0/README.md) records each captured path.
 
