@@ -1,3 +1,4 @@
+import type { RealtimeChannel } from '@supabase/supabase-js';
 import { isSupabaseConfigured, supabase } from './client';
 
 export type PostRow = {
@@ -22,6 +23,20 @@ export const fetchPosts = async (limit = 50): Promise<PostRow[]> => {
     throw error;
   }
   return (data as PostRow[]) ?? [];
+};
+
+// Fires when a post you can see is created (RLS limits delivery to your own and
+// your friends' posts).
+export const subscribeToPosts = (onInsert: () => void): RealtimeChannel | null => {
+  if (!isSupabaseConfigured) {
+    return null;
+  }
+  return supabase
+    .channel('posts')
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'posts' }, () => {
+      onInsert();
+    })
+    .subscribe();
 };
 
 export type CreatePostPayload = {
