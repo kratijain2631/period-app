@@ -13,7 +13,7 @@ export type CommentActions = {
   remove: (id: string) => Promise<void>;
 };
 export function PostComments({
-  postId,
+  threadKey,
   self,
   offline,
   actions,
@@ -21,7 +21,7 @@ export function PostComments({
   onProfile,
   focused = true,
 }: {
-  postId: string;
+  threadKey: string;
   self: string;
   offline: boolean;
   actions: CommentActions;
@@ -31,7 +31,7 @@ export function PostComments({
 }) {
   const theme = useWidgetTheme();
   const threads = useCommentThreads();
-  const open = threads?.current === postId;
+  const open = threads?.current === threadKey;
   const [rows, setRows] = useState<PostComment[]>([]);
   const [draft, setDraft] = useState('');
   const [limit, setLimit] = useState(20);
@@ -95,7 +95,7 @@ export function PostComments({
       <Pressable
         accessibilityRole="button"
         accessibilityState={{ expanded: open }}
-        onPress={() => threads?.setCurrent((id) => (id === postId ? null : postId))}
+        onPress={() => threads?.setCurrent((id) => (id === threadKey ? null : threadKey))}
         style={{ minHeight: 44, justifyContent: 'center' }}
       >
         <AppText style={{ color: theme.colors.accent, fontFamily: theme.type.semibold }}>
@@ -115,7 +115,7 @@ export function PostComments({
             {rows.map((row) => (
               <View
                 key={row.id}
-                style={{ paddingVertical: 6, borderTopWidth: 1, borderColor: theme.colors.border }}
+                style={{ paddingTop: 6, paddingBottom: 18, borderTopWidth: 1, borderColor: theme.colors.border }}
               >
                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                   <TextAction

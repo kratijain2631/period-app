@@ -6,6 +6,14 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## Unreleased
 
+## 2026-11-12 — TestFlight build 1.0.21 (build 43)
+
+[Received requests](../design/2026-11-12/requests-and-comments/received.png) · [Sent requests](../design/2026-11-12/requests-and-comments/sent.png) · [Automatic update with comments](../design/2026-11-12/requests-and-comments/automatic-comments.png).
+
+- **Comments on every feed update.** Written posts, automatic period updates and phase transitions have the same Comments action in Feed and on member profiles. Anyone who can see the parent update can read and reply. Authors can delete their own comments. Each update keeps its own conversation and opening another collapses the previous thread. Comments on an automatic update count toward its author’s Most supportive ranking.
+- Comment rows leave 18 points between the end of the text and the following divider, including multi-line replies.
+- **Friend requests** has Received and Sent tabs with counts and scrollable lists. Rows show member identity beside Accept and Decline or a clock, Pending status and Cancel request. Actions move below the identity on narrow screens or with larger text. Opening a name still leads to its profile.
+
 ## 2026-11-12 — TestFlight build 1.0.20 (build 42)
 
 Apple processed 1.0.20 (42) and enabled it for **Dev Team** and **Team (Expo)** internal testers. The [signed iOS build](https://expo.dev/accounts/kratijain26/projects/period-app/builds/683c5961-86d2-4f1b-950b-c54d076b1ff3) and [Apple upload](https://expo.dev/accounts/kratijain26/projects/period-app/submissions/ed9624dd-1f7d-4316-ab53-fdf028975bc2) both finished. This build carries forward the approved mascot icon, opening font and standalone Settings from 1.0.19 (41). [iPhone walkthrough](TESTING.md#feed-setup-and-sent-requests) · [Updated screenshots](../design/2026-11-12/v1.0/README.md#later-testflight-revisions).

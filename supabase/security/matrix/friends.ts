@@ -78,6 +78,15 @@ const rows: Row[] = [
   { name: 'a stranger cannot comment on a private post', as:'stranger',op:'insert',table:'post_comments',row:{post_id:{rowOf:'posts'},body:'Matrix denied comment'},expect:'denied' },
   { name: 'a friend cannot remove another author’s comment', as:'friend',op:'delete',table:'post_comments',setup:{post_id:{rowOf:'posts'},user_id:'victim',body:'Matrix protected comment'},where:{body:'Matrix protected comment'},expect:'hidden' },
 
+  { name: 'a stranger cannot read private cycle update comments', as: 'stranger', op: 'select', table: 'event_comments', owner: 'user_id', expect: 'hidden' },
+  { name: 'a friend can comment on a shared cycle update', as: 'friend', op: 'insert', table: 'event_comments',
+    row: { event_id: { rowOf: 'cycle_events' }, body: 'Shared cycle reply' }, expect: 'allowed' },
+  { name: 'a stranger cannot comment on a private cycle update', as: 'stranger', op: 'insert', table: 'event_comments',
+    row: { event_id: { rowOf: 'cycle_events' }, body: 'Private cycle reply' }, expect: 'denied' },
+  { name: 'a friend cannot delete another author’s cycle update comment', as: 'friend', op: 'delete', table: 'event_comments',
+    setup: { event_id: { rowOf: 'cycle_events' }, user_id: 'victim', body: 'Protected cycle reply' },
+    where: { body: 'Protected cycle reply' }, expect: 'hidden' },
+
   // profiles and search
   { name: 'a friend can read the victim\'s name', as: 'friend', op: 'rpc', fn: 'friend_profiles', args: { friend_ids: ['victim'] }, field: 'friend_id', expect: 'allowed' },
   { name: 'a stranger cannot read the victim\'s name', as: 'stranger', op: 'rpc', fn: 'friend_profiles', args: { friend_ids: ['victim'] }, field: 'friend_id', expect: 'hidden' },

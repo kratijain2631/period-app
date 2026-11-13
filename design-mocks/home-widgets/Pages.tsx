@@ -279,8 +279,8 @@ export function AddFriendsPage(
       </AppText>
       <View nativeID="requests" tabIndex={-1}>
         <FriendRequestsCard
-          incoming={props.incomingRequests.map(p => ({ id: p.id, memberId: p.id, alias: p.alias }))}
-          outgoing={sampleContacts.filter(p => relations[p.id] === 'outgoing').map(p => ({ id: p.id, memberId: p.id, alias: p.alias }))}
+          incoming={props.incomingRequests.map(p => ({ id: p.id, memberId: p.id, alias: p.alias, name: p.name }))}
+          outgoing={sampleContacts.filter(p => relations[p.id] === 'outgoing').map(p => ({ id: p.id, memberId: p.id, alias: p.alias, name: p.name }))}
           busy={state === 'Offline'} status="ready" onRetry={() => {}}
           onProfile={id => { const p = sampleContacts.find(c => c.id === id); if (p) onPerson(p); }}
           onRespond={onRequest} onCancel={props.onCancel}

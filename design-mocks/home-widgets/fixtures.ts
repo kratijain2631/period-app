@@ -1,4 +1,4 @@
-import type { ActivityItemModel } from '../../app/features/feed/models/activity';
+import { activityKey, type ActivityItemModel } from '../../app/features/feed/models/activity';
 import type { CycleOverview } from '../../app/features/cycle/models/cycleOverview';
 import type { CirclePerson } from '../../app/features/friends/components/CircleWidgets';
 import type { ProfileIdentityModel } from '../../app/features/profile/components/ProfileWidgets';
@@ -58,6 +58,11 @@ export const initialProfile: ProfileIdentityModel = {
 export const activity: ActivityItemModel[] = [
   { ...initialItem, actorId: 'maya' },
   {
+    ...initialItem, actorId: 'nina', actorName: 'Nina', target: { type: 'cycle', id: 'phase-nina' },
+    label: 'Entered Follicular', body: null, phase: 'follicular',
+    createdAt: '2026-11-03T12:00:00Z', reactions: [], boopCount: 0,
+  },
+  {
     ...initialItem,
     actorId: 'jules',
     actorName: 'Jules',
@@ -116,8 +121,11 @@ export function supportWithVisiblePosts(
   const totals = Object.fromEntries(Object.entries(supportExamples).map(([id, values]) => [id, { ...values }]));
   const postIds = new Set(items.filter((i) => i.isSelf && i.target.type === 'post').map((i) => i.target.id));
   for (const reaction of demoReactions) if (postIds.has(reaction.postId)) totals[reaction.from].reactions++;
-  for (const postId of postIds)
-    for (const comment of comments[postId] ?? []) if (totals[comment.user_id]) totals[comment.user_id].comments++;
+  for (const item of items.filter(i => i.isSelf)) {
+    for (const comment of comments[activityKey(item.target)] ?? []) {
+      if (totals[comment.user_id]) totals[comment.user_id].comments++;
+    }
+  }
   return totals;
 }
 export const communityExamples = [

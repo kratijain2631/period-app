@@ -137,7 +137,7 @@ function Preview() {
   const [mood, setMood] = useState<string | null>(null);
   const [items, setItems] = useState(activity);
   const [comments, setComments] = useState<Record<string, PostComment[]>>({
-    'sunday-walk': [
+    'post:sunday-walk': [
       {
         id: 'sample-comment',
         user_id: 'jules',
@@ -303,39 +303,37 @@ function Preview() {
               }
         }
         comments={
-          item.target.type === 'post' && (
-            <PostComments
-              postId={item.target.id}
-              self="self"
-              offline={offline}
-              revision={0}
-              actions={{
-                read: async (start, n) => (comments[item.target.id] ?? []).slice(start, start + n),
-                add: async (body) => {
-                  const comment = {
-                    id: 'local-' + Date.now(),
-                    user_id: 'self',
-                    alias: profile.alias,
-                    body,
-                    created_at: new Date().toISOString(),
-                  };
-                  setComments((prev) => ({
-                    ...prev,
-                    [item.target.id]: [...(prev[item.target.id] ?? []), comment],
-                  }));
-                },
-                remove: async (id) =>
-                  setComments((prev) => ({
-                    ...prev,
-                    [item.target.id]: (prev[item.target.id] ?? []).filter((c) => c.id !== id),
-                  })),
-              }}
-              onProfile={(id) => {
-                const p = personById(id);
-                if (p) openFriend(p);
-              }}
-            />
-          )
+          <PostComments
+            threadKey={key}
+            self="self"
+            offline={offline}
+            revision={0}
+            actions={{
+              read: async (start, n) => (comments[key] ?? []).slice(start, start + n),
+              add: async (body) => {
+                const comment = {
+                  id: 'local-' + Date.now(),
+                  user_id: 'self',
+                  alias: profile.alias,
+                  body,
+                  created_at: new Date().toISOString(),
+                };
+                setComments((prev) => ({
+                  ...prev,
+                  [key]: [...(prev[key] ?? []), comment],
+                }));
+              },
+              remove: async (id) =>
+                setComments((prev) => ({
+                  ...prev,
+                  [key]: (prev[key] ?? []).filter((c) => c.id !== id),
+                })),
+            }}
+            onProfile={(id) => {
+              const p = personById(id);
+              if (p) openFriend(p);
+            }}
+          />
         }
         pending={false}
         offline={offline}
