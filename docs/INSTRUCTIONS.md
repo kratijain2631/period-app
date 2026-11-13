@@ -56,6 +56,8 @@ This includes **non-code changes that happen outside git** — e.g. Supabase con
 
 ## 2. Cut a version on every published build
 
+**TestFlight hold (2026-11-13).** Krati reported two builds left in the quota after 1.0.24 (46). Start the next TestFlight build only when she explicitly asks for it. This overrides the automatic release step in §9. Until then, keep changes under Unreleased and use the existing build for phone checks.
+
 Every time we make a build (dev, TestFlight, or App Store), "block" the accumulated changes into a dated entry:
 
 1. Rename the `## Unreleased` section to a header that **starts with the date, then names the build type + version + native build number**. **Don't use "Beta N"** — the owner prefers **`TestFlight build <version> (build <n>)`** (get the build number from the `eas build` output / `eas build:list`). Append status labels that apply with `·`: `submitted for review` / `approved` / `app store`. **Also append `· public`** to any build that was submitted for Beta App Review / made available to external (public) TestFlight testers — builds kept internal-only don't get it. Local-only builds are `Dev build`. Update the header later if its status changes (e.g. add `· approved` once App Review passes). Examples:
