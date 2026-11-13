@@ -36,7 +36,7 @@ notifications ───trigger───┼─▶ push_outbox ──insert trigge
 ## Setup per project
 
 1. The migration (applied by the Database deploy workflow) creates everything in the database, including both cron jobs. It relies on the vault secrets `project_url`, `publishable_key` and `cron_secret`, which staging and production already have.
-2. Deploy the function: `supabase functions deploy send-push --project-ref <ref>`. Deploy to staging first.
+2. Deploy the function with gateway JWT checks off, because it checks the vault secret itself and refuses anyone else: `supabase functions deploy send-push --project-ref <ref> --no-verify-jwt`. Deploy to staging first.
 3. Optional: if Expo's "enhanced push security" is turned on, set `EXPO_ACCESS_TOKEN` as a function secret.
 4. The iOS app needs Apple push credentials in EAS (`eas credentials`); EAS normally sets these up during a build.
 
@@ -45,6 +45,12 @@ notifications ───trigger───┼─▶ push_outbox ──insert trigge
 - `select type, attempts, sent_at, result from push_outbox order by created_at desc limit 20;` shows what was queued and what Expo said. `result.status` is `sent`, `failed` (every device rejected), `skipped` (with a reason) or `error` (will retry).
 - On staging, personas have no real device tokens. Inserting a made-up `ExponentPushToken[...]` for a persona exercises the whole path, and Expo answers with an error ticket for it.
 - Real delivery needs a build on a physical phone with notifications allowed. Simulators can't get Expo push tokens, though `xcrun simctl push` can test how a notification looks and what tapping does.
+
+## Status
+
+- **Staging (2026-11-13):** migration applied by the Database deploy workflow, `send-push` deployed (version 1, gateway JWT checks off). Callers without the secret get 401. With made-up tokens for ava, cleo and fay, the `cramps-thread` and `new-friend` scenarios each produced a delivery straight away. Expo answered `DeviceNotRegistered`, the function removed the token, and later rows were recorded as `skipped: no registered device`. A friend request repeated within the day wasn't queued again. Rows queued before the function existed were handled once by the first retry run (21:50 UTC).
+- **Production:** migration applied 2026-11-13; `send-push` **not deployed yet**, so rows queue and expire after a day without sending.
+- **Not yet confirmed:** delivery to a real phone.
 
 ## Phases
 
