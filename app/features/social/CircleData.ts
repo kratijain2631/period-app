@@ -29,7 +29,7 @@ export async function loadCircle(userId: string) {
       id,
       name: p?.full_name?.trim() || alias || 'Circle member',
       alias,
-      score: self && snapshot ? computeSyncScore({ selfSnapshot: self, friendSnapshot: snapshot }).score : null,
+      score: self && snapshot ? (computeSyncScore({ selfSnapshot: self, friendSnapshot: snapshot })?.score ?? null) : null,
     };
   });
   return { people, snapshots: byId, outgoing: pending.map(row => ({

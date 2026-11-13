@@ -32,7 +32,7 @@ export function buildPairComparison(
   return {
     summary, yourPhase, theirPhase,
     yourDay: getCycleDay(yours, now), theirDay: getCycleDay(theirs, now),
-    recommendations: guidance?.recommendations ?? fallbackRecommendations({ selfPhase: yourPhase, friendPhase: theirPhase, score: summary?.score ?? 60 }),
+    recommendations: guidance?.recommendations ?? fallbackRecommendations({ selfPhase: yourPhase, friendPhase: theirPhase, score: summary?.score ?? null }),
     updatedAt: guidance?.generated_at,
   };
 }

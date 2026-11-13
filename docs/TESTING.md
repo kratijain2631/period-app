@@ -280,3 +280,10 @@ The preview passed adding, reading and removing comments on a phase update, sing
 - All 186 app tests, native and preview type checks and the iOS bundle export passed. The browser also passed draft/resume/share, setup preferences in Settings, guidance refresh feedback and mascot bounds at 320, 390 and 480 px.
 - Phone-width design preview passed field entry, cancel, replacement of a pending draft, simulated confirmation, request tabs, automatic comment spacing, single-thread expansion, and member profile actions at 320 and 390 px. [New address field](../design/2026-11-13/contact-settings/change-email.png).
 - Separate on-device checks: inbox delivery to both addresses and Apple relay, SMS codes, physical-iPhone contact permissions and native invite sheet, VoiceOver, large text, back gestures, Apple sign-in, HealthKit and push delivery. This Mac has no installed iOS Simulator runtime or paired device. Shaan’s separate [staging simulator run](#native-find-from-contacts-on-staging---2026-11-13) passed denied and limited access, matching, deduplication and the five-choice limit. Full Access and the system Settings link still need an iPhone check. Browser fixture interactions and component checks do not exercise these native services.
+
+## No-data states on staging, 2026-11-13
+
+- iOS 26.1 simulator, dev build on staging Metro, after `npm run test-accounts:seed`. A successful persona sign-in confirmed staging.
+- As `ava`: Circle showed Bea, Cleo and Eli with percentages in Most in sync, and Dev (no cycle data) in Friends with no percentage and not ranked. Dev's profile showed "Once you both have cycle data, your sync score will appear here", "No phase shared" and general suggestions. Ava's recap still showed a measured 28d cycle length.
+- As `cleo` (one period): the You recap showed "—" for cycle length, 3d period length and 1 month tracked.
+- Metro log had no errors, only the usual simulator warnings for push and background delivery. Screenshots are in the local, uncommitted `screenshots/no-data-states-2026-11-13/`.

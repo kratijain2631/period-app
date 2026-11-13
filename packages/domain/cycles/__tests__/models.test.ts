@@ -5,6 +5,7 @@ jest.mock('@kingstinct/react-native-healthkit', () => ({
 }));
 
 import {
+  countPeriods,
   deriveSnapshot,
   getCycleDay,
   resolveCyclePhase,
@@ -357,5 +358,17 @@ describe('getCycleDay', () => {
     expect(getCycleDay({ samples: [] }, new Date(day('2026-11-03')))).toBeNull();
     expect(getCycleDay(undefined, new Date(day('2026-11-03')))).toBeNull();
     expect(getCycleDay({ samples: period('2026-11-10', 2) }, new Date(day('2026-11-03')))).toBeNull();
+  });
+});
+
+describe('countPeriods', () => {
+  const sample = (id: string, date: string) => flowSample(id, new Date(`${date}T12:00:00`).toISOString());
+
+  it('counts runs of consecutive flow days as one period each', () => {
+    expect(countPeriods([])).toBe(0);
+    expect(countPeriods([sample('a', '2026-10-01'), sample('b', '2026-10-02')])).toBe(1);
+    expect(
+      countPeriods([sample('a', '2026-10-01'), sample('b', '2026-10-02'), sample('c', '2026-10-29')]),
+    ).toBe(2);
   });
 });

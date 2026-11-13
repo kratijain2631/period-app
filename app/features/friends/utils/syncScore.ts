@@ -243,6 +243,14 @@ const buildCycleTrend = (selfSnapshot: CycleSnapshot, friendSnapshot: CycleSnaps
   });
 };
 
+// A score needs a known phase and a period start on both sides. Without them
+// every component falls back to a midpoint, which reads as a real ~48%.
+export const canComputeSyncScore = (selfSnapshot: CycleSnapshot, friendSnapshot: CycleSnapshot) =>
+  [selfSnapshot, friendSnapshot].every(
+    (snapshot) =>
+      (snapshot.currentPhase ?? 'unknown') !== 'unknown' && getLatestPeriodStart(snapshot) !== null,
+  );
+
 export const computeSyncScore = ({
   selfSnapshot,
   friendSnapshot,
@@ -251,7 +259,10 @@ export const computeSyncScore = ({
   selfSnapshot: CycleSnapshot;
   friendSnapshot: CycleSnapshot;
   now?: Date;
-}): SyncScoreSummary => {
+}): SyncScoreSummary | null => {
+  if (!canComputeSyncScore(selfSnapshot, friendSnapshot)) {
+    return null;
+  }
   const selfPhase = selfSnapshot.currentPhase ?? 'unknown';
   const friendPhase = friendSnapshot.currentPhase ?? 'unknown';
   const phaseAlignment = scorePhaseAlignment(selfPhase, friendPhase);
@@ -310,7 +321,7 @@ export const fallbackRecommendations = ({
 }: {
   selfPhase: CyclePhase;
   friendPhase: CyclePhase;
-  score: number;
+  score: number | null;
 }): string[] => {
   const recs: string[] = [];
 
@@ -328,9 +339,9 @@ export const fallbackRecommendations = ({
     recs.push('Offer a low-key hang or quick voice note.');
   }
 
-  if (score >= 80) {
+  if (score !== null && score >= 80) {
     recs.push('Lean into this high-sync week for plans.');
-  } else if (score <= 50) {
+  } else if (score !== null && score <= 50) {
     recs.push('Focus on small, supportive touches.');
   } else {
     recs.push('Sync on one small plan together.');
