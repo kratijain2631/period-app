@@ -245,8 +245,6 @@ Fresh guidance generation returned HTTP 503 with an isolated staging JWT. At tha
 
 ## Account email changes are paused
 
-Setup and Settings display the account email read-only. The code-entry form and email template are retained. Once deployed, the `pause_account_email_changes` trigger on `auth.users` rejects new requests and changes to the stored address, including confirmations started before deployment. Initial account creation and phone verification remain available. Older builds may still display Change and receive an Auth error.
+Settings keeps account email changes paused. First-time setup offers **Use a different email**. Staging and production both use new-inbox-only confirmation (`mailer_secure_email_change_enabled=false`, mail autoconfirm off). The code template uses `{{ .Token }}`. Verify the new address with its code. Auth retains the same user ID and linked Apple identity. The app reads Auth after verification to decide whether the change is complete.
 
-The [November 13 account setup mockups](../design/2026-11-13/account-setup/) predate this pause and show the earlier proposed Settings copy.
-
-Before restoring this feature, require fresh account-owner authentication on the server and test requests from an older client on staging. Remove the trigger in a new migration and enable `EMAIL_CHANGES_ENABLED` in ContactDetails only as part of that rollout. Verify delivery and code entry with a controlled new inbox.
+Starting a change requires a session created by a sign-in in the last ten minutes. Sign in again if prompted. The server authorizes the requested address for one hour. Saving the first alias closes this permission permanently. With **Keep my current email**, the pending request and its codes are withdrawn. A successful change updates the email used in both generations of contact discovery. The discovery opt-in is separate.

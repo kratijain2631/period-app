@@ -180,7 +180,8 @@ function Preview() {
   };
   const [ranked, setRanked] = useState(false);
   const [postSettings, setPostSettings] = useState(DEFAULT_AUTO_POST_SETTINGS);
-  const [contactDetails, setContactDetails] = useState({ email: 'alex@example.com', phone: screenParam() === 'setup' ? '' : '+12025550120' });
+  const [setupReady, setSetupReady] = useState(true);
+  const [contactDetails, setContactDetails] = useState({ email: screenParam() === 'setup' ? 'ava-demo@privaterelay.appleid.com' : 'alex@example.com', phone: screenParam() === 'setup' ? '' : '+12025550120' });
   const settingsChild =
     detail === 'posting' || detail === 'sign-out' || detail === 'delete-account';
   const theme = neutral ? neutralTheme : illustratedTheme;
@@ -403,7 +404,7 @@ function Preview() {
             <View style={{ gap: 6 }}>
               <ActionButton label="Enter preview" onPress={() => navigate('Home')} />
               <TextAction label="Preview first-time setup" onPress={() => {
-                setContactDetails(details => ({ ...details, phone: '' }));
+                setContactDetails({ email: 'ava-demo@privaterelay.appleid.com', phone: '' });
                 navigate('Home', 'setup');
               }} />
             </View>
@@ -413,8 +414,8 @@ function Preview() {
       case 'setup':
         content = <Surface style={{ gap: 12 }}>
           <AppText role="heading">Set up your account</AppText>
-          <SampleContactDetails setup details={contactDetails} save={setContactDetails} />
-          <ActionButton label="Continue" onPress={() => navigate('Home', 'sharing')} />
+          <SampleContactDetails setup onReady={setSetupReady} details={contactDetails} save={setContactDetails} />
+          <ActionButton label="Continue" disabled={!setupReady} onPress={() => navigate('Home', 'sharing')} />
         </Surface>;
         break;
       case 'sharing':
