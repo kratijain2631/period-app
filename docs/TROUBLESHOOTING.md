@@ -211,3 +211,7 @@ Owner confirms 1.0.16 installed, force-close/offline alias retest works and curr
 Shaan does not appear after removal. Phone-only contact cards cannot match on 1.0.16. Adding an email and relaunching with Full Contacts access still did not match; Shaan’s exact account-email equality/private-relay address and discoverability remain unconfirmed. Two isolated staging JWT accounts matched through the legacy email RPC before/after friendship removal, so removal itself is not a backend exclusion in that tested path. Do not read or expose someone’s private email to diagnose this; have them confirm the account email and preference.
 
 Phone/email discovery is already documented as the unreleased 1.0.17 candidate. Its release run stopped before EAS because the repository `EXPO_TOKEN` secret was absent; SMS delivery/device checks remain open. Rerunning an old workflow run builds its original commit. To include the later offline-feed fix, start a new release run from the merged source after release prerequisites are satisfied; do not claim this copy ships merely because the old run is retried.
+
+## Widget preview appears blank or cannot be reached
+
+Start Expo from the repository root using the [preview instructions](../design-mocks/home-widgets/README.md), then open the preview HTML on that server. The HTML, JavaScript bundle and fonts must use the same port. A second static file server can display an empty page when the font loader requests assets from another origin.
