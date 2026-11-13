@@ -10,6 +10,14 @@ const rows: Row[] = [
     row: { from_user_id: 'self', to_user_id: 'victim', status: 'pending' }, expect: 'allowed' },
   { name: 'a stranger cannot send a request in the victim\'s name', as: 'stranger', op: 'insert', table: 'friend_requests',
     row: { from_user_id: 'victim', to_user_id: 'self', status: 'pending' }, expect: 'denied' },
+  // A pair holds at most one request. One of these two is the reverse of their friendship; the
+  // other repeats it, so both must fail whichever way the seed stored it.
+  { name: 'a friend cannot send the victim a new request', as: 'friend', op: 'insert', table: 'friend_requests',
+    row: { from_user_id: 'self', to_user_id: 'victim', status: 'pending' }, expect: 'denied' },
+  { name: 'the victim cannot send a friend a new request', as: 'owner', op: 'insert', table: 'friend_requests',
+    row: { from_user_id: 'self', to_user_id: 'friend', status: 'pending' }, expect: 'denied' },
+  { name: 'a recipient cannot send a second request back', as: 'pendingRecipient', op: 'insert', table: 'friend_requests',
+    row: { from_user_id: 'self', to_user_id: 'pendingSender', status: 'pending' }, expect: 'denied' },
   { name: 'a recipient cannot change who sent a request', as: 'pendingRecipient', op: 'update', table: 'friend_requests',
     where: { from_user_id: 'pendingSender', to_user_id: 'pendingRecipient' }, set: { from_user_id: 'stranger' }, expect: 'hidden' },
   { name: 'a recipient can accept a request', as: 'pendingRecipient', op: 'update', table: 'friend_requests',
