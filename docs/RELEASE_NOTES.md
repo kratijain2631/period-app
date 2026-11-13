@@ -6,9 +6,14 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## Unreleased
 
+## 2026-11-12 — TestFlight build 1.0.18 (build 40)
+
+- Version 1.0.18 carries the same design and behavior as 1.0.17 (39). It gives the redesign its own TestFlight version. The numbered feature list and [design v1.0 gallery](../design/2026-11-12/v1.0/README.md) apply to both builds.
+- Use an existing account for the [iPhone walkthrough](TESTING.md#design-v10-testflight-walkthrough). The production database already contains the comments and rankings migration. SMS setup, real-device checks, unchanged-contact re-verification and Instagram Stories retain the status recorded below.
+
 ## 2026-11-12 — TestFlight build 1.0.17 (build 39)
 
-Internal design beta for testers with an existing account. [iPhone walkthrough](TESTING.md#design-v10-testflight-walkthrough). Expo registered [build 39](https://expo.dev/accounts/kratijain26/projects/period-app/builds/55777766-0fc5-4d67-9dc9-a08f3d21e7c9) from tag `v1.0.17-build39` and scheduled the [Apple upload](https://expo.dev/accounts/kratijain26/projects/period-app/submissions/4fcec060-2c3d-48bb-b42f-7a47a9abb5e0). Build 38 is a separate candidate.
+Internal design beta for testers with an existing account. [iPhone walkthrough](TESTING.md#design-v10-testflight-walkthrough). Expo registered [build 39](https://expo.dev/accounts/kratijain26/projects/period-app/builds/55777766-0fc5-4d67-9dc9-a08f3d21e7c9) from tag `v1.0.17-build39` and completed the [Apple upload](https://expo.dev/accounts/kratijain26/projects/period-app/submissions/4fcec060-2c3d-48bb-b42f-7a47a9abb5e0). Build 38 is a separate candidate.
 
 ### Added
 
