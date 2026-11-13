@@ -32,6 +32,11 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 - Home’s tagline uses two lines, with “your cycle” and “your circle” in a light serif italic.
 - The widget architecture separates data and behavior, widget contracts, screen composition and presentation. Home uses compact previews of widgets owned by Feed, Circle or You. Detailed presenters share actions and data with the compact versions. The illustrated theme uses shared tokens. The [widget inventory and page directory](UI_ARCHITECTURE.md#page-directory) cover live and proposed widgets. Both the original HTML concept and the interactive four-screen preview are included; the latter supports a neutral theme, 320/390/480 px widths and simulated data states.
 
+### Verification and known blockers
+
+- **Requested phone/email QA (2026-11-12).** Two disposable staging JWT accounts passed phone/email/combined matching, deduplication, opt-in/out, caller independence and changed confirmed identifier/readback checks. Verification was Admin-simulated; accounts/data removed, shared accounts untouched. Thirty contact service/controller tests pass with mocked permissions. Real SMS/email confirmation, native contact-detail screens and iOS permission/selection flows remain unverified.
+- **Required-phone onboarding blocked by hosted SMS setup.** Read-only settings show phone auth disabled on staging and production; normal staging phone change failed HTTP 500, exact cause unconfirmed. Configure/enable and validate SMS before distribution. No production tests/configuration writes. TESTING now has short VoiceOver, larger-text and real Health-sync instructions.
+
 ### Fixed
 
 - Accepting or removing a friend refreshes the directory, personal rankings and community boards on the same account; changes on another device are picked up on friendship updates, refresh or foreground. Friendship changes affect Largest Circle and eligible personal rankings; they do not change post totals.

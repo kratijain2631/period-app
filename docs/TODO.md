@@ -27,6 +27,13 @@ Open items, roughly in priority order, with completed items retained as a decisi
 
 ## Widget rollout and follow-ups
 
+- [x] Record every design request in the [release notes](RELEASE_NOTES.md) and [widget inventory](UI_ARCHITECTURE.md#page-directory). The [versioned design gallery](../design/2026-11-12/v1.0/README.md) includes the 1024 px thumbnail, opening page, every preview page, sample profiles and button destinations.
+- [x] Put the small cycle preview on Home, the full wheel and Phase Guide on You, and link Home previews to their owners. Show phase ranges on press/hover, keep the ring legible at 320 px, retain guidance refresh and use the two-line mixed-font tagline.
+- [x] Finish You with My posts. Keep contact details and posting preferences in Settings, add the Community rankings visibility switch, and remove duplicate Circle, upcoming, check-in and profile callouts.
+- [x] Add post comments, compact own-comment deletion, automatic collapse on another post and refreshed support/post ranking counts after deletion.
+- [x] Give friends a four-row scrolling list, incoming requests their own scroll box, matched contacts checkboxes and five-person batches, pending/accepted states and stacked invite actions. Add Friends, Notifications and outward profiles open outside the bottom tabs.
+- [x] Give both Circle rankings consistent numbered rows and tabs. Link the Home match to Most in sync, use a scrolling Top 10 for both Community rankings, and refresh relevant boards when friendships change.
+
 - [ ] **Settings: update and re-verify contact information.** Exercise changes to email and phone from You → Settings → Manage contact details on a staging iPhone: confirmation links, SMS, resend/expiry, cancelled changes, the new verified match and retirement of the old match. Add an explicit re-verification flow for an unchanged contact if needed; today the form verifies replacements.
 
 - [x] Implement the illustrated four-tab app and extract reusable theme-independent cycle, feed, profile and Circle widgets. Record primary owners and secondary destinations in the [widget directory](UI_ARCHITECTURE.md#page-directory).
@@ -189,3 +196,11 @@ Engineering’s missing-sharing-row Circle UI check stays open. The old batch re
 - [ ] Verify staging SMS delivery and complete the phone/email matrix in [TESTING.md](TESTING.md) before distributing the new onboarding flow.
 
 **Contacts follow-up (2026-11-12):** Shaan still does not match on 1.0.16 after adding an email and relaunching with Full Contacts access. Ask him to confirm his exact account email and enabled discoverability. Do not mark the positive-match check complete. Legacy email matching after removing a friend passes with two isolated staging accounts; both accounts/data were deleted. Phone matching is documented for the unreleased 1.0.17 candidate, not build 37.
+
+## Requested contact-discovery QA - 2026-11-12
+
+- [x] Inspect hosted phone settings read-only: phone auth disabled on staging and production. Normal staging phone change fails HTTP 500; SMS is not signed off.
+- [x] Test v2 matching with two isolated staging JWT accounts: default-off, target opt-in, phone-only, email-only, both yielding one row, caller undiscoverable, opt-out/persisted readback and changed confirmed identifiers invalidating old matches. Confirmations/changes were simulated with the staging Admin API; normal user endpoint readback passed. Both accounts/data removed; shared personas and QA pair untouched.
+- [x] Run contact service/controller regression suites: 30 tests pass with mocked denied/limited/full access, Settings/foreground invalidation, late results and preference independence.
+- [ ] Configure/enable SMS verification on staging, validate with an authorized number, then validate production setup through the release process before shipping required-phone onboarding. Real delivery, wrong code, resend, valid code and persistence remain open. Email-change delivery/confirmation needs a controlled inbox and remains untested.
+- [ ] Physical staging-client permission checks: denied, Limited Access, select/deselect cards in Settings, Full Access, stale-result clearing and target opt-in/out independent of caller permission. No simulator runtime is installed here. Mocked tests do not close native checks.

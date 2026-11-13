@@ -215,3 +215,9 @@ Phone/email discovery is already documented as the unreleased 1.0.17 candidate. 
 ## Widget preview appears blank or cannot be reached
 
 Start Expo from the repository root using the [preview instructions](../design-mocks/home-widgets/README.md), then open the preview HTML on that server. The HTML, JavaScript bundle and fonts must use the same port. A second static file server can display an empty page when the font loader requests assets from another origin.
+
+## Hosted SMS prerequisite - verified 2026-11-12
+
+Read-only public Auth settings on staging and production report phone auth disabled (`external.phone=false`), with phone and mail auto-confirm false. Normal JWT phone change on an isolated staging user returned HTTP 500 / `unexpected_failure`; its exact cause was not diagnosed. Configure a supported SMS provider and enable verification, then repeat real delivery, wrong-code, resend and valid confirmation checks with an authorized number before mandatory phone onboarding ships. Email-change confirmation needs a controlled inbox. No configuration was changed or real delivery verified here.
+
+Two isolated staging accounts passed v2 matching and changed confirmed identifier/readback checks with Admin-simulated verification, then were deleted. Thirty contact service/controller tests pass but OS responses are mocked. No simulator runtime is installed; native permission/Settings selection tests remain open. TESTING contains results and short VoiceOver/larger-text/Health instructions.
