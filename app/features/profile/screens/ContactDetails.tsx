@@ -163,9 +163,11 @@ export default function ContactDetails({ userId, onReady, settings = false }: Pr
         <View>
           <Text style={{ fontWeight: '600' }}>{appleSignIn ? 'Email from Apple' : 'Account email'}</Text>
           <Text selectable>{verifiedEmail || email || 'No email on this account'}</Text>
-          {appleSignIn && email.toLowerCase().endsWith('@privaterelay.appleid.com') && (
+          {appleSignIn && (verifiedEmail || email).toLowerCase().endsWith('@privaterelay.appleid.com') ? (
             <Text>You chose to Hide My Email. Friends can't find you by your personal email address while you use this private relay address.</Text>
-          )}
+          ) : !settings && verifiedEmail ? (
+            <Text>Friends who have this email can find you when you turn on Let contacts find me.</Text>
+          ) : null}
         </View>
       ) : pendingEmail && !editingEmail ? (
         <PendingEmail key={pendingEmail} address={pendingEmail} busy={busy}
@@ -203,17 +205,19 @@ export default function ContactDetails({ userId, onReady, settings = false }: Pr
           } : undefined}
         />
       )}
-      {editingPhone ? (
-        <PhoneChangeForm currentPhone={verifiedPhone} busy={busy}
-          onEdit={() => setMessage('')} onSend={phone => submit('send', phone)}
-          onVerify={(phone, code) => void submit('verify', phone, code)}
-          onCancel={() => { setEditingPhone(false); setMessage(''); }} />
-      ) : !settings && !verifiedPhone ? (
-        <OptionalPhonePrompt onAdd={() => { setEditingPhone(true); setMessage(''); }} />
-      ) : (
-        <ContactValue label="Phone number" value={verifiedPhone}
-          onChange={() => { setEditingPhone(true); setMessage(''); }} />
-      )}
+      <View style={!settings ? { paddingTop: 16 } : undefined}>
+        {editingPhone ? (
+          <PhoneChangeForm currentPhone={verifiedPhone} busy={busy}
+            onEdit={() => setMessage('')} onSend={phone => submit('send', phone)}
+            onVerify={(phone, code) => void submit('verify', phone, code)}
+            onCancel={() => { setEditingPhone(false); setMessage(''); }} />
+        ) : !settings && !verifiedPhone ? (
+          <OptionalPhonePrompt onAdd={() => { setEditingPhone(true); setMessage(''); }} />
+        ) : (
+          <ContactValue label="Phone number" value={verifiedPhone}
+            onChange={() => { setEditingPhone(true); setMessage(''); }} />
+        )}
+      </View>
       {message ? <Text accessibilityLiveRegion="polite">{message}</Text> : null}
     </View>
   );

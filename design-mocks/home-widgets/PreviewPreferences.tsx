@@ -46,10 +46,13 @@ export function SampleContactDetails({ details, save, setup = false }: { details
   return (
     <>
       <View style={{ gap: 8 }}>
-        <AppText>Account email</AppText>
+        <AppText>{setup ? 'Email from Apple' : 'Account email'}</AppText>
         <AppText>{details.email || 'No email on this account'}</AppText>
+        {setup && !!details.email && <AppText>{details.email.toLowerCase().endsWith('@privaterelay.appleid.com')
+          ? "You chose to Hide My Email. Friends can't find you by your personal email address while you use this private relay address."
+          : 'Friends who have this email can find you when you turn on Let contacts find me.'}</AppText>}
       </View>
-      <View style={{ gap: 8, borderTopWidth: 1, borderColor: t.colors.border }}>
+      <View style={{ gap: 8, borderTopWidth: 1, borderColor: t.colors.border, paddingTop: setup ? 16 : 0 }}>
         {setup && !editingPhone && !details.phone ? (
           <OptionalPhonePrompt onAdd={() => { setEditingPhone(true); report(''); }} />
         ) : !editingPhone ? (
