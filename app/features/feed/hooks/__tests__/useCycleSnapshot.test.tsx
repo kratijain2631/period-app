@@ -1,0 +1,91 @@
+import React from 'react';
+import { useCycleSnapshot } from '../useCycleSnapshot';
+import { getLatestCycleSnapshot } from '../../../../storage/sqlite/cycleSnapshotStore';
+let mockUser = 'a';
+const mockListener = jest.fn();
+const mockRemove = jest.fn();
+jest.mock('react-native', () => ({
+  DeviceEventEmitter: {
+    addListener: (...args: unknown[]) => {
+      mockListener(...args);
+      return { remove: mockRemove };
+    },
+  },
+}));
+jest.mock('../../../../services/healthkit/syncHealthData', () => ({ CYCLE_SNAPSHOT_UPDATED: 'updated' }));
+jest.mock('../../../../storage/sqlite/cycleSnapshotStore', () => ({
+  getLatestCycleSnapshot: jest.fn(),
+  isSnapshotStale: () => false,
+}));
+jest.mock('../../../../../packages/domain/cycles/models', () => ({
+  resolveCyclePhase: () => ({ phase: 'follicular', source: 'estimated' }),
+}));
+jest.mock('../../../../state/sessionStore', () => ({
+  useSessionStore: Object.assign((select: (state: any) => unknown) => select({ session: { userId: mockUser } }), {
+    getState: () => ({ session: { userId: mockUser } }),
+  }),
+}));
+const { act, create } = require('react-test-renderer');
+let current: ReturnType<typeof useCycleSnapshot>;
+let root: ReturnType<typeof create>;
+const Harness = () => {
+  current = useCycleSnapshot();
+  return null;
+};
+const stored = (label: string) => ({
+  lastSyncedAt: '2026-11-03T12:00:00Z',
+  snapshot: { syncedAt: '2026-11-03T12:00:00Z', samples: [], currentPhase: 'follicular', label },
+});
+const deferred = () => {
+  let resolve!: (value: any) => void;
+  const promise = new Promise<any>((r) => {
+    resolve = r;
+  });
+  return { promise, resolve };
+};
+beforeEach(() => {
+  jest.clearAllMocks();
+  mockUser = 'a';
+  Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
+});
+afterEach(async () => {
+  if (root) await act(async () => root.unmount());
+});
+it('does not let the previous account’s delayed snapshot replace a new account', async () => {
+  const old = deferred();
+  jest
+    .mocked(getLatestCycleSnapshot)
+    .mockReturnValueOnce(old.promise)
+    .mockResolvedValueOnce(stored('b') as any);
+  await act(async () => {
+    root = create(<Harness />);
+  });
+  expect(current.isLoading).toBe(true);
+  mockUser = 'b';
+  await act(async () => root.update(<Harness />));
+  await act(async () => old.resolve(stored('a')));
+  expect(current.snapshot).toMatchObject({ label: 'b' });
+  expect(mockRemove).toHaveBeenCalled();
+});
+it('ignores an earlier read overtaken by a newer update event', async () => {
+  const old = deferred();
+  jest
+    .mocked(getLatestCycleSnapshot)
+    .mockReturnValueOnce(old.promise)
+    .mockResolvedValueOnce(stored('new') as any);
+  await act(async () => {
+    root = create(<Harness />);
+  });
+  await act(async () => mockListener.mock.calls[0][1]());
+  await act(async () => old.resolve(stored('old')));
+  expect(current.snapshot).toMatchObject({ label: 'new' });
+});
+it('distinguishes no readable data from a read failure', async () => {
+  jest.mocked(getLatestCycleSnapshot).mockResolvedValueOnce(null).mockRejectedValueOnce(new Error('read failed'));
+  await act(async () => {
+    root = create(<Harness />);
+  });
+  expect(current).toMatchObject({ snapshot: null, isLoading: false, error: false });
+  await act(async () => current.reload());
+  expect(current).toMatchObject({ snapshot: null, isLoading: false, error: true });
+});

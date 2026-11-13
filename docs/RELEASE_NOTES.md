@@ -6,6 +6,36 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## Unreleased
 
+### Added
+
+- Home, Feed, Circle and You now use reusable widgets. Home previews a cycle, a phase tip, the next estimated transition, a top sync match and the latest update; each opens its full destination. Feed has its own tab for posting, reactions, boops and deleting your own posts.
+- Circle has two personal ranking tabs: **Most in sync** and **Most supportive**. The first compares eligible friends’ shared cycles; the second counts friends’ saved reactions, comments and boops to you over the last 30 days. Numbered rows use the same format and open the member’s profile. Home’s top match opens the sync ranking.
+- Members can read and write comments on posts they can see in Feed, My updates or a member profile, and delete their own comments. A deleted post also removes its comments. Comments on your posts count toward Most supportive.
+- **Cycle Community** shows two opt-in, scrollable Top 10 lists: **Largest Circle** counts distinct accepted friends; **Loudest Voices** counts still-published manual posts in the current UTC month. Each shows aliases and counts. Cycle details and post contents stay private.
+- **Add Friends** is a labeled button beside the Friends list in Circle. It holds a scrollable Friend requests card, Discover friends, and Grow your circle with matching Share and Copy invite-link buttons. The friend directory scrolls after four rows.
+- Discover by name or alias, match an exact verified email or phone where the other member allows it, or choose up to five contact matches at once. Sent requests stay gray and marked **Request pending**. Incoming matches offer **Accept** and **Decline**. Accepted friends leave contact suggestions.
+- **Notifications** is one list in arrival order, oldest first. Friend requests appear between other notifications, with the sender’s profile and inline Accept/Decline; there is no separate activity link. Notifications and Add friends use the same pending list; pending requests count toward the bell until answered.
+- Members have an outward profile reached from names in the feed, directory, rankings, requests and notifications with an identified sender. You can open your own by tapping your name on You. Profiles, Notifications and Add friends are secondary pages outside the bottom bar.
+
+### Changed
+
+- You now owns the full cycle wheel, monthly recap and Phase Guide. **Try something new** opens the guide; **Coming up** on Home opens the wheel. Tap the wheel (or hover in the web preview) for phase ranges. For the 28-day example these are days 1–5, 6–12, 13–15, 16–23 and 24–28; real estimates use cycle history.
+- You ends with **My updates**, close beneath the guide. Removed the duplicate Circle and upcoming-phase sections, extra profile link, redundant cycle-details button and check-in tagline. Existing profile, Health sync, guidance refresh, contact and account settings remain available.
+- Home’s tagline uses two lines, with “your cycle” and “your circle” in a light serif italic.
+- The illustrated theme uses shared tokens and interchangeable compact/full presentations. The [widget inventory and page directory](UI_ARCHITECTURE.md#page-directory) cover live and proposed widgets. Both the original HTML concept and the interactive four-screen preview are included; the latter supports a neutral theme, 320/390/480 px widths and simulated data states.
+
+### Fixed
+
+- Accepting or removing a friend refreshes the directory, personal rankings and community boards on the same account; changes on another device are picked up on friendship updates, refresh or foreground. Friendship changes affect Largest Circle and eligible personal rankings; they do not change post totals.
+- The compact-width cycle wheel keeps its phase and day visible at 320 px. Empty or unknown history is labeled rather than filled with invented values.
+- Deleting a post updates the shared feeds, Loudest Voices and the related support score. Failed deletion leaves the post and counts intact. Post deletion does not affect friendships or cycle sync.
+
+### Known / not yet done
+
+- Instagram Stories export for an author’s own posts is recorded in [Features](FEATURES.md#sharing-and-community-recognition) and [Todo](TODO.md#widget-rollout-and-follow-ups). Quests, XP and streaks in the illustration are design concepts.
+- Settings supports updating a contact email or phone and verifying its replacement. Contact re-verification and device coverage are tracked in Features and Todo.
+- These changes have not been released to TestFlight. Apply the additive database migration before releasing the client and complete the [signed-in iPhone checks](TESTING.md#widget-and-circle-smoke-check).
+
 ### Fixed
 
 - **Offline empty feed has an offline state.** When disconnected and there are no visible updates, Home shows “You’re offline” and reconnect guidance instead of “No updates yet” or an indefinite loading message. Existing feed items remain visible. Uses the current connection store; no backend or queue behavior changes. 155 Jest tests, TypeScript and the iOS JavaScript export pass. Requires the next native build; not in installed 1.0.16.
@@ -18,6 +48,7 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 ### Verification and work in progress
 
 - **Owner feedback (2026-11-12, 1.0.16 installed):** force-close/offline alias retest passes and DSA declaration is reported resolved. Offline empty-feed copy is being corrected; missing contact match for Shaan remains under investigation. Phone/email support is documented in the separate 1.0.17 candidate, not in installed 1.0.16.
+
 
 ## 2026-11-12 — 1.0.17 iOS release candidate
 

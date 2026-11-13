@@ -7,6 +7,10 @@ const victimEmailHash = createHash('sha256').update('bea@personas.example.com').
 // Account data, notifications, guidance and the remaining functions. The victim is bea; ava is
 // her friend and cleo a stranger (see engine.ts).
 const rows: Row[] = [
+  { name: 'no login cannot read the community boards', as: 'anon', op: 'rpc', fn: 'circle_community_top', args: { board: 'friends' }, expect: 'denied' },
+  { name: 'no login cannot read a personal support ranking', as: 'anon', op: 'rpc', fn: 'my_circle_support', expect: 'denied' },
+  { name: 'no login cannot read an outward profile', as: 'anon', op: 'rpc', fn: 'circle_member_profile', args: { subject: 'victim' }, expect: 'denied' },
+  { name: 'no login cannot search the member directory', as: 'anon', op: 'rpc', fn: 'circle_search_members', args: { term: 'be' }, expect: 'denied' },
   // users: own row only; the email always matches the login email
   { name: 'nobody can create a profile for someone else', as: 'stranger', op: 'insert', table: 'users',
     row: { id: 'victim', email: 'security-matrix@personas.example.com' }, expect: 'denied' },

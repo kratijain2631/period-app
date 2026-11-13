@@ -8,7 +8,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import AuthScreen from '../features/auth/screens/AuthScreen';
 import CompanionIntroScreen from '../features/companion/screens/CompanionIntroScreen';
 import FriendSyncScreen from '../features/friends/screens/FriendSyncScreen';
-import FriendsScreen from '../features/friends/screens/FriendsScreen';
+import FriendsScreen, { AddFriendsScreen } from '../features/friends/screens/NativeCircleScreen';
 import HomeScreen from '../features/home/screens/HomeScreen';
 import NotificationsScreen from '../features/notifications/screens/NotificationsScreen';
 import ProfileScreen from '../features/profile/screens/ProfileScreen';
@@ -28,6 +28,9 @@ import {
 } from '../state/sessionStore';
 import { brand } from '../theme/brand';
 
+import { SocialProvider } from '../features/social/SocialProvider';
+import CircleFeedScreen from '../features/feed/screens/CircleFeedScreen';
+import MemberProfileScreen from '../features/profile/screens/MemberProfileScreen';
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 const HomeStack = createNativeStackNavigator();
@@ -37,7 +40,11 @@ const ProfileStack = createNativeStackNavigator();
 function ManageContactDetailsScreen() {
   const session = useSessionStore(selectSession);
   return (
-    <ScrollView contentContainerStyle={{ padding: 24 }} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets>
+    <ScrollView
+      contentContainerStyle={{ padding: 24 }}
+      keyboardShouldPersistTaps="handled"
+      automaticallyAdjustKeyboardInsets
+    >
       {session ? <ContactDetails key={session.userId} userId={session.userId} /> : null}
     </ScrollView>
   );
@@ -53,9 +60,7 @@ const AppNavigator = () => {
   const profileLoadError = useSessionStore((state) => state.profileLoadError);
 
   useEffect(() => {
-    console.log(
-      `[nav] session=${Boolean(session)} introSeen=${hasSeenIntro} permissions=${permissionsGranted}`,
-    );
+    console.log(`[nav] session=${Boolean(session)} introSeen=${hasSeenIntro} permissions=${permissionsGranted}`);
   }, [session, hasSeenIntro, permissionsGranted]);
 
   const isAuthed = Boolean(session);
@@ -66,35 +71,51 @@ const AppNavigator = () => {
 
   return (
     <SafeAreaProvider>
-      <NavigationContainer ref={navigationRef}>
-        <Stack.Navigator screenOptions={{ headerShown: false, gestureEnabled: true }}>
-          {(isHydrating || (isAuthed && isProfileHydrating)) && (
-            <Stack.Screen
-              name="AuthLoading"
-              component={AuthLoadingScreen}
-              options={{ animation: 'fade' }}
-            />
-          )}
-          {!isHydrating && !isAuthed && <Stack.Screen name="Auth" component={AuthScreen} />}
-          {!isHydrating && !isProfileHydrating && profileUnavailable && (
-            <Stack.Screen name="ProfileUnavailable" component={ProfileUnavailableScreen} />
-          )}
-          {!isHydrating && isAuthed && !isProfileHydrating && needsAlias && (
-            <Stack.Screen name="Alias" component={AliasScreen} />
-          )}
-          {!isHydrating && !needsAlias && !profileUnavailable && needsIntro && (
-            <Stack.Screen name="CompanionIntro" component={CompanionIntroScreen} />
-          )}
-          {!isHydrating && readyForHome && <Stack.Screen name="MainTabs" component={MainTabs} />}
-          {!isHydrating && readyForHome && (
-            <Stack.Screen
-              name="FriendSync"
-              component={FriendSyncScreen}
-              options={{ gestureEnabled: true, fullScreenGestureEnabled: true }}
-            />
-          )}
-        </Stack.Navigator>
-      </NavigationContainer>
+      <SocialProvider>
+        <NavigationContainer ref={navigationRef}>
+          <Stack.Navigator
+            key={session?.userId ?? 'signed-out'}
+            screenOptions={{ headerShown: false, gestureEnabled: true }}
+          >
+            {(isHydrating || (isAuthed && isProfileHydrating)) && (
+              <Stack.Screen name="AuthLoading" component={AuthLoadingScreen} options={{ animation: 'fade' }} />
+            )}
+            {!isHydrating && !isAuthed && <Stack.Screen name="Auth" component={AuthScreen} />}
+            {!isHydrating && !isProfileHydrating && profileUnavailable && (
+              <Stack.Screen name="ProfileUnavailable" component={ProfileUnavailableScreen} />
+            )}
+            {!isHydrating && isAuthed && !isProfileHydrating && needsAlias && (
+              <Stack.Screen name="Alias" component={AliasScreen} />
+            )}
+            {!isHydrating && !needsAlias && !profileUnavailable && needsIntro && (
+              <Stack.Screen name="CompanionIntro" component={CompanionIntroScreen} />
+            )}
+            {!isHydrating && readyForHome && <Stack.Screen name="MainTabs" component={MainTabs} />}
+            {!isHydrating && readyForHome && (
+              <Stack.Screen
+                name="AddFriends"
+                component={AddFriendsScreen}
+                options={{ headerShown: true, title: 'Add friends', headerBackButtonDisplayMode: 'minimal' }}
+              />
+            )}
+            {!isHydrating && readyForHome && (
+              <Stack.Screen
+                name="MemberProfile"
+                component={MemberProfileScreen}
+                options={{ headerShown: true, title: 'Profile', headerBackButtonDisplayMode: 'minimal' }}
+              />
+            )}
+            {!isHydrating && readyForHome && <Stack.Screen name="Notifications" component={NotificationsScreen} />}
+            {!isHydrating && readyForHome && (
+              <Stack.Screen
+                name="FriendSync"
+                component={FriendSyncScreen}
+                options={{ gestureEnabled: true, fullScreenGestureEnabled: true }}
+              />
+            )}
+          </Stack.Navigator>
+        </NavigationContainer>
+      </SocialProvider>
     </SafeAreaProvider>
   );
 };
@@ -124,7 +145,6 @@ const HomeStackScreen = () => (
   // there instead of pushing a duplicate ProfileScreen (HomeProfile) here.
   <HomeStack.Navigator screenOptions={{ headerShown: false, gestureEnabled: true }}>
     <HomeStack.Screen name="HomeRoot" component={HomeScreen} />
-    <HomeStack.Screen name="Notifications" component={NotificationsScreen} />
   </HomeStack.Navigator>
 );
 
@@ -215,6 +235,8 @@ const MainTabs = () => {
               let iconName: keyof typeof Ionicons.glyphMap = 'home-outline';
               if (route.name === 'Home') {
                 iconName = 'home-outline';
+              } else if (route.name === 'Feed') {
+                iconName = 'chatbubbles-outline';
               } else if (route.name === 'Friends') {
                 iconName = 'people-outline';
               } else if (route.name === 'Profile') {
@@ -238,6 +260,11 @@ const MainTabs = () => {
             name="Home"
             component={HomeStackScreen}
             options={{ tabBarLabel: 'Home' }}
+            listeners={{ focus: runPageTransition, tabPress: runPageTransition }}
+          />
+          <Tab.Screen
+            name="Feed"
+            component={CircleFeedScreen}
             listeners={{ focus: runPageTransition, tabPress: runPageTransition }}
           />
           <Tab.Screen

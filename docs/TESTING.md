@@ -148,3 +148,17 @@ Record build, iOS version, tester aliases, and observed outcomes. Leave phone nu
 Owner confirms 1.0.16 install and successful force-close/offline alias retest; DSA declaration reported resolved. Home’s empty-feed presentation now prioritizes the existing offline state over loading/empty copy. Code review confirms already loaded feed items remain visible; 155 Jest tests, TypeScript and the iOS JavaScript/Hermes export pass. No new low-impact copy-only unit test was added. Native feed rendering still requires a device check because no simulator runtime is installed locally.
 
 A separate isolated staging check used two temporary real-JWT accounts with the exact build-37 email RPC, confirming matches before friendship, while accepted and after removal, wrong-email exclusion and opt-out. Both accounts/data were deleted. No real contacts or production test writes. Owner’s Full Access positive-match case with Shaan remains open until his account email and discovery preference are confirmed.
+
+
+## Widget and Circle smoke check
+
+Use two staging accounts and a third unrelated viewer after applying the migration. The local [four-tab fixture preview](../design-mocks/home-widgets/README.md) exercises navigation, responsive states and appearance without sending anything to the backend.
+
+1. Request a friendship. Open the recipient’s bell, then tap Add Friends beside the friend directory. Confirm the same request appears in both; accept in one, then verify it disappears from both and from contact suggestions. Repeat with Decline. Background and reopen the app during a request.
+2. Select up to five permitted contact matches, including a pending or incoming match. Check that only eligible selections can be sent and the remaining rows still work after a partial failure. Test limited contacts permission, exact phone and email lookup, Share and Copy on iPhone.
+3. Opt in to the community boards. Create a post and react, comment and boop from a second accepted account. Delete a comment; check the 30-day support count drops by one. Remove/re-accept the friend and check personal eligibility and Largest Circle without changing post totals. Delete the qualifying post and revisit both personal and global boards: the post and its associated support disappear, friendship and cycle sync do not change. Opt out and confirm the alias leaves the boards for the other viewer. Repeat with an empty board.
+4. Follow Home previews to Feed, the inline guide/wheel in You and Circle rankings. Open a profile as self, friend and stranger, and revisit after unfriending. Confirm a stranger cannot see the bio, updates or health information. Test 320 px, large text, VoiceOver, tab focus and the posting keyboard.
+
+Local verification (2026-11-12): all 179 app tests passed; TypeScript passed for native and preview, and the iOS JavaScript bundle exported. The preview confirmed accepting a sample request in Notifications adds the sender to Friends and removes the request from Add friends. No iPhone simulator runtime was installed.
+
+Automated coverage includes cycle range/empty-state selectors, request subscriptions and response races, shared feed mutation failures and deletion, and the transaction in `supabase/tests/circle-rankings.sql` exercised in the disposable database security checks. The iOS JavaScript export does not replace a signed-in device run.

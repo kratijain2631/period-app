@@ -2,6 +2,22 @@
 
 The full schema — tables, functions, RLS policies, indexes — is defined in `supabase/migrations/*.sql`, which is the source of truth. Running those migrations recreates the database from scratch; staging (`rntqwmptuavqnbjovnae`) was built that way, and production (`mmomoyszozclfjdvjbeb`) matches it. Merging a migration applies it to staging, then production ([DB_PUSH.md](DB_PUSH.md)). Real user data lives only in the database, never in the repo. The old `seed-posts.sql` demo data was retired on 2026-11-06; test data now comes from the staging personas ([TESTING.md](TESTING.md)).
 
+
+## Circle rankings and outward profiles (unreleased)
+
+Migration `20261113000000_circle_rankings.sql` adds `users.community_rankings_enabled` (default false). Only a member chooses whether to join the two global boards. The authenticated functions compute scores from current rows; no materialized counters need repair on delete, unfriend or opt-out.
+
+| Function | Returned data and boundary |
+| --- | --- |
+| `circle_community_top(board)` | Up to ten opted-in aliases, member IDs and nonzero counts: distinct accepted friends, or manually authored posts still present for the current UTC month. No pair scores, contact identifiers, posts or friend lists. |
+| `my_circle_support()` | Up to five accepted friends with saved reactions to the caller’s posts/cycle updates, comments on the caller’s posts, or boops sent to the caller within 30 days. Boops tied to deleted posts are excluded. Caller-scoped, subject to existing row policies. |
+| `circle_member_profile(subject)` | Signed-in visitors see an alias; self and accepted friends can also receive name, avatar and bio. Shared updates and cycle data still use their existing access rules. |
+| `circle_search_members(term)` | A literal prefix of at least two characters matches a name or alias, capped at eight. Excludes the caller. Exact phone/email matches still use the separate opt-in verified-contact function. |
+
+`post_comments` belongs to a post (cascade on deletion), stores the authenticated author, server-stamped alias, creation time and 1–1,000 characters of text. Its audience is checked against the parent post. Only the author can remove a comment.
+
+The app's Notifications and Add friends screens query the same pending inbound `friend_requests` rows. Responding changes the relationship itself; it does not create a duplicate notification or introduce a second approval state.
+
 ## Tables (14)
 
 | Table | Purpose |

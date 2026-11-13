@@ -25,6 +25,16 @@ Open items, roughly in priority order, with completed items retained as a decisi
   - [x] Owner confirms 1.0.15 is installed, all important users updated, successful Refresh tips and in-session airplane-mode refresh retains advice (2026-11-12). This confirms availability to the tested group, not every external tester.
   - [ ] Complete remaining phone checks: account/phase changes, VoiceOver/Dynamic Type, HealthKit and two-device concurrency. Cold-start offline testing found the separate alias bug above. Owner reports DSA resolved; no simulator runtime is installed.
 
+## Widget rollout and follow-ups
+
+- [ ] **Settings: update and re-verify contact information.** Exercise changes to email and phone from You → Settings → Manage contact details on a staging iPhone: confirmation links, SMS, resend/expiry, cancelled changes, the new verified match and retirement of the old match. Add an explicit re-verification flow for an unchanged contact if needed; today the form verifies replacements.
+
+- [x] Implement the illustrated four-tab app and extract reusable theme-independent cycle, feed, profile and Circle widgets. Record primary owners and secondary destinations in the [widget directory](UI_ARCHITECTURE.md#page-directory).
+- [x] Implement recipient-only support rankings, opt-in global Top 10 rankings, request handling in Notifications and the Add friends flow. Refresh affected scores on post deletion.
+- [ ] Run the [widget smoke check](TESTING.md#widget-and-circle-smoke-check) on a signed-in staging iPhone before release. Verify the new RPCs, visible changes across two accounts, VoiceOver, large type, narrow screens, contacts permissions and invite sharing.
+- [ ] **Instagram Stories:** prototype the explicit export from your own written post; test preview, missing Instagram, cancellation, return and image saving on iPhone. See [feature scope](FEATURES.md#sharing-and-community-recognition).
+- [ ] Pilot Top 10 with testers. Try private rank/milestones and distinct posting days; evaluate unwanted requests and whether a newcomer can reach the board. Verify post commenting and deletion from Feed and member profiles on-device; confirm both accounts see updated friendship counts.
+
 ## 🎯 Phase Guide — implementation/backend complete; finish native rollout
 - [~] **Redesign how the "You" page do's/don'ts (cycle guidance) get generated.** 🚧 (WIP — Codex, 2026-11-03; content/cards complete; SQL + function deployed, 1.0.15 (36) built and uploaded; important users confirmed updated; extended device verification pending). Fixes the "No guidance yet" bug ([BUGS.md](BUGS.md)) at the design level, not just by babysitting a cron.
   - **2026-11-03 implementation:** immediate local fallback for every phase (including no Health data); authenticated `request-cycle-guidance` generates on page focus, caches against phase + `currentPhaseStart`, and uses caller-scoped claim/complete RPCs with a two-minute lease. Old-phase/old-cycle guidance is hidden, overlapping client calls coalesce, and account changes/late responses cannot replace the current user's tips. AI failures leave fallback visible and are not cached as AI results.

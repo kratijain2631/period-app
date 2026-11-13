@@ -565,3 +565,27 @@ export const deriveSnapshot = (
     nextPhase: resolved.nextPhase ?? null,
   };
 };
+
+/** Display ranges share the estimator's boundaries; renderers only map these to geometry. */
+export type CyclePhaseRange = { phase: CyclePhase; startDay: number; endDay: number };
+export const deriveCycleTimeline = (
+  samples: readonly CycleSample[],
+  referenceDate: Date,
+  signals: readonly CycleSignalSample[] = [],
+) => {
+  const resolved = resolveCyclePhase({ samples, signals, referenceDate });
+  const runs = buildFlowRuns(samples);
+  const lastRun = runs[runs.length - 1];
+  if (!lastRun || !isFiniteDate(referenceDate) || dayDiff(referenceDate, lastRun.start) < 0 || resolved.phase === 'unknown') {
+    return { resolved, currentDay: null, ranges: [] as CyclePhaseRange[] };
+  }
+  const currentDay = (dayDiff(referenceDate, lastRun.start) % resolved.cycleLengthDays) + 1;
+  const ranges: CyclePhaseRange[] = [];
+  for (let day = 1; day <= resolved.cycleLengthDays; day += 1) {
+    const phase = resolvePhaseWindow(day, resolved.cycleLengthDays, resolved.periodLengthDays, resolved.lutealLengthDays).phase;
+    const last = ranges[ranges.length - 1];
+    if (last?.phase === phase) last.endDay = day;
+    else ranges.push({ phase, startDay: day, endDay: day });
+  }
+  return { resolved, currentDay, ranges };
+};

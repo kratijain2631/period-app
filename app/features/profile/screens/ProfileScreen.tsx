@@ -1,9 +1,8 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActionSheetIOS,
   Alert,
   Animated,
-  Easing,
   Image,
   Modal,
   Platform,
@@ -18,22 +17,28 @@ import {
 } from 'react-native';
 import { Buffer } from 'buffer';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import {
+  useFocusEffect,
+  useNavigation,
+  useRoute,
+  type NavigationProp,
+  type RouteProp,
+} from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
 import { selectAlias, selectSession, useSessionStore } from '../../../state/sessionStore';
-import {
-  fetchCurrentUserProfile,
-  updateCurrentUserProfile,
-} from '../../../services/supabase/users';
+import { fetchCurrentUserProfile, updateCurrentUserProfile } from '../../../services/supabase/users';
 import { usePhaseGuidance } from '../hooks/usePhaseGuidance';
 import { guidanceMatchesPhase, resolvePhaseGuidance } from '../../../../packages/domain/cycles/guidance';
 import { useCycleSnapshot } from '../../feed/hooks/useCycleSnapshot';
-import { getCycleDay } from '../../../../packages/domain/cycles/models';
 import { generateAvatarImage, uploadAvatarBlob } from '../../../services/supabase/avatars';
 import { deleteCurrentAccount, signOut } from '../../../services/supabase/auth';
 import { brand, brandType } from '../../../theme/brand';
-import { CycleRing, PhaseAvatar, PhaseIndicator, getPhaseBg, getPhaseColor } from '../../../components/brand/CycleRing';
-import { DottieMascot } from '../../../components/brand/DottieMascot';
+import { CycleStatus } from '../../cycle/components/CycleStatus';
+import { selectCycleOverview } from '../../cycle/models/cycleOverview';
+import { ProfileIdentity, CycleMetrics } from '../components/ProfileWidgets';
+import { PageHeading } from '../../../components/ui/ScreenControls';
+import { ActionButton, AppText, Surface } from '../../../components/ui/WidgetPrimitives';
+import { MemberUpdates } from '../../feed/components/SharedActivity';
 import { PhaseGuide } from '../components/PhaseGuide';
 import { useStaggeredEntrance } from '../../../components/brand/useStaggeredEntrance';
 
@@ -66,16 +71,36 @@ const AVATAR_GLAM_PROMPT = [
 const AVATAR_GLAM_STYLE_LABEL = 'Maximum Glam';
 const AVATAR_GENERATION_TIMEOUT_MS = 90000;
 
+type ProfileSections = { ProfileRoot: { section?: 'cycle' | 'guide' } | undefined };
 const ProfileScreen = () => {
   const session = useSessionStore(selectSession);
   const alias = useSessionStore(selectAlias);
-  const navigation = useNavigation();
-  const { snapshot, isStale, lastSyncedAt } = useCycleSnapshot();
+  const navigation = useNavigation<NavigationProp<ProfileSections>>();
+  const route = useRoute<RouteProp<ProfileSections, 'ProfileRoot'>>();
+  const scroll = useRef<ScrollView>(null);
+  const [cycleY, setCycleY] = useState<number | null>(null);
+  const [guideY, setGuideY] = useState<number | null>(null);
+  const section = route.params?.section;
+  const sectionY = section === 'guide' ? guideY : cycleY;
+  useFocusEffect(
+    useCallback(() => {
+      if (!section || sectionY === null) return;
+      const frame = requestAnimationFrame(() => {
+        scroll.current?.scrollTo({ y: sectionY, animated: false });
+        navigation.setParams({ section: undefined });
+      });
+      return () => cancelAnimationFrame(frame);
+    }, [section, sectionY, navigation]),
+  );
+  const cycle = useCycleSnapshot();
+  const { snapshot } = cycle;
+  const overview = selectCycleOverview(cycle);
   const cyclePhaseKey = snapshot?.currentPhase ?? 'unknown';
   const cyclePhaseStart = snapshot?.currentPhaseStart ?? null;
   const [profileName, setProfileName] = useState('');
   const [profileEmail, setProfileEmail] = useState('');
   const [profileBio, setProfileBio] = useState('');
+  const [nameDraft, setNameDraft] = useState('');
   const [bioDraft, setBioDraft] = useState('');
   const [isBioEditing, setBioEditing] = useState(false);
   const [bioStatus, setBioStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
@@ -83,10 +108,12 @@ const ProfileScreen = () => {
   const [avatarLoadFailed, setAvatarLoadFailed] = useState(false);
   const [isAvatarBusy, setAvatarBusy] = useState(false);
   const [avatarError, setAvatarError] = useState<string | null>(null);
-  const avatarPulse = useRef(new Animated.Value(0)).current;
   const {
-    guidance: cycleGuidance, status: cycleGuidanceStatus,
-    message: guidanceMessage, canRefresh: canRefreshGuidance, refresh: refreshGuidance,
+    guidance: cycleGuidance,
+    status: cycleGuidanceStatus,
+    message: guidanceMessage,
+    canRefresh: canRefreshGuidance,
+    refresh: refreshGuidance,
   } = usePhaseGuidance(session?.userId, cyclePhaseKey, cyclePhaseStart);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [accountAction, setAccountAction] = useState<'idle' | 'signingOut' | 'deleting'>('idle');
@@ -118,7 +145,8 @@ const ProfileScreen = () => {
     }
     setBioStatus('saving');
     try {
-      await updateCurrentUserProfile({ bio: trimmed ? trimmed : null });
+      await updateCurrentUserProfile({ fullName: nameDraft.trim() || null, bio: trimmed || null });
+      setProfileName(nameDraft.trim());
       setProfileBio(trimmed);
       setBioEditing(false);
       setBioStatus('saved');
@@ -127,13 +155,14 @@ const ProfileScreen = () => {
       console.warn('[profile] Failed to update bio', error);
       setBioStatus('error');
     }
-  }, [bioDraft]);
+  }, [bioDraft, nameDraft]);
 
   const handleStartBioEdit = useCallback(() => {
+    setNameDraft(profileName);
     setBioDraft(profileBio);
     setBioStatus('idle');
     setBioEditing(true);
-  }, [profileBio]);
+  }, [profileBio, profileName]);
 
   const handleCancelBioEdit = useCallback(() => {
     setBioDraft(profileBio);
@@ -193,8 +222,7 @@ const ProfileScreen = () => {
         }),
         new Promise<never>((_, reject) =>
           setTimeout(
-            () =>
-              reject(new Error('This is taking longer than expected. Please try again.')),
+            () => reject(new Error('This is taking longer than expected. Please try again.')),
             AVATAR_GENERATION_TIMEOUT_MS,
           ),
         ),
@@ -211,9 +239,7 @@ const ProfileScreen = () => {
     } catch (error) {
       console.warn('[profile] Failed to generate avatar', error);
       const message =
-        error instanceof Error && error.message
-          ? error.message
-          : 'Unable to glam your avatar right now.';
+        error instanceof Error && error.message ? error.message : 'Unable to glam your avatar right now.';
       setAvatarError(message);
     } finally {
       setAvatarBusy(false);
@@ -237,32 +263,6 @@ const ProfileScreen = () => {
       setAvatarBusy(false);
     }
   }, [session?.userId]);
-
-  useEffect(() => {
-    if (!isAvatarBusy) {
-      avatarPulse.stopAnimation();
-      avatarPulse.setValue(0);
-      return;
-    }
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(avatarPulse, {
-          toValue: 1,
-          duration: 900,
-          easing: Easing.out(Easing.quad),
-          useNativeDriver: true,
-        }),
-        Animated.timing(avatarPulse, {
-          toValue: 0,
-          duration: 900,
-          easing: Easing.in(Easing.quad),
-          useNativeDriver: true,
-        }),
-      ]),
-    );
-    loop.start();
-    return () => loop.stop();
-  }, [avatarPulse, isAvatarBusy]);
 
   const handleAvatarPress = useCallback(() => {
     if (isAvatarBusy) {
@@ -310,19 +310,6 @@ const ProfileScreen = () => {
     ]);
   }, [avatarUrl, handlePickAvatar, handleRemoveAvatar, isAvatarBusy]);
 
-  const formatSyncLabel = (value?: string | null) => {
-    if (!value) {
-      return 'Not synced yet';
-    }
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) {
-      return 'Not synced yet';
-    }
-    const datePart = date.toLocaleDateString([], { month: 'short', day: 'numeric' });
-    const timePart = date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-    return `${datePart} • ${timePart}`;
-  };
-
   const formatPhaseLabel = (value?: string | null) => {
     if (!value) {
       return null;
@@ -332,83 +319,9 @@ const ProfileScreen = () => {
     return normalized.charAt(0).toUpperCase() + normalized.slice(1);
   };
 
-  const formatPhaseSourceLabel = (value?: string | null) => {
-    if (value === 'estimated') {
-      return 'Estimated';
-    }
-    return null;
-  };
-
-  const shortId = (value: string) => `${value.slice(0, 4)}...${value.slice(-4)}`;
-
-  const phasePillPalette: Record<string, string> = {
-    menstruation: '#FDECEC',
-    follicular: '#ECFDF3',
-    ovulation: '#FFF8E1',
-    luteal: '#EEF2FF',
-    pms: '#FEF3C7',
-    unknown: '#F3F4F6',
-  };
-
-  const phasePillPaletteText: Record<string, string> = {
-    menstruation: '#B42318',
-    follicular: '#027A48',
-    ovulation: '#B54708',
-    luteal: '#3730A3',
-    pms: '#92400E',
-    unknown: '#6B7280',
-  };
-
   useEffect(() => {
     loadProfile();
   }, [loadProfile]);
-
-  // Your @handle — used for display instead of the email.
-  const aliasHandle = useMemo(() => {
-    const value = alias?.trim();
-    if (!value) {
-      return '';
-    }
-    return value.startsWith('@') ? value : `@${value}`;
-  }, [alias]);
-
-  const displayName = useMemo(() => {
-    if (profileName.trim()) {
-      return profileName.trim().toUpperCase();
-    }
-    if (aliasHandle) {
-      return aliasHandle;
-    }
-    return 'Your Name';
-  }, [aliasHandle, profileName]);
-
-  const canSaveBio = useMemo(
-    () => bioDraft.trim() !== profileBio.trim() && bioDraft.trim().length <= BIO_MAX_LENGTH,
-    [bioDraft, profileBio],
-  );
-
-  const bioStatusLabel = useMemo(() => {
-    switch (bioStatus) {
-      case 'saving':
-        return 'Saving...';
-      case 'saved':
-        return 'Saved';
-      case 'error':
-        return 'Could not save';
-      default:
-        return `${bioDraft.trim().length}/${BIO_MAX_LENGTH}`;
-    }
-  }, [bioDraft, bioStatus]);
-
-  const avatarInitial =
-    (profileName.trim() || alias?.replace(/^@/, '') || '?').slice(0, 1).toUpperCase();
-
-  const navigateToFriendSync = useCallback(
-    (friendUserId: string) => {
-      (navigation as any).navigate('FriendSync', { friendId: friendUserId });
-    },
-    [navigation],
-  );
 
   const navigateToAutoPostSettings = useCallback(() => {
     (navigation as any).navigate('AutoPostSettings');
@@ -435,101 +348,30 @@ const ProfileScreen = () => {
     if (accountAction !== 'idle') {
       return;
     }
-    Alert.alert(
-      'Delete account?',
-      'This permanently removes your account and cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            setAccountError(null);
-            setAccountAction('deleting');
-            try {
-              await deleteCurrentAccount();
-              useSessionStore.getState().reset();
-            } catch (error) {
-              console.warn('[profile] Failed to delete account', error);
-              setAccountError('Could not delete account right now.');
-            } finally {
-              setAccountAction('idle');
-            }
-          },
+    Alert.alert('Delete account?', 'This permanently removes your account and cannot be undone.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          setAccountError(null);
+          setAccountAction('deleting');
+          try {
+            await deleteCurrentAccount();
+            useSessionStore.getState().reset();
+          } catch (error) {
+            console.warn('[profile] Failed to delete account', error);
+            setAccountError('Could not delete account right now.');
+          } finally {
+            setAccountAction('idle');
+          }
         },
-      ],
-    );
+      },
+    ]);
   }, [accountAction]);
 
-  const cyclePhaseLabel = useMemo(
-    () => formatPhaseLabel(snapshot?.currentPhase) ?? 'Unknown phase',
-    [snapshot?.currentPhase],
-  );
-  const cyclePhaseSourceLabel = useMemo(
-    () => formatPhaseSourceLabel(snapshot?.phaseSource ?? null),
-    [snapshot?.phaseSource],
-  );
-  const cyclePhaseDisplayLabel = useMemo(
-    () =>
-      cyclePhaseSourceLabel
-        ? `${cyclePhaseLabel} (${cyclePhaseSourceLabel})`
-        : cyclePhaseLabel,
-    [cyclePhaseLabel, cyclePhaseSourceLabel],
-  );
-  const cycleSyncLabel = useMemo(
-    () => formatSyncLabel(lastSyncedAt ?? snapshot?.syncedAt ?? null),
-    [lastSyncedAt, snapshot?.syncedAt],
-  );
-  const cycleMetaLabel = useMemo(() => {
-    if (!snapshot) {
-      return 'Connect Health';
-    }
-    if (isStale) {
-      return cycleSyncLabel === 'Not synced yet'
-        ? 'Needs sync'
-        : `Needs sync • ${cycleSyncLabel}`;
-    }
-    return 'Up to date';
-  }, [cycleSyncLabel, isStale, snapshot]);
-  const cycleDetailLabel = useMemo(() => {
-    if (!snapshot) {
-      return 'Connect Health to see your phase.';
-    }
-    if (isStale) {
-      return cycleSyncLabel === 'Not synced yet'
-        ? 'Needs sync'
-        : `Needs sync • ${cycleSyncLabel}`;
-    }
-    return cycleSyncLabel === 'Not synced yet' ? 'Synced recently' : `Last synced ${cycleSyncLabel}`;
-  }, [cycleSyncLabel, isStale, snapshot]);
-  const cycleMetaTone = !snapshot || isStale ? 'stale' : 'fresh';
-  const cyclePhaseColors = {
-    background: phasePillPalette[cyclePhaseKey] ?? palette.mutedFill,
-    text: phasePillPaletteText[cyclePhaseKey] ?? palette.secondaryText,
-  };
   const currentGuidance = guidanceMatchesPhase(cycleGuidance, cyclePhaseKey, cyclePhaseStart);
-  const { dos: phaseDos, donts: phaseDonts } = resolvePhaseGuidance(
-    cycleGuidance, cyclePhaseKey, cyclePhaseStart,
-  );
-  const friendSuggestions = currentGuidance ? cycleGuidance?.friend_suggestions ?? [] : [];
-  const friendsEmptyLabel = useMemo(() => {
-    if (cycleGuidanceStatus === 'loading') {
-      return 'Finding friends in similar phases...';
-    }
-    return 'No similar-phase friends yet.';
-  }, [cycleGuidanceStatus]);
-
-  const cycleDayNumber = useMemo(
-    () => getCycleDay(snapshot),
-    [snapshot],
-  );
-
-  const cycleLengthDays = snapshot?.cycleLengthDays ?? 28;
-  const monthlyTracked = Math.max(
-    1,
-    Math.min(12, Math.round((snapshot?.samples.length ?? 0) / 5) || 6),
-  );
-
+  const { dos: phaseDos, donts: phaseDonts } = resolvePhaseGuidance(cycleGuidance, cyclePhaseKey, cyclePhaseStart);
   const entranceStyles = useStaggeredEntrance(5, {
     initialDelay: 40,
     stagger: 80,
@@ -538,151 +380,105 @@ const ProfileScreen = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.content}>
-        <Animated.View style={entranceStyles[0]}>
-          <View style={styles.headerRow}>
-          <View style={styles.headerIdentity}>
-            <Pressable
-              style={styles.avatarPress}
-              onPress={handleAvatarPress}
-              accessibilityRole="button"
-              accessibilityLabel="Choose profile photo"
-              accessibilityState={{ disabled: isAvatarBusy }}
-            >
-              {avatarUrl && !avatarLoadFailed ? (
-                <Image
-                  source={{ uri: avatarUrl }}
-                  style={styles.avatarImage}
-                  onError={() => {
-                    setAvatarLoadFailed(true);
-                    setAvatarError('Could not load avatar. Try re-uploading.');
-                  }}
-                />
-              ) : (
-                <PhaseAvatar initial={avatarInitial} phase={cyclePhaseKey} size={56} />
-              )}
-            </Pressable>
-            <View style={styles.identityMeta}>
-              <Text style={styles.profileName}>{displayName}</Text>
-              {profileName.trim() && aliasHandle ? (
-                <Text style={styles.profileEmail}>{aliasHandle}</Text>
-              ) : null}
-              {isAvatarBusy ? <Text style={styles.inlineStatus}>Glamifying your photo...</Text> : null}
-              {avatarError ? <Text style={styles.inlineError}>{avatarError}</Text> : null}
-            </View>
-          </View>
-
-          <TouchableOpacity
-            style={styles.settingsButton}
+      <ScrollView ref={scroll} contentContainerStyle={styles.content}>
+        <View style={{ gap: 14, marginBottom: 14 }}>
+          <PageHeading
+            title="You"
+            icon="settings-outline"
+            action="Open settings"
             onPress={() => setSettingsOpen(true)}
-            accessibilityRole="button"
-            accessibilityLabel="Open settings"
-          >
-            <Ionicons name="settings-outline" size={19} color="#8A857E" />
-          </TouchableOpacity>
-          </View>
-        </Animated.View>
-
-        <Animated.View style={entranceStyles[1]}>
-          <View style={[styles.heroCard, { backgroundColor: getPhaseBg(cyclePhaseKey) }]}>
-            <CycleRing
-              currentDay={cycleDayNumber ?? 1}
-              currentPhase={cyclePhaseKey}
-              cycleLengthDays={snapshot?.cycleLengthDays ?? null}
-              lutealLengthDays={snapshot?.lutealLengthDays ?? null}
-              periodLengthDays={snapshot?.periodLengthDays ?? null}
-              size={180}
-            />
-            <View style={styles.heroPhaseWrap}>
-              <PhaseIndicator phase={cyclePhaseKey} />
-            </View>
-            <View style={styles.heroMascot}>
-              <DottieMascot size={64} mood="meditating" color={getPhaseColor(cyclePhaseKey)} />
-            </View>
-          </View>
-        </Animated.View>
-
-        <Animated.View style={entranceStyles[2]}>
-          <View style={styles.recapBlock}>
-          <Text style={styles.recapEyebrow}>Your Monthly Recap</Text>
-
-          <View style={styles.recapLargeCard}>
-            <Text style={styles.recapLargeLabel}>Cycle Length</Text>
-            <Text style={styles.recapLargeHint}>Right on track!</Text>
-            <View style={styles.recapValueRow}>
-              <Text style={styles.recapLargeValue}>{cycleLengthDays}</Text>
-              <Text style={styles.recapLargeSuffix}>days</Text>
-            </View>
-          </View>
-
-          <View style={styles.recapGrid}>
-            <View style={[styles.recapSmallCard, { backgroundColor: '#EDF5F0' }]}>
-              <Text style={[styles.recapSmallLabel, { color: '#7BA68F' }]}>Current Day</Text>
-              <View style={styles.recapValueRow}>
-                <Text style={styles.recapSmallValue}>{cycleDayNumber ?? '--'}</Text>
-                <Text style={styles.recapSmallSuffix}>of {cycleLengthDays}</Text>
-              </View>
-            </View>
-
-            <View style={[styles.recapSmallCard, { backgroundColor: '#FFF8ED' }]}>
-              <Text style={[styles.recapSmallLabel, { color: '#D4A252' }]}>Tracked</Text>
-              <View style={styles.recapValueRow}>
-                <Text style={styles.recapSmallValue}>{monthlyTracked}</Text>
-                <Text style={styles.recapSmallSuffix}>months</Text>
-              </View>
-            </View>
-          </View>
-          </View>
-        </Animated.View>
-
-        <PhaseGuide
-          dos={phaseDos}
-          donts={phaseDonts}
-          personalized={currentGuidance}
-          onRefresh={refreshGuidance}
-          refreshing={cycleGuidanceStatus === 'loading'}
-          refreshDisabled={!canRefreshGuidance}
-          message={guidanceMessage}
-          phaseLabel={cyclePhaseKey === 'unknown' ? null : formatPhaseLabel(cyclePhaseKey)}
-        />
-
-        <Text style={styles.sectionTitle}>Friends In Sync</Text>
-        <View style={styles.friendsCard}>
-          {friendSuggestions.length ? (
-            friendSuggestions.map((item, index) => {
-              const friendName = item.friend_name ?? `Friend ${shortId(item.friend_id)}`;
-              const initial = friendName.trim().slice(0, 1).toUpperCase() || '?';
-              const phaseColor = getPhaseColor(cyclePhaseKey);
-              return (
-                <TouchableOpacity
-                  key={`${item.friend_id}-${index}`}
-                  style={styles.friendRow}
-                  onPress={() => navigateToFriendSync(item.friend_id)}
-                  accessibilityLabel={`View sync with ${friendName}`}
-                >
-                  <PhaseAvatar initial={initial} phase={cyclePhaseKey} size={42} />
-                  <View style={styles.friendMeta}>
-                    <View style={styles.friendMetaTitle}>
-                      <Text style={styles.friendName}>{friendName}</Text>
-                      <View style={[styles.friendPhaseBadge, { backgroundColor: `${phaseColor}14` }]}>
-                        <View style={[styles.friendPhaseDot, { backgroundColor: phaseColor }]} />
-                        <Text style={[styles.friendPhaseText, { color: phaseColor }]}>Sync</Text>
-                      </View>
-                    </View>
-                    <Text style={styles.friendNote} numberOfLines={1}>
-                      {item.suggestion}
-                    </Text>
-                  </View>
-                  <Ionicons name="chevron-forward" size={16} color="#DDD9D3" />
-                  {index < friendSuggestions.length - 1 ? <View style={styles.friendDivider} /> : null}
-                </TouchableOpacity>
-              );
-            })
-          ) : (
-            <Text style={styles.emptyInlineText}>{friendsEmptyLabel}</Text>
+          />
+          <ProfileIdentity
+            profile={{ name: profileName || alias || 'You', alias: alias || '', bio: profileBio, avatarUrl }}
+            onEdit={handleStartBioEdit}
+            onOpen={() => session && (navigation as any).navigate('MemberProfile', { memberId: session.userId })}
+          />
+          {isBioEditing && (
+            <Surface style={{ gap: 8 }}>
+              <AppText role="heading">Edit profile</AppText>
+              <TextInput
+                accessibilityLabel="Display name"
+                placeholder="Display name"
+                value={nameDraft}
+                maxLength={80}
+                onChangeText={setNameDraft}
+                style={{ minHeight: 44 }}
+              />
+              <TextInput
+                accessibilityLabel="Bio"
+                placeholder="A little about you"
+                value={bioDraft}
+                maxLength={BIO_MAX_LENGTH}
+                onChangeText={setBioDraft}
+                style={{ minHeight: 44 }}
+              />
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Choose profile photo"
+                onPress={handleAvatarPress}
+                disabled={isAvatarBusy}
+                style={{ minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 8 }}
+              >
+                {avatarUrl && !avatarLoadFailed && (
+                  <Image
+                    source={{ uri: avatarUrl }}
+                    style={styles.avatarImage}
+                    onError={() => setAvatarLoadFailed(true)}
+                  />
+                )}
+                <AppText>{isAvatarBusy ? 'Updating photo…' : 'Change profile photo'}</AppText>
+              </Pressable>
+              {avatarError && <AppText>{avatarError}</AppText>}
+              {bioStatus === 'error' && <AppText>Couldn’t save your profile. Try again.</AppText>}
+              <ActionButton label="Save changes" disabled={bioStatus === 'saving'} onPress={handleSaveBio} />
+              <ActionButton outline label="Cancel" onPress={handleCancelBioEdit} />
+            </Surface>
           )}
         </View>
+        <Animated.View
+          style={[entranceStyles[1], { marginBottom: 16 }]}
+          onLayout={(e) => setCycleY(e.nativeEvent.layout.y)}
+        >
+          <CycleStatus model={overview} />
+        </Animated.View>
 
+        {overview.state === 'ready' && snapshot && (
+          <View style={{ marginBottom: 14 }}>
+            <CycleMetrics
+              month={new Date().toLocaleDateString(undefined, { month: 'long' })}
+              metrics={[
+                { label: 'Cycle length', value: overview.cycleLength ? overview.cycleLength + 'd' : '—' },
+                {
+                  label: 'Period length',
+                  value: snapshot.periodLengthDays ? snapshot.periodLengthDays + 'd' : '—',
+                },
+                {
+                  label: 'Months tracked',
+                  value: String(new Set(snapshot.samples.map((s) => s.startDate.slice(0, 7))).size),
+                },
+              ]}
+            />
+          </View>
+        )}
+        <View onLayout={(e) => setGuideY(e.nativeEvent.layout.y)}>
+          <PhaseGuide
+            dos={phaseDos}
+            donts={phaseDonts}
+            personalized={currentGuidance}
+            onRefresh={refreshGuidance}
+            refreshing={cycleGuidanceStatus === 'loading'}
+            refreshDisabled={!canRefreshGuidance}
+            message={guidanceMessage}
+            phaseLabel={cyclePhaseKey === 'unknown' ? null : formatPhaseLabel(cyclePhaseKey)}
+          />
+        </View>
+
+        <View style={{ marginTop: 14, gap: 8 }}>
+          <Text accessibilityRole="header" style={styles.sectionTitle}>
+            My updates
+          </Text>
+          {session && <MemberUpdates memberId={session.userId} />}
+        </View>
       </ScrollView>
 
       <Modal
@@ -775,47 +571,11 @@ const styles = StyleSheet.create({
     paddingTop: 14,
     paddingBottom: 120,
   },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    marginBottom: 18,
-  },
-  headerIdentity: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    flex: 1,
-  },
-  avatarPress: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    overflow: 'hidden',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   avatarImage: {
     width: '100%',
     height: '100%',
     borderRadius: 28,
     resizeMode: 'cover',
-  },
-  identityMeta: {
-    flex: 1,
-    minWidth: 0,
-  },
-  profileName: {
-    fontSize: 22,
-    color: '#2D2A26',
-    ...brandType.display,
-  },
-  profileEmail: {
-    fontSize: 13,
-    color: '#8A857E',
-    marginTop: 0.5,
-    letterSpacing: 0.2,
-    ...brandType.body,
   },
   settingsOverlay: {
     flex: 1,
@@ -848,123 +608,10 @@ const styles = StyleSheet.create({
     color: palette.accent,
     ...brandType.semibold,
   },
-  settingsButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#F0EDE8',
-    backgroundColor: '#FFFFFF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...brand.shadow.soft,
-  },
-  inlineStatus: {
-    marginTop: 3,
-    fontSize: 12,
-    color: '#C4654A',
-    ...brandType.semibold,
-  },
   inlineError: {
     marginTop: 6,
     fontSize: 12,
     color: '#C4654A',
-    ...brandType.body,
-  },
-  heroCard: {
-    borderRadius: 28,
-    paddingVertical: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 18,
-    overflow: 'hidden',
-  },
-  heroPhaseWrap: {
-    marginTop: 10,
-  },
-  heroMascot: {
-    position: 'absolute',
-    right: -4,
-    bottom: -2,
-    opacity: 0.32,
-  },
-  recapBlock: {
-    marginBottom: 18,
-  },
-  recapEyebrow: {
-    fontSize: 10,
-    color: '#8A857E',
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-    marginBottom: 8,
-    ...brandType.semibold,
-  },
-  recapLargeCard: {
-    borderRadius: 24,
-    backgroundColor: '#EEF3F8',
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    marginBottom: 10,
-  },
-  recapLargeLabel: {
-    fontSize: 10,
-    color: '#6B8DB5',
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
-    ...brandType.semibold,
-  },
-  recapLargeHint: {
-    fontSize: 12,
-    color: '#8A857E',
-    marginBottom: 3,
-    ...brandType.body,
-  },
-  recapValueRow: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    gap: 5,
-  },
-  recapLargeValue: {
-    fontSize: 58,
-    lineHeight: 66,
-    paddingTop: 2,
-    color: '#2D2A26',
-    ...brandType.display,
-  },
-  recapLargeSuffix: {
-    fontSize: 14,
-    color: '#8A857E',
-    marginBottom: 8,
-    ...brandType.body,
-  },
-  recapGrid: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  recapSmallCard: {
-    flex: 1,
-    borderRadius: 24,
-    paddingHorizontal: 12,
-    paddingVertical: 11,
-  },
-  recapSmallLabel: {
-    fontSize: 10,
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
-    marginBottom: 3,
-    ...brandType.semibold,
-  },
-  recapSmallValue: {
-    fontSize: 40,
-    lineHeight: 46,
-    paddingTop: 1,
-    color: '#2D2A26',
-    ...brandType.display,
-  },
-  recapSmallSuffix: {
-    fontSize: 12,
-    color: '#8A857E',
-    marginBottom: 6,
     ...brandType.body,
   },
   sectionTitle: {
@@ -972,79 +619,6 @@ const styles = StyleSheet.create({
     color: '#2D2A26',
     marginBottom: 8,
     ...brandType.display,
-  },
-  emptyInlineText: {
-    fontSize: 13,
-    color: '#8A857E',
-    ...brandType.body,
-  },
-  friendsCard: {
-    borderRadius: 24,
-    borderWidth: 1,
-    borderColor: '#F0EDE8',
-    backgroundColor: '#FFFFFF',
-    marginBottom: 18,
-    overflow: 'hidden',
-    ...brand.shadow.card,
-  },
-  friendRow: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  friendMeta: {
-    flex: 1,
-    marginLeft: 10,
-    marginRight: 8,
-  },
-  friendMetaTitle: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginBottom: 3,
-  },
-  friendName: {
-    fontSize: 14,
-    color: '#2D2A26',
-    ...brandType.semibold,
-  },
-  friendPhaseBadge: {
-    borderRadius: 999,
-    paddingHorizontal: 9,
-    paddingVertical: 3,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  friendPhaseDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-  },
-  friendPhaseText: {
-    fontSize: 10,
-    ...brandType.semibold,
-  },
-  friendNote: {
-    fontSize: 12,
-    color: '#8A857E',
-    ...brandType.body,
-  },
-  friendDivider: {
-    position: 'absolute',
-    left: 16,
-    right: 16,
-    bottom: 0,
-    height: 1,
-    backgroundColor: '#F3F0EC',
-  },
-  accountCard: {
-    borderRadius: 24,
-    borderWidth: 1,
-    borderColor: '#F0EDE8',
-    backgroundColor: '#FFFFFF',
-    marginBottom: 18,
-    overflow: 'hidden',
-    ...brand.shadow.card,
   },
   accountRow: {
     minHeight: 56,

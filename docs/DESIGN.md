@@ -72,6 +72,8 @@ For **UI mockups with legible text**, the image models rank roughly:
 
 ## Status
 
+- Implemented the illustrated widget design on all four native tabs (unreleased). The [directory](UI_ARCHITECTURE.md#page-directory) records full and preview placements; the [interactive preview](../design-mocks/home-widgets/README.md) demonstrates both themes. The supplied illustration influences visual treatment; actual activity, phase ranges, and permissions come from the app.
+
 - ✅ Palette/type foundation (`app/theme/brand.ts`, `app/config/branding.ts`), imported by ~8 screens.
 - ✅ Branded animated launch/intro overlay (`BrandSplash.tsx`, tagline "Cadence — where your cycle meets your circle").
 - ✅ Haptics on Home-feed boops/reactions.

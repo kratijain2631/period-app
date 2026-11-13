@@ -66,7 +66,7 @@ export const deletePost = async (postId: string): Promise<void> => {
   }
   // RLS (`posts_delete_own`) restricts this to the author; related
   // post_reactions cascade on delete.
-  const { error } = await supabase.from('posts').delete().eq('id', postId);
+  const { error } = await supabase.from('posts').delete().eq('id', postId).select('id').single();
   if (error) {
     throw error;
   }

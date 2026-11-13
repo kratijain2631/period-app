@@ -5,7 +5,11 @@ import Constants from 'expo-constants';
 export const APP_NAME = (Constants.expoConfig?.name as string | undefined) ?? 'Cadence';
 
 // Tagline shown on the launch screen and usable elsewhere in the UI.
-export const APP_TAGLINE = 'where your cycle meets your circle';
+export const TAGLINE_LINES = [
+  ['where', 'your cycle'],
+  ['meets', 'your circle'],
+] as const;
+export const APP_TAGLINE = TAGLINE_LINES.map((parts) => parts.join(' ')).join(' ');
 
 // Public install link shared from the "Invite Friends" button. Points at the
 // TestFlight join link for now; swap to the App Store URL at public launch.
