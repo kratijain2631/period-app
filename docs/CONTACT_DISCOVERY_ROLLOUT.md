@@ -57,3 +57,11 @@ The native access picker is no longer invoked: selected-contact management opens
 
 Close the rollout only after the physical matrix passes and permission recovery/invalidation findings are resolved. For the new phone/email client, run the additional checks in [TESTING.md](TESTING.md).
 
+
+## Owner retry — 1.0.16, 2026-11-12
+
+Owner confirms build 37 installed, removes Shaan and cannot find him through contacts. His card initially had only a phone number; build 37 supports email-only matching. Owner then adds an email, relaunches and still sees no match with **Full Access**. Shaan’s actual account-email equality (including Apple private relay) and “Let contacts find me” preference remain unconfirmed. Do not call this a successful positive match or assume the email is correct. Removing a friend is not an exclusion in the legacy RPC or contact-results UI.
+
+Staging check with two disposable JWT accounts: exact `contact_friend_matches` call used by build 37 matched an opted-in email before friendship, while accepted and after `remove_friend`; wrong email and opt-out returned no match. Accounts and cascading records were removed; no shared persona reset, production test data or real address book was used. This rules out a blanket removal exclusion in the tested backend path, not an iOS or account-configuration issue.
+
+Phone/email matching and contact-detail verification are documented in the 1.0.17 candidate release notes and TESTING. They are not part of 1.0.16. The candidate passed staging synthetic lookup checks but its CI release stopped before EAS because `EXPO_TOKEN` was missing; actual SMS delivery and native checks remain pending.

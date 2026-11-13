@@ -1546,7 +1546,12 @@ const HomeScreen = () => {
           return renderCycleEvent({ item: item.event });
         }}
         ListEmptyComponent={
-          isLoading ? (
+          isOffline ? (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyTitle}>You’re offline</Text>
+              <Text style={styles.emptySubtitle}>Connect to the internet to load your circle feed.</Text>
+            </View>
+          ) : isLoading ? (
             <View style={styles.emptyState}>
               <ActivityIndicator color={palette.accent} />
               <Text style={styles.emptySubtitle}>Loading your circle feed…</Text>
