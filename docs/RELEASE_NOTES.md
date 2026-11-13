@@ -8,6 +8,10 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## 2026-11-12 — TestFlight build 1.0.17 (build 38)
 
+The [release job](https://github.com/kratijain2631/period-app/actions/runs/43318041600/job/131633755146) built the phone/email candidate at `fa7768c5`. [Apple upload](https://expo.dev/accounts/kratijain26/projects/period-app/submissions/bfce249f-9fcc-4073-b5b0-985aed1299ad) succeeded and Apple reported processing. Use the [contacts checklist](TESTING.md#1017-iphone-checklist) with existing accounts. The design changes below postdate this build.
+
+### Design changes prepared after build 38
+
 Internal design beta for testers with an existing account. [iPhone walkthrough](TESTING.md#design-v10-testflight-walkthrough). Build and Apple upload status are recorded below after verification.
 
 ### Added
@@ -72,7 +76,7 @@ Internal design beta for testers with an existing account. [iPhone walkthrough](
 
 ### Earlier 1.0.17 candidate verification
 
-2026-11-12 — [1.0.17 release run](https://github.com/kratijain2631/period-app/actions/runs/43318041600) passed TypeScript and all 155 Jest tests. The two dedicated staging accounts signed in and passed phone-only, email-only, combined/deduplicated, caller independence and opt-out lookups. The release job stopped before starting EAS because the GitHub Actions repository secret `EXPO_TOKEN` was missing. After configuring the secret, re-run failed jobs on that run. SMS delivery and physical-device checks remain pending.
+2026-11-12 — [1.0.17 release run](https://github.com/kratijain2631/period-app/actions/runs/43318041600) passed TypeScript and all 155 Jest tests. The two dedicated staging accounts signed in and passed phone-only, email-only, combined/deduplicated, caller independence and opt-out lookups. The release job stopped before starting EAS because the GitHub Actions repository secret `EXPO_TOKEN` was missing. The subsequent retry uploaded build 38. SMS delivery and physical-device checks remain pending.
 
 Earlier candidate preparation is included in this build. [Contact checks](TESTING.md#1017-iphone-checklist).
 - Added a startup check of recent GitHub work and an offer to review colleagues’ changes since the previous session.
