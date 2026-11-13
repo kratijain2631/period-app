@@ -6,6 +6,8 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## Unreleased
 
+- Change email accepts the code for each inbox and still supports confirmation links. Hosted sender setup and inbox delivery testing are pending.
+
 - Paused new TestFlight builds at the owner’s request to reserve the two remaining builds. Build 1.0.24 (46) is available for internal testing.
 
 ## 2026-11-13 — TestFlight build 1.0.24 (build 46)

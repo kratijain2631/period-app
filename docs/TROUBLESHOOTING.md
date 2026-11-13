@@ -229,3 +229,9 @@ Both hosted Auth configurations were read without changing them. The email provi
 Use a verified From address on a domain you control, configure a transactional mail provider in each target project and set the Site URL or an allowed redirect to a reachable confirmation page. Register the sender with Apple and authenticate the domain for users of Hide My Email. Test the current and replacement inboxes and return to Settings. [Supabase email sender setup](https://supabase.com/docs/guides/auth/auth-smtp) · [Apple private email relay registration](https://developer.apple.com/help/account/capabilities/configure-private-email-relay-service).
 
 Fresh guidance generation returned HTTP 503 with an isolated staging JWT. Staging has no `OPENAI_API_KEY` in its function secret inventory. Cached advice, refresh claims, cooldown and authorization checks passed. Configure the intended staging key and retry. Production guidance generation was not exercised.
+
+### Change email codes and hosted sender setup
+
+Use the [email change template](../supabase/email-change.html) for Authentication → Email Templates → Change Email Address in each hosted project. Keep secure email change enabled. Each recipient gets their own code and a confirmation link compatible with earlier builds. The client submits the code with its recipient address and reads the verified address back from Auth.
+
+The requested From address is `verify@cadenceapp.org`. Its domain renewal, sending-domain verification, hosted SMTP setup and inbox delivery are pending verification. Once control of the domain is established, verify the provider’s sending DNS records and configure its SMTP credentials in Supabase. A paid Microsoft mailbox is unnecessary for outbound delivery. Test both inboxes on staging before enabling production delivery.

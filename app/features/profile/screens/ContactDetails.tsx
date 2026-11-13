@@ -85,7 +85,7 @@ export default function ContactDetails({ userId, onReady, settings = false }: Pr
     return () => { active = false; clearInterval(timer); listener.remove(); };
   }, [pendingEmail, editingEmail, userId]);
 
-  async function submit(action: 'email' | 'send' | 'verify') {
+  async function submit(action: 'email' | 'send' | 'verify' | 'emailCode', inbox = '', token = '') {
     if (submitting.current) return;
     submitting.current = true;
     setBusy(true);
@@ -108,6 +108,24 @@ export default function ContactDetails({ userId, onReady, settings = false }: Pr
           throw new Error('Could not start the email change. Check the address and try again.');
         }
         setEditingEmail(false);
+      } else if (action === 'emailCode') {
+        if (!pendingEmail || data.user.new_email !== pendingEmail ||
+            (inbox !== pendingEmail && inbox !== data.user.email)) {
+          throw new Error('This email change is no longer current. Reopen Settings.');
+        }
+        const result = await supabase.auth.verifyOtp({ type: 'email_change', email: inbox, token });
+        if (result.error) throw result.error;
+        const refreshed = await supabase.auth.getUser();
+        const user = refreshed.data.user;
+        if (refreshed.error || user?.id !== userId) throw new Error('Reopen Settings to check confirmation.');
+        if (user.email_confirmed_at && user.email?.toLowerCase() === pendingEmail.toLowerCase() && !user.new_email) {
+          setEmail(user.email);
+          setVerifiedEmail(user.email);
+          setPendingEmail('');
+          setMessage('Email address updated.');
+        } else {
+          setMessage('Code accepted. Confirm the other inbox to finish.');
+        }
       } else if (normalized && action === 'send') {
         const response = await supabase.auth.updateUser({ phone: normalized });
         if (response.error) throw response.error;
@@ -147,7 +165,8 @@ export default function ContactDetails({ userId, onReady, settings = false }: Pr
   return (
     <View style={{ gap: 8 }}>
       {pendingEmail && !editingEmail ? (
-        <PendingEmail address={pendingEmail} currentEmail={verifiedEmail} onEdit={() => {
+        <PendingEmail key={pendingEmail} address={pendingEmail} currentEmail={verifiedEmail} busy={busy}
+          onVerify={(inbox, token) => void submit('emailCode', inbox, token)} onEdit={() => {
           setEmail(''); setMessage(''); setEditingEmail(true);
         }} />
       ) : settings && !editingEmail ? (

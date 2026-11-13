@@ -35,7 +35,7 @@ export function EmailChangeForm({ email, currentEmail, busy, onChange, onSend, o
           onBlur={() => setFocused(false)} returnKeyType="done" onSubmitEditing={() => { if (canSend) onSend(); }}
           style={{ flex: 1, minWidth: 0, minHeight: 49, color: t.colors.text, fontFamily: t.type.body, fontSize: 16 }} />
       </View>
-      <ActionButton label={busy ? 'Sending…' : 'Send confirmation email'} disabled={!canSend} onPress={onSend} />
+      <ActionButton label={busy ? 'Sending…' : 'Send verification code'} disabled={!canSend} onPress={onSend} />
       {onCancel && (
         <Pressable accessibilityRole="button" disabled={busy} onPress={onCancel}
           style={({ pressed }) => ({ alignSelf: 'center', minHeight: 44, justifyContent: 'center',
@@ -47,13 +47,36 @@ export function EmailChangeForm({ email, currentEmail, busy, onChange, onSend, o
   );
 }
 
-export function PendingEmail({ address, currentEmail, onEdit }: { address: string; currentEmail: string; onEdit: () => void }) {
+function InboxCode({ inbox, busy, onVerify }: {
+  inbox: string; busy: boolean; onVerify: (inbox: string, token: string) => void;
+}) {
+  const [code, setCode] = useState('');
+  const t = useWidgetTheme();
+  const label = `Code sent to ${inbox}`;
+  return (
+    <View style={{ gap: 5 }}>
+      <AppText>{label}</AppText>
+      <TextInput accessibilityLabel={label} placeholder="Verification code" keyboardType="number-pad"
+        textContentType="oneTimeCode" editable={!busy} value={code} onChangeText={setCode}
+        style={{ minHeight: 44, paddingHorizontal: 10, color: t.colors.text, backgroundColor: t.colors.surface }} />
+      <ActionButton outline label="Verify email code" disabled={busy || !/^\d+$/.test(code.trim())}
+        onPress={() => onVerify(inbox, code.trim())} />
+    </View>
+  );
+}
+
+export function PendingEmail({ address, currentEmail, busy, onVerify, onEdit }: {
+  address: string; currentEmail: string; busy: boolean;
+  onVerify: (inbox: string, token: string) => void; onEdit: () => void;
+}) {
   const t = useWidgetTheme();
   return (
     <View accessibilityLiveRegion="polite" style={{ gap: 5, padding: 12, borderRadius: t.radius.control, backgroundColor: t.colors.subtle }}>
       <AppText style={{ fontFamily: t.type.semibold }}>Awaiting email confirmation</AppText>
-      <AppText>{currentEmail ? `Open the confirmation links sent to ${currentEmail} and ${address}.` : `Check ${address} for the confirmation link.`} Your address will update here once confirmed.</AppText>
-      <ActionButton outline label="Use a different address" onPress={onEdit} />
+      <AppText>{currentEmail ? 'Confirm each inbox using its own code or confirmation link.' : 'Enter the emailed code or open the confirmation link.'}</AppText>
+      {currentEmail && <InboxCode inbox={currentEmail} busy={busy} onVerify={onVerify} />}
+      <InboxCode inbox={address} busy={busy} onVerify={onVerify} />
+      <ActionButton outline disabled={busy} label="Use a different address" onPress={onEdit} />
     </View>
   );
 }
