@@ -2,7 +2,7 @@ import { Pressable, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { AppText, Surface } from '../../../components/ui/WidgetPrimitives';
 import { useWidgetTheme } from '../../../theme/widgetTheme';
-import type { CycleOverview } from '../models/cycleOverview';
+import { lateLabel, type CycleOverview } from '../models/cycleOverview';
 import { phaseLabels } from '../models/phaseLabels';
 import { CycleStatus } from './CycleStatus';
 
@@ -15,7 +15,7 @@ export function CycleSummaryStrip({ model, onOpen }: { model: CycleOverview; onO
       </Pressable>
     );
   const tone = t.phase[model.phase];
-  const position = (100 * (model.currentDay - 0.5)) / model.cycleLength;
+  const position = (100 * (Math.min(model.currentDay, model.cycleLength) - 0.5)) / model.cycleLength;
   return (
     <Pressable
       accessibilityRole="button"
@@ -35,6 +35,7 @@ export function CycleSummaryStrip({ model, onOpen }: { model: CycleOverview; onO
         <AppText style={{ color: t.colors.secondary, fontSize: 13 }}>
           Day {model.currentDay} of {model.cycleLength} ·{' '}
           {model.source === 'observed' ? 'Logged signals' : 'Estimated phase'}
+          {model.daysLate !== null ? ` · ${lateLabel(model.daysLate)}` : ''}
         </AppText>
         <View aria-hidden style={{ marginTop: 9, height: 10, flexDirection: 'row', alignItems: 'center' }}>
           {model.ranges.map((range) => (

@@ -25,7 +25,11 @@ import {
   getLatestCycleSnapshot,
   upsertCycleSnapshot,
 } from '../../storage/sqlite/cycleSnapshotStore';
-import { upsertCycleEvents, upsertCycleSnapshotRemote } from '../supabase/cycleEvents';
+import {
+  remoteSnapshotHasSamples,
+  upsertCycleEvents,
+  upsertCycleSnapshotRemote,
+} from '../supabase/cycleEvents';
 import { fetchCurrentAutoPostSettings } from '../supabase/users';
 import {
   DEFAULT_AUTO_POST_SETTINGS,
@@ -231,7 +235,21 @@ export const syncHealthData = async ({
         autoPostSettings,
         accountCreatedAtMs,
       );
-      await upsertCycleSnapshotRemote(session.userId, snapshot);
+      // A sync that reads no samples (new phone, Health access off — iOS doesn't
+      // say which) must not replace real history that friends see with an
+      // "Unknown" snapshot. A first snapshot is still written for new users. If
+      // the check fails, keep what's there.
+      const keepRemoteSnapshot =
+        samples.length === 0 &&
+        (await remoteSnapshotHasSamples(session.userId).catch((error) => {
+          console.warn('[cycle-sync] Could not check the shared snapshot; leaving it unchanged', error);
+          return true;
+        }));
+      if (keepRemoteSnapshot) {
+        console.log('[cycle-sync] No Health samples read; keeping the existing shared snapshot');
+      } else {
+        await upsertCycleSnapshotRemote(session.userId, snapshot);
+      }
       const phaseMetadata = {
         phase_source: snapshot.phaseSource ?? 'unknown',
         cycle_length_days: snapshot.cycleLengthDays ?? null,
@@ -252,7 +270,8 @@ export const syncHealthData = async ({
         },
         starts_at: sample.startDate,
       }));
-      if (phaseChanged && autoPostSettings.postPhaseTransitions) {
+      // Losing an estimate (e.g. no period for 60 days) isn't news to post.
+      if (phaseChanged && snapshot.currentPhase !== 'unknown' && autoPostSettings.postPhaseTransitions) {
         events.push({
           user_id: session.userId,
           event_type: 'phase_transition',

@@ -1,4 +1,4 @@
-import { fetchCycleEvents } from '../cycleEvents';
+import { fetchCycleEvents, remoteSnapshotHasSamples } from '../cycleEvents';
 
 jest.mock('../client', () => ({
   isSupabaseConfigured: true,
@@ -39,5 +39,41 @@ describe('shared cycle events', () => {
 
     await expect(fetchCycleEvents()).rejects.toEqual(error);
     expect(supabase.from).not.toHaveBeenCalled();
+  });
+});
+
+describe('remoteSnapshotHasSamples', () => {
+  const selectOwnRow = (result: { data: unknown; error: unknown }) => {
+    const maybeSingle = jest.fn().mockResolvedValue(result);
+    const eq = jest.fn(() => ({ maybeSingle }));
+    const select = jest.fn(() => ({ eq }));
+    supabase.from.mockReturnValue({ select });
+    return { select, eq };
+  };
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('reads only the signed-in user\'s own row', async () => {
+    const { select, eq } = selectOwnRow({ data: { snapshot: { samples: [{ id: 's1' }] } }, error: null });
+
+    await expect(remoteSnapshotHasSamples('user-1')).resolves.toBe(true);
+    expect(supabase.from).toHaveBeenCalledWith('cycle_snapshots');
+    expect(select).toHaveBeenCalledWith('snapshot');
+    expect(eq).toHaveBeenCalledWith('user_id', 'user-1');
+  });
+
+  it('is false with no row or an empty snapshot', async () => {
+    selectOwnRow({ data: null, error: null });
+    await expect(remoteSnapshotHasSamples('user-1')).resolves.toBe(false);
+    selectOwnRow({ data: { snapshot: { samples: [] } }, error: null });
+    await expect(remoteSnapshotHasSamples('user-1')).resolves.toBe(false);
+  });
+
+  it('propagates query errors', async () => {
+    const error = { code: '42501', message: 'permission denied' };
+    selectOwnRow({ data: null, error });
+    await expect(remoteSnapshotHasSamples('user-1')).rejects.toEqual(error);
   });
 });
