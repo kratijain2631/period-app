@@ -50,7 +50,7 @@ notifications ───trigger───┼─▶ push_outbox ──insert trigge
 
 - **Staging (2026-11-13):** migration applied by the Database deploy workflow, `send-push` deployed (version 1, gateway JWT checks off). Callers without the secret get 401. With made-up tokens for ava, cleo and fay, the `cramps-thread` and `new-friend` scenarios each produced a delivery straight away. Expo answered `DeviceNotRegistered`, the function removed the token, and later rows were recorded as `skipped: no registered device`. A friend request repeated within the day wasn't queued again. Rows queued before the function existed were handled once by the first retry run (21:50 UTC).
 - **Production (2026-11-13):** migration applied by the Database deploy workflow; `send-push` deployed (version 1, gateway JWT checks off) at the owner's request, and callers without the secret get 401. Nothing was queued at deploy time, so no late pushes went out. 4 users had registered tokens. No test activity was created on production; the first real friend request, reaction or boop is the first live send. Check it with the query under [Checking it](#checking-it).
-- **Not yet confirmed:** delivery to a real phone.
+- **Real phone (2026-11-13, ~22:17 UTC):** the owner sent a friend request on production and the recipient's iPhone showed "@shaan sent you a friend request" on the lock screen. The notification's app icon appeared as a blank white square, though the build's icon is correct (a single 1024×1024 opaque PNG). That's most likely iOS's icon cache after the icon changed on 2026-11-12; restarting the phone normally clears it.
 
 ## Phases
 
