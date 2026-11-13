@@ -6,7 +6,7 @@ Guidance for all AI agents (whatever the tool or model) and humans working in th
 
 ## Key conventions (full detail in docs/INSTRUCTIONS.md)
 
-- **TestFlight builds are on hold.** Wait for Krati to explicitly request the next build. See the [release instructions](docs/INSTRUCTIONS.md#2-cut-a-version-on-every-published-build).
+- **TestFlight builds are on hold.** Obtain Krati’s explicit approval for each iOS build, including retries and builds triggered through CI. See the [release instructions](docs/INSTRUCTIONS.md#2-cut-a-version-on-every-published-build).
 - Update **[docs/RELEASE_NOTES.md](docs/RELEASE_NOTES.md)** (`## Unreleased` section) in the *same commit* as any notable change; cut a named version on each published build.
 - **Check for bugs after every change** — re-read the diff, run `npm test`, and log any unfixed bug in [docs/BUGS.md](docs/BUGS.md).
 - Prefer small **atomic commits**; end AI-authored commit messages with a `Co-Authored-By:` trailer.
