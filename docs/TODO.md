@@ -27,6 +27,9 @@ Open items, roughly in priority order, with completed items retained as a decisi
 
 ## Widget rollout and follow-ups
 
+- [x] Preview a thumbnail using Home’s actual waving mascot and match the opening wordmark to Home.
+- [ ] Review the revised icon in the live preview before selecting it for a future native build.
+
 - [x] Give the redesign a distinct 1.0.18 TestFlight version. The previous 1.0.17 (39) contains the same features. This design’s visual reference is v1.0.
 
 - [x] Record every design request in the [release notes](RELEASE_NOTES.md) and [widget inventory](UI_ARCHITECTURE.md#page-directory). The [versioned design gallery](../design/2026-11-12/v1.0/README.md) includes the 1024 px thumbnail, opening page, every preview page, sample profiles and button destinations.

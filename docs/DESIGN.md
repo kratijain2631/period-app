@@ -89,3 +89,5 @@ For **UI mockups with legible text**, the image models rank roughly:
 ## Design v1.0 · November 12, 2026
 
 The [screen index](../design/2026-11-12/v1.0/README.md) and [visual gallery](../design/2026-11-12/v1.0/index.html) record this version of the illustrated preview. The thumbnail, animated opening and signed-out page share the smiling drop and five phase colors.
+
+The [subsequent opening-page preview](../design/2026-11-12/mascot-thumbnail/opening.png) uses the exact Home wordmark and its waving mascot in the [thumbnail candidate](../design/2026-11-12/mascot-thumbnail/thumbnail.png). The v1.0 gallery above records the version delivered in builds 39 and 40.

@@ -369,7 +369,7 @@ function Preview() {
       case 'opening':
         content = (
           <View style={{ flexGrow: 1, justifyContent: 'center', paddingHorizontal: 14, gap: 54 }}>
-            <OpeningIdentity />
+            <OpeningIdentity icon={require('../../design/2026-11-12/mascot-thumbnail/thumbnail.png')} />
             <ActionButton label="Enter preview" onPress={() => navigate('Home')} />
           </View>
         );

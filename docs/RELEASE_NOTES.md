@@ -6,7 +6,11 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## Unreleased
 
+- The opening page and Home share the same lowercase Nunito ExtraBold wordmark, including its 34-point size, letter spacing and terracotta color. The live browser preview pairs it with an [icon candidate made from Home’s waving mascot](../design/2026-11-12/mascot-thumbnail/thumbnail.png). This is a preview revision after builds 39 and 40.
+
 ## 2026-11-12 — TestFlight build 1.0.18 (build 40)
+
+Apple processed and enabled build 40 for the existing **Dev Team** and **Team (Expo)** internal testing groups. The [signed build](https://expo.dev/accounts/kratijain26/projects/period-app/builds/61ece33d-37d1-40af-9282-5eab64127444) and [Apple upload](https://expo.dev/accounts/kratijain26/projects/period-app/submissions/b222dec8-171a-4d65-a450-b4dc3a44b9b7) both finished. Build 39 also passed Apple processing and is available to the same groups.
 
 - **1.0.18 (40) and 1.0.17 (39) contain the same screens, features and fixes.** It gives the redesign its own TestFlight version. The numbered feature list and [design v1.0 gallery](../design/2026-11-12/v1.0/README.md) apply to both builds.
 - Use an existing account for the [iPhone walkthrough](TESTING.md#design-v10-testflight-walkthrough). The production database already contains the comments and rankings migration. SMS setup, real-device checks, unchanged-contact re-verification and Instagram Stories retain the status recorded below.
