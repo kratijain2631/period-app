@@ -287,3 +287,7 @@ The preview passed adding, reading and removing comments on a phase update, sing
 - As `ava`: Circle showed Bea, Cleo and Eli with percentages in Most in sync, and Dev (no cycle data) in Friends with no percentage and not ranked. Dev's profile showed "Once you both have cycle data, your sync score will appear here", "No phase shared" and general suggestions. Ava's recap still showed a measured 28d cycle length.
 - As `cleo` (one period): the You recap showed "—" for cycle length, 3d period length and 1 month tracked.
 - Metro log had no errors, only the usual simulator warnings for push and background delivery. Screenshots are in the local, uncommitted `screenshots/no-data-states-2026-11-13/`.
+
+## Owner large-text feedback - 2026-11-13
+
+Owner tried very large accessibility text and reported an awkward appearance, acceptable for now. Layout polish is deferred as a non-blocking future item in [TODO.md](TODO.md). Build, iOS version and affected screens were not supplied. This is feedback on appearance, not a full Dynamic Type or VoiceOver pass.
