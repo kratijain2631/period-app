@@ -296,6 +296,8 @@ The Delete account endpoint removed a synthetic account’s saved cycle snapshot
 
 Erasing twice was safe. The saved history, automatic updates and their comments/reactions/boops, inbox notices (including an older detached notice), guidance requests, saved guidance and both directions of paired recommendations were gone. The friendship, authored post and its interactions, and the friend’s own history were still present. Old upload requests and background guidance writes were denied. Reconnecting allowed a fresh import that was visible to the friend. All fixture accounts were removed. The 208 app tests, both type checks, iOS bundle export and pull request database checks passed. Native long-press accessibility, Apple Health permissions and re-import on a physical iPhone remain to be checked.
 
+An additional browser session rendered the app’s reaction list and privacy controls with a real login on staging. Holding a written post’s heart and an automatic update’s reactions and Boop showed the sender’s name. Selecting the member returned the expected profile ID. Cancel preserved the friend’s access, confirming erased the history, reloading kept sharing off, and reconnecting did not resurrect old records. The browser check used synthetic records and did not invoke HealthKit.
+
 ## Owner large-text feedback - 2026-11-13
 
 Owner tried very large accessibility text and reported an awkward appearance, acceptable for now. Layout polish is deferred as a non-blocking future item in [TODO.md](TODO.md). Build, iOS version and affected screens were not supplied. This is feedback on appearance, not a full Dynamic Type or VoiceOver pass.

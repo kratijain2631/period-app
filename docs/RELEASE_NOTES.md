@@ -8,6 +8,8 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## 2026-11-13 — TestFlight build 1.0.24 (build 46)
 
+Apple processed build 46 and confirmed internal beta testing for **Dev Team** and **Team (Expo)**. [Signed iOS build](https://expo.dev/accounts/kratijain26/projects/period-app/builds/6443e4ea-d226-45e9-ad2b-f0a321d0090b) · [Apple upload](https://expo.dev/accounts/kratijain26/projects/period-app/submissions/7e652223-6d31-405a-abf1-f94867025226).
+
 The features passed [staging tests with disposable accounts](TESTING.md#explicit-erasure-and-engagement), phone-width gesture checks and 208 app tests. [Database deployment](https://github.com/kratijain2631/period-app/actions/runs/43480982106).
 
 **Cycle privacy**
