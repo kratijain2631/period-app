@@ -120,7 +120,7 @@ Owner confirms important users on 1.0.15, successful refresh and accepts missing
 
 ## Phone and email discovery
 
-Before distributing a client with required phone setup, enable phone verification, require phone change confirmations, and configure an SMS provider in the target Supabase Auth project. Validate delivery with an authorized test number. Keep provider credentials server-side. Apple users can keep their sign-in email (including a private relay) or verify a different account email that friends know. Verify email change confirmations are enabled. Existing users can verify a number in You → Settings → Manage contact details.
+First-time setup requires a verified email and alias. A new member can continue without sending an SMS. To test the optional phone path, enable phone verification, require phone change confirmations, and configure an SMS provider in the target Supabase Auth project. Validate delivery with an authorized test number. Keep provider credentials server-side. Apple users can keep their sign-in email (including a private relay) or verify a different account email that friends know. Verify email change confirmations are enabled. Existing users can verify a number in You → Settings → Manage contact details.
 
 On staging, use two synthetic accounts. Complete fresh alias setup with a verified email and SMS number. Try an incorrect code and retry. Open Manage contact details from You → Settings, verify the signed-in account is shown, and go back to You. In Circle, confirm Find Contacts and Let contacts find me are still available. With B opted in, test three address cards separately: B’s phone only, B’s email only, and both together (one result). Repeat with B off (zero). Verify denied, limited and full iOS access and Settings revocation. A must be able to search while undiscoverable. Record the backend, build, OS, aliases and actual results. Do not record codes or phone numbers. Hosted SMS and native UI checks are pending.
 
@@ -305,3 +305,9 @@ Owner tried very large accessibility text and reported an awkward appearance, ac
 
 - In the Settings component, a disposable account signed in on staging. Checked the +1 default, invalid input, a UK national number with its trunk prefix, the outgoing international number and Cancel/reopen. The browser intercepted the SMS request to simulate a delivery error. The account was removed. Real SMS delivery and an iOS walkthrough remain open. This Mac has no installed simulator runtime.
 - The Settings preview showed distinct bordered inputs at 320 and 390 px. The compact dialing-code box fits a plus sign and three digits. The [phone editor capture](../design/2026-11-13/contact-settings/change-phone.png) shows the default +1. The preview passed international paste, resend, invalid and correct sample codes, unchanged-number validation and cancel at a 320 px width. All 210 app tests and native and preview type checks passed.
+
+## Optional phone at signup, 2026-11-13
+
+A disposable staging account with a verified email and no phone opened the actual alias screen in a phone-width browser. Continue saved the alias in the staging profile without any SMS request. Settings then offered the phone editor. After a simulated SMS send error, Cancel returned to setup. Continuing with a partially typed number also saved the alias and left the account phone empty. The account was removed after the check.
+
+The preview reached sharing preferences both by skipping the phone and by confirming its sample code. Automated checks cover verified, unconfirmed and pending-change email states without a phone. Real SMS receipt on an iPhone remains a separate check.

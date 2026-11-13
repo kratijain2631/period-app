@@ -3,7 +3,7 @@ import { ContactValue } from '../components/SettingsPage';
 import { useEffect, useRef, useState } from 'react';
 import { AppState, Button, Text, View } from 'react-native';
 import { supabase } from '../../../services/supabase/client';
-import { PhoneChangeForm } from '../components/PhoneChangeForm';
+import { OptionalPhonePrompt, PhoneChangeForm } from '../components/PhoneChangeForm';
 
 type Props = { userId: string; settings?: boolean; onReady?: (ready: boolean) => void };
 
@@ -19,7 +19,7 @@ export default function ContactDetails({ userId, onReady, settings = false }: Pr
   const [message, setMessage] = useState('');
   const [reload, setReload] = useState(0);
   const [loaded, setLoaded] = useState(false);
-  const ready = loaded && !editingEmail && !pendingEmail && !!verifiedEmail && !editingPhone && !!verifiedPhone;
+  const ready = loaded && !editingEmail && !pendingEmail && !!verifiedEmail && !busy;
 
   useEffect(() => {
     onReady?.(ready);
@@ -38,7 +38,7 @@ export default function ContactDetails({ userId, onReady, settings = false }: Pr
         setEmail(user.email ?? '');
         setPendingEmail(user.new_email ?? '');
         setEditingEmail(false);
-        setEditingPhone(!settings && !confirmed);
+        setEditingPhone(false);
         setVerifiedEmail(user.email_confirmed_at ? (user.email ?? '') : '');
         setLoaded(true);
         setMessage('');
@@ -49,7 +49,7 @@ export default function ContactDetails({ userId, onReady, settings = false }: Pr
     return () => {
       current = false;
     };
-  }, [userId, reload, settings]);
+  }, [userId, reload]);
 
   useEffect(() => {
     if (!pendingEmail || editingEmail) return;
@@ -176,6 +176,8 @@ export default function ContactDetails({ userId, onReady, settings = false }: Pr
           onEdit={() => setMessage('')} onSend={phone => submit('send', phone)}
           onVerify={(phone, code) => void submit('verify', phone, code)}
           onCancel={() => { setEditingPhone(false); setMessage(''); }} />
+      ) : !settings && !verifiedPhone ? (
+        <OptionalPhonePrompt onAdd={() => { setEditingPhone(true); setMessage(''); }} />
       ) : (
         <ContactValue label="Phone number" value={verifiedPhone}
           onChange={() => { setEditingPhone(true); setMessage(''); }} />

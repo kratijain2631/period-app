@@ -6,6 +6,8 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## Unreleased
 
+- **First-time setup.** Continue with a verified email and an alias. **Add phone number** is optional. You can leave the field blank, skip an unfinished SMS confirmation, or add a number later under **You → Settings → Personal info**. Only confirmed numbers can match in phone discovery.
+
 - **Push notifications, phase 1.** Friend requests, accepted requests, reactions and boops now send a push to the other person's phone once the `send-push` edge function is deployed. Lock-screen text names who did something and never mentions anyone's cycle. A re-sent friend request within a day, or boops within 10 minutes, don't push again. Fixes a privacy bug: signing out now removes the phone's push token first, and a token belongs only to the last account that registered it, so a shared phone no longer receives the previous account's pushes. Database: `20261113230000_push-notifications.sql` adds `push_outbox` (server-only queue), `notification_preferences` (defaults; settings screen comes in phase 2), the triggers, a 5-minute retry job and a daily cleanup. [Design](design/push-notifications.md).
 
 - **Email, phone and verification.** Settings and first-time setup use the same outlined fields and compact Cancel button for phone and email. The country code has a compact, four-character box, initially +1. The national number fills the remaining width. Members can send, resend and verify a confirmation code. [Phone editor preview](../design/2026-11-13/contact-settings/change-phone.png).

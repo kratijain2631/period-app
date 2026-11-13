@@ -70,6 +70,6 @@ Phone/email matching and contact-detail verification are documented in the 1.0.1
 
 v2 matching, deduplication, opt-out/caller independence and changed confirmed identifier/readback checks passed with two new isolated staging JWT accounts. Confirmations were Admin-simulated; both accounts/data deleted, shared QA pair untouched. Thirty service/controller tests pass with mocked OS responses.
 
-Real SMS/email confirmation and native permission/selection flows are not signed off. Phone auth is disabled on both hosted projects; normal staging phone change fails HTTP 500. Configure/enable and validate SMS before releasing required-phone onboarding. No simulator runtime is installed. See TESTING for results and short accessibility/Health steps.
+Real SMS/email confirmation and native permission/selection flows are not signed off. At the original check, hosted phone auth was disabled and a staging phone change returned HTTP 500. Staging subsequently enabled phone auth. Signup now supports skipping the number. Live SMS delivery for phone discovery still needs a device check. No simulator runtime is installed. See TESTING for results and short accessibility/Health steps.
 
 For the owner case, target discoverability is now server-confirmed and profile/login email agree. Owner reports both access/toggle enabled and adding the actual account email after the initial mismatch. The device read/hash/match path remains unresolved. No private identifiers are recorded.

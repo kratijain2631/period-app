@@ -180,7 +180,7 @@ function Preview() {
   };
   const [ranked, setRanked] = useState(false);
   const [postSettings, setPostSettings] = useState(DEFAULT_AUTO_POST_SETTINGS);
-  const [contactDetails, setContactDetails] = useState({ email: 'alex@example.com', phone: '+12025550120' });
+  const [contactDetails, setContactDetails] = useState({ email: 'alex@example.com', phone: screenParam() === 'setup' ? '' : '+12025550120' });
   const settingsChild =
     detail === 'posting' || detail === 'sign-out' || detail === 'delete-account';
   const theme = neutral ? neutralTheme : illustratedTheme;
@@ -402,7 +402,10 @@ function Preview() {
             <OpeningIdentity />
             <View style={{ gap: 6 }}>
               <ActionButton label="Enter preview" onPress={() => navigate('Home')} />
-              <TextAction label="Preview first-time setup" onPress={() => navigate('Home', 'setup')} />
+              <TextAction label="Preview first-time setup" onPress={() => {
+                setContactDetails(details => ({ ...details, phone: '' }));
+                navigate('Home', 'setup');
+              }} />
             </View>
           </View>
         );
@@ -410,7 +413,7 @@ function Preview() {
       case 'setup':
         content = <Surface style={{ gap: 12 }}>
           <AppText role="heading">Personal info</AppText>
-          <SampleContactDetails details={contactDetails} save={setContactDetails} />
+          <SampleContactDetails setup details={contactDetails} save={setContactDetails} />
           <ActionButton label="Continue" onPress={() => navigate('Home', 'sharing')} />
         </Surface>;
         break;

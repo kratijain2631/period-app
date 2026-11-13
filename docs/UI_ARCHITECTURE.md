@@ -61,7 +61,7 @@ The native app and interactive design have four bottom tabs. An outward profile 
 | Write a post | Secondary page from Share an update in Feed | Session-scoped draft and mood. Back resumes later, successful submit returns to Feed |
 | Delete confirmation | Feed author action | Confirm removal of your own update |
 | Edit profile / settings | You flows | Identity and posting preferences in the preview. Native settings also includes account actions and contact details |
-| Sign-in / profile and contact setup / introduction and permissions | Native onboarding | Verified contacts and alias → initial ranking and posting choices → optional Apple Health → Home |
+| Sign-in / profile and contact setup / introduction and permissions | Native onboarding | Verified email and alias, optional phone → initial ranking and posting choices → optional Apple Health → Home |
 
 The wheel and full Phase Guide are sections of You. The countdown on Home opens the wheel. Add friends owns discovery and invitations. Received and Sent tabs share a request card. Sent requests support cancellation. Incoming requests also appear directly in Notifications. The member profile renders the full pair comparison inline for accepted friends. Its parent owns navigation and scrolling.
 
