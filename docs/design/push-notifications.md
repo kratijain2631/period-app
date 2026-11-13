@@ -14,7 +14,7 @@ notifications ───trigger───┼─▶ push_outbox ──insert trigge
 1. **Producers queue a push.** Database triggers call `enqueue_push`, which adds a row to `push_outbox`:
    - `notifications` inserts of type `post_reaction`, `event_reaction` and `boop` (those rows are themselves made by the engagement triggers, so the bell and the push stay in step).
    - `friend_requests`: a new pending request notifies the recipient (`friend_request`); pending → accepted notifies the sender (`friend_request_accepted`). Declining deletes the row and tells nobody.
-   - `enqueue_push` skips self-actions and repeats from the same person inside a quiet window: one day for friend requests, 10 minutes for boops.
+   - `enqueue_push` skips self-actions and repeats from the same person inside a quiet window: 5 minutes for friend requests (a day until `20261114010000`), 10 minutes for boops.
 2. **The queue is server-only.** `push_outbox` has row-level security with no policies, so the app can't read it. That's also why friend requests go there rather than into `notifications`: older builds already build friend-request entries in the bell from `friend_requests`, and a `notifications` row would show them twice.
 3. **Delivery.** Each new outbox row calls the `send-push` edge function through `pg_net`, with the vault's `publishable_key` (for the gateway) and `cron_secret` (which the function checks, see `_shared/cronAuth.ts`). If the vault isn't set up, as on a local database, the row waits for the retry job. Neither can block the original insert.
 4. **`send-push`** calls `claim_pushes`, which marks rows so the immediate call and the retry job never send the same one, then for each row:
