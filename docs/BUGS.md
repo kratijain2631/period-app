@@ -4,6 +4,8 @@ Known bugs to fix. This is for **open** bugs; problems we already diagnosed and 
 
 ## Open
 
+- [~] **Production Phase Guide refresh reported failing (2026-11-13).** The owner reports a failure after the earlier successful build 36 check. Investigating current production behavior separately from the missing staging generation key. 🚧 (WIP — Codex, 2026-11-13)
+
 - [x] Explicit cycle erasure removes the saved snapshot, related automatic posts and cycle notices, and blocks future uploads until reconnection. See Cycle privacy in the release notes.
 
 - [ ] General email-change delivery needs a verified custom sender and a reachable confirmation landing URL. Both hosted environments currently use the default team-restricted sender, secure email change and a localhost redirect. Verify receipt at both addresses, including Apple relay, after configuration.
