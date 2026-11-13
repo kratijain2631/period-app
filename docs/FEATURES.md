@@ -159,6 +159,7 @@ This design's [page and widget inventory](UI_ARCHITECTURE.md#page-directory) and
 
 - [x] **Home, Feed and You.** Home previews the cycle, next transition, guide, top sync match and latest post. The separate Feed owns composing, reactions, boops and comments. You owns the wheel, press/hover ranges, full guide with refresh, monthly recap and My posts below it. Home uses the two-line mixed-font tagline. The 320 px wheel keeps its contents visible.
 - [x] **Dedicated post editor.** Feed opens Write a post from Share an update, resumes a session draft and returns after successful sharing.
+- [~] **Optional phone setup.** Offer SMS verification at signup and let members continue with a verified email and alias. 🚧 (WIP — Codex, 2026-11-13)
 - [x] **First-time sharing choices.** After contact verification, choose ranking visibility and all three automatic posting preferences before optional Apple Health access. These are the same account preferences shown later in Settings.
 - [x] **Sent friend requests.** See outgoing pending requests alongside incoming requests on Add Friends. Cancel a pending request there or from its member profile. Contacts and the recipient’s request list reflect the change.
 - [x] **One friend profile.** Tapping a friend opens their identity, bio, sync rings, phases, flow timing, shared history, recommendations, boop, confirmed removal and shared updates on one page. Self, pending and other public profiles keep their own permitted views.
