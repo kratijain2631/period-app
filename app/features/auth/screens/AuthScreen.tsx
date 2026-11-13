@@ -166,6 +166,10 @@ const AuthScreen = () => {
           />
         ) : null}
 
+        {showAppleButton && (
+          <Text style={styles.notice}>To let friends find you by email, choose Share My Email with Apple and turn on Let contacts find me in the app.</Text>
+        )}
+
         {showEmailForm ? (
           <View style={styles.devAuth}>
             <Text style={styles.devTitle}>Dev sign-in (Supabase email/password)</Text>

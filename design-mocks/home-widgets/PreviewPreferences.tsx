@@ -1,10 +1,9 @@
 import { CyclePrivacyControl } from '../../app/features/profile/components/CyclePrivacyControl';
-import { EmailChangeForm, PendingEmail } from '../../app/features/profile/components/EmailChangeForm';
 import { SettingsPage, ContactValue } from '../../app/features/profile/components/SettingsPage';
 import { useState } from 'react';
 import { View } from 'react-native';
 import { OptionalPhonePrompt, PhoneChangeForm } from '../../app/features/profile/components/PhoneChangeForm';
-import { AppText, ActionButton } from '../../app/components/ui/WidgetPrimitives';
+import { AppText } from '../../app/components/ui/WidgetPrimitives';
 import { useWidgetTheme } from '../../app/theme/widgetTheme';
 import { RankingVisibilityRow } from '../../app/features/profile/components/RankingVisibilityRow';
 
@@ -39,8 +38,6 @@ export function SettingsMenu({
 
 export function SampleContactDetails({ details, save, setup = false }: { details: Details; save: (next: Details) => void; setup?: boolean }) {
   const t = useWidgetTheme();
-  const [email, setEmail] = useState<string | null>(null);
-  const [pendingEmail, setPendingEmail] = useState('');
   const [editingPhone, setEditingPhone] = useState(() => {
     const params = new URLSearchParams(window.location.search);
     return params.get('screen') === 'settings' && params.get('edit') === 'phone';
@@ -49,29 +46,8 @@ export function SampleContactDetails({ details, save, setup = false }: { details
   return (
     <>
       <View style={{ gap: 8 }}>
-        {pendingEmail && email === null ? (
-          <>
-            <PendingEmail address={pendingEmail} currentEmail={details.email} onEdit={() => { setEmail(''); report(''); }} />
-            <ActionButton outline label="Simulate opening the email link" onPress={() => {
-              save({ ...details, email: pendingEmail });
-              setPendingEmail('');
-              report('Sample email verified.');
-            }} />
-          </>
-        ) : email === null ? (
-          <ContactValue
-            label="Email"
-            value={details.email}
-            onChange={() => {
-              setEmail('');
-              report('');
-            }}
-          />
-        ) : (
-          <EmailChangeForm email={email} currentEmail={details.email} busy={false}
-            onChange={setEmail} onSend={() => { setPendingEmail(email.trim()); setEmail(null); report(''); }}
-            onCancel={() => { setEmail(null); report(''); }} />
-        )}
+        <AppText>Account email</AppText>
+        <AppText>{details.email || 'No email on this account'}</AppText>
       </View>
       <View style={{ gap: 8, borderTopWidth: 1, borderColor: t.colors.border }}>
         {setup && !editingPhone && !details.phone ? (

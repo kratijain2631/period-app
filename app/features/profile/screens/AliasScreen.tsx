@@ -42,7 +42,7 @@ const AliasScreen = () => {
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <Text style={styles.title}>Set up your account</Text>
-        <Text style={styles.subtitle}>This is how friends will see you in the feed.</Text>
+        <Text style={styles.subtitle}>Choose the name friends will see in the feed.</Text>
         <TextInput
           style={styles.input}
           value={alias}
@@ -52,7 +52,6 @@ const AliasScreen = () => {
           autoCorrect={false}
         />
         {userId ? <ContactDetails key={userId} userId={userId} onReady={setDetailsReady} /> : null}
-        <Text style={styles.subtitle}>You can let friends find you by phone or email in Circle.</Text>
         {error ? <Text style={styles.errorText}>{error}</Text> : null}
         <TouchableOpacity
           style={[styles.primaryButton, isSaving || !detailsReady ? styles.primaryButtonDisabled : null]}
@@ -88,7 +87,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#ddd',
     borderRadius: 12,
-    paddingHorizontal: 12,
+    paddingHorizontal: 18,
     paddingVertical: 10,
     fontSize: 16,
     backgroundColor: '#fff',

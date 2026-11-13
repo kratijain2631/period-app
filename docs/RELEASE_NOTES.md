@@ -6,6 +6,8 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## Unreleased
 
+- Paused account email changes in setup, Settings and Auth. The new-address code flow is retained for a future release.
+
 - Phone verification focuses the SMS code field and shows the destination number. Members can resend the code or edit the number. [Code entry preview](../design/2026-11-13/contact-settings/verify-phone.png).
 
 - **First-time setup.** Continue with a verified email and an alias. The signup preview is titled **Set up your account**. Only signup labels the field **Phone number (optional)**; Settings calls it **Phone number**. You can leave the field blank, skip an unfinished SMS confirmation, or add a number later under **You → Settings → Personal info**. Only confirmed numbers can match in phone discovery.
