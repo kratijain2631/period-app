@@ -6,6 +6,8 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## Unreleased
 
+- Recorded the decision to let the [GoDaddy domain and mailbox](TROUBLESHOOTING.md#godaddy-domain-and-mailbox-non-renewal-november-2026) expire, with purchase prices and cancellation dates.
+
 - Recorded owner feedback on very large accessibility text; layout polish is a future, non-blocking todo. No UI behavior changed.
 
 **Cycle accuracy**
