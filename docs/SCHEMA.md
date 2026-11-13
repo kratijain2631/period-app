@@ -1,5 +1,8 @@
 # Database schema (Supabase)
 
+During first-time setup, `authorize_setup_email_change` binds one requested address to the caller after a recent sign-in. `cancel_setup_email_change` withdraws that request. A private enrollment closes on the first saved alias. The Auth trigger rejects other changes and checks authorization again on confirmation. The confirmed address updates `public.users.email` in the same transaction so both contact lookup functions see the same email. Migration `20261114010000_setup_account_email.sql`.
+
+
 The full schema — tables, functions, RLS policies, indexes — is defined in `supabase/migrations/*.sql`, which is the source of truth. Running those migrations recreates the database from scratch; staging (`rntqwmptuavqnbjovnae`) was built that way, and production (`mmomoyszozclfjdvjbeb`) matches it. Merging a migration applies it to staging, then production ([DB_PUSH.md](DB_PUSH.md)). Real user data lives only in the database, never in the repo. The old `seed-posts.sql` demo data was retired on 2026-11-06; test data now comes from the staging personas ([TESTING.md](TESTING.md)).
 
 

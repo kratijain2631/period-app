@@ -56,7 +56,6 @@ export const signInWithApple = async (): Promise<AppleSignInResult> => {
 
   upsertCurrentUserProfile({
     appleUserId: credential.user,
-    email: credential.email ?? undefined,
     fullName: fullName || undefined,
   }).catch((error) => {
     console.warn('[auth] failed to upsert user profile', error);

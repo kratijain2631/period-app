@@ -7,6 +7,9 @@ const victimEmailHash = createHash('sha256').update('bea@personas.example.com').
 // Account data, notifications, guidance and the remaining functions. The victim is bea; ava is
 // her friend and cleo a stranger (see engine.ts).
 const rows: Row[] = [
+  { name: 'a member who finished setup cannot cancel an email change', as: 'owner', op: 'rpc', fn: 'cancel_setup_email_change', expect: 'denied' },
+  { name: 'anonymous callers cannot authorize account email changes', as: 'anon', op: 'rpc', fn: 'authorize_setup_email_change', args: { new_address: 'replacement@example.invalid' }, expect: 'denied' },
+  { name: 'a member who finished setup cannot authorize an email change', as: 'owner', op: 'rpc', fn: 'authorize_setup_email_change', args: { new_address: 'replacement@example.invalid' }, expect: 'denied' },
   { name: 'cycle sync preferences require a login', as: 'anon', op: 'rpc', fn: 'cycle_sync_enabled', expect: 'denied' },
   { name: 'another member cannot withdraw the victim’s consent', as: 'friend', op: 'rpc', fn: 'set_cycle_sync_enabled', args: { expected_user_id: 'victim', enabled: false }, expect: 'denied' },
   { name: 'anonymous callers cannot erase cycle data', as: 'anon', op: 'rpc', fn: 'set_cycle_sync_enabled', args: { expected_user_id: 'victim', enabled: false }, expect: 'denied' },
