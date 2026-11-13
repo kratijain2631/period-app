@@ -179,3 +179,11 @@ Engineering’s missing-sharing-row Circle UI check stays open. The old batch re
 - [ ] Verify staging SMS delivery and complete the phone/email matrix in [TESTING.md](TESTING.md) before distributing the new onboarding flow.
 
 **Contacts follow-up (2026-11-12):** Shaan still does not match on 1.0.16 after adding an email and relaunching with Full Contacts access. Ask him to confirm his exact account email and enabled discoverability. Do not mark the positive-match check complete. Legacy email matching after removing a friend passes with two isolated staging accounts; both accounts/data were deleted. Phone matching is documented for the unreleased 1.0.17 candidate, not build 37.
+
+## Requested contact-discovery QA - 2026-11-12
+
+- [x] Inspect hosted phone settings read-only: phone auth disabled on staging and production. Normal staging phone change fails HTTP 500; SMS is not signed off.
+- [x] Test v2 matching with two isolated staging JWT accounts: default-off, target opt-in, phone-only, email-only, both yielding one row, caller undiscoverable, opt-out/persisted readback and changed confirmed identifiers invalidating old matches. Confirmations/changes were simulated with the staging Admin API; normal user endpoint readback passed. Both accounts/data removed; shared personas and QA pair untouched.
+- [x] Run contact service/controller regression suites: 30 tests pass with mocked denied/limited/full access, Settings/foreground invalidation, late results and preference independence.
+- [ ] Configure/enable SMS verification on staging, validate with an authorized number, then validate production setup through the release process before shipping required-phone onboarding. Real delivery, wrong code, resend, valid code and persistence remain open. Email-change delivery/confirmation needs a controlled inbox and remains untested.
+- [ ] Physical staging-client permission checks: denied, Limited Access, select/deselect cards in Settings, Full Access, stale-result clearing and target opt-in/out independent of caller permission. No simulator runtime is installed here. Mocked tests do not close native checks.

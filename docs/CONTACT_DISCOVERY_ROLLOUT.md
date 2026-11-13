@@ -65,3 +65,11 @@ Owner confirms build 37 installed, removes Shaan and cannot find him through con
 Staging check with two disposable JWT accounts: exact `contact_friend_matches` call used by build 37 matched an opted-in email before friendship, while accepted and after `remove_friend`; wrong email and opt-out returned no match. Accounts and cascading records were removed; no shared persona reset, production test data or real address book was used. This rules out a blanket removal exclusion in the tested backend path, not an iOS or account-configuration issue.
 
 Phone/email matching and contact-detail verification are documented in the 1.0.17 candidate release notes and TESTING. They are not part of 1.0.16. The candidate passed staging synthetic lookup checks but its CI release stopped before EAS because `EXPO_TOKEN` was missing; actual SMS delivery and native checks remain pending.
+
+## Requested follow-up QA - 2026-11-12
+
+v2 matching, deduplication, opt-out/caller independence and changed confirmed identifier/readback checks passed with two new isolated staging JWT accounts. Confirmations were Admin-simulated; both accounts/data deleted, shared QA pair untouched. Thirty service/controller tests pass with mocked OS responses.
+
+Real SMS/email confirmation and native permission/selection flows are not signed off. Phone auth is disabled on both hosted projects; normal staging phone change fails HTTP 500. Configure/enable and validate SMS before releasing required-phone onboarding. No simulator runtime is installed. See TESTING for results and short accessibility/Health steps.
+
+For the owner case, target discoverability is now server-confirmed and profile/login email agree. Owner reports both access/toggle enabled and adding the actual account email after the initial mismatch. The device read/hash/match path remains unresolved. No private identifiers are recorded.
