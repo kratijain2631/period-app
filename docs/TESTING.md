@@ -126,3 +126,25 @@ Before distributing a client with required phone setup, enable phone verificatio
 On staging, use two synthetic accounts. Complete fresh alias setup with a verified email and SMS number. Try an incorrect code and retry. Open Manage contact details from You → Settings, verify the signed-in account is shown, and go back to You. In Circle, confirm Find Contacts and Let contacts find me are still available. With B opted in, test three address cards separately: B’s phone only, B’s email only, and both together (one result). Repeat with B off (zero). Verify denied, limited and full iOS access and Settings revocation. A must be able to search while undiscoverable. Record the backend, build, OS, aliases and actual results. Do not record codes or phone numbers. Hosted SMS and native UI checks are pending.
 
 2026-11-12 — Phone/email discovery migration applied to staging and production in [Database deploy](https://github.com/kratijain2631/period-app/actions/runs/43298960603). The 76 staging access checks, 155 Jest tests, TypeScript and local SQL contract checks passed. Hosted SMS delivery and native onboarding/contact checks remain pending. No TestFlight build includes this change yet.
+
+
+## 1.0.17 iPhone checklist
+
+Use the staging development client for repeatable checks. Start it with `npm run start:staging`. Sign in with Email (dev) as circleqa-a or circleqa-b from the [persona guide](TEST_ACCOUNTS.md). These staging accounts have no production access. TestFlight uses production and Apple sign-in; use two consenting developers on physical phones for the final pass.
+
+1. On a new account, keep the verified Apple email or confirm an alternative. Enter a phone number with country code. Try an incorrect code, then enter the delivered code and finish setup. Record actual delivery separately from the automated fixture.
+2. On an existing developer account open **You → Settings → Manage contact details**, verify the displayed account, update a number and navigate back. Check the setting persists after relaunch.
+3. On B, enable **Circle → Let contacts find me**. On A, leave the switch off. Save B's verified number in a dedicated contact with no email. Open Circle and check that permission is first requested after tapping Find Contacts.
+4. Test denied access, then return directly from Settings with Limited Access. Select B and search (one match). Deselect B (zero matches and no stale name). Switch to Full (B returns). Repeat with B's verified email alone, then both identifiers (one row).
+5. With A's Contacts permission denied, toggle A's discoverability. From B, search for A by a saved identifier after each toggle. Confirm A disappears on the next search after opt-out and stays opted out after relaunch. Send and accept a request using two eligible accounts.
+6. As an upgrade regression, open an existing profile online, force-quit and launch in airplane mode. Verify it keeps its alias. Restore connectivity and confirm Refresh tips still works.
+
+Record build, iOS version, tester aliases, and observed outcomes. Leave phone numbers and verification codes out of GitHub.
+
+2026-11-12 — [1.0.17 release run](https://github.com/kratijain2631/period-app/actions/runs/43318041600) passed TypeScript and all 155 Jest tests. The two dedicated staging accounts signed in and passed phone-only, email-only, combined/deduplicated, caller independence and opt-out lookups. The release job stopped before starting EAS because the GitHub Actions repository secret `EXPO_TOKEN` was missing. After configuring the secret, re-run failed jobs on that run. SMS delivery and physical-device checks remain pending.
+
+## Owner feedback and offline feed — 2026-11-12
+
+Owner confirms 1.0.16 install and successful force-close/offline alias retest; DSA declaration reported resolved. Home’s empty-feed presentation now prioritizes the existing offline state over loading/empty copy. Code review confirms already loaded feed items remain visible; 155 Jest tests, TypeScript and the iOS JavaScript/Hermes export pass. No new low-impact copy-only unit test was added. Native feed rendering still requires a device check because no simulator runtime is installed locally.
+
+A separate isolated staging check used two temporary real-JWT accounts with the exact build-37 email RPC, confirming matches before friendship, while accepted and after removal, wrong-email exclusion and opt-out. Both accounts/data were deleted. No real contacts or production test writes. Owner’s Full Access positive-match case with Shaan remains open until his account email and discovery preference are confirmed.

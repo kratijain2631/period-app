@@ -111,3 +111,10 @@ This isn't tied to any agent or model. The hard rules are in [AGENTS.md](../AGEN
 - **Check where a dev build will connect before launching it with a real session.** The dev client reopens the last server, and with a production server a zero-sample sync runs immediately (BUGS.md). The most reliable proof you're on staging is that a persona can sign in; personas don't exist on production.
 - New migrations reach staging first automatically: merging one runs the Database deploy workflow, which applies it to staging, runs `test-accounts:rls`, then applies it to production ([DB_PUSH.md](DB_PUSH.md)). Edge functions aren't covered, so deploy a changed one to staging by hand first.
 - [TESTING.md](TESTING.md) is the overview of every kind of testing; this file is the persona detail.
+
+
+### Contact-discovery QA pair
+
+The 1.0.17 release workflow provisions `circleqa-a@personas.example.com` (searcher) and `circleqa-b@personas.example.com` (target) only in staging. Use Email (dev) and the existing `TEST_PERSONA_PASSWORD`. The target fixture number is the fictional +1 202-555-0148. Automated checks simulate confirmation with the staging Admin API and restore the target to undiscoverable. For a real delivery test, use an authorized SMS-capable number. The six shared cycle personas are independent of this pair.
+
+Both QA accounts were provisioned and signed in successfully on 2026-11-12. The staging run verified opt-out on the last lookup and restored circleqa-b to undiscoverable.

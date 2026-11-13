@@ -6,7 +6,7 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## Unreleased
 
-- 2026-11-12 — **1.0.17 fixes for the friends beta (source only, not yet built).** Testing: `npx tsc --noEmit` clean; 165 Jest tests and the iOS JS export pass. Not yet checked on a phone or simulator.
+- 2026-11-12 — **1.0.17 fixes for the friends beta (source only, not yet built).** These postdate the 1.0.17 release-candidate run below, so re-run the release after merging; otherwise 1.0.17 would require SMS at sign-up. Testing: `npx tsc --noEmit` clean; 165 Jest tests and the iOS JS export pass. Not yet checked on a phone or simulator.
   - **Phone verification is off by default.** New accounts finish setup with only an alias, and the phone section is hidden in contact details, until a build sets `EXPO_PUBLIC_PHONE_VERIFICATION=true`. Production has no SMS provider yet, so the required phone step from #90 would have stopped new users. This makes main releasable again.
   - **Over-the-air updates.** `expo-updates` added, with a channel per build profile and the app version as the runtime version. From 1.0.17 on, JS-only fixes can ship with `eas update` (INSTRUCTIONS.md §2b). Native change: needs the 1.0.17 build.
   - **Empty Health syncs no longer wipe shared data.** A sync with no flow or signal samples keeps the snapshot friends see and posts no phase change.
@@ -14,7 +14,27 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
   - **Friend requests in Circle.** Incoming requests (Accept/Decline) and sent requests are listed; Circle refreshes as soon as a request changes; "Requested you" in search and contact results is an Accept button; email requests show their confirmation. Accepting removes the opposite pending request when both people asked. The email helper no longer says the app hides whether an account exists, since sent requests now show the recipient's alias.
   - **Friend Sync cycle history** compares whole periods instead of single days. Phase names show "PMS" in capitals everywhere.
 
-- 2026-11-12 — Phone/email discovery migration applied to staging and production in [Database deploy](https://github.com/kratijain2631/period-app/actions/runs/43298960603). The 76 staging access checks, 155 Jest tests, TypeScript and local SQL contract checks passed. Hosted SMS delivery and native onboarding/contact checks remain pending. No TestFlight build includes this change yet.
+### Fixed
+
+- **Offline empty feed has an offline state.** When disconnected and there are no visible updates, Home shows “You’re offline” and reconnect guidance instead of “No updates yet” or an indefinite loading message. Existing feed items remain visible. Uses the current connection store; no backend or queue behavior changes. 155 Jest tests, TypeScript and the iOS JavaScript export pass. Requires the next native build; not in installed 1.0.16.
+
+### Verification
+
+- **Owner confirms 1.0.16 installed, force-close/offline alias retest passes, and DSA is resolved (2026-11-12).** Closed those follow-ups while retaining the future EU launch reassessment and extended phone checks.
+- **Contact mismatch narrowed, not closed.** Shaan’s card originally contained only a phone number; adding an email and relaunching with Full Access still gives no match on 1.0.16. Exact account-email equality and his discovery opt-in are unconfirmed. Two isolated staging accounts verified the legacy email lookup before friendship, while accepted and after removal, plus wrong-email/opt-out exclusion; accounts/data removed. Phone/email support is already documented under the separate 1.0.17 candidate, whose build/SMS gates remain open.
+
+### Verification and work in progress
+
+- **Owner feedback (2026-11-12, 1.0.16 installed):** force-close/offline alias retest passes and DSA declaration is reported resolved. Offline empty-feed copy is being corrected; missing contact match for Shaan remains under investigation. Phone/email support is documented in the separate 1.0.17 candidate, not in installed 1.0.16.
+
+## 2026-11-12 — 1.0.17 iOS release candidate
+
+2026-11-12 — [1.0.17 release run](https://github.com/kratijain2631/period-app/actions/runs/43318041600) passed TypeScript and all 155 Jest tests. The two dedicated staging accounts signed in and passed phone-only, email-only, combined/deduplicated, caller independence and opt-out lookups. The release job stopped before starting EAS because the GitHub Actions repository secret `EXPO_TOKEN` was missing. After configuring the secret, re-run failed jobs on that run. SMS delivery and physical-device checks remain pending.
+
+Prepared for internal TestFlight. Build number and Apple upload are pending verification. [What to test](TESTING.md#1017-iphone-checklist).
+- Added a startup check of recent GitHub work and an offer to review colleagues’ changes since the previous session.
+
+- 2026-11-12 — Phone/email discovery migration applied to staging and production in [Database deploy](https://github.com/kratijain2631/period-app/actions/runs/43298960603). The 76 staging access checks, 155 Jest tests, TypeScript and local SQL contract checks passed. Hosted SMS delivery and native onboarding/contact checks remain pending. First iOS candidate with these changes: 1.0.17.
 - New account setup confirms the sign-in email and verifies a phone number by SMS. Circle uses one default-off preference for matching by either verified identifier. Manage contact details is under You → Settings, where users can update their account email and verified phone number. Requires the new database RPC and a configured SMS provider before releasing the client.
 
 
