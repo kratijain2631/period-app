@@ -24,6 +24,17 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 - A friend's new post now appears in your feed within a few seconds, and reactions, comments and boops reach the bell right away, instead of waiting up to a minute or for a pull to refresh. Database: `20261113210000_realtime-posts-notifications.sql` adds `posts` and `notifications` to realtime delivery.
 - Two people can no longer hold friend requests to each other at the same time. Accepting one used to leave the other pending, so you could be offered Accept for someone who was already your friend. Database: `20261113231000_one-request-per-pair.sql`.
 
+### November highlights across recent builds
+
+- **Staging and security.** A separate staging environment and test accounts make it possible to exercise new flows without touching production data. Automated checks test who can read or change data on database pull requests and again before a migration reaches production.
+- **Friend discovery.** Contacts can match an opted-in member by verified phone, email, or both. When both match the same person, they appear once. Members can also search by exact email or phone.
+- **AI guidance and notifications.** Phase Guide generates tips on demand, including things to try yourself or with a friend. Cached tips remain readable when a refresh fails. Personal phase reminders are separate from general pushes for friend requests, acceptances, reactions and boops. Notifications specifically for new personal or joint guidance were reported; their trigger and delivery are not verified on `main`.
+- **Design, rankings and comments.** Home, Feed, Circle and You use reusable widgets and the illustrated theme. Circle has **Most in sync** and **Most supportive**; the opt-in community Top 10 lists are **Largest Circle** and **Loudest Voices**. Both written and automatic updates support comments.
+- **Cycle accuracy and stale data.** A late period no longer restarts the estimated cycle. An empty Health sync preserves the last shared summary; explicitly erasing synced data clears it and stops sharing.
+- **Domain, email and SMS.** The `cadenceapp.org` domain and Microsoft 365 email plan were renewed. Account setup and Settings support email confirmation and SMS codes. A Twilio account was opened and credits were added for SMS verification. Provider setup is distinct from confirming that a text or email reaches a real recipient; end-to-end delivery is not confirmed here.
+
+<sub>Contributors: Shaan — staging, security checks, discovery, AI guidance and push notifications. Krati — design, rankings, comments, cycle accuracy, domain and email renewal, and contact verification.</sub>
+
 ## 2026-11-13 — TestFlight build 1.0.24 (build 46)
 
 Apple processed build 46 and confirmed internal beta testing for **Dev Team** and **Team (Expo)**. [Signed iOS build](https://expo.dev/accounts/kratijain26/projects/period-app/builds/6443e4ea-d226-45e9-ad2b-f0a321d0090b) · [Apple upload](https://expo.dev/accounts/kratijain26/projects/period-app/submissions/7e652223-6d31-405a-abf1-f94867025226).
