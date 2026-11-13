@@ -6,6 +6,8 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## Unreleased
 
+- A friend request that's cancelled and sent again now pushes again after 5 minutes, instead of waiting a day. Database: `20261114010000_friend-request-push-window.sql`.
+
 - Paused account email changes in setup, Settings and Auth. The new-address code flow is retained for a future release.
 
 - Phone verification focuses the SMS code field and shows the destination number. Members can resend the code or edit the number. [Code entry preview](../design/2026-11-13/contact-settings/verify-phone.png).
