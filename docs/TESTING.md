@@ -91,8 +91,7 @@ The step-by-step procedure, including preflight checks, signing in safely and re
 
 - **Real HealthKit, background delivery, push notifications and haptics** need a real phone on a TestFlight or dev build. The on-device checklist is in [TODO.md](TODO.md).
 - **Scheduled phase reminders** at 15:00 UTC run on their own schedule. Nightly guidance was retired on 2026-11-12. Changing the simulator's date is the practical way to test reminders.
-- **AI text**: staging has no `OPENAI_API_KEY`, so recommendations use their free fallback text.
-- **`request-cycle-guidance`** is deployed on staging and production (2026-11-11). Staging has `PROJECT_PUBLISHABLE_KEY` configured but no `OPENAI_API_KEY`; cached requests and refresh claim/save/cooldown can be verified without paid generation. Actual AI generation still needs separate verification in an appropriately configured staging environment.
+- **`request-cycle-guidance`** is deployed on staging and production (2026-11-11). Staging has both `PROJECT_PUBLISHABLE_KEY` and `OPENAI_API_KEY`. Cached requests and refresh limits passed. A fresh generation attempt on November 13 reached OpenAI and returned HTTP 429.
 
 ## Guidance verification — 2026-11-11
 
@@ -301,3 +300,8 @@ An additional browser session rendered the app’s reaction list and privacy con
 ## Owner large-text feedback - 2026-11-13
 
 Owner tried very large accessibility text and reported an awkward appearance, acceptable for now. Layout polish is deferred as a non-blocking future item in [TODO.md](TODO.md). Build, iOS version and affected screens were not supplied. This is feedback on appearance, not a full Dynamic Type or VoiceOver pass.
+
+## Phone editor and staging Phase Guide, 2026-11-13
+
+- In the Settings component, a disposable account signed in on staging. Checked the +1 default, invalid input, a UK national number with its trunk prefix, the outgoing international number and Cancel/reopen. The browser intercepted the SMS request to simulate a delivery error. The account was removed. Real SMS delivery and an iOS walkthrough remain open. This Mac has no installed simulator runtime.
+- The Settings preview passed international paste, resend, invalid and correct sample codes, unchanged-number validation and cancel at a 320 px width. All 210 app tests and native and preview type checks passed.

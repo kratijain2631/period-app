@@ -4,6 +4,8 @@ Known bugs to fix. This is for **open** bugs; problems we already diagnosed and 
 
 ## Open
 
+- [ ] **Fresh Phase Guide tips on staging.** The key is present. Two disposable-account requests returned HTTP 503 on November 13. Staging logged OpenAI HTTP 429. See the [delivery and guidance runbook](TROUBLESHOOTING.md#contact-verification-delivery-and-guidance-on-staging-2026-11-13).
+
 - [x] **Production Phase Guide rechecked (2026-11-13).** The owner retried Refresh tips on their phone and confirmed it works. The staging configuration issue is tracked below.
 
 - [x] Explicit cycle erasure removes the saved snapshot, related automatic posts and cycle notices, and blocks future uploads until reconnection. See Cycle privacy in the release notes.
