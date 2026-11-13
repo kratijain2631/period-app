@@ -41,7 +41,10 @@ export function SampleContactDetails({ details, save }: { details: Details; save
   const t = useWidgetTheme();
   const [email, setEmail] = useState<string | null>(null);
   const [pendingEmail, setPendingEmail] = useState('');
-  const [editingPhone, setEditingPhone] = useState(false);
+  const [editingPhone, setEditingPhone] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('screen') === 'settings' && params.get('edit') === 'phone';
+  });
   const [message, report] = useState('');
   return (
     <>

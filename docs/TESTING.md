@@ -131,7 +131,7 @@ On staging, use two synthetic accounts. Complete fresh alias setup with a verifi
 
 Use the staging development client for repeatable checks. Start it with `npm run start:staging`. Sign in with Email (dev) as circleqa-a or circleqa-b from the [persona guide](TEST_ACCOUNTS.md). These staging accounts have no production access. TestFlight uses production and Apple sign-in; use two consenting developers on physical phones for the final pass.
 
-1. On a new account, keep the verified Apple email or confirm an alternative. Enter a phone number with country code. Try an incorrect code, then enter the delivered code and finish setup. Record actual delivery separately from the automated fixture.
+1. On a new account, keep the verified Apple email or confirm an alternative. Enter the national number in its own box and check the country code in the adjacent box (initially +1). Try an incorrect code, then enter the delivered code and finish setup. Record actual delivery separately from the automated fixture.
 2. On an existing developer account open **You → Settings → Manage contact details**, verify the displayed account, update a number and navigate back. Check the setting persists after relaunch.
 3. On B, enable **Circle → Let contacts find me**. On A, leave the switch off. Save B's verified number in a dedicated contact with no email. Open Circle and check that permission is first requested after tapping Find Contacts.
 4. Test denied access, then return directly from Settings with Limited Access. Select B and search (one match). Deselect B (zero matches and no stale name). Switch to Full (B returns). Repeat with B's verified email alone, then both identifiers (one row).
@@ -304,4 +304,4 @@ Owner tried very large accessibility text and reported an awkward appearance, ac
 ## Phone editor and staging Phase Guide, 2026-11-13
 
 - In the Settings component, a disposable account signed in on staging. Checked the +1 default, invalid input, a UK national number with its trunk prefix, the outgoing international number and Cancel/reopen. The browser intercepted the SMS request to simulate a delivery error. The account was removed. Real SMS delivery and an iOS walkthrough remain open. This Mac has no installed simulator runtime.
-- The Settings preview passed international paste, resend, invalid and correct sample codes, unchanged-number validation and cancel at a 320 px width. All 210 app tests and native and preview type checks passed.
+- The Settings preview showed distinct bordered inputs at 320 and 390 px. The [phone editor capture](../design/2026-11-13/contact-settings/change-phone.png) shows the default +1. The preview passed international paste, resend, invalid and correct sample codes, unchanged-number validation and cancel at a 320 px width. All 210 app tests and native and preview type checks passed.
