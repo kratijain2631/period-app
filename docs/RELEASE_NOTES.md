@@ -6,6 +6,8 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## Unreleased
 
+- Paused new TestFlight builds at the owner’s request to reserve the two remaining builds. Build 1.0.24 (46) is available for internal testing.
+
 ## 2026-11-13 — TestFlight build 1.0.24 (build 46)
 
 Apple processed build 46 and confirmed internal beta testing for **Dev Team** and **Team (Expo)**. [Signed iOS build](https://expo.dev/accounts/kratijain26/projects/period-app/builds/6443e4ea-d226-45e9-ad2b-f0a321d0090b) · [Apple upload](https://expo.dev/accounts/kratijain26/projects/period-app/submissions/7e652223-6d31-405a-abf1-f94867025226).
