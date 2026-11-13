@@ -36,6 +36,18 @@ export const getContactDiscoveryPermission = async (): Promise<ContactDiscoveryP
 export const requestContactDiscoveryPermission = async (): Promise<ContactDiscoveryPermission> =>
   permissionFromResponse(await Contacts.requestPermissionsAsync());
 
+// Keep autocomplete on-device. An address is looked up only when the user submits it.
+export const readSavedEmails = async (): Promise<string[]> => {
+  const { data } = await Contacts.getContactsAsync({ fields: [Contacts.Fields.Emails] });
+  const emails = new Set<string>();
+  for (const contact of data) {
+    for (const entry of contact.emails ?? []) {
+      if (entry.email?.trim()) emails.add(normalizeContactEmail(entry.email));
+    }
+  }
+  return [...emails].sort();
+};
+
 export const findDiscoverableContacts = async (): Promise<ContactMatch[]> => {
   if (!isSupabaseConfigured) {
     return [];

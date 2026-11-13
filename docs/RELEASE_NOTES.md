@@ -6,6 +6,8 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## Unreleased
 
+- Discover friends suggests saved email addresses as you type. Exact email and phone matches show the same profile name as name search. Apple sign-in now explains how **Share My Email** and **Let contacts find me** enable email discovery.
+
 - Phone verification focuses the SMS code field and shows the destination number. Members can resend the code or edit the number. [Code entry preview](../design/2026-11-13/contact-settings/verify-phone.png).
 
 - **First-time setup.** Continue with a verified email and an alias. The signup preview is titled **Set up your account**. Only signup labels the field **Phone number (optional)**; Settings calls it **Phone number**. You can leave the field blank, skip an unfinished SMS confirmation, or add a number later under **You → Settings → Personal info**. Only confirmed numbers can match in phone discovery.

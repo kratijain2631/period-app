@@ -16,7 +16,7 @@ The [November 12 database deployment](https://github.com/kratijain2631/period-ap
 | `circle_community_top(board)` | Up to ten opted-in aliases, member IDs and nonzero counts: distinct accepted friends, or manually authored posts still present for the current UTC month. No pair scores, contact identifiers, posts or friend lists. |
 | `my_circle_support()` | Up to five accepted friends with saved reactions to the caller’s posts/cycle updates, comments on the caller’s posts, or boops sent to the caller within 30 days. Boops tied to deleted posts are excluded. Caller-scoped, subject to existing row policies. |
 | `circle_member_profile(subject)` | Signed-in visitors see an alias; self and accepted friends can also receive name, avatar and bio. Shared updates and cycle data still use their existing access rules. |
-| `circle_search_members(term)` | A literal prefix of at least two characters matches a name or alias, capped at eight. Excludes the caller. Exact phone/email matches still use the separate opt-in verified-contact function. |
+| `circle_search_members(term)` | A literal prefix of at least two characters matches a name or alias, capped at eight. Excludes the caller. Exact phone/email lookup uses `contact_friend_matches_v3`, which adds the profile name to v2’s verified, opt-in matches and shares its rate limit. Email autocomplete runs on-device. |
 
 `post_comments` belongs to a post (cascade on deletion), stores the authenticated author, server-stamped alias, creation time and 1–1,000 characters of text. Its audience is checked against the parent post. Only the author can remove a comment.
 

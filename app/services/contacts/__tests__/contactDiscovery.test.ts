@@ -23,6 +23,7 @@ import {
   getContactDiscoveryPermission,
   hashContactEmail,
   normalizeContactEmail,
+  readSavedEmails,
   requestContactDiscoveryPermission,
   setContactDiscoverability,
 } from '../contactDiscovery';
@@ -108,6 +109,16 @@ describe('contact discovery', () => {
       update: jest.fn().mockReturnValue({ eq: jest.fn().mockResolvedValue({ error: new Error('Unavailable') }) }),
     });
     await expect(setContactDiscoverability(true)).rejects.toThrow('Unavailable');
+  });
+
+  it('keeps autocomplete addresses local and deduplicates them across allowed cards', async () => {
+    (Contacts.getContactsAsync as jest.Mock).mockResolvedValue({ data: [
+      { emails: [{ email: ' Friend@example.com ' }, { email: 'work@example.com' }] },
+      { emails: [{ email: 'friend@example.com' }] },
+      {},
+    ] });
+    expect(await readSavedEmails()).toEqual(['friend@example.com', 'work@example.com']);
+    expect(supabase.rpc).not.toHaveBeenCalled();
   });
 
   it('normalizes emails before hashing', () => {
