@@ -8,6 +8,8 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## 2026-11-13 — TestFlight build 1.0.23 (build 45)
 
+Apple processed the [signed iOS build](https://expo.dev/accounts/kratijain26/projects/period-app/builds/20a87dc4-bda4-4e2a-95c9-0eb48f716143) and [upload](https://expo.dev/accounts/kratijain26/projects/period-app/submissions/0ca1b910-467b-4dac-b938-06c1e6242f04). Build 45 is in internal beta testing and assigned to **Dev Team** and **Team (Expo)**.
+
 The [database deployment](https://github.com/kratijain2631/period-app/actions/runs/43467339668) applied the author lookup to staging, passed 76 staging access checks and applied it to production. All 186 app tests, native and preview type checks and the iOS bundle export passed. [Staging and remaining iPhone checks](TESTING.md#staging-qa-2026-11-13).
 
 **Design and member identity**
