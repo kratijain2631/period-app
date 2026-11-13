@@ -211,6 +211,14 @@ export const syncHealthData = async ({
     const phaseChanged = previousPhase && previousPhase !== snapshot.currentPhase;
 
     await upsertCycleSnapshot(session.userId, snapshot);
+    // A sync that finds no Health data at all (new phone, Health access turned
+    // off, data not available yet) must not replace the snapshot friends see
+    // with an empty "Unknown" one, or post a phase change to "unknown". Keep
+    // what was last shared until a sync with real data arrives.
+    const hasHealthData = samples.length > 0 || signalSamples.length > 0;
+    if (!hasHealthData) {
+      console.log('[cycle-sync] No Health samples found; keeping the shared snapshot');
+    }
     try {
       let autoPostSettings = useSessionStore.getState().autoPostSettings ?? DEFAULT_AUTO_POST_SETTINGS;
       try {
@@ -230,7 +238,9 @@ export const syncHealthData = async ({
         autoPostSettings,
         accountCreatedAtMs,
       );
-      await upsertCycleSnapshotRemote(session.userId, snapshot);
+      if (hasHealthData) {
+        await upsertCycleSnapshotRemote(session.userId, snapshot);
+      }
       const phaseMetadata = {
         phase_source: snapshot.phaseSource ?? 'unknown',
         cycle_length_days: snapshot.cycleLengthDays ?? null,
@@ -251,7 +261,7 @@ export const syncHealthData = async ({
         },
         starts_at: sample.startDate,
       }));
-      if (phaseChanged && autoPostSettings.postPhaseTransitions) {
+      if (hasHealthData && phaseChanged && autoPostSettings.postPhaseTransitions) {
         events.push({
           user_id: session.userId,
           event_type: 'phase_transition',

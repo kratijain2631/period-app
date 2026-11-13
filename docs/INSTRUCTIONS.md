@@ -72,6 +72,21 @@ Every time we make a build (dev, TestFlight, or App Store), "block" the accumula
 
 So: **changes accumulate under `Unreleased` as we commit, get blocked into a named version each time we publish, and every build is tagged so it's an atomic rollback point.**
 
+## 2b. Over-the-air updates (EAS Update)
+
+Builds from 1.0.17 on include `expo-updates`. A JS-only fix can reach testers without a new TestFlight build or Apple review:
+
+```
+eas update --channel production --environment production --message "Fix <what>"
+```
+
+- **JS-only.** An update reaches only builds whose app `version` matches the one in `app.config.ts` when you publish (runtime policy `appVersion`). Anything that changes native code (a new native package, a config plugin, Info.plist, entitlements) needs a new build with a bumped `version`, never an update.
+- **`--environment production` is required.** It bundles the EAS production environment variables. Without it the update uses your local `.env`/`.env.local`, which may point at staging. Never publish while `npm run start:staging` is running.
+- **When it arrives.** The app checks on each cold start and switches to the downloaded update on the next launch. Ask testers to close and reopen the app twice.
+- **Record it.** Add a RELEASE_NOTES line naming the update and the build it targets (for example "EAS Update to 1.0.17: …").
+- **Roll back** with `eas update:republish` of the previous update group, or `eas update:rollback`.
+- `channel` is set per build profile in `eas.json` (development, preview, production).
+
 ## 3. Record issues and future-relevant info in TROUBLESHOOTING.md
 
 When you hit and resolve a problem — or learn something that could bite a future contributor (a gotcha, a thing that could expire or fail, a non-obvious setup step, an account/access requirement, or info someone would need later) — write it into [TROUBLESHOOTING.md](TROUBLESHOOTING.md). Broader background and the "why" behind decisions goes in [LEARNINGS.md](LEARNINGS.md). The goal: nobody should have to re-derive what we already figured out, or repeat a mistake we already fixed.

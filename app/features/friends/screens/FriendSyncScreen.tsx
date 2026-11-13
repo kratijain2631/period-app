@@ -34,6 +34,7 @@ import {
   fallbackRecommendations,
   type SyncScoreSummary,
 } from '../utils/syncScore';
+import { hasCycleData } from '../../../../packages/domain/cycles/models';
 import { brand, brandType } from '../../../theme/brand';
 import { SyncRings, getPhaseColor } from '../../../components/brand/CycleRing';
 import { DottieSyncScene } from '../../../components/brand/DottieMascot';
@@ -233,7 +234,12 @@ const FriendSyncScreen = () => {
       const selfSnapshot = selfSnapshotRow?.snapshot;
       const friendSnapshotValue = friendSnapshotRow?.snapshot;
 
-      if (selfSnapshot && friendSnapshotValue) {
+      if (
+        selfSnapshot &&
+        friendSnapshotValue &&
+        hasCycleData(selfSnapshot) &&
+        hasCycleData(friendSnapshotValue)
+      ) {
         const computed = computeSyncScore({
           selfSnapshot,
           friendSnapshot: friendSnapshotValue,
@@ -655,6 +661,11 @@ const FriendSyncScreen = () => {
                     friendAvatarUrl={friendAvatarUrl}
                     size={170}
                   />
+                  {!isLoading && !syncScore && !shouldShowPreview ? (
+                    <Text style={[styles.mutedText, { textAlign: 'center', marginTop: 8 }]}>
+                      Your sync score appears once you both have period data in Apple Health.
+                    </Text>
+                  ) : null}
                 </View>
               </View>
             </Animated.View>

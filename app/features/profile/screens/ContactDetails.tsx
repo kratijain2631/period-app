@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Button, Text, TextInput, View } from 'react-native';
 import { supabase } from '../../../services/supabase/client';
 import { normalizeContactPhone } from '../../../services/contacts/phone';
+import { PHONE_VERIFICATION_ENABLED } from '../../../config/features';
 
 type Props = { userId: string; onReady?: (ready: boolean) => void };
 
@@ -84,6 +85,7 @@ export default function ContactDetails({ userId, onReady }: Props) {
       <Button title="Verify email" disabled={busy || !email.trim()} onPress={() => submit('email')} />
       <Button title="Check confirmation" disabled={busy} onPress={() => setReload(value => value + 1)} />
     </>}
+    {PHONE_VERIFICATION_ENABLED ? <>
     <Text>Phone number with country code</Text>
     <TextInput accessibilityLabel="Phone number with country code" placeholder="+1 212 555 0123"
       keyboardType="phone-pad" value={phone} editable={!busy} onChangeText={value => { setPhone(value); setSentTo(''); setMessage(''); }} />
@@ -94,6 +96,7 @@ export default function ContactDetails({ userId, onReady }: Props) {
         <Button title="Verify code" disabled={busy || !code.trim()} onPress={() => submit('verify')} />
       </> : null}
     </>}
+    </> : null}
     {message ? <Text accessibilityLiveRegion="polite">{message}</Text> : null}
   </View>;
 }

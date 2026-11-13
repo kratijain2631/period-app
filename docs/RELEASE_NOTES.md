@@ -6,6 +6,14 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## Unreleased
 
+- 2026-11-12 — **1.0.17 fixes for the friends beta (source only, not yet built).** These postdate the 1.0.17 release-candidate run below, so re-run the release after merging; otherwise 1.0.17 would require SMS at sign-up. Testing: `npx tsc --noEmit` clean; 165 Jest tests and the iOS JS export pass. Not yet checked on a phone or simulator.
+  - **Phone verification is off by default.** New accounts finish setup with only an alias, and the phone section is hidden in contact details, until a build sets `EXPO_PUBLIC_PHONE_VERIFICATION=true`. Production has no SMS provider yet, so the required phone step from #90 would have stopped new users. This makes main releasable again.
+  - **Over-the-air updates.** `expo-updates` added, with a channel per build profile and the app version as the runtime version. From 1.0.17 on, JS-only fixes can ship with `eas update` (INSTRUCTIONS.md §2b). Native change: needs the 1.0.17 build.
+  - **Empty Health syncs no longer wipe shared data.** A sync with no flow or signal samples keeps the snapshot friends see and posts no phase change.
+  - **No-data state.** Without period data in Apple Health, the You recap explains how to add it instead of showing default numbers, and sync scores are hidden until both friends have data.
+  - **Friend requests in Circle.** Incoming requests (Accept/Decline) and sent requests are listed; Circle refreshes as soon as a request changes; "Requested you" in search and contact results is an Accept button; email requests show their confirmation. Accepting removes the opposite pending request when both people asked. The email helper no longer says the app hides whether an account exists, since sent requests now show the recipient's alias.
+  - **Friend Sync cycle history** compares whole periods instead of single days. Phase names show "PMS" in capitals everywhere.
+
 ### Fixed
 
 - **Offline empty feed has an offline state.** When disconnected and there are no visible updates, Home shows “You’re offline” and reconnect guidance instead of “No updates yet” or an indefinite loading message. Existing feed items remain visible. Uses the current connection store; no backend or queue behavior changes. 155 Jest tests, TypeScript and the iOS JavaScript export pass. Requires the next native build; not in installed 1.0.16.

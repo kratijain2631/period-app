@@ -1,6 +1,8 @@
 import { CategoryValueMenstrualFlow } from '@kingstinct/react-native-healthkit';
 import {
   getLatestPeriodStart,
+  getPeriodRuns,
+  type FlowRun,
   type CyclePhase,
   type CycleSample,
   type CycleSnapshot,
@@ -81,11 +83,6 @@ const scorePhaseAlignment = (a: CyclePhase, b: CyclePhase) => {
   return clamp(1 - distance / maxDistance, 0, 1);
 };
 
-const sortFlowSamples = (samples: CycleSample[]) =>
-  [...samples]
-    .filter((sample) => sample.flowValue !== CategoryValueMenstrualFlow.none)
-    .sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
-
 const toDateKey = (date: Date) => date.toISOString().slice(0, 10);
 
 const collectFlowDates = (samples: CycleSample[], now: Date, windowDays = 28): Set<string> => {
@@ -109,15 +106,6 @@ const collectFlowDates = (samples: CycleSample[], now: Date, windowDays = 28): S
   });
 
   return dates;
-};
-
-const overlapDaysBetweenSamples = (left: CycleSample, right: CycleSample): number => {
-  const start = Math.max(new Date(left.startDate).getTime(), new Date(right.startDate).getTime());
-  const end = Math.min(new Date(left.endDate).getTime(), new Date(right.endDate).getTime());
-  if (end < start) {
-    return 0;
-  }
-  return Math.round((end - start) / DAY_MS) + 1;
 };
 
 const buildHighlights = (
@@ -196,34 +184,39 @@ const buildTimeline = (
   return items;
 };
 
+const overlapDaysBetweenRuns = (left: FlowRun, right: FlowRun): number => {
+  const start = Math.max(left.start.getTime(), right.start.getTime());
+  const end = Math.min(left.end.getTime(), right.end.getTime());
+  if (end < start) {
+    return 0;
+  }
+  return Math.round((end - start) / DAY_MS) + 1;
+};
+
+// Compares each person's most recent periods, newest first. Each row is one
+// period (a run of flow days), not one HealthKit sample: samples are usually
+// single days, which made "Previous cycle" show the day before.
 const buildCycleTrend = (selfSnapshot: CycleSnapshot, friendSnapshot: CycleSnapshot): CycleTrendRow[] => {
-  const selfSamples = sortFlowSamples(selfSnapshot.samples);
-  const friendSamples = sortFlowSamples(friendSnapshot.samples);
-  const count = Math.min(selfSamples.length, friendSamples.length, 3);
+  const selfRuns = getPeriodRuns(selfSnapshot.samples).reverse();
+  const friendRuns = getPeriodRuns(friendSnapshot.samples).reverse();
+  const count = Math.min(selfRuns.length, friendRuns.length, 3);
   const rows: CycleTrendRow[] = [];
 
   for (let index = 0; index < count; index += 1) {
-    const selfSample = selfSamples[index];
-    const friendSample = friendSamples[index];
-    const selfEnd = selfSample.endDate ?? selfSample.startDate;
-    const friendEnd = friendSample.endDate ?? friendSample.startDate;
-    const daysApart = Math.abs(
-      Math.round(
-        (new Date(selfSample.startDate).getTime() - new Date(friendSample.startDate).getTime()) / DAY_MS,
-      ),
-    );
-    const overlapDays = overlapDaysBetweenSamples(selfSample, friendSample);
+    const selfRun = selfRuns[index];
+    const friendRun = friendRuns[index];
+    const daysApart = Math.abs(Math.round((selfRun.start.getTime() - friendRun.start.getTime()) / DAY_MS));
     const label =
       index === 0 ? 'Most recent' : index === 1 ? 'Previous cycle' : 'Two cycles ago';
 
     rows.push({
       label,
-      selfStart: selfSample.startDate,
-      selfEnd,
-      friendStart: friendSample.startDate,
-      friendEnd,
+      selfStart: selfRun.start.toISOString(),
+      selfEnd: selfRun.end.toISOString(),
+      friendStart: friendRun.start.toISOString(),
+      friendEnd: friendRun.end.toISOString(),
       daysApart,
-      overlapDays,
+      overlapDays: overlapDaysBetweenRuns(selfRun, friendRun),
       trend: 'unknown',
     });
   }

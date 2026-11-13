@@ -1,3 +1,4 @@
+import { formatPhaseName } from '../../../../packages/domain/cycles/phaseName';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated,
@@ -22,7 +23,10 @@ import {
   fetchAcceptedFriendRequests,
   fetchOutboundFriendRequests,
   ensureFriendSharingForRequests,
+  fetchFriendRequestProfiles,
+  respondToFriendRequest,
   sendFriendRequest,
+  subscribeToFriendRequests,
   sendFriendRequestByEmail,
   type FriendRequestRow,
 } from '../../../services/supabase/friendRequests';
@@ -33,7 +37,7 @@ import {
 import { searchUsersByAliasOrEmail, type UserSearchResult } from '../../../services/supabase/users';
 import { fetchFriendCycleSnapshots, type CycleSnapshotRow } from '../../../services/supabase/cycleSnapshots';
 import { computeSyncScore } from '../utils/syncScore';
-import { getCycleDay, type CyclePhase } from '../../../../packages/domain/cycles/models';
+import { getCycleDay, hasCycleData, type CyclePhase } from '../../../../packages/domain/cycles/models';
 import { brand, brandType } from '../../../theme/brand';
 import { DottieAndFriend } from '../../../components/brand/DottieMascot';
 import { PhaseAvatar, getPhaseColor } from '../../../components/brand/CycleRing';
@@ -65,6 +69,9 @@ const FriendsScreen = () => {
   const [isSearching, setSearching] = useState(false);
   const [inboundRequests, setInboundRequests] = useState<FriendRequestRow[]>([]);
   const [outboundRequests, setOutboundRequests] = useState<FriendRequestRow[]>([]);
+  // Alias of the other person on each pending request, keyed by request id.
+  const [requestAliases, setRequestAliases] = useState<Record<string, string | null>>({});
+  const [respondingRequestId, setRespondingRequestId] = useState<string | null>(null);
   const [friendProfileMap, setFriendProfileMap] = useState<Record<string, FriendProfileRow>>({});
   const [friendSnapshots, setFriendSnapshots] = useState<
     Array<{ user_id: string; last_synced_at?: string; snapshot?: CycleSnapshotRow['snapshot'] }>
@@ -99,8 +106,22 @@ const FriendsScreen = () => {
         fetchOutboundFriendRequests(),
         fetchFriendCycleSnapshots(),
       ]);
+      const pendingOutbound = outbound.filter((row) => row.status === 'pending');
       setInboundRequests(inbound);
-      setOutboundRequests(outbound.filter((row) => row.status === 'pending'));
+      setOutboundRequests(pendingOutbound);
+      const pendingIds = [...inbound, ...pendingOutbound].map((row) => row.id);
+      if (pendingIds.length > 0) {
+        try {
+          const profiles = await fetchFriendRequestProfiles(pendingIds);
+          setRequestAliases(
+            Object.fromEntries(profiles.map((profile) => [profile.request_id, profile.alias ?? null])),
+          );
+        } catch (error) {
+          console.warn('[friends] Failed to load request profiles', error);
+        }
+      } else {
+        setRequestAliases({});
+      }
       if (session?.userId) {
         const selfSnapshotRow = snapshots.find((row) => row.user_id === session.userId);
         setSelfPhase((selfSnapshotRow?.snapshot?.currentPhase ?? 'unknown') as CyclePhase);
@@ -132,7 +153,8 @@ const FriendsScreen = () => {
           const selfSnapshotValue = snapshots.find((row) => row.user_id === session?.userId)?.snapshot;
           const scores = mutualFriendIds.map((friendId) => {
             const friendSnapshot = snapshotMap.get(friendId)?.snapshot;
-            if (!selfSnapshotValue || !friendSnapshot) {
+            // No score without period data on both sides: it would be made up.
+            if (!hasCycleData(selfSnapshotValue) || !hasCycleData(friendSnapshot)) {
               return [friendId, null] as const;
             }
             try {
@@ -183,7 +205,15 @@ const FriendsScreen = () => {
     useCallback(() => {
       loadFriends();
       const intervalId = setInterval(() => loadFriends(), 60000);
-      return () => clearInterval(intervalId);
+      // Refresh as soon as a request is sent, accepted or removed, so Circle
+      // doesn't keep showing "Requested" after the other person accepts.
+      const requestsChannel = subscribeToFriendRequests(() => {
+        loadFriends();
+      }, 'friend_requests:circle');
+      return () => {
+        clearInterval(intervalId);
+        requestsChannel?.unsubscribe();
+      };
     }, [loadFriends]),
   );
 
@@ -315,7 +345,7 @@ const FriendsScreen = () => {
     if (!value) {
       return 'Unknown';
     }
-    return value.charAt(0).toUpperCase() + value.slice(1);
+    return formatPhaseName(value);
   }, []);
 
   const formatPairSummary = useCallback(
@@ -385,6 +415,25 @@ const FriendsScreen = () => {
         }
       } finally {
         setLoading(false);
+      }
+    },
+    [loadFriends],
+  );
+
+  const handleRespond = useCallback(
+    async (requestId: string, status: 'accepted' | 'declined') => {
+      setRespondingRequestId(requestId);
+      setErrorMessage(null);
+      try {
+        await respondToFriendRequest(requestId, status);
+        await loadFriends();
+      } catch (error) {
+        console.warn('[friends] Failed to respond to friend request', error);
+        setErrorMessage(
+          status === 'accepted' ? 'Could not accept the request. Try again.' : 'Could not decline the request. Try again.',
+        );
+      } finally {
+        setRespondingRequestId(null);
       }
     },
     [loadFriends],
@@ -511,7 +560,8 @@ const FriendsScreen = () => {
             {isEmailQuery ? (
               <View style={styles.searchResultsWrap}>
                 <Text style={styles.helperText}>
-                  Send a private request by email. We won&apos;t reveal whether they have an account.
+                  Send a request to the email they signed up with. If they have an account, it shows under
+                  Friend requests until they accept.
                 </Text>
                 <TouchableOpacity
                   style={[styles.primaryButton, isLoading ? styles.buttonDisabled : null]}
@@ -520,6 +570,17 @@ const FriendsScreen = () => {
                 >
                   <Text style={styles.primaryButtonText}>Send Request</Text>
                 </TouchableOpacity>
+                {searchNotice ? (
+                  <Text
+                    style={[
+                      styles.noticeText,
+                      searchNotice.tone === 'error' ? styles.noticeError : styles.noticeInfo,
+                    ]}
+                    accessibilityLiveRegion="polite"
+                  >
+                    {searchNotice.message}
+                  </Text>
+                ) : null}
               </View>
             ) : null}
 
@@ -558,9 +619,13 @@ const FriendsScreen = () => {
                             <Text style={styles.secondaryButtonText}>View Sync</Text>
                           </TouchableOpacity>
                         ) : isInbound ? (
-                          <View style={styles.pendingChip}>
-                            <Text style={styles.pendingChipText}>Requested you</Text>
-                          </View>
+                          <TouchableOpacity
+                            style={[styles.primaryButton, respondingRequestId ? styles.buttonDisabled : null]}
+                            onPress={() => handleRespond(inboundRequestMap.get(result.id)!.id, 'accepted')}
+                            disabled={!!respondingRequestId}
+                          >
+                            <Text style={styles.primaryButtonText}>Accept</Text>
+                          </TouchableOpacity>
                         ) : isOutbound ? (
                           <View style={styles.pendingChip}>
                             <Text style={styles.pendingChipText}>Requested</Text>
@@ -593,6 +658,72 @@ const FriendsScreen = () => {
             ) : null}
           </View>
         </Animated.View>
+
+        {inboundRequests.length > 0 || outboundRequests.length > 0 ? (
+          <View style={styles.contactsCard}>
+            <Text style={styles.contactsTitle}>Friend requests</Text>
+            {inboundRequests.map((request, index) => {
+              const alias = requestAliases[request.id];
+              const name = alias ? formatAlias(alias) : 'Someone';
+              const isResponding = respondingRequestId === request.id;
+              return (
+                <View key={request.id} style={[styles.searchRow, index > 0 ? styles.rowDivider : null]}>
+                  <View style={styles.searchAvatar}>
+                    <Text style={styles.searchAvatarText}>
+                      {(alias ?? '?').trim().slice(0, 1).toUpperCase() || '?'}
+                    </Text>
+                  </View>
+                  <View style={styles.searchMeta}>
+                    <Text style={styles.searchName}>{name}</Text>
+                    <Text style={styles.contactAlias}>Wants to be friends</Text>
+                  </View>
+                  <TouchableOpacity
+                    style={[styles.secondaryButton, respondingRequestId ? styles.buttonDisabled : null]}
+                    onPress={() => handleRespond(request.id, 'declined')}
+                    disabled={!!respondingRequestId}
+                    accessibilityLabel={`Decline ${name}`}
+                  >
+                    <Text style={styles.secondaryButtonText}>Decline</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.primaryButton, respondingRequestId ? styles.buttonDisabled : null]}
+                    onPress={() => handleRespond(request.id, 'accepted')}
+                    disabled={!!respondingRequestId}
+                    accessibilityLabel={`Accept ${name}`}
+                  >
+                    <Text style={styles.primaryButtonText}>{isResponding ? '…' : 'Accept'}</Text>
+                  </TouchableOpacity>
+                </View>
+              );
+            })}
+            {outboundRequests.map((request, index) => {
+              const alias = requestAliases[request.id];
+              const name = alias ? formatAlias(alias) : 'Pending request';
+              return (
+                <View
+                  key={request.id}
+                  style={[
+                    styles.searchRow,
+                    index > 0 || inboundRequests.length > 0 ? styles.rowDivider : null,
+                  ]}
+                >
+                  <View style={styles.searchAvatar}>
+                    <Text style={styles.searchAvatarText}>
+                      {(alias ?? '?').trim().slice(0, 1).toUpperCase() || '?'}
+                    </Text>
+                  </View>
+                  <View style={styles.searchMeta}>
+                    <Text style={styles.searchName}>{name}</Text>
+                    <Text style={styles.contactAlias}>Waiting for them to accept</Text>
+                  </View>
+                  <View style={styles.pendingChip}>
+                    <Text style={styles.pendingChipText}>Requested</Text>
+                  </View>
+                </View>
+              );
+            })}
+          </View>
+        ) : null}
 
         <View style={styles.contactsCard}>
           <View style={styles.contactsHeadingRow}>
@@ -658,9 +789,13 @@ const FriendsScreen = () => {
                         <Text style={styles.pendingChipText}>Friends</Text>
                       </View>
                     ) : isInbound ? (
-                      <View style={styles.pendingChip}>
-                        <Text style={styles.pendingChipText}>Requested you</Text>
-                      </View>
+                      <TouchableOpacity
+                        style={[styles.primaryButton, respondingRequestId ? styles.buttonDisabled : null]}
+                        onPress={() => handleRespond(inboundRequestMap.get(match.id)!.id, 'accepted')}
+                        disabled={!!respondingRequestId}
+                      >
+                        <Text style={styles.primaryButtonText}>Accept</Text>
+                      </TouchableOpacity>
                     ) : isOutbound ? (
                       <View style={styles.pendingChip}>
                         <Text style={styles.pendingChipText}>Requested</Text>
@@ -747,6 +882,7 @@ const FriendsScreen = () => {
                 const username = friendUsername(row.user_id);
                 const initial = username.replace('@', '').trim().slice(0, 1).toUpperCase() || '?';
                 const normalizedScoreRaw = friendScores[row.user_id];
+                const hasScore = typeof normalizedScoreRaw === 'number';
                 const normalizedScore =
                   typeof normalizedScoreRaw === 'number'
                     ? normalizedScoreRaw <= 1
@@ -783,6 +919,7 @@ const FriendsScreen = () => {
                           {`Day ${friendCycleDay ?? '--'} · ${formatPairSummary(row.snapshot?.currentPhase)}`}
                         </Text>
 
+                        {hasScore ? (
                         <View style={styles.scoreRow}>
                           <View style={styles.scoreTrack}>
                             <View
@@ -797,9 +934,12 @@ const FriendsScreen = () => {
                           </View>
                           <Text style={styles.scoreValue}>{`${normalizedScore}%`}</Text>
                         </View>
+                        ) : null}
 
                         <View style={styles.friendFootRow}>
-                          <Text style={styles.friendStatus}>{trendLabel}</Text>
+                          <Text style={styles.friendStatus}>
+                            {hasScore ? trendLabel : 'Sync score needs period data from both of you'}
+                          </Text>
                           <Text style={styles.friendLastActive}>{formatSyncedAt(row.last_synced_at)}</Text>
                         </View>
                       </View>

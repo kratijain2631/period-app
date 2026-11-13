@@ -7,6 +7,7 @@ jest.mock('@kingstinct/react-native-healthkit', () => ({
 import {
   deriveSnapshot,
   getCycleDay,
+  hasCycleData,
   resolveCyclePhase,
   type CycleSample,
   type CycleSignalSample,
@@ -301,5 +302,22 @@ describe('getCycleDay', () => {
     expect(getCycleDay({ samples: [] }, new Date(day('2026-11-03')))).toBeNull();
     expect(getCycleDay(undefined, new Date(day('2026-11-03')))).toBeNull();
     expect(getCycleDay({ samples: period('2026-11-10', 2) }, new Date(day('2026-11-03')))).toBeNull();
+  });
+});
+
+describe('hasCycleData', () => {
+  it('is false without period samples', () => {
+    expect(hasCycleData(undefined)).toBe(false);
+    expect(hasCycleData({ samples: [] })).toBe(false);
+  });
+
+  it('is true with at least one period day', () => {
+    expect(
+      hasCycleData({
+        samples: [
+          { id: 'a', startDate: '2026-10-01T08:00:00.000Z', endDate: '2026-10-01T08:00:00.000Z', flowValue: 1 as never },
+        ],
+      }),
+    ).toBe(true);
   });
 });

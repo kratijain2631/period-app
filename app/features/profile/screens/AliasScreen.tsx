@@ -1,12 +1,15 @@
 import ContactDetails from './ContactDetails';
 import { useState } from 'react';
 import { SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity } from 'react-native';
+import { PHONE_VERIFICATION_ENABLED } from '../../../config/features';
 import { updateUserAlias } from '../../../services/supabase/users';
 import { useSessionStore } from '../../../state/sessionStore';
 
 const AliasScreen = () => {
   const userId = useSessionStore(state => state.session?.userId);
-  const [detailsReady, setDetailsReady] = useState(false);
+  // Without phone verification, contact details are optional and live in
+  // You → Settings, so setup only needs an alias.
+  const [detailsReady, setDetailsReady] = useState(!PHONE_VERIFICATION_ENABLED);
   const [alias, setAlias] = useState('');
   const [isSaving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -51,8 +54,14 @@ const AliasScreen = () => {
           autoCapitalize="words"
           autoCorrect={false}
         />
-        {userId ? <ContactDetails key={userId} userId={userId} onReady={setDetailsReady} /> : null}
-        <Text style={styles.subtitle}>You can let friends find you by phone or email in Circle.</Text>
+        {PHONE_VERIFICATION_ENABLED && userId ? (
+          <ContactDetails key={userId} userId={userId} onReady={setDetailsReady} />
+        ) : null}
+        <Text style={styles.subtitle}>
+          {PHONE_VERIFICATION_ENABLED
+            ? 'You can let friends find you by phone or email in Circle.'
+            : 'You can add contact details later in You → Settings.'}
+        </Text>
         {error ? <Text style={styles.errorText}>{error}</Text> : null}
         <TouchableOpacity
           style={[styles.primaryButton, isSaving || !detailsReady ? styles.primaryButtonDisabled : null]}

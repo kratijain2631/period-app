@@ -6,14 +6,18 @@ import { isSupabaseConfigured, supabase } from './client';
 // notifications bell/page can refresh sub-second instead of waiting for the 60s
 // poll. RLS scopes delivered events to rows the user participates in. No-ops
 // (and just leaves the poll as the fallback) when Supabase isn't configured.
+// Each screen that listens passes its own channel name: supabase-js reuses a
+// channel with the same name, so two screens sharing one would unsubscribe
+// each other.
 export const subscribeToFriendRequests = (
   onChange: () => void,
+  channelName = 'friend_requests',
 ): RealtimeChannel | null => {
   if (!isSupabaseConfigured) {
     return null;
   }
   return supabase
-    .channel('friend_requests')
+    .channel(channelName)
     .on(
       'postgres_changes',
       { event: '*', schema: 'public', table: 'friend_requests' },
@@ -78,7 +82,7 @@ export const sendFriendRequest = async (toUserId: string) => {
       (row) => row.status === 'pending' && row.from_user_id === toUserId,
     );
     if (pendingInbound) {
-      throw new Error('They already requested you. Check Incoming Requests.');
+      throw new Error('They already sent you a request. Accept it under Friend requests.');
     }
     const declinedIds = existing.filter((row) => row.status === 'declined').map((row) => row.id);
     if (declinedIds.length > 0) {
@@ -133,16 +137,31 @@ export const respondToFriendRequest = async (requestId: string, status: 'accepte
     return;
   }
 
-  const { error: updateError } = await supabase
+  const { data: accepted, error: updateError } = await supabase
     .from('friend_requests')
     .update({ status })
-    .eq('id', requestId);
+    .eq('id', requestId)
+    .select('from_user_id, to_user_id')
+    .maybeSingle();
   if (updateError) {
     throw updateError;
   }
 
   if (status === 'accepted') {
     await ensureFriendSharingForRequests([requestId]);
+    // If both people requested each other, the opposite request is still
+    // pending. Remove it so neither side is offered Accept for a friend.
+    if (accepted) {
+      const { error: cleanupError } = await supabase
+        .from('friend_requests')
+        .delete()
+        .eq('status', 'pending')
+        .eq('from_user_id', accepted.to_user_id)
+        .eq('to_user_id', accepted.from_user_id);
+      if (cleanupError) {
+        console.warn('[friends] Failed to remove the opposite pending request', cleanupError);
+      }
+    }
   }
 };
 
