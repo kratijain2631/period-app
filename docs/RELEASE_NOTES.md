@@ -6,6 +6,10 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## Unreleased
 
+## 2026-11-12 — TestFlight build 1.0.21 (build 43)
+
+[Received requests](../design/2026-11-12/requests-and-comments/received.png) · [Sent requests](../design/2026-11-12/requests-and-comments/sent.png) · [Automatic update with comments](../design/2026-11-12/requests-and-comments/automatic-comments.png).
+
 - **Comments on every feed update.** Written posts, automatic period updates and phase transitions have the same Comments action in Feed and on member profiles. Anyone who can see the parent update can read and reply. Authors can delete their own comments. Each update keeps its own conversation and opening another collapses the previous thread. Comments on an automatic update count toward its author’s Most supportive ranking.
 - Comment rows leave 18 points between the end of the text and the following divider, including multi-line replies.
 - **Friend requests** has Received and Sent tabs with counts and scrollable lists. Rows show member identity beside Accept and Decline or a clock, Pending status and Cancel request. Actions move below the identity on narrow screens or with larger text. Opening a name still leads to its profile.

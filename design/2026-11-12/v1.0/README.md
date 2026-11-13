@@ -11,7 +11,7 @@ Each image is a capture of the running preview. The default device is 390 CSS pi
 - **1.0.19 (41)** includes the [approved waving thumbnail](../mascot-thumbnail/thumbnail.png), [opening wordmark](../mascot-thumbnail/opening.png) and [standalone Settings page](../settings/settings.png).
 - **1.0.20 (42)** includes [Write a post](../setup-and-requests/write-post.png), [setup contact details](../setup-and-requests/personal-info.png), [initial sharing preferences](../setup-and-requests/sharing-preferences.png), [sent and received requests](../setup-and-requests/sent-requests.png) and the complete profile drop at [320 px](../setup-and-requests/you-320.png), [390 px](../setup-and-requests/you-390.png) and [480 px](../setup-and-requests/you-480.png).
 
-- Later revisions include the [Received tab](../requests-and-comments/received.png), [Sent tab](../requests-and-comments/sent.png), [320 px request layout](../requests-and-comments/received-320.png) and [automatic update with two comments](../requests-and-comments/automatic-comments.png).
+- **1.0.21 (43)** includes the [Received tab](../requests-and-comments/received.png), [Sent tab](../requests-and-comments/sent.png), [320 px request layout](../requests-and-comments/received-320.png) and [automatic update with two comments](../requests-and-comments/automatic-comments.png).
 
 ## Screens and dialogs
 
