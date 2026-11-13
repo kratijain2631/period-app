@@ -189,6 +189,22 @@ Fresh `expo prebuild --clean` and Debug simulator build (iPhone 17 Pro, iOS 26.1
 
 Bugs found are logged in BUGS.md (2026-11-13 entries). Not tested: Full Access, because this simulator's address book holds about 350 real iCloud contacts that would be hashed and sent to staging; sending the requests; and physical-device Settings deep links. Metro reloads when screenshots are written inside the project, so save them outside it while Metro runs.
 
+## Find from contacts recheck on staging - 2026-11-13
+
+Rechecked the fixes from #108 on the same iPhone 17 Pro simulator (iOS 26.1), staging Metro, signed in as circleqa-a. Limited access was granted through the real sheet with **Select Contacts Later**, so no contacts were shared and nothing was sent to staging. No friend requests were sent, and the contacts permission was reset afterwards.
+
+- **Denied:** passed. Only the "Contacts access is off" notice and Open contact settings show, with no filter, count or Send button.
+- **Limited with no matches:** passed. Find shows the empty-results notice and Hide contact matches, and no picker.
+- **Returning from Settings:** passed. The button is Find from contacts again, the "Contacts access updated" notice shows, and one tap searches.
+- **Hide:** passed. Closes the lookup and clears the notice.
+- **After the permission sheet:** failed at first. The iOS 18+ sheet backgrounds the app twice (the alert, then the contact picker), and the first return cleared the notice flag. Fixed by keeping the flag until the next Find or Hide, then passed.
+- **Settings links:** Settings crashes on this simulator; see BUGS.md. Not a fault in this app.
+- **Logs:** no Metro errors.
+
+`xcrun simctl privacy grant contacts-limited` grants **Full Access** on this simulator (TCC auth value 2, not 3). Don't use it with a simulator that holds real contacts. Use the system sheet's Select Contacts Later instead, and check `auth_value` in the simulator's TCC.db before tapping Find.
+
+Not tested: a positive match, because no account is discoverable on staging after the last cleanup.
+
 ## Short physical iPhone checks
 
 Use your existing real account and Health records on TestFlight; synthetic Health belongs only in staging.

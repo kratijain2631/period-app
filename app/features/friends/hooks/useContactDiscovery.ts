@@ -27,7 +27,8 @@ export const useContactDiscovery = (userId: string | undefined, isFocused: boole
   const [isUpdatingDiscoverability, setUpdatingDiscoverability] = useState(false);
   const lookupVersion = useRef(0);
   const preferenceVersion = useRef(0);
-  // Set while Settings or the permission sheet may background the app, so the return explains itself.
+  // Set when Settings or the permission sheet may background the app, so the return explains itself.
+  // Kept until the next Find or Hide: the iOS 18+ sheet backgrounds the app once for the alert and again for the picker.
   const leftForAccessChange = useRef(false);
 
   const invalidateLookup = useCallback(() => {
@@ -48,7 +49,6 @@ export const useContactDiscovery = (userId: string | undefined, isFocused: boole
 
     const refreshPermission = async (returningFromSettings = false) => {
       invalidateLookup();
-      leftForAccessChange.current = false;
       const version = lookupVersion.current;
       try {
         const permission = await withDeadline(getContactDiscoveryPermission());
@@ -87,6 +87,7 @@ export const useContactDiscovery = (userId: string | undefined, isFocused: boole
     if (!userId || !isFocused || isFindingContacts) return;
     invalidateLookup();
     const version = lookupVersion.current;
+    leftForAccessChange.current = false;
     setContactLookupOpen(true);
     setFindingContacts(true);
     setContactNotice('Checking the contacts you have allowed…');
@@ -123,6 +124,7 @@ export const useContactDiscovery = (userId: string | undefined, isFocused: boole
 
   const closeContactLookup = useCallback(() => {
     invalidateLookup();
+    leftForAccessChange.current = false;
     setContactNotice(null);
   }, [invalidateLookup]);
 
