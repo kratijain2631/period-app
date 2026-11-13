@@ -6,7 +6,7 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## Unreleased
 
-- **Email, phone and verification.** Settings and first-time setup use the same outlined fields and compact Cancel button for phone and email. The country code has its own editable box, initially +1, beside the national number. Members can send, resend and verify a confirmation code. [Phone editor preview](../design/2026-11-13/contact-settings/change-phone.png).
+- **Email, phone and verification.** Settings and first-time setup use the same outlined fields and compact Cancel button for phone and email. The country code has a compact, four-character box, initially +1. The national number fills the remaining width. Members can send, resend and verify a confirmation code. [Phone editor preview](../design/2026-11-13/contact-settings/change-phone.png).
 
 - The owner confirmed Phase Guide refresh on their production phone. The staging key is configured. Two fresh generation attempts returned HTTP 503, and the function logged OpenAI HTTP 429. [Staging setup](TROUBLESHOOTING.md#contact-verification-delivery-and-guidance-on-staging-2026-11-13).
 
