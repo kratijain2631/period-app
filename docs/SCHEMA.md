@@ -112,3 +112,5 @@ Migration `20261113120100` was applied on staging and production by [Database de
 
 - `private.cycle_sync_withdrawals` holds the owner ID only. The signed-in owner can read their status with `cycle_sync_enabled()` and atomically withdraw or resume through `set_cycle_sync_enabled(expected_user_id,enabled)`. Trigger checks on snapshots, events, guidance and pair recommendations serialize new writes with withdrawal. Deleting a cycle event clears its linked notifications and boops before their nullable foreign keys are cleared.
 - `update_engagement_members` runs with caller permissions, checks the written or automatic parent, groups visible interactions by member, and returns up to 40 people per page. Names follow the outward-profile visibility rules.
+
+The [database deployment](https://github.com/kratijain2631/period-app/actions/runs/43480982106) tracks these two migrations. The [staging account checks](TESTING.md#explicit-erasure-and-engagement) cover the owner, an accepted friend and an unrelated account.
