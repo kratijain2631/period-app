@@ -27,6 +27,8 @@ Open items, roughly in priority order, with completed items retained as a decisi
 
 ## Widget rollout and follow-ups
 
+- [~] Support comments on automatic period and phase updates and give each comment more room above the divider. 🚧 (WIP — Codex, 2026-11-12)
+
 - [x] Open a dedicated Write a post page from Share an update in the iPhone Feed, retain unfinished drafts when backing out, and return to Feed after successful sharing.
 - [x] Ask about contact details, ranking visibility and post settings during first-time setup.
 - [x] Fix the flat, clipped tip on the illustrated drop in the You bio banner and check the shared profile artwork at 320, 390 and 480 px.
