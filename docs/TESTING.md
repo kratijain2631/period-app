@@ -201,3 +201,14 @@ Live SMS verification, new-account setup and Shaan’s contact match have separa
 ### Standalone Settings and approved thumbnail
 
 Browser checks followed You → Settings → Post settings and back, changed the sample email and phone with confirmation, and verified ranking visibility survives leaving and returning. The full bio mascot fits at 320, 390 and 480 px. All 179 app tests, native and preview type checks, and the local iOS bundle export passed. Hosted SMS delivery is pending the owner’s provider setup. [Current Settings screenshot](../design/2026-11-12/settings/settings.png).
+
+## 1.0.19 Settings and mascot
+
+Install 1.0.19 (41) in TestFlight using an existing account.
+
+1. Cold-launch from the waving mascot icon. Compare the opening wordmark to Home.
+2. On You, check that the drop’s tip and feet are fully visible on the bio banner. Try larger text.
+3. Open Settings. Verify Personal info shows each value once. Change an email using a test account you control and complete the confirmation. After hosted SMS is configured, verify a replacement phone number using its code. Confirm a cancelled change keeps the old value.
+4. Under Privacy and permissions, open Post settings, return to Settings, and toggle Community rankings visibility. Confirm the preference survives navigating away and back. Sign out and Delete account sit at the bottom.
+
+The earlier core widget checks still apply. See the [v1.0 walkthrough](#design-v10-testflight-walkthrough).
