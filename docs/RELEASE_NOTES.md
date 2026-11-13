@@ -37,6 +37,8 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 <sub>Contributors: Shaan — staging, security checks, discovery, AI guidance and push notifications. Krati — design, rankings, comments, cycle accuracy, domain and email renewal, and contact verification.</sub>
 
+- Discover friends suggests saved email addresses as you type. Exact email and phone matches show the same profile name as name search. Apple sign-in now explains how **Share My Email** and **Let contacts find me** enable email discovery.
+
 ## 2026-11-13 — TestFlight build 1.0.24 (build 46)
 
 Apple processed build 46 and confirmed internal beta testing for **Dev Team** and **Team (Expo)**. [Signed iOS build](https://expo.dev/accounts/kratijain26/projects/period-app/builds/6443e4ea-d226-45e9-ad2b-f0a321d0090b) · [Apple upload](https://expo.dev/accounts/kratijain26/projects/period-app/submissions/7e652223-6d31-405a-abf1-f94867025226).

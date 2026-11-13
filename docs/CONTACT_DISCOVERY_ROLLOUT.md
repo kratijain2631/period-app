@@ -2,6 +2,10 @@
 
 Status: **open**. Code/native integration shipped in TestFlight **1.0.12 (33)**. Live database and automated service checks passed **2026-11-03**; physical iPhone checks are being collected separately below. Do not equate mocked permission responses with native permission verification.
 
+## Apple email and contact search
+
+Email suggestions match prefixes on the device using contacts the member has allowed. Only a submitted full address or phone number is hashed for an account lookup. A member who chooses Share My Email and enables Let contacts find me can match their shared email. With Hide My Email, the relay address cannot identify the underlying inbox. Members can also verify a phone number and opt into discovery.
+
 ## Phone verification — 2026-11-13
 
 Staging and production use Twilio Verify. The first production TestFlight attempt reached Twilio and returned error 21608. After Twilio approved the Primary Compliance Profile, the owner confirmed SMS verification succeeded on her iPhone. That test used the existing TestFlight UI. The redesigned code entry still needs an on-device check.

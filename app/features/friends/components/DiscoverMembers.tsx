@@ -5,7 +5,7 @@ import { AppText, Surface, ActionButton } from '../../../components/ui/WidgetPri
 import { TextAction } from '../../../components/ui/ScreenControls';
 import { useWidgetTheme } from '../../../theme/widgetTheme';
 import { useContactDiscovery } from '../hooks/useContactDiscovery';
-import { hashContactEmail } from '../../../services/contacts/contactDiscovery';
+import { hashContactEmail, readSavedEmails } from '../../../services/contacts/contactDiscovery';
 import { normalizeContactPhone } from '../../../services/contacts/phone';
 import { sha256 } from 'js-sha256';
 import { supabase } from '../../../services/supabase/client';
@@ -31,6 +31,7 @@ export function DiscoverMembers({
   const [found, setFound] = useState<Match[]>([]);
   const [notice, setNotice] = useState('');
   const [checking, setChecking] = useState(false);
+  const [savedEmails, setSavedEmails] = useState<string[]>([]);
   const [filter, setFilter] = useState('');
   const [chosen, select] = useState<string[]>([]);
   const term = query.trim();
@@ -53,7 +54,7 @@ export function DiscoverMembers({
       if (email || phone) {
         const ident = email ? hashContactEmail(q) : normalizeContactPhone(q, region);
         if (!ident) throw Error('Enter the full phone number, including its country code.');
-        const { data, error } = await supabase.rpc('contact_friend_matches_v2', {
+        const { data, error } = await supabase.rpc('contact_friend_matches_v3', {
           identifiers: [email ? ident : sha256(ident)],
         });
         if (error) throw error;
@@ -93,6 +94,22 @@ export function DiscoverMembers({
       sequence.current++;
     };
   }, [term, focused, email, phone]);
+  const canReadEmails = focused && !!id && (c.contactPermission === 'limited' || c.contactPermission === 'granted');
+  const searchingEmail = term.length >= 2 && !phone && !term.startsWith('@');
+  useEffect(() => {
+    let active = true;
+    setSavedEmails([]);
+    if (canReadEmails && searchingEmail) {
+      void readSavedEmails().then(addresses => {
+        if (active) setSavedEmails(addresses);
+      }).catch(() => {});
+    }
+    return () => { active = false; };
+  }, [canReadEmails, searchingEmail, id, c.contactPermission]);
+  const prefix = term.toLowerCase();
+  const suggestions = canReadEmails && searchingEmail
+    ? savedEmails.filter(address => address !== prefix && address.startsWith(prefix)).slice(0, 8)
+    : [];
   const input = {
     minHeight: 46,
     borderWidth: 1,
@@ -128,6 +145,12 @@ export function DiscoverMembers({
         onChangeText={setQuery}
         onSubmitEditing={findMatch}
       />
+      {suggestions.map(address => (
+        <TextAction key={address} label={address} onPress={() => setQuery(address)} />
+      ))}
+      {term.includes('@') && !term.startsWith('@') && !email && !suggestions.length && (
+        <AppText role="caption">Enter the full email or use Find from contacts for saved email suggestions.</AppText>
+      )}
       {/* Exact lookups wait for a tap, so say so until one has run. */}
       {(email || phone) && !checking && !notice && !found.length && (
         <AppText role="caption">Tap Find to look up this {email ? 'email' : 'number'}.</AppText>
@@ -142,7 +165,7 @@ export function DiscoverMembers({
         />
       )}
       {checking && <AppText>Searching…</AppText>}
-      {notice && <AppText accessibilityLiveRegion="polite">{notice}</AppText>}
+      {notice && !(suggestions.length && notice === 'No matching people.') && <AppText accessibilityLiveRegion="polite">{notice}</AppText>}
       {found.map((p) => (
         <View key={p.id}>
           <TextAction label={p.full_name || p.alias || 'Member'} onPress={() => open(p.id, p.alias || '')} />
