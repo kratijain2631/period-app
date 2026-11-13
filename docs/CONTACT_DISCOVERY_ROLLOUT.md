@@ -2,6 +2,10 @@
 
 Status: **open**. Code/native integration shipped in TestFlight **1.0.12 (33)**. Live database and automated service checks passed **2026-11-03**; physical iPhone checks are being collected separately below. Do not equate mocked permission responses with native permission verification.
 
+## Phone verification — 2026-11-13
+
+Staging and production use Twilio Verify. The first production TestFlight attempt reached Twilio and returned error 21608. After Twilio approved the Primary Compliance Profile, the owner confirmed SMS verification succeeded on her iPhone. That test used the existing TestFlight UI. The redesigned code entry still needs an on-device check.
+
 ## Verified backend and automated checks — 2026-11-03
 
 - Linked project: `mmomoyszozclfjdvjbeb`. Live `users.discoverable_by_contacts` is a non-null boolean with default `false`; `contact_friend_matches(text[], integer)` matches the checked-in migration, including the opt-in filter, caller exclusion, normalized email hashing and result cap. The migration was already applied; nothing was reapplied.
