@@ -27,6 +27,10 @@ Open items, roughly in priority order, with completed items retained as a decisi
 
 ## Widget rollout and follow-ups
 
+- [x] Redesign Received and Sent friend requests with tab counts, compact member rows, distinct actions and accessible touch targets.
+
+- [x] Support comments on automatic period and phase updates and give each comment more room above the divider.
+
 - [x] Open a dedicated Write a post page from Share an update in the iPhone Feed, retain unfinished drafts when backing out, and return to Feed after successful sharing.
 - [x] Ask about contact details, ranking visibility and post settings during first-time setup.
 - [x] Fix the flat, clipped tip on the illustrated drop in the You bio banner and check the shared profile artwork at 320, 390 and 480 px.
@@ -45,6 +49,7 @@ Open items, roughly in priority order, with completed items retained as a decisi
 - [x] Put the small cycle preview on Home, the full wheel and Phase Guide on You, and link Home previews to their owners. Show phase ranges on press/hover, keep the ring legible at 320 px, retain guidance refresh and use the two-line mixed-font tagline.
 - [x] Finish You with My posts. Keep contact details and posting preferences in Settings, add the Community rankings visibility switch, and remove duplicate Circle, upcoming, check-in and profile callouts.
 - [x] Add post comments, compact own-comment deletion, automatic collapse on another post and refreshed support/post ranking counts after deletion.
+- [x] Merge the separate cycle comparison into the outward friend profile in the app and preview, including friend actions and shared updates.
 - [x] Give friends a four-row scrolling list, incoming requests their own scroll box, matched contacts checkboxes and five-person batches, pending/accepted states and stacked invite actions. Add Friends, Notifications and outward profiles open outside the bottom tabs.
 - [x] Give both Circle rankings consistent numbered rows and tabs. Link the Home match to Most in sync, use a scrolling Top 10 for both Community rankings, and refresh relevant boards when friendships change.
 

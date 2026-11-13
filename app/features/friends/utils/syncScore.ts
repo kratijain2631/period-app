@@ -338,36 +338,3 @@ export const fallbackRecommendations = ({
 
   return recs.slice(0, 3);
 };
-
-export const createPreviewSnapshots = (now = new Date()): {
-  selfSnapshot: CycleSnapshot;
-  friendSnapshot: CycleSnapshot;
-} => {
-  const buildSamples = (label: string, offsets: number[], spanDays = 3): CycleSample[] =>
-    offsets.map((offset, index) => {
-      const start = new Date(now.getTime() - offset * DAY_MS);
-      const end = new Date(start.getTime() + (spanDays - 1) * DAY_MS);
-      return {
-        id: `${label}-${index}`,
-        startDate: start.toISOString(),
-        endDate: end.toISOString(),
-        flowValue: CategoryValueMenstrualFlow.light,
-      };
-    });
-
-  const selfSnapshot: CycleSnapshot = {
-    syncedAt: now.toISOString(),
-    samples: buildSamples('self', [2, 3, 4]),
-    currentPhase: 'luteal',
-    latestSampleStart: new Date(now.getTime() - 2 * DAY_MS).toISOString(),
-  };
-
-  const friendSnapshot: CycleSnapshot = {
-    syncedAt: now.toISOString(),
-    samples: buildSamples('friend', [4, 5, 6]),
-    currentPhase: 'pms',
-    latestSampleStart: new Date(now.getTime() - 4 * DAY_MS).toISOString(),
-  };
-
-  return { selfSnapshot, friendSnapshot };
-};

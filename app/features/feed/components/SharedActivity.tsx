@@ -1,6 +1,6 @@
 import { CommentThreads } from './CommentThreads';
 import { PostComments } from './PostComments';
-import { readPostComments, addPostComment, deletePostComment } from '../../../services/supabase/postComments';
+import { readComments, addComment, deleteComment } from '../../../services/supabase/postComments';
 import { useMemo, useState } from 'react';
 import { Alert } from 'react-native';
 import { useIsFocused, useNavigation } from '@react-navigation/native';
@@ -14,20 +14,23 @@ import { AppText } from '../../../components/ui/WidgetPrimitives';
 export function SharedActivity({ item, link = true }: { item: ActivityItemModel; link?: boolean }) {
   const { feed, id, commentsRevision, commentsChanged } = useSocial();
   const focused = useIsFocused();
-  const postId = item.target.id;
+  const { type, id: targetId } = item.target;
   const commentActions = useMemo(
-    () => ({
-      read: (start: number, limit: number) => readPostComments(postId, start, limit),
-      add: async (body: string) => {
-        await addPostComment(postId, body);
-        commentsChanged();
-      },
-      remove: async (commentId: string) => {
-        await deletePostComment(commentId);
-        commentsChanged();
-      },
-    }),
-    [postId, commentsChanged],
+    () => {
+      const target = { type, id: targetId };
+      return {
+        read: (start: number, limit: number) => readComments(target, start, limit),
+        add: async (body: string) => {
+          await addComment(target, body);
+          commentsChanged();
+        },
+        remove: async (commentId: string) => {
+          await deleteComment(target, commentId);
+          commentsChanged();
+        },
+      };
+    },
+    [type, targetId, commentsChanged],
   );
   const nav = useNavigation<any>();
   const offline = !useConnectionStore(selectIsOnline);
@@ -38,17 +41,15 @@ export function SharedActivity({ item, link = true }: { item: ActivityItemModel;
       <ActivityItem
         model={item}
         comments={
-          item.target.type === 'post' && (
-            <PostComments
-              postId={postId}
-              self={id}
-              offline={offline}
-              actions={commentActions}
-              revision={commentsRevision}
-              focused={focused}
-              onProfile={(memberId) => nav.navigate('MemberProfile', { memberId })}
-            />
-          )
+          <PostComments
+            threadKey={activityKey(item.target)}
+            self={id}
+            offline={offline}
+            actions={commentActions}
+            revision={commentsRevision}
+            focused={focused}
+            onProfile={(memberId) => nav.navigate('MemberProfile', { memberId })}
+          />
         }
         offline={offline}
         pending={pending}

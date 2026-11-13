@@ -1,6 +1,10 @@
+import { FriendComparison } from '../../friends/components/FriendComparison';
+import { PairActions } from '../../friends/components/PairComparison';
+import { removeFriend } from '../../../services/supabase/friendSharing';
+import { sendBoop } from '../../../services/supabase/boops';
 import { useState, useCallback } from 'react';
 import { ScrollView } from 'react-native';
-import { useRoute, useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useRoute, useFocusEffect } from '@react-navigation/native';
 import { ProfileIdentity } from '../components/ProfileWidgets';
 import { AppText, ActionButton, Surface } from '../../../components/ui/WidgetPrimitives';
 import { useWidgetTheme } from '../../../theme/widgetTheme';
@@ -19,9 +23,8 @@ type Identity = {
 };
 export default function MemberProfileScreen() {
   const route = useRoute<any>();
-  const nav = useNavigation<any>();
   const id: string = route.params.memberId;
-  const { id: self, circle, notifications, refreshCircle, respondToRequest } = useSocial();
+  const { id: self, circle, circleStatus, feed, notifications, refreshCircle, respondToRequest } = useSocial();
   const t = useWidgetTheme();
   const [profile, setProfile] = useState<Identity | null>(null);
   const [error, setError] = useState('');
@@ -68,6 +71,14 @@ export default function MemberProfileScreen() {
       setBusy(false);
     }
   };
+  const name = profile?.full_name || profile?.alias || 'Circle member';
+  const isFriend = self !== id && !!person && profile?.has_access;
+  const remove = async () => {
+    await removeFriend(id);
+    setProfile(null);
+    await Promise.all([refreshCircle(), feed.reload()]);
+    retry(v => v + 1);
+  };
   return (
     <ScrollView
       style={{ backgroundColor: t.colors.canvas }}
@@ -83,7 +94,7 @@ export default function MemberProfileScreen() {
         <>
           <ProfileIdentity
             profile={{
-              name: profile.full_name || profile.alias || 'Circle member',
+              name,
               alias: profile.alias || '',
               bio: profile.bio || '',
               avatarUrl: profile.avatar_url,
@@ -91,15 +102,15 @@ export default function MemberProfileScreen() {
           />
           {self === id ? (
             <AppText>Your profile</AppText>
-          ) : profile.has_access ? (
+          ) : isFriend ? (
             <>
-              <AppText>In your circle{person?.score != null ? ` · ${person.score}% in sync` : ''}</AppText>
-              <ActionButton
-                outline
-                label="View cycle comparison"
-                onPress={() => nav.navigate('FriendSync', { friendId: id })}
-              />
+              <FriendComparison key={id} memberId={id} name={name} avatar={profile.avatar_url} />
+              <PairActions key={`actions-${id}`} name={name} onBoop={async () => (await sendBoop({ toUserId: id })).status} onRemove={remove} />
             </>
+          ) : profile.has_access ? (
+            circleStatus === 'error'
+              ? <ActionButton outline label="Reload circle" onPress={refreshCircle} />
+              : <AppText>Loading friendship…</AppText>
           ) : (
             <ActionButton
               label={

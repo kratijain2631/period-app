@@ -235,3 +235,17 @@ The earlier core widget checks still apply. See the [v1.0 walkthrough](#design-v
 4. Look at the illustrated drop on You and an outward profile. Check the pointed tip, hands and feet. [Phone-width captures](../design/2026-11-12/setup-and-requests/).
 
 The browser preview passed draft/resume/share, setup-to-Settings readback, request cancellation, and mascot bounds at 320, 390 and 480 px. Two isolated staging accounts passed preferences save/readback, request profile lookup, sender-only pending cancellation, recipient inbox removal, resending, and preservation of an accepted friendship. Both test accounts were removed. All 181 app tests passed, along with type checking and an iOS bundle export. No iOS simulator runtime is installed here. Real SMS delivery and the signed-in physical iPhone walkthrough are pending.
+
+## Automatic comments and request tabs
+
+In Feed, open Comments on a period update or phase transition, post two replies, and check the space before each divider. Switch to a written post and back. Check that exactly one thread opens, both replies persist, and you can delete your own. With two existing friends, confirm the recipient’s Most supportive score reflects a new comment and its deletion.
+
+On Circle → Add Friends, switch between Received and Sent. Open a profile, accept or decline an incoming request and cancel an outgoing one. Check the tab counts and the empty state after the last cancellation. On narrow screens and at large text sizes, the row actions can sit below the identity.
+
+The preview passed adding, reading and removing comments on a phase update, single-thread selection, 18 px of space below each comment, tab counts, cancellation and decline. The phone layouts are saved in [the dated screenshots](../design/2026-11-12/requests-and-comments/). All 181 app tests, native and preview type checks and the iOS bundle export passed.
+
+## Friend profile and automatic comment checks, 2026-11-12
+
+- The browser preview opens an accepted friend directly from Circle, displays score, phases, timeline, guidance and updates, and supports booping, cancelling removal, confirming removal and sending a new request. Checked both 320 and 390 px and verified the self, incoming-request and missing-history states. [Screenshots](../design/2026-11-12/friend-profile/README.md).
+- Isolated staging accounts verified access to the accepted member’s bio and cycle summaries, exclusion of an unrelated account and immediate revocation after removal. Separate period and phase update tests verified creating, reading and deleting comments, author-only deletion, parent deletion and support rankings. All temporary accounts were removed.
+- On iPhone, open Circle → an accepted friend, scroll the full profile, then go back once. Also try a Feed author and a pending sender in Notifications. Check VoiceOver, large text and the back gesture. This Mac has no installed iOS Simulator runtime.

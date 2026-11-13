@@ -20,7 +20,7 @@ import { phaseLabels } from '../../app/features/cycle/models/phaseLabels';
 import { fallbackPhaseGuidance } from '../../packages/domain/cycles/guidance';
 import { CommunityLeaderboard } from './CommunityLeaderboard';
 import { DiscoverFriends, InviteCircle } from './PreviewDetails';
-import { communityExamples, supportExamples, sampleContacts, type ContactRelation, type PreviewState } from './fixtures';
+import { communityExamples, supportExamples, people, sampleContacts, type ContactRelation, type PreviewState } from './fixtures';
 
 export function FeedPage({
   state,
@@ -279,10 +279,10 @@ export function AddFriendsPage(
       </AppText>
       <View nativeID="requests" tabIndex={-1}>
         <FriendRequestsCard
-          incoming={props.incomingRequests.map(p => ({ id: p.id, memberId: p.id, alias: p.alias }))}
-          outgoing={sampleContacts.filter(p => relations[p.id] === 'outgoing').map(p => ({ id: p.id, memberId: p.id, alias: p.alias }))}
+          incoming={props.incomingRequests.map(p => ({ id: p.id, memberId: p.id, alias: p.alias, name: p.name }))}
+          outgoing={[...sampleContacts, ...people].filter(p => relations[p.id] === 'outgoing').map(p => ({ id: p.id, memberId: p.id, alias: p.alias, name: p.name }))}
           busy={state === 'Offline'} status="ready" onRetry={() => {}}
-          onProfile={id => { const p = sampleContacts.find(c => c.id === id); if (p) onPerson(p); }}
+          onProfile={id => { const p = [...sampleContacts, ...people].find(c => c.id === id); if (p) onPerson(p); }}
           onRespond={onRequest} onCancel={props.onCancel}
         />
       </View>

@@ -8,6 +8,23 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 - **Find from contacts** goes back to its normal label when matches are cleared, for example after returning from Settings. One tap now searches again; before, the first tap only hid an empty panel. The filter, selection count and Send button appear only when there are matches, so denied access shows just the notice. "Contacts access updated" appears only after returning from Settings or the permission sheet, not on every return to the app.
 
+## 2026-11-12 — TestFlight build 1.0.22 (build 44)
+
+Apple confirmed internal testing for **Dev Team** and **Team (Expo)**. The [signed iOS build](https://expo.dev/accounts/kratijain26/projects/period-app/builds/8e71b4af-a9af-4ad9-8998-0569763de558) and [Apple upload](https://expo.dev/accounts/kratijain26/projects/period-app/submissions/69f6c154-a17d-4471-888d-f9120646d824) finished. [iPhone checks](TESTING.md#friend-profile-and-automatic-comment-checks-2026-11-12).
+
+- **One tap opens the full friend profile.** Circle rankings, the friend directory, posts and other member links use the same profile. Under identity and bio, accepted friends see the sync rings, score and confidence, both phases, latest flow gap, 28-day overlap, comparison timelines and suggestions. Boop, confirmed removal and shared updates are on the same page. Removed the “View cycle comparison” button and its separate destination.
+- Friends without paired snapshots still have a profile, friend actions and an empty history state. Pending requests, other members and your own outward profile keep their relationship-appropriate views. [Profile and history screenshots](../design/2026-11-12/friend-profile/README.md).
+
+## 2026-11-12 — TestFlight build 1.0.21 (build 43)
+
+[Build](https://expo.dev/accounts/kratijain26/projects/period-app/builds/b02c7903-30b0-4df4-9024-d1690f902493) and [upload](https://expo.dev/accounts/kratijain26/projects/period-app/submissions/e1261422-76b6-4df3-9eb2-b2c0ed33b731) finished. Apple confirmed internal testing in Team (Expo) and Dev Team. [Database deployment](https://github.com/kratijain2631/period-app/actions/runs/43359047626) succeeded on staging and production.
+
+[Received requests](../design/2026-11-12/requests-and-comments/received.png) · [Sent requests](../design/2026-11-12/requests-and-comments/sent.png) · [Automatic update with comments](../design/2026-11-12/requests-and-comments/automatic-comments.png).
+
+- **Comments on every feed update.** Written posts, automatic period updates and phase transitions have the same Comments action in Feed and on member profiles. Anyone who can see the parent update can read and reply. Authors can delete their own comments. Each update keeps its own conversation and opening another collapses the previous thread. Comments on an automatic update count toward its author’s Most supportive ranking.
+- Comment rows leave 18 points between the end of the text and the following divider, including multi-line replies.
+- **Friend requests** has Received and Sent tabs with counts and scrollable lists. Rows show member identity beside Accept and Decline or a clock, Pending status and Cancel request. Actions move below the identity on narrow screens or with larger text. Opening a name still leads to its profile.
+
 ## 2026-11-12 — TestFlight build 1.0.20 (build 42)
 
 Apple processed 1.0.20 (42) and enabled it for **Dev Team** and **Team (Expo)** internal testers. The [signed iOS build](https://expo.dev/accounts/kratijain26/projects/period-app/builds/683c5961-86d2-4f1b-950b-c54d076b1ff3) and [Apple upload](https://expo.dev/accounts/kratijain26/projects/period-app/submissions/ed9624dd-1f7d-4316-ab53-fdf028975bc2) both finished. This build carries forward the approved mascot icon, opening font and standalone Settings from 1.0.19 (41). [iPhone walkthrough](TESTING.md#feed-setup-and-sent-requests) · [Updated screenshots](../design/2026-11-12/v1.0/README.md#later-testflight-revisions).

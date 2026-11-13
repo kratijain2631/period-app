@@ -327,7 +327,6 @@ export const SyncRings = memo(
     friendAvatarUrl = null,
     size = 180,
   }: SyncRingsProps) => {
-    const isFocused = useIsFocused();
     const center = size / 2;
     const outerStroke = Math.max(7, size * 0.055);
     const innerStroke = Math.max(6, size * 0.045);
@@ -380,9 +379,6 @@ export const SyncRings = memo(
     const friendPicRadius = Math.max(8, innerStroke * 1.1);
 
     useEffect(() => {
-      if (!isFocused) {
-        return;
-      }
       outerSegmentProgress.forEach((value) => value.setValue(0));
       innerSegmentProgress.forEach((value) => value.setValue(0));
       yourAvatarScale.setValue(0);
@@ -409,7 +405,7 @@ export const SyncRings = memo(
         }),
       );
 
-      Animated.parallel([
+      const animation = Animated.parallel([
         ...outerAnimations,
         ...innerAnimations,
         Animated.sequence([
@@ -447,10 +443,11 @@ export const SyncRings = memo(
             }),
           ]),
         ]),
-      ]).start();
+      ]);
+      animation.start();
+      return () => animation.stop();
     }, [
       innerRadius,
-      isFocused,
       outerRadius,
       size,
       syncPercent,

@@ -8,7 +8,6 @@ import { ActivityIndicator, Animated, Easing, StyleSheet, Text, TouchableOpacity
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import AuthScreen from '../features/auth/screens/AuthScreen';
 import CompanionIntroScreen from '../features/companion/screens/CompanionIntroScreen';
-import FriendSyncScreen from '../features/friends/screens/FriendSyncScreen';
 import FriendsScreen, { AddFriendsScreen } from '../features/friends/screens/NativeCircleScreen';
 import HomeScreen from '../features/home/screens/HomeScreen';
 import NotificationsScreen from '../features/notifications/screens/NotificationsScreen';
@@ -115,13 +114,6 @@ const AppNavigator = () => {
               />
             )}
             {!isHydrating && readyForHome && <Stack.Screen name="Notifications" component={NotificationsScreen} />}
-            {!isHydrating && readyForHome && (
-              <Stack.Screen
-                name="FriendSync"
-                component={FriendSyncScreen}
-                options={{ gestureEnabled: true, fullScreenGestureEnabled: true }}
-              />
-            )}
           </Stack.Navigator>
         </NavigationContainer>
       </SocialProvider>
