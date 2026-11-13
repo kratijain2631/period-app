@@ -6,6 +6,8 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## Unreleased
 
+## 2026-11-12 — TestFlight build 1.0.22 (build 44)
+
 - **One tap opens the full friend profile.** Circle rankings, the friend directory, posts and other member links use the same profile. Under identity and bio, accepted friends see the sync rings, score and confidence, both phases, latest flow gap, 28-day overlap, comparison timelines and suggestions. Boop, confirmed removal and shared updates are on the same page. Removed the “View cycle comparison” button and its separate destination.
 - Friends without paired snapshots still have a profile, friend actions and an empty history state. Pending requests, other members and your own outward profile keep their relationship-appropriate views. [Profile and history screenshots](../design/2026-11-12/friend-profile/README.md).
 
