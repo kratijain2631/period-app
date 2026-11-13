@@ -5,7 +5,7 @@ import type { CyclePhaseRange } from '../../../../packages/domain/cycles/models'
 import { useWidgetTheme } from '../../../theme/widgetTheme';
 import { AppText, Surface } from '../../../components/ui/WidgetPrimitives';
 import { CloudArt } from '../../../components/brand/WidgetArt';
-import type { CycleOverview } from '../models/cycleOverview';
+import { lateLabel, type CycleOverview } from '../models/cycleOverview';
 import { phaseLabels } from '../models/phaseLabels';
 
 const point = (angle: number, radius = 136) => {
@@ -24,7 +24,7 @@ export const CycleTimeline = ({
   size: number;
 }) => {
   const t = useWidgetTheme();
-  const marker = point(((currentDay - 0.5) / cycleLength) * 360);
+  const marker = point(((Math.min(currentDay, cycleLength) - 0.5) / cycleLength) * 360);
   return (
     <Svg width={size} height={size} viewBox="0 0 320 320" accessible={false} aria-hidden>
       {ranges.map((range) => {
@@ -114,6 +114,7 @@ export const CycleStatus = ({
       </AppText>
       <AppText role="caption" style={{ color: t.colors.secondary, textAlign: 'center' }}>
         {model.source === 'observed' ? 'From your logged signals' : 'Estimated phase'}
+        {model.daysLate !== null ? ` · ${lateLabel(model.daysLate)}` : ''}
         {model.stale ? ' · needs a sync' : ''}
       </AppText>
       {!smallRing && supportingText}

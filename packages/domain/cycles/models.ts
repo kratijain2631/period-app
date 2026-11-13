@@ -72,6 +72,8 @@ export type ResolvedCyclePhase = {
   currentPhaseStart?: string | null;
   nextPhaseStart?: string | null;
   nextPhase?: CyclePhase | null;
+  // Days past the expected next period (0 = due today). Null when not overdue.
+  daysLate?: number | null;
 };
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -84,6 +86,9 @@ const MIN_LUTEAL_LENGTH = 11;
 const MAX_LUTEAL_LENGTH = 16;
 const MIN_PERIOD_LENGTH = 3;
 const MAX_PERIOD_LENGTH = 8;
+// With no new period for this long the latest one is too old to estimate from
+// (stopped logging, pregnancy, menopause), so the phase becomes unknown.
+const MAX_ESTIMATE_DAYS = MAX_VALID_CYCLE_LENGTH;
 
 const toDayStart = (date: Date) => new Date(date.getFullYear(), date.getMonth(), date.getDate());
 const isFiniteDate = (date: Date) => !Number.isNaN(date.getTime());
@@ -416,7 +421,7 @@ export const resolveCyclePhase = ({
 
   const latestRun = runs[runs.length - 1];
   const daysSinceStart = dayDiff(referenceDate, latestRun.start);
-  if (daysSinceStart < 0) {
+  if (daysSinceStart < 0 || daysSinceStart >= MAX_ESTIMATE_DAYS) {
     return {
       phase: 'unknown',
       source: 'unknown',
@@ -426,8 +431,17 @@ export const resolveCyclePhase = ({
     };
   }
 
-  const cycleDay = (daysSinceStart % cycleLengthDays) + 1;
-  const window = resolvePhaseWindow(cycleDay, cycleLengthDays, periodLengthDays, lutealLengthDays);
+  // Don't wrap past the expected length: a late period is not a new cycle, and
+  // wrapping would estimate (and auto-post) menstruation with no period logged.
+  // An overdue cycle stays in the last phase of the cycle until flow is logged.
+  const cycleDay = daysSinceStart + 1;
+  const isLate = cycleDay > cycleLengthDays;
+  const window = resolvePhaseWindow(
+    Math.min(cycleDay, cycleLengthDays),
+    cycleLengthDays,
+    periodLengthDays,
+    lutealLengthDays,
+  );
   // Days elapsed since the current phase began → back-date the transition from
   // the reference (sync) time, so a phase-change post reads at the real transition.
   const daysIntoPhase = Math.max(0, cycleDay - window.phaseStartDay);
@@ -461,8 +475,10 @@ export const resolveCyclePhase = ({
     lutealLengthDays,
     periodLengthDays,
     currentPhaseStart,
-    nextPhaseStart,
+    // An overdue period can't be dated, so don't predict (or remind about) it.
+    nextPhaseStart: isLate ? null : nextPhaseStart,
     nextPhase,
+    daysLate: isLate ? cycleDay - cycleLengthDays - 1 : null,
   };
 };
 
@@ -521,7 +537,8 @@ export const getLatestPeriodStart = (snapshot?: CycleDaySnapshot | null): Date |
 };
 
 // Day of the current cycle, where day 1 is the first flow day of the latest period.
-// Wraps at the cycle length like the phase estimate in resolveCyclePhase.
+// Keeps counting past the cycle length while a period is late, like
+// resolveCyclePhase, and is null once the latest period is too old to estimate.
 export const getCycleDay = (
   snapshot?: CycleDaySnapshot | null,
   referenceDate: Date = new Date(),
@@ -531,10 +548,10 @@ export const getCycleDay = (
     return null;
   }
   const daysSinceStart = dayDiff(referenceDate, periodStart);
-  if (daysSinceStart < 0) {
+  if (daysSinceStart < 0 || daysSinceStart >= MAX_ESTIMATE_DAYS) {
     return null;
   }
-  return (daysSinceStart % (snapshot?.cycleLengthDays ?? DEFAULT_CYCLE_LENGTH)) + 1;
+  return daysSinceStart + 1;
 };
 
 export const deriveSnapshot = (
@@ -579,7 +596,7 @@ export const deriveCycleTimeline = (
   if (!lastRun || !isFiniteDate(referenceDate) || dayDiff(referenceDate, lastRun.start) < 0 || resolved.phase === 'unknown') {
     return { resolved, currentDay: null, ranges: [] as CyclePhaseRange[] };
   }
-  const currentDay = (dayDiff(referenceDate, lastRun.start) % resolved.cycleLengthDays) + 1;
+  const currentDay = dayDiff(referenceDate, lastRun.start) + 1;
   const ranges: CyclePhaseRange[] = [];
   for (let day = 1; day <= resolved.cycleLengthDays; day += 1) {
     const phase = resolvePhaseWindow(day, resolved.cycleLengthDays, resolved.periodLengthDays, resolved.lutealLengthDays).phase;

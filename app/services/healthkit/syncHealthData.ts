@@ -252,7 +252,8 @@ export const syncHealthData = async ({
         },
         starts_at: sample.startDate,
       }));
-      if (phaseChanged && autoPostSettings.postPhaseTransitions) {
+      // Losing an estimate (e.g. no period for 60 days) isn't news to post.
+      if (phaseChanged && snapshot.currentPhase !== 'unknown' && autoPostSettings.postPhaseTransitions) {
         events.push({
           user_id: session.userId,
           event_type: 'phase_transition',

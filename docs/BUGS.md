@@ -11,6 +11,8 @@ Known bugs to fix. This is for **open** bugs; problems we already diagnosed and 
 
 ### Cycle widgets
 
+- [x] **A late period restarted the cycle — FIXED in source 2026-11-13; next native build required.** The cycle day and estimated phase used `daysSinceStart % cycleLength`, so day 30 of a 28-day cycle with no new period read as day 3, menstruation, and the next sync could auto-post "Entered menstruation" to friends. The day now keeps counting, an overdue cycle stays in PMS with "Period expected N days ago", no next-phase reminder is scheduled while overdue, and the phase becomes unknown (without a post) 60 days after the latest period started. `packages/domain/cycles/models.ts`; checked in the widget preview with a late fixture.
+
 - [ ] The pair comparison still draws its rings against a fixed 28-day template. The full wheel on You uses the member’s cycle ranges, so the two views can differ.
 - [ ] Feed period-day labels use the last 40 visible cycle events. If that window starts in the middle of a period, its first visible day can appear as day one. See the [widget architecture](UI_ARCHITECTURE.md).
 

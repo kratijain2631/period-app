@@ -202,6 +202,56 @@ describe('resolveCyclePhase', () => {
   });
 });
 
+describe('resolveCyclePhase when a period is late', () => {
+  const day = (date: string) => new Date(`${date}T12:00:00`);
+  const period = (start: string, lengthDays: number): CycleSample[] =>
+    Array.from({ length: lengthDays }, (_, index) => {
+      const date = new Date(`${start}T12:00:00`);
+      date.setDate(date.getDate() + index);
+      return flowSample(`${start}-${index}`, date.toISOString());
+    });
+  // 28-day cycles; the next period was due 2026-10-26.
+  const samples = [...period('2026-08-31', 5), ...period('2026-09-28', 5)];
+
+  it('stays in PMS with no period logged instead of estimating menstruation', () => {
+    const due = resolveCyclePhase({ samples, referenceDate: day('2026-10-25') });
+    const late = resolveCyclePhase({ samples, referenceDate: day('2026-11-03') });
+    expect(due.cycleLengthDays).toBe(28);
+    expect(due).toMatchObject({ phase: 'pms', daysLate: null });
+    expect(late).toMatchObject({ phase: 'pms', source: 'estimated', daysLate: 8 });
+    expect(resolveCyclePhase({ samples, referenceDate: day('2026-10-26') }).daysLate).toBe(0);
+  });
+
+  it('keeps the same phase start so no new transition is posted while late', () => {
+    const due = resolveCyclePhase({ samples, referenceDate: day('2026-10-25') });
+    const late = resolveCyclePhase({ samples, referenceDate: day('2026-11-03') });
+    expect(late.currentPhaseStart).toBe(due.currentPhaseStart);
+  });
+
+  it('stops predicting the next phase date while overdue', () => {
+    const late = resolveCyclePhase({ samples, referenceDate: day('2026-11-03') });
+    expect(late.nextPhaseStart).toBeNull();
+    expect(late.nextPhase).toBe('menstruation');
+  });
+
+  it('becomes unknown 60 days after the latest period started', () => {
+    expect(resolveCyclePhase({ samples, referenceDate: day('2026-11-26') }).phase).toBe('pms');
+    expect(resolveCyclePhase({ samples, referenceDate: day('2026-11-27') })).toMatchObject({
+      phase: 'unknown',
+      source: 'unknown',
+    });
+  });
+
+  it('starts a new cycle as soon as the late period is logged', () => {
+    const resolved = resolveCyclePhase({
+      samples: [...samples, ...period('2026-11-03', 1)],
+      referenceDate: day('2026-11-03'),
+    });
+    expect(resolved.phase).toBe('menstruation');
+    expect(resolved.daysLate ?? null).toBeNull();
+  });
+});
+
 describe('deriveSnapshot', () => {
   it('persists phase source and personalized cycle metrics', () => {
     const samples = [
@@ -280,10 +330,16 @@ describe('getCycleDay', () => {
     expect(getCycleDay(snapshot, new Date(day('2026-11-03')))).toBe(10);
   });
 
-  it('wraps when the next period is overdue, matching the phase estimate', () => {
+  it('keeps counting when the next period is overdue instead of starting a new cycle', () => {
     const snapshot = deriveSnapshot(period('2026-10-01', 5), day('2026-11-03'));
     // 33 days elapsed in a 28-day cycle.
-    expect(getCycleDay(snapshot, new Date(day('2026-11-03')))).toBe(6);
+    expect(getCycleDay(snapshot, new Date(day('2026-11-03')))).toBe(34);
+  });
+
+  it('returns null once the latest period is too old to estimate from', () => {
+    const snapshot = deriveSnapshot(period('2026-09-01', 5), day('2026-11-03'));
+    expect(getCycleDay(snapshot, new Date(day('2026-10-30')))).toBe(60);
+    expect(getCycleDay(snapshot, new Date(day('2026-10-31')))).toBeNull();
   });
 
   it('ignores samples with no flow', () => {

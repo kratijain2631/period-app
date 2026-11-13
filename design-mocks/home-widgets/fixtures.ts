@@ -9,6 +9,7 @@ export const example: CycleOverview = {
   source: 'estimated',
   currentDay: 9,
   cycleLength: 28,
+  daysLate: null,
   ranges: [
     { phase: 'menstruation', startDay: 1, endDay: 5 },
     { phase: 'follicular', startDay: 6, endDay: 12 },

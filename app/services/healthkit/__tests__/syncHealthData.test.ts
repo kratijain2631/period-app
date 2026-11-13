@@ -323,4 +323,16 @@ describe('syncHealthData signal integration', () => {
     // The phase-transition post still carries the real current phase.
     expect(transitionEvent?.phase).toBe(snapshot?.currentPhase);
   });
+
+  it('does not post a transition when the phase can no longer be estimated', async () => {
+    // 62 days after the latest period started, with no newer flow logged.
+    jest.setSystemTime(new Date('2026-05-01T12:00:00.000Z'));
+    const snapshot = await syncHealthData({ trigger: 'manual' });
+
+    expect(snapshot?.currentPhase).toBe('unknown');
+    const postedEvents = mockUpsertCycleEvents.mock.calls[0][0];
+    expect(
+      postedEvents.some((event: { event_type: string }) => event.event_type === 'phase_transition'),
+    ).toBe(false);
+  });
 });

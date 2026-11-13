@@ -32,7 +32,7 @@ Use this as the launch tracker. Claim an item the same way as in [BUGS.md](BUGS.
 
 ### Wrong data shown or shared (fix first)
 
-- [ ] **A late period restarts the cycle.** The cycle day and estimated phase use `daysSinceStart % cycleLength`, so day 30 of a 28-day cycle with no new period reads as day 3, menstruation, and the next sync can auto-post "Entered menstruation" to friends. `packages/domain/cycles/models.ts` (`resolveCyclePhase`, `getCycleDay`).
+- [x] **A late period restarts the cycle.** _(Fixed in source 2026-11-13; see BUGS.md.)_ The cycle day and estimated phase use `daysSinceStart % cycleLength`, so day 30 of a 28-day cycle with no new period reads as day 3, menstruation, and the next sync can auto-post "Entered menstruation" to friends. `packages/domain/cycles/models.ts` (`resolveCyclePhase`, `getCycleDay`).
 - [ ] **A Health sync with no samples replaces the snapshot friends see.** [BUGS.md](BUGS.md) → "A sync with zero Health samples still uploads an empty snapshot".
 - [ ] **No-data users see made-up numbers.** [BUGS.md](BUGS.md) → "No-data users see made-up numbers".
 

@@ -16,7 +16,7 @@ All in [`packages/domain/cycles/models.ts`](../packages/domain/cycles/models.ts)
 Each derived snapshot has a **`phaseSource`**:
 
 - **`observed`** — from real, recent data: flow logged today → `menstruation`; positive ovulation test or peak cervical mucus → `ovulation`; recent progesterone or elevated BBT → `luteal`.
-- **`estimated`** — no recent signal, so we compute it: days since your last period start, modulo your cycle length, mapped onto phase windows (`resolvePhaseWindow`) sized from your real `cycleLengthDays` / `periodLengthDays` / `lutealLengthDays`. This is effectively a prediction, grounded in your real period history.
+- **`estimated`** — no recent signal, so we compute it: days since your last period start, mapped onto phase windows (`resolvePhaseWindow`) sized from your real `cycleLengthDays` / `periodLengthDays` / `lutealLengthDays`. This is effectively a prediction, grounded in your real period history. The day count doesn't wrap: when the next period is overdue the estimate stays in PMS (`daysLate` counts from the expected day, and `nextPhaseStart` is null so no reminder is scheduled) until flow is logged. 60 days after the latest period started, the phase becomes `unknown`, and a change to `unknown` is never posted.
 - **`unknown`** — no usable data.
 
 **Reality for a typical user** (who only logs period flow, no ovulation tests/BBT): during your period it's `observed`; the rest of the month it's `estimated`. So most of the cycle, the phase is our model's estimate.
