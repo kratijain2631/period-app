@@ -38,7 +38,7 @@ Use this as the launch tracker. Claim an item the same way as in [BUGS.md](BUGS.
 
 ### Friends and social
 
-- [x] Email friend request shows no confirmation (`FriendsScreen.tsx`, notice only renders for non-email queries). _(Already fixed in the live screen, `DiscoverMembers`; the old `FriendsScreen.tsx` is unused. Confirmed on staging 2026-11-13; see BUGS.md.)_
+- [x] Email friend request shows no confirmation (`FriendsScreen.tsx`, notice only renders for non-email queries). _(Already fixed in the live screen, `DiscoverMembers`; the unused old `FriendsScreen.tsx` has been removed. Confirmed on staging 2026-11-13; see BUGS.md.)_
 - [ ] Circle doesn't refresh after an accept; new posts need pull-to-refresh; the bell can lag about a minute.
 - [ ] Two-way pending requests leave a stale row.
 - [ ] Re-check "Deleting an accepted request directly leaves sharing on" against the 2026-11-11 friend-rule migration; it may be fixed.
