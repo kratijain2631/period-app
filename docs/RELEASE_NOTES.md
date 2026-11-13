@@ -6,7 +6,11 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## Unreleased
 
-- The owner confirmed Phase Guide refresh on their production phone. Staging still needs an OpenAI key for fresh tips and can use the existing production key. [Staging setup](TROUBLESHOOTING.md#contact-verification-delivery-and-guidance-on-staging-2026-11-13).
+- **Push notifications, phase 1.** Friend requests, accepted requests, reactions and boops now send a push to the other person's phone once the `send-push` edge function is deployed. Lock-screen text names who did something and never mentions anyone's cycle. A re-sent friend request within a day, or boops within 10 minutes, don't push again. Fixes a privacy bug: signing out now removes the phone's push token first, and a token belongs only to the last account that registered it, so a shared phone no longer receives the previous account's pushes. Database: `20261113230000_push-notifications.sql` adds `push_outbox` (server-only queue), `notification_preferences` (defaults; settings screen comes in phase 2), the triggers, a 5-minute retry job and a daily cleanup. [Design](design/push-notifications.md).
+
+- **Email, phone and verification.** Settings and first-time setup use the same outlined fields and compact Cancel button for phone and email. The country code has a compact, four-character box, initially +1. The national number fills the remaining width. Members can send, resend and verify a confirmation code. [Phone editor preview](../design/2026-11-13/contact-settings/change-phone.png).
+
+- The owner confirmed Phase Guide refresh on their production phone. The staging key is configured. Two fresh generation attempts returned HTTP 503, and the function logged OpenAI HTTP 429. [Staging setup](TROUBLESHOOTING.md#contact-verification-delivery-and-guidance-on-staging-2026-11-13).
 
 - Paused new TestFlight builds at the owner’s request to reserve the two remaining builds. Build 1.0.24 (46) is available for internal testing.
 - Searching for a friend by email or phone is easier to notice. After a full address or number, a caption says to tap Find, the button is filled and names what it will look up, and the keyboard's Search key runs it too. Lookups still run only when you ask, so only the exact address you typed is checked.

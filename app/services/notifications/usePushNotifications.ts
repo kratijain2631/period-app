@@ -4,11 +4,15 @@ import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import { useEffect } from 'react';
-import { registerDeviceToken, revokeDeviceToken } from '../supabase/deviceTokens';
+import {
+  registerDeviceToken,
+  releaseStoredDeviceToken,
+  revokeDeviceToken,
+  TOKEN_STORAGE_KEY,
+} from '../supabase/deviceTokens';
 import { useSessionStore } from '../../state/sessionStore';
 import { navigationRef } from '../../navigation/navigationRef';
 
-const TOKEN_STORAGE_KEY = 'device-push-token';
 const NAV_RETRY_COUNT = 6;
 const NAV_RETRY_DELAY_MS = 500;
 
@@ -102,13 +106,9 @@ export const usePushNotifications = () => {
   useEffect(() => {
     const run = async () => {
       if (!session) {
-        const existing = await AsyncStorage.getItem(TOKEN_STORAGE_KEY);
-        if (existing) {
-          await revokeDeviceToken(existing).catch((error) =>
-            console.warn('[push] Failed to revoke device token', error),
-          );
-          await AsyncStorage.removeItem(TOKEN_STORAGE_KEY);
-        }
+        // signOut releases the token while still signed in; this covers sessions
+        // that ended some other way (expiry, remote sign-out).
+        await releaseStoredDeviceToken();
         return;
       }
 

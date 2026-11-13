@@ -64,7 +64,8 @@ supabase/
 │   ├── friend-recommendations/ # Not scheduled
 │   ├── notifications-handler/  # Not deployed
 │   ├── phase-change-reminder/  # Daily reminder push (cron)
-│   └── request-cycle-guidance/ # Authenticated on-demand and manual AI guidance
+│   ├── request-cycle-guidance/ # Authenticated on-demand and manual AI guidance
+│   └── send-push/        # Delivers queued pushes (push_outbox) through Expo
 └── tests/                # RLS policy tests
 
 overall/                  # SSOT: 2025-11-11-cycle-companion-ssot.md
@@ -102,7 +103,8 @@ thoughts/shared/          # Design docs, requirements, handoffs
 **Notifications:**
 - Push: `app/services/notifications/usePushNotifications.ts`
 - In-app: `app/services/supabase/notifications.ts` + `app/features/notifications/`
-- Edge function: `supabase/functions/notifications-handler/`
+- Push delivery: `push_outbox` queue → `supabase/functions/send-push/` (design: [docs/design/push-notifications.md](docs/design/push-notifications.md))
+- Edge function: `supabase/functions/notifications-handler/` (not deployed; replaced by `send-push` in phase 3)
 
 ---
 

@@ -2,6 +2,7 @@ import type { Session as SupabaseSession } from '@supabase/supabase-js';
 import { isSupabaseConfigured, supabase } from './client';
 import type { Session } from '../../state/sessionStore';
 import { upsertCurrentUserProfile } from './users';
+import { releaseStoredDeviceToken } from './deviceTokens';
 
 const REMOTE_SIGN_OUT_TIMEOUT_MS = 5000;
 
@@ -82,6 +83,7 @@ export const signOut = async () => {
   if (!isSupabaseConfigured) {
     return;
   }
+  await releaseStoredDeviceToken();
   const { error } = await supabase.auth.signOut({ scope: 'local' });
   if (error) {
     throw error;

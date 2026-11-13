@@ -8,7 +8,7 @@ From the repository root:
 EXPO_OFFLINE=1 npx expo start --localhost --port 8084
 ```
 
-Then open <http://localhost:8084/home-widgets.html>. `public/home-widgets.html` links to this directory’s `index.html`; Metro serves both the bundle and fonts on the same origin. Do not serve the HTML on another port: Expo’s font loader requires the assets on the same origin. This is a local development preview, not a published site.
+Then open <http://localhost:8084/home-widgets.html>. To see the separate country code and number fields immediately, open the [phone editor](http://localhost:8084/home-widgets.html?screen=settings&edit=phone). `public/home-widgets.html` links to this directory’s `index.html`; Metro serves both the bundle and fonts on the same origin. Do not serve the HTML on another port: Expo’s font loader requires the assets on the same origin. This is a local development preview, not a published site.
 
 Open Controls for the theme, 320/390/480 px widths and ready, empty, loading, error, stale or offline fixture states. The bottom tabs stay visible while scrolling. Drafts and reactions persist across tabs and themes. Reloading resets sample edits.
 
