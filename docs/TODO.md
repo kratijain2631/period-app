@@ -27,8 +27,10 @@ Open items, roughly in priority order, with completed items retained as a decisi
 
 ## Widget rollout and follow-ups
 
+- [x] Move Settings to its own page, group email/phone change actions under Personal info, put Post settings and ranking visibility under Privacy and permissions, and finish with Sign out and Delete account. Allow enough headroom for the bio mascot at every preview width.
+
 - [x] Preview a thumbnail using Home’s actual waving mascot and match the opening wordmark to Home.
-- [ ] Review the revised icon in the live preview before selecting it for a future native build.
+- [x] Review the revised icon in the live preview. The owner approved the waving mascot for the app thumbnail.
 
 - [x] Give the redesign a distinct 1.0.18 TestFlight version. The previous 1.0.17 (39) contains the same features. This design’s visual reference is v1.0.
 

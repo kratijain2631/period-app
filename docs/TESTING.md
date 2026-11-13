@@ -197,3 +197,7 @@ Record build, iOS version, affected control and outcome; do not publish personal
 6. Try larger text and VoiceOver. Report the screen, action, expected result, actual result, iOS version and build number. Keep any private health or contact data out of shared screenshots.
 
 Live SMS verification, new-account setup and Shaan’s contact match have separate follow-up work. Browser verification uses synthetic contacts.
+
+### Standalone Settings and approved thumbnail
+
+Browser checks followed You → Settings → Post settings and back, changed the sample email and phone with confirmation, and verified ranking visibility survives leaving and returning. The full bio mascot fits at 320, 390 and 480 px. All 179 app tests, native and preview type checks, and the local iOS bundle export passed. Hosted SMS delivery is pending the owner’s provider setup. [Current Settings screenshot](../design/2026-11-12/settings/settings.png).

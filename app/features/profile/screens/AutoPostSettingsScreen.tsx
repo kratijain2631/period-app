@@ -116,7 +116,7 @@ const AutoPostSettingsScreen = () => {
             accessibilityLabel="Go back"
           >
             <Ionicons name="chevron-back" size={18} color={palette.primaryText} />
-            <Text style={styles.backLabel}>Profile</Text>
+            <Text style={styles.backLabel}>Settings</Text>
           </TouchableOpacity>
           <Text style={styles.title}>Auto-post settings</Text>
           <Text style={[styles.subtitle, status === 'error' ? styles.statusError : null]}>

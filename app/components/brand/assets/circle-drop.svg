@@ -1,7 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
   <defs>
     <radialGradient id="paper" cx=".4" cy=".33" r=".86"><stop stop-color="#fff9ed"/><stop offset="1" stop-color="#f5e5ce"/></radialGradient>
-    <linearGradient id="clay" x2=".8" y2="1" gradientUnits="objectBoundingBox"><stop stop-color="#e98961"/><stop offset=".65" stop-color="#ce6143"/><stop offset="1" stop-color="#b64d37"/></linearGradient>
   </defs>
   <rect width="1024" height="1024" fill="url(#paper)"/>
   <g fill="none" stroke-width="42" stroke-linecap="round">
@@ -11,7 +10,5 @@
     <path stroke="#819cb2" d="M375 820a337 337 0 0 1-200-304"/>
     <path stroke="#af879c" d="M180 455a337 337 0 0 1 277-275"/>
   </g>
-  <path fill="url(#clay)" d="M515 287c-12 0-29 31-54 70-49 75-130 165-130 242 0 107 80 177 181 177s184-70 184-177c0-78-69-160-126-246-24-36-44-66-55-66z" transform="translate(24 6) scale(.95)"/>
-  <g fill="#fff6e6"><circle cx="458" cy="563" r="17"/><circle cx="565" cy="563" r="17"/></g>
-  <path d="M465 619q46 49 93-2" fill="none" stroke="#fff6e6" stroke-width="19" stroke-linecap="round"/>
+  <g transform="translate(191 176) scale(5.35)" fill="none"><ellipse cx="60" cy="112" rx="22" ry="5" fill="#E8E4DE" opacity="0.5"></ellipse><path d="M60 12 C60 12 30 52 30 72 C30 88.568 43.432 102 60 102 C76.568 102 90 88.568 90 72 C90 52 60 12 60 12Z" fill="#C65A3D"></path><circle cx="44" cy="78" r="4.5" fill="#FFD4C4" opacity="0.45"></circle><circle cx="76" cy="78" r="4.5" fill="#FFD4C4" opacity="0.45"></circle><circle cx="52" cy="70" r="4.5" fill="#3D2920"></circle><circle cx="68" cy="70" r="4.5" fill="#3D2920"></circle><circle cx="54" cy="68" r="1.5" fill="#FFF"></circle><circle cx="70" cy="68" r="1.5" fill="#FFF"></circle><path d="M56 81 Q60 85 64 81" stroke="#3D2920" stroke-width="2" stroke-linecap="round"></path><path d="M34 78 Q28 84 27 90" stroke="#C65A3D" stroke-width="4" stroke-linecap="round"></path><path d="M86 74 Q92 64 96 58" stroke="#C65A3D" stroke-width="4" stroke-linecap="round"></path><circle cx="96" cy="56" r="4" fill="#C65A3D"></circle><ellipse cx="52" cy="102" rx="6" ry="3" fill="rgb(168, 77, 52)"></ellipse><ellipse cx="68" cy="102" rx="6" ry="3" fill="rgb(168, 77, 52)"></ellipse></g>
 </svg>

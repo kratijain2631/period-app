@@ -1,11 +1,9 @@
-import { RankingVisibility } from '../components/RankingVisibility';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActionSheetIOS,
   Alert,
   Animated,
   Image,
-  Modal,
   Platform,
   Pressable,
   SafeAreaView,
@@ -17,7 +15,6 @@ import {
   View,
 } from 'react-native';
 import { Buffer } from 'buffer';
-import { Ionicons } from '@expo/vector-icons';
 import {
   useFocusEffect,
   useNavigation,
@@ -32,7 +29,6 @@ import { usePhaseGuidance } from '../hooks/usePhaseGuidance';
 import { guidanceMatchesPhase, resolvePhaseGuidance } from '../../../../packages/domain/cycles/guidance';
 import { useCycleSnapshot } from '../../feed/hooks/useCycleSnapshot';
 import { generateAvatarImage, uploadAvatarBlob } from '../../../services/supabase/avatars';
-import { deleteCurrentAccount, signOut } from '../../../services/supabase/auth';
 import { brand, brandType } from '../../../theme/brand';
 import { CycleStatus } from '../../cycle/components/CycleStatus';
 import { selectCycleOverview } from '../../cycle/models/cycleOverview';
@@ -72,7 +68,7 @@ const AVATAR_GLAM_PROMPT = [
 const AVATAR_GLAM_STYLE_LABEL = 'Maximum Glam';
 const AVATAR_GENERATION_TIMEOUT_MS = 90000;
 
-type ProfileSections = { ProfileRoot: { section?: 'cycle' | 'guide' } | undefined };
+type ProfileSections = { Settings: undefined; ProfileRoot: { section?: 'cycle' | 'guide' } | undefined };
 const ProfileScreen = () => {
   const session = useSessionStore(selectSession);
   const alias = useSessionStore(selectAlias);
@@ -99,7 +95,6 @@ const ProfileScreen = () => {
   const cyclePhaseKey = snapshot?.currentPhase ?? 'unknown';
   const cyclePhaseStart = snapshot?.currentPhaseStart ?? null;
   const [profileName, setProfileName] = useState('');
-  const [profileEmail, setProfileEmail] = useState('');
   const [profileBio, setProfileBio] = useState('');
   const [nameDraft, setNameDraft] = useState('');
   const [bioDraft, setBioDraft] = useState('');
@@ -116,16 +111,11 @@ const ProfileScreen = () => {
     canRefresh: canRefreshGuidance,
     refresh: refreshGuidance,
   } = usePhaseGuidance(session?.userId, cyclePhaseKey, cyclePhaseStart);
-  const [settingsOpen, setSettingsOpen] = useState(false);
-  const [accountAction, setAccountAction] = useState<'idle' | 'signingOut' | 'deleting'>('idle');
-  const [accountError, setAccountError] = useState<string | null>(null);
-
   const loadProfile = useCallback(async () => {
     try {
       const data = await fetchCurrentUserProfile();
       if (data) {
         setProfileName(data.full_name ?? '');
-        setProfileEmail(data.email ?? '');
         const nextBio = data.bio ?? '';
         setProfileBio(nextBio);
         setBioDraft(nextBio);
@@ -324,53 +314,6 @@ const ProfileScreen = () => {
     loadProfile();
   }, [loadProfile]);
 
-  const navigateToAutoPostSettings = useCallback(() => {
-    (navigation as any).navigate('AutoPostSettings');
-  }, [navigation]);
-
-  const handleSignOut = useCallback(async () => {
-    if (accountAction !== 'idle') {
-      return;
-    }
-    setAccountError(null);
-    setAccountAction('signingOut');
-    try {
-      await signOut();
-      useSessionStore.getState().reset();
-    } catch (error) {
-      console.warn('[profile] Failed to sign out', error);
-      setAccountError('Could not sign out right now.');
-    } finally {
-      setAccountAction('idle');
-    }
-  }, [accountAction]);
-
-  const confirmDeleteAccount = useCallback(() => {
-    if (accountAction !== 'idle') {
-      return;
-    }
-    Alert.alert('Delete account?', 'This permanently removes your account and cannot be undone.', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: async () => {
-          setAccountError(null);
-          setAccountAction('deleting');
-          try {
-            await deleteCurrentAccount();
-            useSessionStore.getState().reset();
-          } catch (error) {
-            console.warn('[profile] Failed to delete account', error);
-            setAccountError('Could not delete account right now.');
-          } finally {
-            setAccountAction('idle');
-          }
-        },
-      },
-    ]);
-  }, [accountAction]);
-
   const currentGuidance = guidanceMatchesPhase(cycleGuidance, cyclePhaseKey, cyclePhaseStart);
   const { dos: phaseDos, donts: phaseDonts } = resolvePhaseGuidance(cycleGuidance, cyclePhaseKey, cyclePhaseStart);
   const entranceStyles = useStaggeredEntrance(5, {
@@ -387,7 +330,7 @@ const ProfileScreen = () => {
             title="You"
             icon="settings-outline"
             action="Open settings"
-            onPress={() => setSettingsOpen(true)}
+            onPress={() => navigation.navigate('Settings')}
           />
           <ProfileIdentity
             profile={{ name: profileName || alias || 'You', alias: alias || '', bio: profileBio, avatarUrl }}
@@ -482,86 +425,7 @@ const ProfileScreen = () => {
         </View>
       </ScrollView>
 
-      <Modal
-        visible={settingsOpen}
-        animationType="slide"
-        transparent
-        onRequestClose={() => setSettingsOpen(false)}
-      >
-        <Pressable style={styles.settingsOverlay} onPress={() => setSettingsOpen(false)}>
-          <ScrollView style={{ flexGrow: 0, maxHeight: '90%' }} contentContainerStyle={styles.settingsSheet} keyboardShouldPersistTaps="handled" bounces={false}>
-            <Pressable onPress={() => {}}>
-            <View style={styles.settingsHeader}>
-              <Text style={styles.settingsTitle}>Settings</Text>
-              <TouchableOpacity onPress={() => setSettingsOpen(false)} accessibilityLabel="Close settings">
-                <Text style={styles.settingsClose}>Done</Text>
-              </TouchableOpacity>
-            </View>
 
-            {settingsOpen && session && <RankingVisibility key={session.userId} userId={session.userId} />}
-
-            {profileEmail ? (
-              <View style={[styles.accountRow, styles.accountRowDivider]}>
-                <Ionicons name="mail-outline" size={18} color="#8A857E" />
-                <Text style={styles.accountRowText}>{profileEmail}</Text>
-              </View>
-            ) : null}
-
-            <TouchableOpacity
-              style={[styles.accountRow, styles.accountRowDivider]}
-              onPress={() => {
-                setSettingsOpen(false);
-                (navigation as any).navigate('ManageContactDetails');
-              }}
-            >
-              <Ionicons name="person-outline" size={18} color="#8A857E" />
-              <Text style={styles.accountRowText}>Manage contact details</Text>
-              <Ionicons name="chevron-forward" size={16} color="#DDD9D3" />
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.accountRow, styles.accountRowDivider]}
-              onPress={() => {
-                setSettingsOpen(false);
-                navigateToAutoPostSettings();
-              }}
-            >
-              <Ionicons name="settings-outline" size={18} color="#8A857E" />
-              <Text style={styles.accountRowText}>Post Settings</Text>
-              <Ionicons name="chevron-forward" size={16} color="#DDD9D3" />
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[
-                styles.accountRow,
-                styles.accountRowDivider,
-                accountAction !== 'idle' ? styles.buttonDisabled : null,
-              ]}
-              onPress={handleSignOut}
-              disabled={accountAction !== 'idle'}
-            >
-              <Ionicons name="log-out-outline" size={18} color="#C4654A" />
-              <Text style={styles.accountSignOutText}>
-                {accountAction === 'signingOut' ? 'Signing out...' : 'Sign out'}
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.accountRow, accountAction !== 'idle' ? styles.buttonDisabled : null]}
-              onPress={confirmDeleteAccount}
-              disabled={accountAction !== 'idle'}
-            >
-              <Ionicons name="trash-outline" size={18} color="#D4A252" />
-              <Text style={styles.accountDeleteText}>
-                {accountAction === 'deleting' ? 'Deleting...' : 'Delete account'}
-              </Text>
-            </TouchableOpacity>
-
-            {accountError ? <Text style={styles.inlineError}>{accountError}</Text> : null}
-            </Pressable>
-          </ScrollView>
-        </Pressable>
-      </Modal>
     </SafeAreaView>
   );
 };
@@ -582,37 +446,6 @@ const styles = StyleSheet.create({
     borderRadius: 28,
     resizeMode: 'cover',
   },
-  settingsOverlay: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0,0,0,0.35)',
-  },
-  settingsSheet: {
-    backgroundColor: palette.white,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 32,
-    borderTopWidth: 1,
-    borderColor: palette.separator,
-  },
-  settingsHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingBottom: 8,
-  },
-  settingsTitle: {
-    fontSize: 18,
-    color: palette.primaryText,
-    ...brandType.heading,
-  },
-  settingsClose: {
-    fontSize: 14,
-    color: palette.accent,
-    ...brandType.semibold,
-  },
   inlineError: {
     marginTop: 6,
     fontSize: 12,
@@ -624,35 +457,6 @@ const styles = StyleSheet.create({
     color: '#2D2A26',
     marginBottom: 8,
     ...brandType.display,
-  },
-  accountRow: {
-    minHeight: 56,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    paddingHorizontal: 16,
-  },
-  accountRowDivider: {
-    borderBottomWidth: 1,
-    borderBottomColor: '#F3F0EC',
-  },
-  accountRowText: {
-    flex: 1,
-    fontSize: 14,
-    color: '#5A564F',
-    ...brandType.body,
-  },
-  accountSignOutText: {
-    flex: 1,
-    fontSize: 14,
-    color: '#C4654A',
-    ...brandType.semibold,
-  },
-  accountDeleteText: {
-    flex: 1,
-    fontSize: 14,
-    color: '#D4A252',
-    ...brandType.semibold,
   },
   buttonDisabled: {
     opacity: 0.6,

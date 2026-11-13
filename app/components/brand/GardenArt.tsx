@@ -11,7 +11,7 @@ export function GardenArt({ pair = false }: { pair?: boolean }) {
       aria-hidden
       accessibilityElementsHidden
       importantForAccessibility="no-hide-descendants"
-      style={{ position: 'absolute', right: 0, bottom: 0, width: '100%', height: '100%', overflow: 'hidden' }}
+      style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, overflow: 'hidden' }}
     >
       <Svg
         width="100%"
@@ -53,12 +53,12 @@ export function GardenArt({ pair = false }: { pair?: boolean }) {
       <View
         style={{
           position: 'absolute',
-          right: pair ? 11 : 12,
-          bottom: pair ? 13 : 5,
+          right: pair ? 11 : 14,
+          bottom: pair ? 13 : 8,
           transform: [{ rotate: pair ? '8deg' : '-5deg' }],
         }}
       >
-        <DottieMascot size={pair ? 64 : 87} color={t.phase.menstruation.chart} mood={pair ? 'waving' : 'happy'} />
+        <DottieMascot size={pair ? 64 : 80} color={t.phase.menstruation.chart} mood={pair ? 'waving' : 'happy'} />
       </View>
     </View>
   );

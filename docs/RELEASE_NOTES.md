@@ -6,7 +6,10 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## Unreleased
 
-- The opening page and Home share the same lowercase Nunito ExtraBold wordmark, including its 34-point size, letter spacing and terracotta color. The live browser preview pairs it with an [icon candidate made from Home’s waving mascot](../design/2026-11-12/mascot-thumbnail/thumbnail.png). This is a preview revision after builds 39 and 40.
+- The opening page and Home use the same lowercase Nunito ExtraBold wordmark, including its size, spacing and terracotta color. The approved app thumbnail now uses Home’s actual waving mascot inside the five-color ring. [Opening preview](../design/2026-11-12/mascot-thumbnail/opening.png) and [1024 px thumbnail](../app/components/brand/assets/app-icon.png).
+- Settings now opens as a full page from You. **Personal info** displays each email and phone number once, with individual change actions. A replacement email uses confirmation links and a replacement phone uses an SMS code. The owner is setting up hosted SMS separately. **Privacy and permissions** contains Post settings and Community rankings visibility. Sign out and Delete account are at the bottom. [Settings screenshot](../design/2026-11-12/settings/settings.png).
+- The You bio banner gives the drop more headroom and anchors its landscape within the cover. The shared profile banner keeps the full mascot visible at 320, 390 and 480 px.
+
 
 ## 2026-11-12 — TestFlight build 1.0.18 (build 40)
 

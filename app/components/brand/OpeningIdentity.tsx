@@ -1,13 +1,13 @@
-import { Image, Platform, Text, View, type ImageSourcePropType } from 'react-native';
+import { Image, Platform, Text, View } from 'react-native';
 import { APP_TAGLINE, TAGLINE_LINES } from '../../config/branding';
 import { AppText } from '../ui/WidgetPrimitives';
 import { Wordmark } from './Wordmark';
 
-export function OpeningIdentity({ icon = require('./assets/app-icon.png') }: { icon?: ImageSourcePropType }) {
+export function OpeningIdentity() {
   return (
     <View style={{ alignItems: 'center', gap: 12 }}>
       <Image
-        source={icon}
+        source={require('./assets/app-icon.png')}
         accessible={false}
         style={{ width: 142, height: 142, borderRadius: 38, marginBottom: 10 }}
       />
