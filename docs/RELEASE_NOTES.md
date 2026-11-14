@@ -6,6 +6,8 @@ Changelog for this app's builds. Newest first. See [INSTRUCTIONS.md](INSTRUCTION
 
 ## Unreleased
 
+- Signup explains how friends can find you by shared email or verified phone, with more space above the optional phone section.
+
 - Added the [service account directory](ACCOUNTS.md) and recorded the domain and mailbox renewal terms in [Troubleshooting](TROUBLESHOOTING.md#godaddy-domain-and-mailbox-renewal-november-2026).
 
 - Paused account email changes in setup, Settings and Auth. The new-address code flow is retained for a future release. Its signup action, **Use a different email**, now uses the same outlined button and type as **Add phone number**.

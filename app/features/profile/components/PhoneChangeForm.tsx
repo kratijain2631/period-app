@@ -19,6 +19,7 @@ export function OptionalPhonePrompt({ onAdd }: { onAdd: () => void }) {
   return (
     <View style={{ gap: 6 }}>
       <AppText>Phone number (optional)</AppText>
+      <AppText>Verify your number so friends who have it can find you when you turn on Let contacts find me.</AppText>
       <ActionButton outline label="Add phone number" onPress={onAdd} />
     </View>
   );
